@@ -20,8 +20,17 @@ services:
     build:
       context: .
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    # NOT published to the host. Dokploy's own dashboard already occupies host
+    # port 3000, so `ports: - "3000:3000"` fails with "port is already
+    # allocated" and Traefik then has nothing to route to (502).
+    #
+    # Traefik reaches the container over the Docker network instead; set the
+    # port to 3000 in Dokploy's Domains tab.
+    #
+    # To publish it locally for testing, run with:
+    #   docker compose run --service-ports app
+    expose:
+      - "3000"
     environment:
       NODE_ENV: production
       # Full connection string from your cloud provider, including
