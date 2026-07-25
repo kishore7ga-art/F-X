@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { databaseErrorCode } from "@/lib/db-errors";
+import {
+  classifyDatabaseError,
+  DATABASE_FAILURE_HINTS,
+  type DatabaseFailureKind,
+} from "@/lib/db-errors";
+import { parseDatabaseHost, probeDatabaseSocket } from "@/lib/db-probe";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -8,36 +13,54 @@ export const dynamic = "force-dynamic";
 /**
  * Operational health check: `GET /api/health`.
  *
- * Exists so a failing deployment can be diagnosed from outside the server,
- * without shell access or reading container logs. Returns 503 when the
- * database is unreachable so uptime monitors notice.
+ * Exists so a failing deployment can be diagnosed from a browser, without
+ * shell access or reading container logs. Returns 503 when the database is
+ * unreachable so uptime monitors notice.
  *
- * Deliberately reports only an error *code*, never the driver message — those
- * contain the database host and would leak internal topology to the public.
+ * Reports the host and a classified reason — never credentials, never the raw
+ * driver message.
  */
 export async function GET() {
   const startedAt = Date.now();
+  const target = parseDatabaseHost(process.env.DATABASE_URL);
+  const host = target ? `${target.host}:${target.port}` : null;
 
   try {
     await prisma.$queryRawUnsafe("SELECT 1");
     return NextResponse.json({
       status: "ok",
       database: "connected",
+      host,
       latencyMs: Date.now() - startedAt,
     });
   } catch (error) {
-    const code = databaseErrorCode(error);
-    console.error(`[health] database unreachable (${code})`);
+    let { kind, code } = classifyDatabaseError(error);
+
+    // Prisma reports every transport failure as the same P2010, so a bad
+    // hostname and a dead port look identical. Probe the socket to tell them
+    // apart — they need completely different fixes.
+    if (target && kind !== "auth" && kind !== "missing-url") {
+      const probe = await probeDatabaseSocket(target.host, target.port);
+      if (!probe.reachable) {
+        kind = probe.kind as DatabaseFailureKind;
+        code = probe.detail ?? code;
+      } else if (kind === "unknown") {
+        // TCP is fine, so this is not a networking problem: wrong credentials,
+        // wrong database name, or a TLS mismatch.
+        kind = "auth";
+      }
+    }
+
+    console.error(`[health] database unreachable: ${kind} (${code})`);
 
     return NextResponse.json(
       {
         status: "degraded",
         database: "unreachable",
+        reason: kind,
         code,
-        hint:
-          code === "P1000"
-            ? "Credentials rejected — check the username/password in DATABASE_URL."
-            : "Check DATABASE_URL, and that the database service is running and reachable from this container.",
+        host,
+        hint: DATABASE_FAILURE_HINTS[kind],
         databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
       },
       { status: 503 },

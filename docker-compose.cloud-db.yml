@@ -24,6 +24,22 @@ services:
       DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
     volumes:
       - uploads:/app/public/uploads
+    # Using a database created inside Dokploy (Create -> Database -> PostgreSQL)?
+    # Compose puts this service on its own private network, so a hostname like
+    # `xite-xiteb-ieymdm` will NOT resolve and /api/health reports
+    # reason: "dns". Uncomment the two blocks below to join Dokploy's shared
+    # network so the two can see each other.
+    #
+    # Leave them commented for a managed provider (Neon, Supabase, ...), which
+    # is reached over the public internet, and for local development, where
+    # `dokploy-network` does not exist.
+    #
+    # networks:
+    #   - dokploy-network
+
+# networks:
+#   dokploy-network:
+#     external: true
 
 volumes:
   uploads:
