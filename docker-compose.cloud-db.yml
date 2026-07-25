@@ -1,0 +1,29 @@
+# App only — for use with a MANAGED CLOUD POSTGRES (Neon, Supabase, RDS, ...).
+#
+#   docker compose -f docker-compose.cloud-db.yml up
+#
+# Set DATABASE_URL to the provider's connection string, keeping
+# `?sslmode=require`. TLS is negotiated automatically for non-local hosts.
+#
+# WARNING: never use `localhost` here — inside a container that resolves to the
+# container itself, not your machine or your host.
+
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    # See docker-compose.yml for why this is `expose` and not `ports`.
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      # Keep the pool under the provider's connection limit.
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+    volumes:
+      - uploads:/app/public/uploads
+
+volumes:
+  uploads:

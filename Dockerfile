@@ -46,6 +46,8 @@ COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+# `npm start` is `node scripts/start.mjs`.
+COPY --from=builder /app/scripts ./scripts
 
 # Section image uploads are written here; compose mounts a volume over it so
 # they survive redeploys.
