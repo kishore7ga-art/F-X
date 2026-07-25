@@ -1,15 +1,12 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
+import { createPool } from "@/lib/db-pool";
 
-/**
- * Prisma 7 requires an explicit driver adapter — `new PrismaClient()` with no
- * arguments throws. The adapter owns the pg connection pool.
- */
 function createPrismaClient() {
-  return new PrismaClient({
-    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-  });
+  // Prisma 7 requires an explicit driver adapter — `new PrismaClient()` with no
+  // arguments throws. The pool is cloud-tuned; see db-pool.ts.
+  return new PrismaClient({ adapter: new PrismaPg(createPool()) });
 }
 
 const globalForPrisma = globalThis as unknown as {

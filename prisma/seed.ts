@@ -4,15 +4,17 @@ import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
+import { createPool } from "../src/lib/db-pool";
 import { CollegeStatus, SectionType } from "../src/generated/prisma/enums";
 import {
   parseSectionContent,
   type SupportedSectionType,
 } from "../src/lib/sections/schemas";
 
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+// Same cloud-tuned pool the app uses, so seeding works against a managed
+// database (TLS) as well as local Postgres.
+const pool = createPool();
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 const PALETTES = [
   {
@@ -438,4 +440,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

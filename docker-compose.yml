@@ -1,47 +1,39 @@
-# Two services, not three: this project is a single full-stack Next.js app
-# (Server Components, Server Actions and route handlers), so there is no
-# separate backend process to run. `frontend` talks to `db` directly.
+# Default deployment: the app connects to a MANAGED CLOUD POSTGRES.
 #
-# No credentials are hardcoded here — set them in Dokploy under
-# Application -> Environment. See .env.example for the full list.
+# There is one service here, not three. This project is a single full-stack
+# Next.js app (Server Components, Server Actions, route handlers) so there is no
+# separate backend process, and the database is hosted by a provider rather than
+# run as a container.
+#
+# Set DATABASE_URL in Dokploy -> Application -> Environment to your provider's
+# connection string. See .env.example.
+#
+# To run Postgres as a container instead (self-hosted, you own backups), deploy
+# with the override file:
+#   docker compose -f docker-compose.yml -f docker-compose.self-hosted-db.yml up
+#
+# WARNING: do not point a deployed app at `localhost` — inside a container that
+# resolves to the container itself, not your machine.
 
 services:
-  frontend:
+  app:
     build:
       context: .
     restart: unless-stopped
     ports:
       - "3000:3000"
-    depends_on:
-      db:
-        # Postgres accepts connections a few seconds after the container
-        # starts; without this the first boot races the migration step.
-        condition: service_healthy
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      # Full connection string from your cloud provider, including
+      # `?sslmode=require`. TLS is negotiated automatically for non-local hosts.
+      DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
+      # Keep the pool under the provider's connection limit.
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
     volumes:
       # Uploaded section images are written to disk. Without this volume they
       # disappear on every redeploy.
       - uploads:/app/public/uploads
 
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    # Deliberately not published to the host — only `frontend` needs it.
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-
 volumes:
-  db_data:
   uploads:

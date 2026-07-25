@@ -56,9 +56,32 @@ Designs adapted from third-party templates record their licence in
 `src/lib/sections/attributions.ts`; required credits render in the site footer
 only for colleges actually using that design.
 
+## Database
+
+The app expects a **managed cloud Postgres** (Neon, Supabase, Railway, RDS …).
+Point `DATABASE_URL` at it and keep `?sslmode=require`.
+
+TLS, pool sizing and reconnection are handled in `src/lib/db-pool.ts`:
+
+- TLS is enabled automatically for any non-local host, verified against the
+  system CA store
+- The pool is capped (`DATABASE_POOL_MAX`, default 10) so one container cannot
+  exhaust a provider's connection limit
+- `keepAlive` stops load balancers dropping idle sockets
+- An `error` handler on idle clients means a recycled or dropped connection is
+  discarded and replaced on the next query instead of crashing the process
+
+To run Postgres as a container instead:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.self-hosted-db.yml up
+```
+
 ## Deployment
 
-Dokploy → Create → Compose, pointed at this repo. `docker-compose.yml` is at
-the root. Set the variables from `.env.example` in the Dokploy dashboard —
-never commit a real `.env`. Migrations run automatically on container start via
-`prisma migrate deploy`.
+Dokploy → Create → Compose, pointed at this repo. Set the variables from
+`.env.example` in the Dokploy dashboard — never commit a real `.env`.
+Migrations run automatically on container start via `prisma migrate deploy`.
+
+Do not use `localhost` in a deployed `DATABASE_URL`; inside a container that
+resolves to the container itself.
