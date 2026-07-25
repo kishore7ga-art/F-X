@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Radian template">
+  <rect width="800" height="600" fill="#f8fafc"/>
+  <rect width="800" height="64" fill="#1e3a8a"/>
+  <rect x="28" y="26" width="150" height="14" rx="7" fill="#ffffff" opacity=".9"/>
+  <g fill="#ffffff" opacity=".6">
+    <rect x="520" y="27" width="54" height="12" rx="6"/>
+    <rect x="590" y="27" width="54" height="12" rx="6"/>
+    <rect x="660" y="27" width="54" height="12" rx="6"/>
+  </g>
+  <rect y="64" width="800" height="230" fill="#3b82f6"/>
+  <rect x="230" y="130" width="340" height="26" rx="13" fill="#ffffff" opacity=".95"/>
+  <rect x="290" y="174" width="220" height="14" rx="7" fill="#f59e0b"/>
+  <rect x="330" y="212" width="140" height="34" rx="17" fill="#f59e0b"/>
+  <g fill="#e2e8f0">
+    <rect x="60" y="336" width="200" height="150" rx="10"/>
+    <rect x="300" y="336" width="200" height="150" rx="10"/>
+    <rect x="540" y="336" width="200" height="150" rx="10"/>
+  </g>
+  <g fill="#1e3a8a" opacity=".65">
+    <rect x="80" y="360" width="120" height="12" rx="6"/>
+    <rect x="320" y="360" width="120" height="12" rx="6"/>
+    <rect x="560" y="360" width="120" height="12" rx="6"/>
+  </g>
+  <rect y="540" width="800" height="60" fill="#0f172a"/>
+</svg>

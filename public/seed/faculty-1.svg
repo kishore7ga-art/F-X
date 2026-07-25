@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="AR">
+  <rect width="400" height="400" fill="#1e3a8a"/>
+  <circle cx="200" cy="155" r="66" fill="#ffffff" opacity=".92"/>
+  <path d="M200 240c-72 0-130 45-130 101v59h260v-59c0-56-58-101-130-101z" fill="#ffffff" opacity=".92"/>
+  <text x="200" y="176" font-family="Segoe UI, Arial, sans-serif" font-size="62" font-weight="700"
+        fill="#1e3a8a" text-anchor="middle">AR</text>
+</svg>

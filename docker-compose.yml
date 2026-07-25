@@ -1,0 +1,47 @@
+# Two services, not three: this project is a single full-stack Next.js app
+# (Server Components, Server Actions and route handlers), so there is no
+# separate backend process to run. `frontend` talks to `db` directly.
+#
+# No credentials are hardcoded here — set them in Dokploy under
+# Application -> Environment. See .env.example for the full list.
+
+services:
+  frontend:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        # Postgres accepts connections a few seconds after the container
+        # starts; without this the first boot races the migration step.
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      SESSION_SECRET: ${SESSION_SECRET}
+    volumes:
+      # Uploaded section images are written to disk. Without this volume they
+      # disappear on every redeploy.
+      - uploads:/app/public/uploads
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    # Deliberately not published to the host — only `frontend` needs it.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  db_data:
+  uploads:
