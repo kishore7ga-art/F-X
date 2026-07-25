@@ -35,6 +35,11 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://collegeadmin:${POSTGRES_PASSWORD}@db:5432/college_saas?schema=public}
       SESSION_SECRET: ${SESSION_SECRET}
       DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      # Not used to connect directly. It lets scripts/start.mjs rebuild the
+      # line above when DATABASE_URL was set to an unfilled template
+      # placeholder, which would otherwise override this default with a
+      # hostname that cannot resolve.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       # Uploaded section images are written to disk. Without this volume they
       # disappear on every redeploy.

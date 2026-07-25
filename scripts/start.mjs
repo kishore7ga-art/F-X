@@ -46,6 +46,20 @@ const PLACEHOLDER_MARKERS = [
   "placeholder",
 ];
 
+/**
+ * The bundled Postgres from docker-compose.yml, rebuilt from the same parts
+ * compose uses for its `${DATABASE_URL:-...}` default. Available only when the
+ * db service is in play, which is what POSTGRES_PASSWORD signals.
+ */
+function bundledDatabaseUrl() {
+  const password = process.env.POSTGRES_PASSWORD;
+  if (!password) return null;
+  return (
+    `postgresql://collegeadmin:${encodeURIComponent(password)}` +
+    "@db:5432/college_saas?schema=public"
+  );
+}
+
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
@@ -56,20 +70,36 @@ if (!databaseUrl) {
 } else {
   const marker = PLACEHOLDER_MARKERS.find((m) => databaseUrl.includes(m));
   if (marker) {
+    const fallback = bundledDatabaseUrl();
+
+    // A placeholder is never a real destination, so preferring the bundled
+    // database over it cannot cost anyone a working connection — but it does
+    // rescue the common case of pasting .env.example into a dashboard and
+    // leaving the host unfilled. Without this the placeholder silently wins
+    // and every page fails against a hostname that cannot resolve.
     console.error(
       "\n" +
         "=".repeat(72) +
         "\n[start] DATABASE_URL still contains the template placeholder " +
         `"${marker}".\n` +
-        "\n  It is set, so it OVERRIDES the Postgres container that " +
-        "docker-compose.yml\n  would otherwise provide — which is why the host " +
-        "cannot be reached.\n" +
-        "\n  Fix it either way:\n" +
-        "    - Delete DATABASE_URL entirely to use the bundled database, or\n" +
-        "    - Replace it with a real connection string from your provider.\n" +
+        (fallback
+          ? "\n  IGNORING it and using the bundled Postgres (db:5432) instead.\n" +
+            "\n  Delete DATABASE_URL from your host's environment to silence " +
+            "this,\n  or replace it with a real connection string to use your " +
+            "own database.\n"
+          : "\n  It is set, so it OVERRIDES the Postgres container that " +
+            "docker-compose.yml\n  would otherwise provide — which is why the " +
+            "host cannot be reached.\n" +
+            "\n  Fix it either way:\n" +
+            "    - Delete DATABASE_URL entirely to use the bundled database, or\n" +
+            "    - Replace it with a real connection string from your provider.\n") +
         "=".repeat(72) +
         "\n",
     );
+
+    // Child processes below (migrate, seed, next start) inherit process.env,
+    // so this one assignment redirects the whole boot.
+    if (fallback) process.env.DATABASE_URL = fallback;
   }
 }
 

@@ -89,9 +89,10 @@ With the default `docker-compose.yml` (bundled Postgres) that is just two:
 | `POSTGRES_PASSWORD` | a strong random password |
 
 Leave `DATABASE_URL` **unset** — compose builds it from `POSTGRES_PASSWORD`.
-Setting it to a placeholder is worse than leaving it out, because a set value
-overrides the bundled database; `scripts/start.mjs` detects that case and says
-so. Never use `localhost` in a deployed `DATABASE_URL`: inside a container that
+If it is set to an unfilled template placeholder, `scripts/start.mjs` ignores it
+and uses the bundled database anyway, logging loudly; that rescue needs
+`POSTGRES_PASSWORD`, so it does not apply to `docker-compose.cloud-db.yml`.
+Never use `localhost` in a deployed `DATABASE_URL`: inside a container that
 resolves to the container itself.
 
 On container start, `scripts/start.mjs`:
