@@ -12,7 +12,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 # Dev dependencies are needed: the Prisma CLI runs at build AND at container
 # start (`prisma migrate deploy`).
-RUN npm ci
+#
+# --ignore-scripts because the `postinstall` hook runs `prisma generate`, and
+# prisma/schema.prisma has not been copied at this layer. The builder stage
+# below generates the client explicitly instead. (The hook exists for Nixpacks
+# builds, which copy the whole source tree before installing.)
+RUN npm ci --ignore-scripts
 
 # ---- build ------------------------------------------------------------------
 FROM base AS builder
@@ -49,6 +54,7 @@ RUN mkdir -p public/uploads && chown -R nextjs:nodejs public/uploads
 USER nextjs
 EXPOSE 3000
 
-# Apply pending migrations before serving, so a fresh database is usable on
-# first boot. `migrate deploy` is the non-interactive, production-safe command.
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+# `npm start` is `prisma migrate deploy && next start`, so pending migrations
+# are applied before serving and a fresh database is usable on first boot.
+# `migrate deploy` is the non-interactive, production-safe command.
+CMD ["npm", "start"]

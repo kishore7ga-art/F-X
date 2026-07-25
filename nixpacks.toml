@@ -1,0 +1,19 @@
+# Only used when the platform builds with Nixpacks (Dokploy "Application"
+# build type). Ignored when building from the Dockerfile / docker-compose.
+#
+# Nixpacks otherwise picks a default Node that is too old: Prisma 7 requires
+# Node 20.19+, 22.12+ or 24+, and openssl must be present for its query engine.
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "openssl"]
+
+[phases.install]
+# `npm ci` triggers the postinstall script, which runs `prisma generate`.
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+# `npm start` applies pending migrations before serving.
+cmd = "npm start"
