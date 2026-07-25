@@ -26,11 +26,47 @@ function run(command, args) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-if (!process.env.DATABASE_URL) {
+/**
+ * Catch a DATABASE_URL that was copied from the template but never filled in.
+ * Setting it to a placeholder is worse than leaving it unset, because a set
+ * value overrides the bundled Postgres in docker-compose.yml — so the symptom
+ * is an unreachable host rather than an obvious configuration mistake.
+ */
+const PLACEHOLDER_MARKERS = [
+  "USER:PASSWORD",
+  "HOST-pooler",
+  "@HOST.",
+  "REGION",
+  "PROJECTREF",
+  "replace-with",
+  "placeholder",
+];
+
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
   console.error(
     "[start] DATABASE_URL is not set. The app will start but every page that " +
       "touches the database will fail. Set it in your host's environment.",
   );
+} else {
+  const marker = PLACEHOLDER_MARKERS.find((m) => databaseUrl.includes(m));
+  if (marker) {
+    console.error(
+      "\n" +
+        "=".repeat(72) +
+        "\n[start] DATABASE_URL still contains the template placeholder " +
+        `"${marker}".\n` +
+        "\n  It is set, so it OVERRIDES the Postgres container that " +
+        "docker-compose.yml\n  would otherwise provide — which is why the host " +
+        "cannot be reached.\n" +
+        "\n  Fix it either way:\n" +
+        "    - Delete DATABASE_URL entirely to use the bundled database, or\n" +
+        "    - Replace it with a real connection string from your provider.\n" +
+        "=".repeat(72) +
+        "\n",
+    );
+  }
 }
 
 let migrated = false;
