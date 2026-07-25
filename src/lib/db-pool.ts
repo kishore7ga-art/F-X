@@ -7,30 +7,48 @@ import pg from "pg";
  * behave identically against local Docker Postgres and a cloud provider.
  */
 
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "db", "postgres"]);
+const PRIVATE_IP =
+  /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.)/;
 
-function hostOf(connectionString: string): string {
-  try {
-    return new URL(connectionString).hostname;
-  } catch {
-    return "";
-  }
+/**
+ * Is this host inside our own network rather than out on the internet?
+ *
+ * The reliable signal is the absence of a dot. Container and service
+ * hostnames on a Docker network are single labels — `db`, `postgres`,
+ * `xite-xiteb-ieymdm` — while every managed provider is a fully qualified
+ * domain. An earlier version listed known-local names instead, which wrongly
+ * demanded TLS from any Docker service whose name it had not been told about.
+ */
+function isInternalHost(host: string): boolean {
+  if (!host) return false;
+  if (host === "localhost" || host === "::1") return true;
+  if (PRIVATE_IP.test(host)) return true;
+  return !host.includes(".");
 }
 
 /**
  * Managed Postgres (Neon, Supabase, RDS, ...) requires TLS; a Postgres
- * container on the same Docker network does not. Decide from the URL rather
- * than making the caller remember.
+ * container on the same Docker network neither offers nor needs it. An
+ * explicit `sslmode` in the URL always wins; otherwise infer from the host.
  */
 export function sslConfig(connectionString: string): pg.PoolConfig["ssl"] {
-  if (/[?&]sslmode=disable/.test(connectionString)) return undefined;
-
-  const explicitlyRequired = /[?&]sslmode=(require|verify-ca|verify-full)/.test(
-    connectionString,
-  );
-  if (!explicitlyRequired && LOCAL_HOSTS.has(hostOf(connectionString))) {
+  let host = "";
+  let sslmode: string | null = null;
+  try {
+    const url = new URL(connectionString);
+    host = url.hostname;
+    sslmode = url.searchParams.get("sslmode");
+  } catch {
+    // Unparseable URL: let pg surface the error rather than guessing.
     return undefined;
   }
+
+  if (sslmode === "disable") return undefined;
+
+  const explicitlyRequired =
+    sslmode === "require" || sslmode === "verify-ca" || sslmode === "verify-full";
+
+  if (!explicitlyRequired && isInternalHost(host)) return undefined;
 
   // Certificates are verified against the system CA store by default, which is
   // correct for every major managed provider. Only disable it for a provider
