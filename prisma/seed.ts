@@ -275,7 +275,21 @@ const PAGE_LAYOUT: {
   },
 ];
 
-async function main() {
+/**
+ * The demo college ships a login whose password is published in the README, so
+ * it must never be created on a deployed instance. `scripts/start.mjs` sets
+ * SEED_DEMO_COLLEGE=false; `npm run db:seed` leaves it unset and gets the full
+ * local fixture.
+ */
+const INCLUDE_DEMO_COLLEGE = process.env.SEED_DEMO_COLLEGE !== "false";
+
+/**
+ * Templates, theme options and the section-variant library. This is reference
+ * data, not sample content: without it the template gallery is empty and a new
+ * signup has nothing to build a site from, so it is seeded on every boot.
+ * Every write is an upsert keyed on a natural key, so re-running is a no-op.
+ */
+async function seedReferenceData() {
   // --- Theme options -------------------------------------------------------
   const palettes = await Promise.all(
     PALETTES.map((p) =>
@@ -353,6 +367,16 @@ async function main() {
     });
   }
 
+  return { palettes, fonts, template, sectionsByType };
+}
+
+/** Local-development fixture: one published-ready college with real content. */
+async function seedDemoCollege({
+  palettes,
+  fonts,
+  template,
+  sectionsByType,
+}: Awaited<ReturnType<typeof seedReferenceData>>) {
   // --- Sample college ------------------------------------------------------
   const college = await prisma.college.upsert({
     where: { subdomain: "greenfield" },
@@ -415,6 +439,22 @@ async function main() {
     }
   }
 
+  console.log(
+    `Login: ${SEED_LOGIN.email} / ${SEED_LOGIN.password}  ->  /editor/greenfield`,
+  );
+}
+
+async function main() {
+  const reference = await seedReferenceData();
+
+  if (INCLUDE_DEMO_COLLEGE) {
+    await seedDemoCollege(reference);
+  } else {
+    console.log(
+      "[seed] SEED_DEMO_COLLEGE=false — reference data only, no demo college.",
+    );
+  }
+
   const counts = {
     templates: await prisma.template.count(),
     sections: await prisma.section.count(),
@@ -428,9 +468,6 @@ async function main() {
   };
 
   console.log("Seed complete:", counts);
-  console.log(
-    `Login: ${SEED_LOGIN.email} / ${SEED_LOGIN.password}  ->  /editor/greenfield`,
-  );
 }
 
 main()

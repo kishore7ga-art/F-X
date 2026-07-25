@@ -42,7 +42,10 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/src/generated ./src/generated
+# The whole tree, not just src/generated: the seed step in scripts/start.mjs
+# runs prisma/seed.ts through tsx, which imports src/lib/db-pool and
+# src/lib/sections/schemas at runtime.
+COPY --from=builder /app/src ./src
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
@@ -56,7 +59,8 @@ RUN mkdir -p public/uploads && chown -R nextjs:nodejs public/uploads
 USER nextjs
 EXPOSE 3000
 
-# `npm start` is `prisma migrate deploy && next start`, so pending migrations
-# are applied before serving and a fresh database is usable on first boot.
-# `migrate deploy` is the non-interactive, production-safe command.
+# `npm start` is `node scripts/start.mjs`: it applies pending migrations, seeds
+# the reference data a fresh database needs (templates, variants, themes), then
+# serves. Both steps are retried and non-fatal, so a slow database delays the
+# first boot rather than crash-looping it.
 CMD ["npm", "start"]

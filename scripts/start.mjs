@@ -16,9 +16,13 @@ import { spawn } from "node:child_process";
 const MAX_ATTEMPTS = Number(process.env.MIGRATE_RETRIES ?? 5);
 const FAIL_FAST = process.env.MIGRATE_FAIL_FAST === "true";
 
-function run(command, args) {
+function run(command, args, env) {
   return new Promise((resolve) => {
-    const child = spawn(command, args, { stdio: "inherit", shell: true });
+    const child = spawn(command, args, {
+      stdio: "inherit",
+      shell: true,
+      env: { ...process.env, ...env },
+    });
     child.on("exit", (code) => resolve(code ?? 1));
     child.on("error", () => resolve(1));
   });
@@ -87,6 +91,33 @@ if (!migrated) {
   console.error("[start] migrations did not apply after all retries.");
   if (FAIL_FAST) process.exit(1);
   console.error("[start] starting the server anyway so the error is visible.");
+}
+
+/**
+ * Migrations only create tables. Templates, theme palettes, font packs and the
+ * section-variant library are reference data that lives in the seed, so without
+ * this step a fresh database boots "connected" but with an empty template
+ * gallery and no way to build a site.
+ *
+ * The seed upserts on natural keys, so this is a no-op on every boot after the
+ * first, and it never overwrites a college's edited content.
+ *
+ * SEED_DEMO_COLLEGE=false omits the sample college and its README-published
+ * login, which must not exist on a deployed instance. Set SEED_ON_START=false
+ * to skip seeding entirely.
+ */
+if (migrated && process.env.SEED_ON_START !== "false") {
+  console.log("[start] seeding reference data (templates, variants, themes)");
+  if ((await run("npx", ["prisma", "db", "seed"], {
+    SEED_DEMO_COLLEGE: "false",
+  })) !== 0) {
+    // Non-fatal for the same reason migrations are: serving an app that can
+    // report the problem beats a crash loop behind a 502.
+    console.error(
+      "[start] seeding failed. The app will start, but the template gallery " +
+        "may be empty. Re-run with `npx prisma db seed` once the cause is fixed.",
+    );
+  }
 }
 
 process.exit(await run("npx", ["next", "start"]));

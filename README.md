@@ -58,8 +58,13 @@ only for colleges actually using that design.
 
 ## Database
 
-The app expects a **managed cloud Postgres** (Neon, Supabase, Railway, RDS …).
-Point `DATABASE_URL` at it and keep `?sslmode=require`.
+The default `docker-compose.yml` brings up **its own Postgres container**, so
+the stack boots with no external database account — leave `DATABASE_URL` unset
+and it is built from `POSTGRES_PASSWORD`.
+
+To use a **managed cloud Postgres** (Neon, Supabase, Railway, RDS …) instead,
+run `docker-compose.cloud-db.yml` and point `DATABASE_URL` at it, keeping
+`?sslmode=require`. A set `DATABASE_URL` always overrides the bundled database.
 
 TLS, pool sizing and reconnection are handled in `src/lib/db-pool.ts`:
 
@@ -71,17 +76,34 @@ TLS, pool sizing and reconnection are handled in `src/lib/db-pool.ts`:
 - An `error` handler on idle clients means a recycled or dropped connection is
   discarded and replaced on the next query instead of crashing the process
 
-To run Postgres as a container instead:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.self-hosted-db.yml up
-```
-
 ## Deployment
 
 Dokploy → Create → Compose, pointed at this repo. Set the variables from
 `.env.example` in the Dokploy dashboard — never commit a real `.env`.
-Migrations run automatically on container start via `prisma migrate deploy`.
 
-Do not use `localhost` in a deployed `DATABASE_URL`; inside a container that
+With the default `docker-compose.yml` (bundled Postgres) that is just two:
+
+| Variable | Value |
+|---|---|
+| `SESSION_SECRET` | 32+ random chars (`openssl rand -base64 32`) |
+| `POSTGRES_PASSWORD` | a strong random password |
+
+Leave `DATABASE_URL` **unset** — compose builds it from `POSTGRES_PASSWORD`.
+Setting it to a placeholder is worse than leaving it out, because a set value
+overrides the bundled database; `scripts/start.mjs` detects that case and says
+so. Never use `localhost` in a deployed `DATABASE_URL`: inside a container that
 resolves to the container itself.
+
+On container start, `scripts/start.mjs`:
+
+1. applies pending migrations (`prisma migrate deploy`, retried with backoff)
+2. seeds **reference data** — templates, section variants, palettes, font packs
+   — which migrations do not create, so a fresh database has a populated
+   template gallery rather than an empty one
+3. starts the server
+
+Both steps are idempotent and non-fatal: a slow database delays the first boot
+instead of crash-looping it behind a 502, and `/api/health` reports why. The
+seed runs with `SEED_DEMO_COLLEGE=false`, so the demo college and its
+README-published login are never created on a deployed instance. Set
+`SEED_ON_START=false` to skip seeding entirely.
