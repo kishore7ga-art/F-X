@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { login } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { getCurrentCollege } from "@/lib/auth/current";
+import { DEMO_LOGIN, demoLoginEnabled } from "@/lib/auth/demo";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,13 @@ export default async function LoginPage() {
         linkLabel: "Create one",
         href: "/signup",
       }}
+      // Only sent to the browser when the demo account was actually seeded, so
+      // the credentials are absent from the page source everywhere else.
+      autofill={
+        demoLoginEnabled()
+          ? { label: "Fill demo login", values: DEMO_LOGIN }
+          : undefined
+      }
     />
   );
 }

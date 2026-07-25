@@ -5,6 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { createPool } from "../src/lib/db-pool";
+import { DEMO_LOGIN } from "../src/lib/auth/demo";
 import { CollegeStatus, SectionType } from "../src/generated/prisma/enums";
 import {
   parseSectionContent,
@@ -49,11 +50,8 @@ const PALETTES = [
   },
 ];
 
-/** Demo login for the sample college. */
-const SEED_LOGIN = {
-  email: "admin@greenfield.edu.in",
-  password: "greenfield123",
-};
+/** Demo login for the sample college. Shared with the sign-in page's autofill. */
+const SEED_LOGIN = DEMO_LOGIN;
 
 const FONT_PACKS = [
   {
