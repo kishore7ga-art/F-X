@@ -6,6 +6,11 @@ import { z } from "zod";
 
 import { createSession, destroySession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import {
+  DATABASE_UNAVAILABLE_MESSAGE,
+  databaseErrorCode,
+  isDatabaseUnavailable,
+} from "@/lib/db-errors";
 
 export type AuthState = { error: string | null };
 
@@ -65,30 +70,41 @@ export async function signup(
 
   const { collegeName, subdomain, email, password } = parsed.data;
 
-  const [existingUser, existingCollege] = await Promise.all([
-    prisma.user.findUnique({ where: { email } }),
-    prisma.college.findUnique({ where: { subdomain } }),
-  ]);
+  let user;
+  try {
+    const [existingUser, existingCollege] = await Promise.all([
+      prisma.user.findUnique({ where: { email } }),
+      prisma.college.findUnique({ where: { subdomain } }),
+    ]);
 
-  if (existingUser) return { error: "That email is already registered" };
-  if (existingCollege) return { error: "That subdomain is already taken" };
+    if (existingUser) return { error: "That email is already registered" };
+    if (existingCollege) return { error: "That subdomain is already taken" };
 
-  const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, 12);
 
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      college: {
-        create: {
-          name: collegeName,
-          subdomain,
-          // New sites start as drafts; nothing is public until it's published.
-          status: "DRAFT",
+    user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        college: {
+          create: {
+            name: collegeName,
+            subdomain,
+            // New sites start as drafts; nothing is public until published.
+            status: "DRAFT",
+          },
         },
       },
-    },
-  });
+    });
+  } catch (cause) {
+    // A dead database should read as a service message, not a 500 whose text
+    // Next strips in production.
+    if (isDatabaseUnavailable(cause)) {
+      console.error(`[signup] database unavailable (${databaseErrorCode(cause)})`);
+      return { error: DATABASE_UNAVAILABLE_MESSAGE };
+    }
+    throw cause;
+  }
 
   await createSession({ userId: user.id, collegeId: user.collegeId });
   redirect("/templates");
@@ -103,10 +119,19 @@ export async function login(
   );
   if (!parsed.success) return { error: "Enter your email and password" };
 
-  const user = await prisma.user.findUnique({
-    where: { email: parsed.data.email },
-    include: { college: { select: { subdomain: true } } },
-  });
+  let user;
+  try {
+    user = await prisma.user.findUnique({
+      where: { email: parsed.data.email },
+      include: { college: { select: { subdomain: true } } },
+    });
+  } catch (cause) {
+    if (isDatabaseUnavailable(cause)) {
+      console.error(`[login] database unavailable (${databaseErrorCode(cause)})`);
+      return { error: DATABASE_UNAVAILABLE_MESSAGE };
+    }
+    throw cause;
+  }
 
   // Same message either way — don't reveal which emails exist.
   const invalid = { error: "Incorrect email or password" };
