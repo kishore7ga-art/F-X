@@ -5,6 +5,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth/session";
+import { UPLOAD_DIR, uploadUrl } from "@/lib/uploads";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -52,13 +53,11 @@ export async function POST(request: Request) {
 
   // Filename comes from us, never from the client — no path traversal.
   const filename = `${randomUUID()}${extension}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-  await mkdir(uploadDir, { recursive: true });
+  await mkdir(UPLOAD_DIR, { recursive: true });
   await writeFile(
-    path.join(uploadDir, filename),
+    path.join(UPLOAD_DIR, filename),
     Buffer.from(await file.arrayBuffer()),
   );
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  return NextResponse.json({ url: uploadUrl(filename) });
 }
