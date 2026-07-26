@@ -34,11 +34,25 @@ export async function GET() {
 
   try {
     await prisma.$queryRawUnsafe("SELECT 1");
+
+    // Seeding is deliberately non-fatal, so "connected" on its own can still
+    // mean a site nobody can build: a reachable database with no templates to
+    // pick. Counting them here is the difference between diagnosing that from
+    // a browser and needing container logs. Guarded separately so a missing
+    // table reads as 0 rather than being misclassified as a connection fault.
+    let templates: number | null = null;
+    try {
+      templates = await prisma.template.count();
+    } catch {
+      templates = null;
+    }
+
     return NextResponse.json({
       status: "ok",
       database: "connected",
       host,
       auth: AUTH_DISABLED ? "open" : "required",
+      templates,
       latencyMs: Date.now() - startedAt,
     });
   } catch (error) {
