@@ -7,6 +7,7 @@ import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { defaultContentFor } from "@/lib/sections/defaults";
 import { isSupportedSectionType } from "@/lib/sections/schemas";
+import { DEFAULT_PAGES } from "@/lib/site/starter";
 
 const startWithDesignSchema = z.object({
   templateId: z.string().min(1),
@@ -15,13 +16,6 @@ const startWithDesignSchema = z.object({
 });
 
 export type StartWithDesignInput = z.infer<typeof startWithDesignSchema>;
-
-const DEFAULT_PAGES = [
-  { slug: "home", title: "Home", navOrder: 0 },
-  { slug: "about", title: "About", navOrder: 1 },
-  { slug: "admissions", title: "Admissions", navOrder: 2 },
-  { slug: "contact", title: "Contact", navOrder: 3 },
-];
 
 /**
  * Screen 2's "Start with this design": saves the chosen template + theme onto

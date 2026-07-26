@@ -31,6 +31,8 @@ type ThemePickerProps = {
   fonts: FontOption[];
   initialPaletteId: string;
   initialFontId: string;
+  /** False until this college has a site to look at, which /site would 404 on. */
+  hasSite: boolean;
 };
 
 /** Screen 2 — template preview with theme selection. */
@@ -42,6 +44,7 @@ export function ThemePicker({
   fonts,
   initialPaletteId,
   initialFontId,
+  hasSite,
 }: ThemePickerProps) {
   const [paletteId, setPaletteId] = useState(initialPaletteId);
   const [fontId, setFontId] = useState(initialFontId);
@@ -142,7 +145,9 @@ export function ThemePicker({
           >
             <iframe
               ref={iframeRef}
-              src={`/preview/${subdomain}`}
+              // The template is named so the frame has something to show before
+              // this college owns a site of its own.
+              src={`/preview/${subdomain}?template=${template.id}`}
               title={`${template.name} preview`}
               className="h-full min-h-[600px] w-full"
               onLoad={() => pushTheme(paletteId, fontId)}
@@ -204,13 +209,17 @@ export function ThemePicker({
               {isSaving ? "Saving…" : "Start with this design"}
             </button>
 
-            <Link
-              href={`/site/${subdomain}`}
-              target="_blank"
-              className="block w-full rounded-lg border px-4 py-3 text-center text-sm font-semibold transition hover:bg-black/5"
-            >
-              View demo site
-            </Link>
+            {/* Offered only once there is a site behind it — before that the
+                link led straight to a 404. */}
+            {hasSite ? (
+              <Link
+                href={`/site/${subdomain}`}
+                target="_blank"
+                className="block w-full rounded-lg border px-4 py-3 text-center text-sm font-semibold transition hover:bg-black/5"
+              >
+                View demo site
+              </Link>
+            ) : null}
 
             <p className="pt-1 text-center text-xs text-black/45">
               Currently previewing{" "}

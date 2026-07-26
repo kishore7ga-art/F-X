@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/db";
+import { defaultContentFor } from "@/lib/sections/defaults";
+import { isSupportedSectionType } from "@/lib/sections/schemas";
+import { DEFAULT_PAGES } from "@/lib/site/starter";
 import {
   DEFAULT_FONTS,
   parsePaletteColors,
@@ -108,5 +111,90 @@ export async function getSitePage(
       isVisible: row.isVisible,
       content: row.content,
     })),
+  };
+}
+
+/**
+ * The same page shape, but derived from a template instead of read from a
+ * college's saved sections — nothing is written.
+ *
+ * Screen 2 asks a college with no site yet to judge a design, which it cannot
+ * do from an empty frame: before this, `getSitePage` correctly returned null
+ * for a college with no pages and the preview iframe 404ed at exactly the
+ * moment the template most needed showing. This renders what "Start with this
+ * design" is about to create, using the same starter pages, the same first
+ * variant per section and the same default copy, so the preview is a promise
+ * the action keeps.
+ */
+export async function getTemplatePreview(
+  subdomain: string,
+  templateId: string,
+): Promise<SitePageData | null> {
+  const [college, template] = await Promise.all([
+    prisma.college.findUnique({
+      where: { subdomain },
+      include: { themePalette: true, themeFont: true },
+    }),
+    prisma.template.findUnique({
+      where: { id: templateId },
+      include: {
+        sections: {
+          orderBy: { defaultOrder: "asc" },
+          include: { variants: { orderBy: { variantName: "asc" } } },
+        },
+      },
+    }),
+  ]);
+
+  if (!college || !template) return null;
+
+  // Ids that cannot collide with a real row: these sections are never saved,
+  // and treating one as a database id would silently edit the wrong thing.
+  const pages = DEFAULT_PAGES.map((page) => ({
+    id: `preview:${page.slug}`,
+    slug: page.slug,
+    title: page.title,
+  }));
+
+  const sections: RenderableSection[] = [];
+  let displayOrder = 1;
+
+  for (const section of template.sections) {
+    // First variant by name, matching provisionStarterSite's choice.
+    const variant = section.variants[0];
+    if (!variant) continue;
+    if (!isSupportedSectionType(section.sectionType as never)) continue;
+
+    sections.push({
+      id: `preview:${section.id}`,
+      sectionType: section.sectionType,
+      componentKey: variant.componentKey,
+      variantId: variant.id,
+      variantName: variant.variantName,
+      displayOrder: displayOrder++,
+      isVisible: true,
+      content: defaultContentFor(section.sectionType as never, college.name),
+    });
+  }
+
+  return {
+    college: {
+      id: college.id,
+      name: college.name,
+      subdomain: college.subdomain,
+      status: college.status,
+    },
+    theme: {
+      colors: parsePaletteColors(college.themePalette?.colors),
+      fonts: college.themeFont
+        ? {
+            headingFont: college.themeFont.headingFont,
+            bodyFont: college.themeFont.bodyFont,
+          }
+        : DEFAULT_FONTS,
+    },
+    pages,
+    currentPage: pages[0],
+    sections,
   };
 }
