@@ -28,6 +28,8 @@ export type EditorSection = {
   displayOrder: number;
   isVisible: boolean;
   content: unknown;
+  /** When this section was last written, for the autosave indicator. */
+  lastSavedAt: string | null;
   /** All design variants of this section type, for the ↻ button. */
   variants: EditorVariant[];
 };
@@ -107,6 +109,7 @@ export async function getEditorPage(
       displayOrder: row.displayOrder,
       isVisible: row.isVisible,
       content: row.content,
+      lastSavedAt: row.lastSavedAt?.toISOString() ?? null,
       variants: row.section.variants.map((v) => ({
         id: v.id,
         variantName: v.variantName,

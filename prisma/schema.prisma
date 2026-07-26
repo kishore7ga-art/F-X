@@ -139,6 +139,15 @@ model CollegeSection {
   displayOrder Int     @map("display_order")
   isVisible    Boolean @default(true) @map("is_visible")
   content      Json    @default("{}")
+  /// When this section's content was last written. Drives the editor's "Saved
+  /// 14:32" line, which is what makes an autosaving form trustworthy: without a
+  /// timestamp, "Saved" is indistinguishable from a form that never saved.
+  ///
+  /// There is deliberately no `save_status` column beside it. A row cannot be
+  /// "saving" — that is one browser's in-flight state, not a fact about the
+  /// data — and it can never be "error", because the write that would record
+  /// the error is the write that just failed. Both live in the client.
+  lastSavedAt  DateTime? @map("last_saved_at")
 
   college College        @relation(fields: [collegeId], references: [id], onDelete: Cascade)
   section Section        @relation(fields: [sectionId], references: [id], onDelete: Cascade)

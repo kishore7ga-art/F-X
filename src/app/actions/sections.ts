@@ -212,10 +212,19 @@ const contentSchema = z.object({
   content: z.unknown(),
 });
 
-/** Saves the content-edit form, validated against the section type's schema. */
+/**
+ * Saves the content-edit form, validated against the section type's schema.
+ *
+ * Called on a debounce as the college types rather than from a Save button, so
+ * it runs often and must stay cheap. Concurrent editors are last-write-wins:
+ * two tabs on one section will overwrite each other, which is the documented
+ * MVP trade rather than an oversight.
+ *
+ * Returns the save time so the caller can show it without a round trip.
+ */
 export async function updateSectionContent(
   input: z.infer<typeof contentSchema>,
-) {
+): Promise<{ savedAt: string }> {
   const { collegeSectionId, content } = contentSchema.parse(input);
   const row = await loadOwnedSection(collegeSectionId, await currentCollegeId());
 
@@ -225,10 +234,13 @@ export async function updateSectionContent(
 
   const parsed = parseSectionContent(row.section.sectionType, content);
 
-  await prisma.collegeSection.update({
+  const saved = await prisma.collegeSection.update({
     where: { id: row.id },
-    data: { content: parsed },
+    data: { content: parsed, lastSavedAt: new Date() },
+    select: { lastSavedAt: true },
   });
 
   revalidateEditor(row.college.subdomain);
+
+  return { savedAt: (saved.lastSavedAt ?? new Date()).toISOString() };
 }
