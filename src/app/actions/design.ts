@@ -129,7 +129,10 @@ export async function cycleTemplate() {
 
   // Section type -> where it lands in the new template. First variant by name,
   // the same default provisionStarterSite and addSection both pick.
-  const target = new Map<string, { sectionId: string; variantId: string }>();
+  const target = new Map<
+    string,
+    { sectionId: string; variantId: string; defaultContent: unknown }
+  >();
   for (const section of nextTemplate.sections) {
     const variant = section.variants[0];
     if (!variant) continue;
@@ -138,6 +141,7 @@ export async function cycleTemplate() {
     target.set(section.sectionType, {
       sectionId: section.id,
       variantId: variant.id,
+      defaultContent: section.defaultContent,
     });
   }
 
@@ -186,7 +190,10 @@ export async function cycleTemplate() {
             // Valid starter copy rather than {}: the editor renders hidden rows
             // so they can be toggled on, and an empty object has no fields for
             // the component to draw.
-            content: defaultContentFor(sectionType as never, college.name),
+            content: starterContent(
+              { sectionType, defaultContent: slot.defaultContent },
+              college.name,
+            ) as never,
           },
         });
       }
@@ -206,8 +213,23 @@ export async function cycleTemplate() {
 type TemplateSection = {
   id: string;
   sectionType: string;
+  defaultContent: unknown;
   variants: { id: string }[];
 };
+
+/**
+ * Starter copy for a section: the template's own, falling back to the generic
+ * stub only for a template seeded before default_content existed.
+ */
+function starterContent(
+  section: { sectionType: string; defaultContent?: unknown },
+  collegeName: string,
+) {
+  return (
+    (section.defaultContent as object | null) ??
+    defaultContentFor(section.sectionType as never, collegeName)
+  );
+}
 
 /** Creates the default pages and a starter set of sections for a new site. */
 async function provisionStarterSite(
@@ -243,7 +265,7 @@ async function provisionStarterSite(
         pageId: homePage.id,
         displayOrder: displayOrder++,
         isVisible: true,
-        content: defaultContentFor(section.sectionType as never, collegeName),
+        content: starterContent(section, collegeName) as never,
       },
     });
   }

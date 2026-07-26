@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { stableStringify } from "@/lib/json-stable";
 import { defaultContentFor } from "@/lib/sections/defaults";
 import {
   isSupportedSectionType,
@@ -197,7 +198,8 @@ export async function addSection(input: z.infer<typeof addSchema>) {
         variantId,
         displayOrder: afterOrder + 1,
         isVisible: true,
-        content: defaultContentFor(section.sectionType, college.name),
+        content: (section.defaultContent ??
+          defaultContentFor(section.sectionType, college.name)) as never,
       },
     }),
   ]);
@@ -235,25 +237,6 @@ const contentSchema = z.object({
   content: z.unknown(),
   trigger: z.enum(SAVE_TRIGGERS).default("typing"),
 });
-
-/**
- * JSON with object keys in a fixed order, for comparing content to content.
- *
- * Postgres reorders jsonb keys on storage, so a value read back never
- * stringifies to what was written even when nothing changed — which made every
- * no-op save look like an edit and put an identical snapshot in history.
- */
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") return JSON.stringify(value);
-  if (Array.isArray(value)) {
-    return `[${value.map(stableStringify).join(",")}]`;
-  }
-  const entries = Object.entries(value as Record<string, unknown>)
-    .filter(([, v]) => v !== undefined)
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`);
-  return `{${entries.join(",")}}`;
-}
 
 /**
  * Saves the content-edit form, validated against the section type's schema.

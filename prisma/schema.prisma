@@ -97,6 +97,14 @@ model Section {
   sectionType  SectionType @map("section_type")
   defaultOrder Int         @map("default_order")
   isRequired   Boolean     @default(false) @map("is_required")
+  /// Starter copy for this section in this template's voice — the same content
+  /// its demo site shows.
+  ///
+  /// A college that has just picked a design should see the template working,
+  /// not five headings over empty space. Provisioning used a generic stub
+  /// ("About Us", "Courses"), so every new site opened looking broken while the
+  /// gallery demo beside it looked finished.
+  defaultContent Json?     @map("default_content")
 
   template        Template         @relation(fields: [templateId], references: [id], onDelete: Cascade)
   variants        SectionVariant[]

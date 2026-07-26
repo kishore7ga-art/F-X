@@ -5,6 +5,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { createPool } from "../src/lib/db-pool";
+import { stableStringify } from "../src/lib/json-stable";
+import { defaultContentFor } from "../src/lib/sections/defaults";
 import { DEMO_LOGIN } from "../src/lib/auth/demo";
 import { CollegeStatus, SectionType } from "../src/generated/prisma/enums";
 import {
@@ -466,6 +468,10 @@ async function seedReferenceData() {
   const templates = [];
 
   for (const spec of TEMPLATES) {
+    // The same copy the template's demo site shows, so "Start with this
+    // design" delivers what the gallery promised.
+    const templateContent = contentFor(spec.demo);
+
     const template = await prisma.template.upsert({
       where: { name: spec.name },
       // Updated, not left alone: descriptions and thumbnails get revised, and a
@@ -499,12 +505,14 @@ async function seedReferenceData() {
         update: {
           defaultOrder: librarySpec.defaultOrder,
           isRequired: librarySpec.isRequired,
+          defaultContent: templateContent[sectionType] as never,
         },
         create: {
           templateId: template.id,
           sectionType,
           defaultOrder: librarySpec.defaultOrder,
           isRequired: librarySpec.isRequired,
+          defaultContent: templateContent[sectionType] as never,
         },
       });
 
@@ -699,12 +707,59 @@ async function seedDemoCollege({
   );
 }
 
+/**
+ * Upgrades sections still holding the generic stub to their template's own
+ * starter copy.
+ *
+ * Sites provisioned before templates carried default_content opened on "About
+ * Us" over empty space while the gallery demo beside them looked finished.
+ *
+ * Only rewrites content byte-identical to the stub this code would generate —
+ * i.e. a section nobody has touched. Anything edited, even one word, is left
+ * exactly as the college left it. Nothing here is worth overwriting a real
+ * sentence for.
+ */
+async function backfillStarterContent() {
+  const rows = await prisma.collegeSection.findMany({
+    where: { college: { isDemo: false } },
+    include: {
+      section: { select: { sectionType: true, defaultContent: true } },
+      college: { select: { name: true } },
+    },
+  });
+
+  let upgraded = 0;
+
+  for (const row of rows) {
+    if (!row.section.defaultContent) continue;
+
+    const stub = parseSectionContent(
+      row.section.sectionType as SupportedSectionType,
+      defaultContentFor(row.section.sectionType as never, row.college.name),
+    );
+
+    if (stableStringify(row.content) !== stableStringify(stub)) continue;
+
+    await prisma.collegeSection.update({
+      where: { id: row.id },
+      data: { content: row.section.defaultContent as never },
+    });
+    upgraded += 1;
+  }
+
+  if (upgraded) {
+    console.log(`[seed] filled ${upgraded} untouched section(s) with template copy`);
+  }
+}
+
 async function main() {
   const reference = await seedReferenceData();
 
   // Always, including production: these are the gallery's showcases and they
   // carry no credentials, so there is nothing to sign in to.
   await seedDemoSites(reference);
+
+  await backfillStarterContent();
 
   if (INCLUDE_DEMO_COLLEGE) {
     await seedDemoCollege(reference);
