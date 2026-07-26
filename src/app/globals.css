@@ -26,17 +26,22 @@ body {
    Scoped to its own tokens so it cannot leak into a published college site,
    whose colours must come from its chosen theme_palette and nothing else.
 
-   Deep teal into citrus — deliberately not the indigo/violet every SaaS site
-   has converged on, so the page reads as ours rather than as a genre.
+   Monochrome. With no colour to lean on, hierarchy has to come from weight,
+   scale and space — which is the discipline that makes a black-and-white page
+   look deliberate rather than unfinished.
+
+   The names stay so every component keeps working; only the values change.
+   `bright`, `citrus` and `coral` are the light end of the ramp, used where
+   something must read against black.
    --------------------------------------------------------------------------- */
 @theme inline {
-  --color-brand-ink: #04211f;
-  --color-brand-deep: #0b3f3a;
-  --color-brand: #0d9488;
-  --color-brand-bright: #2dd4bf;
-  --color-brand-citrus: #f59e0b;
-  --color-brand-coral: #fb7185;
-  --color-brand-mist: #f2fbf9;
+  --color-brand-ink: #0a0a0a;
+  --color-brand-deep: #171717;
+  --color-brand: #404040;
+  --color-brand-bright: #d4d4d4;
+  --color-brand-citrus: #a3a3a3;
+  --color-brand-coral: #737373;
+  --color-brand-mist: #f5f5f5;
 }
 
 @keyframes rise {

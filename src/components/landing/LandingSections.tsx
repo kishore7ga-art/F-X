@@ -140,7 +140,7 @@ function RowVisual({ kind }: { kind: Row["visual"] }) {
       </div>
       <div className="flex items-center justify-between rounded-xl bg-brand-ink px-4 py-3.5">
         <span className="text-sm font-semibold text-white">Publish site</span>
-        <span className="rounded-full bg-brand px-3 py-1 text-xs font-bold text-white">
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-ink">
           Live
         </span>
       </div>
@@ -358,7 +358,7 @@ export function LandingTemplates({ editHref }: { editHref: string }) {
 /** Full-width closing band — the last thing before the footer. */
 export function LandingCta({ editHref }: { editHref: string }) {
   return (
-    <section className="bg-gradient-to-br from-brand-deep via-brand to-brand-bright py-20 sm:py-28">
+    <section className="bg-gradient-to-br from-brand-ink via-brand-deep to-brand py-20 sm:py-28">
       <div className="mx-auto max-w-3xl px-5 text-center sm:px-8">
         <h2 className="text-balance text-3xl font-extrabold leading-[1.06] tracking-tight text-white sm:text-6xl">
           Your site could be live this week
