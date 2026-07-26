@@ -26,11 +26,22 @@ export async function createSession(payload: SessionPayload) {
     .setExpirationTime(`${MAX_AGE_SECONDS}s`)
     .sign(secretKey());
 
+  /**
+   * `lax` is right while the API is same-origin, and silently wrong the moment
+   * it is not: a lax cookie is never sent to a different origin, so moving the
+   * API to api.xite.co.in would 401 every authenticated call while CORS looked
+   * perfectly configured.
+   *
+   * `none` requires `secure`, which is why it is keyed off having a
+   * cross-origin API rather than offered as a free-standing switch.
+   */
+  const crossOrigin = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
+
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: crossOrigin ? "none" : "lax",
+    secure: crossOrigin || process.env.NODE_ENV === "production",
     path: "/",
     maxAge: MAX_AGE_SECONDS,
   });

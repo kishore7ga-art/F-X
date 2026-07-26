@@ -1,0 +1,54 @@
+# XITE frontend — pages and editor UI only.
+#
+# Pairs with the xite-B repo, which is deployed as its own Dokploy service and
+# brings up the database. This file brings up no Postgres of its own on
+# purpose: two compose projects each starting one would give the frontend and
+# the backend a database each, and the editor would write to one while the
+# pages rendered from the other.
+#
+#   Backend service (xite-B)  →  owns the schema, migrates, seeds, serves /api
+#   This service (xite-F)     →  renders pages, never migrates
+#
+# Both attach to Dokploy's shared network and reach the backend's containers by
+# the fixed aliases it publishes: `xite-db` and `xite-api`.
+
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    # Traefik reaches this over the Docker network; set port 3000 in Domains.
+    expose:
+      - "3000"
+    environment:
+      NODE_ENV: production
+      # Points at the backend's Postgres, not a local one. `xite-db` is the
+      # alias that service publishes on dokploy-network — never `localhost`,
+      # which inside a container is the container itself.
+      DATABASE_URL: ${DATABASE_URL}
+      # Must be byte-identical to the backend's, or a cookie signed by one
+      # service fails verification at the other and every save 401s.
+      SESSION_SECRET: ${SESSION_SECRET}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      # The backend already migrated and seeded. A second container running
+      # `prisma migrate deploy` against the same database is how a schema lands
+      # half applied.
+      SKIP_MIGRATIONS: "true"
+      SEED_ON_START: "false"
+      # Empty keeps browser API calls same-origin, served by this container.
+      # Set to https://api.xite.co.in to send them to the backend instead —
+      # which then needs CORS_ORIGINS and cross-site cookies (see
+      # DEPLOY-SPLIT.md).
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+    volumes:
+      - uploads:/app/public/uploads
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  uploads:
