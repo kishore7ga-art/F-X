@@ -24,8 +24,10 @@ export const AUTH_DISABLED = process.env.AUTH_DISABLED === "true";
  * one created, so the first visit lands somewhere usable instead of a redirect
  * loop between `/` and `/login`.
  */
-const SUBDOMAIN = process.env.OPEN_ACCESS_SUBDOMAIN ?? "main";
-const NAME = process.env.OPEN_ACCESS_COLLEGE_NAME ?? "My College";
+// `||`, not `??`: a dashboard that saves an empty value would otherwise create
+// a college with an empty subdomain, whose editor URL is unreachable.
+const SUBDOMAIN = process.env.OPEN_ACCESS_SUBDOMAIN || "main";
+const NAME = process.env.OPEN_ACCESS_COLLEGE_NAME || "My College";
 
 export async function openAccessCollege() {
   const existing = await prisma.college.findFirst({
