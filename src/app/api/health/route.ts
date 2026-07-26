@@ -6,6 +6,7 @@ import {
   type DatabaseFailureKind,
 } from "@/lib/db-errors";
 import { parseDatabaseHost, probeDatabaseSocket } from "@/lib/db-probe";
+import { AUTH_DISABLED } from "@/lib/auth/open-access";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,12 @@ export const dynamic = "force-dynamic";
  *
  * Reports the host and a classified reason — never credentials, never the raw
  * driver message.
+ *
+ * `auth` is here for a narrower reason: "is my change live yet?" is otherwise
+ * unanswerable from outside. A deploy that silently reused a cached image looks
+ * exactly like one where the environment variable never saved, and both look
+ * like the feature not working. Absent field means old code, "required" means
+ * the flag is unset, "open" means it took.
  */
 export async function GET() {
   const startedAt = Date.now();
@@ -31,6 +38,7 @@ export async function GET() {
       status: "ok",
       database: "connected",
       host,
+      auth: AUTH_DISABLED ? "open" : "required",
       latencyMs: Date.now() - startedAt,
     });
   } catch (error) {
@@ -60,6 +68,7 @@ export async function GET() {
         reason: kind,
         code,
         host,
+        auth: AUTH_DISABLED ? "open" : "required",
         hint: DATABASE_FAILURE_HINTS[kind],
         databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
       },
