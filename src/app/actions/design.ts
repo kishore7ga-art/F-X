@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -71,6 +72,135 @@ export async function startWithThisDesign(input: StartWithDesignInput) {
   }
 
   redirect(`/editor/${college.subdomain}`);
+}
+
+/**
+ * Template-level refresh: the whole site's look, not one section's.
+ *
+ * The per-section ↻ swaps a variant within a section type. This swaps the
+ * template underneath every section at once, which is only a data operation
+ * because content lives in `college_sections.content` as JSONB keyed by section
+ * type rather than by template — so re-pointing section_id/variant_id carries
+ * the college's text across untouched.
+ *
+ * Three cases, and the awkward two are why this is not a one-line update:
+ *  - the new template has the section type    -> re-point, keep content
+ *  - it does not                              -> hide the row, never delete it,
+ *    so the text is still there on the next refresh
+ *  - it has a type the college never had      -> add it hidden, for them to
+ *    fill in rather than publish empty
+ *
+ * Palette and font packs are deliberately untouched: this changes layout, not
+ * the college's chosen colours.
+ */
+export async function cycleTemplate() {
+  const session = await getSession();
+  if (!session) throw new Error("Not signed in");
+  const collegeId = session.collegeId;
+
+  const college = await prisma.college.findUnique({
+    where: { id: collegeId },
+    select: { id: true, name: true, subdomain: true, templateId: true },
+  });
+  if (!college) throw new Error("College not found");
+
+  const templates = await prisma.template.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true },
+  });
+  // Nothing to cycle to. Not an error — the button is disabled for this too.
+  if (templates.length < 2) return;
+
+  // A college with no template yet lands on the first: findIndex gives -1, and
+  // -1 + 1 is 0.
+  const currentIndex = templates.findIndex((t) => t.id === college.templateId);
+  const nextId = templates[(currentIndex + 1) % templates.length].id;
+
+  const nextTemplate = await prisma.template.findUnique({
+    where: { id: nextId },
+    include: {
+      sections: {
+        orderBy: { defaultOrder: "asc" },
+        include: { variants: { orderBy: { variantName: "asc" } } },
+      },
+    },
+  });
+  if (!nextTemplate) return;
+
+  // Section type -> where it lands in the new template. First variant by name,
+  // the same default provisionStarterSite and addSection both pick.
+  const target = new Map<string, { sectionId: string; variantId: string }>();
+  for (const section of nextTemplate.sections) {
+    const variant = section.variants[0];
+    if (!variant) continue;
+    if (!isSupportedSectionType(section.sectionType as never)) continue;
+    if (target.has(section.sectionType)) continue;
+    target.set(section.sectionType, {
+      sectionId: section.id,
+      variantId: variant.id,
+    });
+  }
+
+  const rows = await prisma.collegeSection.findMany({
+    where: { collegeId },
+    include: { section: { select: { sectionType: true } } },
+    orderBy: { displayOrder: "asc" },
+  });
+
+  const homePage = await prisma.page.findFirst({
+    where: { collegeId },
+    orderBy: { navOrder: "asc" },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    const covered = new Set<string>();
+
+    for (const row of rows) {
+      const match = target.get(row.section.sectionType);
+      if (match) {
+        covered.add(row.section.sectionType);
+        await tx.collegeSection.update({
+          where: { id: row.id },
+          data: { sectionId: match.sectionId, variantId: match.variantId },
+        });
+      } else {
+        await tx.collegeSection.update({
+          where: { id: row.id },
+          data: { isVisible: false },
+        });
+      }
+    }
+
+    if (homePage) {
+      let displayOrder = Math.max(0, ...rows.map((r) => r.displayOrder)) + 1;
+      for (const [sectionType, slot] of target) {
+        if (covered.has(sectionType)) continue;
+        await tx.collegeSection.create({
+          data: {
+            collegeId,
+            pageId: homePage.id,
+            sectionId: slot.sectionId,
+            variantId: slot.variantId,
+            displayOrder: displayOrder++,
+            isVisible: false,
+            // Valid starter copy rather than {}: the editor renders hidden rows
+            // so they can be toggled on, and an empty object has no fields for
+            // the component to draw.
+            content: defaultContentFor(sectionType as never, college.name),
+          },
+        });
+      }
+    }
+
+    await tx.college.update({
+      where: { id: college.id },
+      data: { templateId: nextTemplate.id },
+    });
+  });
+
+  revalidatePath(`/editor/${college.subdomain}`);
+  revalidatePath(`/site/${college.subdomain}`);
+  revalidatePath(`/preview/${college.subdomain}`);
 }
 
 type TemplateSection = {

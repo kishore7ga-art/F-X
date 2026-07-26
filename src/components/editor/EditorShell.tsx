@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition, type ReactNode } from "react";
 
 import { logout } from "@/app/actions/auth";
+import { cycleTemplate } from "@/app/actions/design";
 import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
 import { EditorContextProvider } from "@/components/editor/EditorContext";
 import { PageTabs } from "@/components/editor/PageTabs";
@@ -21,10 +22,13 @@ export function EditorShell({
   // Open-access mode has no session to end, so the control would clear a cookie
   // that is not there and bounce the user straight back into the editor.
   canSignOut = true,
+  /** False when only one template is installed, leaving nothing to cycle to. */
+  canCycleTemplate = false,
 }: {
   data: EditorPageData;
   children: ReactNode;
   canSignOut?: boolean;
+  canCycleTemplate?: boolean;
 }) {
   const { college, pages, currentPage, sections, addableSections } = data;
 
@@ -79,6 +83,21 @@ export function EditorShell({
                 <span className="text-xs text-black/45">Saving…</span>
               ) : null}
               <PublishToggle collegeId={college.id} status={college.status} />
+              {/* Rendered even with nothing to cycle to, disabled — the same
+                  way a section's ↻ stays visible when it has one variant. */}
+              <button
+                type="button"
+                onClick={() => run(() => cycleTemplate())}
+                disabled={!canCycleTemplate || isPending}
+                title={
+                  canCycleTemplate
+                    ? "Swap every section to another template's design, keeping your content"
+                    : "Only one template is installed"
+                }
+                className="rounded-md border px-3 py-1.5 text-xs font-semibold transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                ↻ Try another template
+              </button>
               <Link
                 href={`/templates`}
                 className="rounded-md border px-3 py-1.5 text-xs font-semibold transition hover:bg-black/5"
@@ -147,6 +166,10 @@ export function EditorShell({
                   <li>↻ — swap the design, keeping your content</li>
                   <li>◉ — show or hide the section</li>
                   <li>+ — insert a new section below</li>
+                  <li className="pt-1.5">
+                    ↻ Try another template (top bar) — swaps every section at
+                    once, keeping your content and colours
+                  </li>
                 </ul>
               </div>
             )}

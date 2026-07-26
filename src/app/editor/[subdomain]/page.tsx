@@ -6,6 +6,7 @@ import { SectionBlock } from "@/components/editor/SectionBlock";
 import { SiteFrame } from "@/components/site/SiteFrame";
 import { requireCollegeBySubdomain } from "@/lib/auth/current";
 import { AUTH_DISABLED } from "@/lib/auth/open-access";
+import { prisma } from "@/lib/db";
 import { getEditorPage } from "@/lib/editor/queries";
 
 export const dynamic = "force-dynamic";
@@ -26,13 +27,20 @@ export default async function EditorPage({
   // it to pick a design rather than showing an empty editor.
   if (!college.templateId) redirect("/templates");
 
-  const data = await getEditorPage(subdomain, pageSlug);
+  const [data, templateCount] = await Promise.all([
+    getEditorPage(subdomain, pageSlug),
+    prisma.template.count(),
+  ]);
   if (!data) notFound();
 
   const { sections, theme } = data;
 
   return (
-    <EditorShell data={data} canSignOut={!AUTH_DISABLED}>
+    <EditorShell
+      data={data}
+      canSignOut={!AUTH_DISABLED}
+      canCycleTemplate={templateCount > 1}
+    >
       {/*
         Sections are rendered on the server with the very same components the
         public site uses, then handed to the client block wrapper as children.
