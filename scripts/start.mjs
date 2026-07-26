@@ -12,6 +12,7 @@
  * to restore exit-on-failure behaviour.
  */
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const MAX_ATTEMPTS = Number(process.env.MIGRATE_RETRIES ?? 5);
 const FAIL_FAST = process.env.MIGRATE_FAIL_FAST === "true";
@@ -47,6 +48,32 @@ const PLACEHOLDER_MARKERS = [
 ];
 
 /**
+ * A DATABASE_URL pointing at localhost is the other way this goes wrong, and
+ * the more common one: `.env.example` ends with a LOCAL DEVELOPMENT line, and
+ * pasting the whole file into a dashboard carries it into production. Inside a
+ * container localhost is the container itself, where no Postgres is listening,
+ * so every query fails with ECONNREFUSED against a host that looks plausible.
+ */
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
+
+function pointsAtLocalhost(connectionString) {
+  try {
+    // URL keeps IPv6 literals bracketed; strip them before comparing.
+    const { hostname } = new URL(connectionString);
+    return LOCAL_HOSTS.has(hostname.replace(/^\[|\]$/g, ""));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Only containers make localhost wrong. Running `npm start` directly on a
+ * machine with its own Postgres is a legitimate setup, and warning about it
+ * there would be noise.
+ */
+const inContainer = existsSync("/.dockerenv");
+
+/**
  * The bundled Postgres from docker-compose.yml, rebuilt from the same parts
  * compose uses for its `${DATABASE_URL:-...}` default. Available only when the
  * db service is in play, which is what POSTGRES_PASSWORD signals.
@@ -69,19 +96,29 @@ if (!databaseUrl) {
   );
 } else {
   const marker = PLACEHOLDER_MARKERS.find((m) => databaseUrl.includes(m));
-  if (marker) {
+
+  // Both faults are the same mistake with two faces — a value copied out of the
+  // template that names somewhere the database is not — so they get the same
+  // rescue and differ only in how the line is described.
+  const fault = marker
+    ? `still contains the template placeholder "${marker}"`
+    : inContainer && pointsAtLocalhost(databaseUrl)
+      ? "points at localhost, which inside a container is the container " +
+        "itself\n  and never the database"
+      : null;
+
+  if (fault) {
     const fallback = bundledDatabaseUrl();
 
-    // A placeholder is never a real destination, so preferring the bundled
-    // database over it cannot cost anyone a working connection — but it does
-    // rescue the common case of pasting .env.example into a dashboard and
-    // leaving the host unfilled. Without this the placeholder silently wins
-    // and every page fails against a hostname that cannot resolve.
+    // Neither a placeholder nor localhost is ever a real destination, so
+    // preferring the bundled database over one cannot cost anyone a working
+    // connection — but it does rescue the common case of pasting .env.example
+    // into a dashboard. Without this the bad value silently wins and every
+    // page fails against a host that was never going to answer.
     console.error(
       "\n" +
         "=".repeat(72) +
-        "\n[start] DATABASE_URL still contains the template placeholder " +
-        `"${marker}".\n` +
+        `\n[start] DATABASE_URL ${fault}.\n` +
         (fallback
           ? "\n  IGNORING it and using the bundled Postgres (db:5432) instead.\n" +
             "\n  Delete DATABASE_URL from your host's environment to silence " +
