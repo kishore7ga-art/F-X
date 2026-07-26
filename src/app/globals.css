@@ -19,3 +19,61 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* ---------------------------------------------------------------------------
+   Marketing surface (the landing page only).
+
+   Scoped to its own tokens so it cannot leak into a published college site,
+   whose colours must come from its chosen theme_palette and nothing else.
+
+   Deep teal into citrus — deliberately not the indigo/violet every SaaS site
+   has converged on, so the page reads as ours rather than as a genre.
+   --------------------------------------------------------------------------- */
+@theme inline {
+  --color-brand-ink: #04211f;
+  --color-brand-deep: #0b3f3a;
+  --color-brand: #0d9488;
+  --color-brand-bright: #2dd4bf;
+  --color-brand-citrus: #f59e0b;
+  --color-brand-coral: #fb7185;
+  --color-brand-mist: #f2fbf9;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -22px, 0) scale(1.06);
+  }
+}
+
+/* Entrance, staggered by the `style` delay each section sets. */
+.rise {
+  animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* The hero's colour field. Slow enough to read as depth, not as motion. */
+.drift {
+  animation: drift 18s ease-in-out infinite;
+}
+
+/* Nobody should have to watch a page breathe to read it. */
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .drift {
+    animation: none;
+  }
+}
