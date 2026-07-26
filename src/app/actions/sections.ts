@@ -207,10 +207,53 @@ export async function addSection(input: z.infer<typeof addSchema>) {
 
 // --- Content ------------------------------------------------------------------
 
+const SAVE_TRIGGERS = [
+  "typing",
+  "drag",
+  "color",
+  "font",
+  "image",
+  "delete",
+  "resize",
+  "section_update",
+  "restore",
+] as const;
+
+/**
+ * Snapshots kept per section.
+ *
+ * A two-second debounce across every action type writes history faster than
+ * anyone will read it, so this is bounded rather than swept on a schedule: a
+ * cron that has not run yet is not a retention policy. Fifty covers a long
+ * editing session; older than that, the college wants the published site back,
+ * not keystroke 51.
+ */
+const RETAINED_VERSIONS = 50;
+
 const contentSchema = z.object({
   collegeSectionId: idSchema,
   content: z.unknown(),
+  trigger: z.enum(SAVE_TRIGGERS).default("typing"),
 });
+
+/**
+ * JSON with object keys in a fixed order, for comparing content to content.
+ *
+ * Postgres reorders jsonb keys on storage, so a value read back never
+ * stringifies to what was written even when nothing changed — which made every
+ * no-op save look like an edit and put an identical snapshot in history.
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`);
+  return `{${entries.join(",")}}`;
+}
 
 /**
  * Saves the content-edit form, validated against the section type's schema.
@@ -225,7 +268,7 @@ const contentSchema = z.object({
 export async function updateSectionContent(
   input: z.infer<typeof contentSchema>,
 ): Promise<{ savedAt: string }> {
-  const { collegeSectionId, content } = contentSchema.parse(input);
+  const { collegeSectionId, content, trigger } = contentSchema.parse(input);
   const row = await loadOwnedSection(collegeSectionId, await currentCollegeId());
 
   if (!isSupportedSectionType(row.section.sectionType)) {
@@ -234,13 +277,102 @@ export async function updateSectionContent(
 
   const parsed = parseSectionContent(row.section.sectionType, content);
 
-  const saved = await prisma.collegeSection.update({
-    where: { id: row.id },
-    data: { content: parsed, lastSavedAt: new Date() },
-    select: { lastSavedAt: true },
+  // A save that changed nothing still happens — refocusing a field, a retry
+  // landing after the first attempt already succeeded — and each one would add
+  // an identical snapshot, burying the versions that differ.
+  const changed =
+    stableStringify(parsed) !== stableStringify(row.content ?? null);
+
+  const savedAt = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.collegeSection.update({
+      where: { id: row.id },
+      data: { content: parsed, lastSavedAt: savedAt },
+    });
+
+    if (!changed) return;
+
+    await tx.collegeSectionHistory.create({
+      data: {
+        collegeSectionId: row.id,
+        contentSnapshot: parsed,
+        saveTrigger: trigger,
+        savedAt,
+      },
+    });
+
+    // Prune here rather than on a schedule, so the bound holds even if no
+    // scheduled job is ever wired up.
+    const stale = await tx.collegeSectionHistory.findMany({
+      where: { collegeSectionId: row.id },
+      orderBy: { savedAt: "desc" },
+      skip: RETAINED_VERSIONS,
+      select: { id: true },
+    });
+    if (stale.length) {
+      await tx.collegeSectionHistory.deleteMany({
+        where: { id: { in: stale.map((s) => s.id) } },
+      });
+    }
   });
 
   revalidateEditor(row.college.subdomain);
 
-  return { savedAt: (saved.lastSavedAt ?? new Date()).toISOString() };
+  return { savedAt: savedAt.toISOString() };
+}
+
+/** Snapshots for one section, newest first, for the restore timeline. */
+export async function listSectionHistory(
+  input: z.infer<typeof sectionRefSchema>,
+): Promise<
+  { id: string; savedAt: string; saveTrigger: string; isCurrent: boolean }[]
+> {
+  const { collegeSectionId } = sectionRefSchema.parse(input);
+  const row = await loadOwnedSection(collegeSectionId, await currentCollegeId());
+
+  const versions = await prisma.collegeSectionHistory.findMany({
+    where: { collegeSectionId: row.id },
+    orderBy: { savedAt: "desc" },
+    select: { id: true, savedAt: true, saveTrigger: true, contentSnapshot: true },
+  });
+
+  const live = stableStringify(row.content ?? null);
+
+  return versions.map((version) => ({
+    id: version.id,
+    savedAt: version.savedAt.toISOString(),
+    saveTrigger: version.saveTrigger,
+    isCurrent: stableStringify(version.contentSnapshot) === live,
+  }));
+}
+
+const restoreSchema = z.object({
+  collegeSectionId: idSchema,
+  versionId: idSchema,
+});
+
+/**
+ * Rolls a section's content back to a snapshot.
+ *
+ * The restore is itself a save, so it gets its own history row. Rolling back
+ * must never be the one action you cannot undo.
+ */
+export async function restoreSectionVersion(
+  input: z.infer<typeof restoreSchema>,
+): Promise<{ savedAt: string }> {
+  const { collegeSectionId, versionId } = restoreSchema.parse(input);
+  const row = await loadOwnedSection(collegeSectionId, await currentCollegeId());
+
+  const version = await prisma.collegeSectionHistory.findFirst({
+    // Scoped to this section, so a known id from another college is useless.
+    where: { id: versionId, collegeSectionId: row.id },
+  });
+  if (!version) throw new Error("That version no longer exists");
+
+  return updateSectionContent({
+    collegeSectionId: row.id,
+    content: version.contentSnapshot,
+    trigger: "restore",
+  });
 }

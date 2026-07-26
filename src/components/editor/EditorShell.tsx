@@ -153,6 +153,10 @@ export function EditorShell({
           <aside className="min-h-0 overflow-hidden border-l bg-white lg:block">
             {selectedSection ? (
               <SectionContentForm
+                // Remount per section rather than resyncing state inside an
+                // effect: the form's state IS the section being edited, so a
+                // different section is a different form.
+                key={selectedSection.id}
                 section={selectedSection}
                 onClose={() => setSelectedSectionId(null)}
               />

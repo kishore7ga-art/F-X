@@ -153,9 +153,37 @@ model CollegeSection {
   section Section        @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   variant SectionVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   page    Page?          @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  history CollegeSectionHistory[]
 
   @@index([collegeId, pageId, displayOrder])
   @@map("college_sections")
+}
+
+/// One snapshot of a section's content, written on every save that actually
+/// changed something.
+///
+/// Autosave without history is only half a safety net: it guarantees work is
+/// never lost to forgetting to save, and guarantees nothing about work lost to
+/// a bad edit. This is the other half — the timeline behind "Restore previous
+/// version".
+///
+/// Pruned to the newest RETAINED_VERSIONS rows per section on insert. A
+/// two-second debounce across every action type produces snapshots faster than
+/// anyone will ever read them, and unbounded JSONB copies of a page's content
+/// is a storage bill, not a feature.
+model CollegeSectionHistory {
+  id               String   @id @default(cuid())
+  collegeSectionId String   @map("college_section_id")
+  contentSnapshot  Json     @map("content_snapshot")
+  savedAt          DateTime @default(now()) @map("saved_at")
+  /// What caused this save: typing / drag / color / font / image / delete /
+  /// resize / section_update / restore.
+  saveTrigger      String   @map("save_trigger")
+
+  collegeSection CollegeSection @relation(fields: [collegeSectionId], references: [id], onDelete: Cascade)
+
+  @@index([collegeSectionId, savedAt])
+  @@map("college_sections_history")
 }
 
 model ThemePalette {
