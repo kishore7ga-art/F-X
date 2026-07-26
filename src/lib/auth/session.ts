@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
 
+import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
+
 const COOKIE_NAME = "college_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
@@ -35,6 +37,18 @@ export async function createSession(payload: SessionPayload) {
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
+  // Open-access mode short-circuits here rather than at each of the dozen call
+  // sites. Everything downstream — the editor guard, the section and publish
+  // actions, upload authorisation, draft visibility — already asks this one
+  // question, so answering it differently is the whole switch.
+  //
+  // Only collegeId is ever read from a session; userId exists for the JWT's
+  // sake, so a synthetic one costs nothing and needs no User row.
+  if (AUTH_DISABLED) {
+    const college = await openAccessCollege();
+    return { userId: `open-access:${college.id}`, collegeId: college.id };
+  }
+
   const store = await cookies();
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;

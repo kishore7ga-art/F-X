@@ -18,9 +18,13 @@ import type { EditorPageData } from "@/lib/editor/queries";
 export function EditorShell({
   data,
   children,
+  // Open-access mode has no session to end, so the control would clear a cookie
+  // that is not there and bounce the user straight back into the editor.
+  canSignOut = true,
 }: {
   data: EditorPageData;
   children: ReactNode;
+  canSignOut?: boolean;
 }) {
   const { college, pages, currentPage, sections, addableSections } = data;
 
@@ -88,14 +92,16 @@ export function EditorShell({
               >
                 View site
               </Link>
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="rounded-md px-2 py-1.5 text-xs font-semibold text-black/50 transition hover:text-black"
-                >
-                  Sign out
-                </button>
-              </form>
+              {canSignOut && (
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    className="rounded-md px-2 py-1.5 text-xs font-semibold text-black/50 transition hover:text-black"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              )}
             </div>
           </div>
 

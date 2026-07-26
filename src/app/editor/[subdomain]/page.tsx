@@ -5,6 +5,7 @@ import { EditorShell } from "@/components/editor/EditorShell";
 import { SectionBlock } from "@/components/editor/SectionBlock";
 import { SiteFrame } from "@/components/site/SiteFrame";
 import { requireCollegeBySubdomain } from "@/lib/auth/current";
+import { AUTH_DISABLED } from "@/lib/auth/open-access";
 import { getEditorPage } from "@/lib/editor/queries";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export default async function EditorPage({
   const { sections, theme } = data;
 
   return (
-    <EditorShell data={data}>
+    <EditorShell data={data} canSignOut={!AUTH_DISABLED}>
       {/*
         Sections are rendered on the server with the very same components the
         public site uses, then handed to the client block wrapper as children.
