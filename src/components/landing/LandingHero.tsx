@@ -1,121 +1,124 @@
 import Link from "next/link";
 
-/** Hero: colour field, headline, the two things you can do next. */
+/**
+ * Editorial hero: type first, product second.
+ *
+ * The headline carries the page — everything below it is evidence — so the
+ * visual sits under the fold line rather than competing beside it.
+ */
 export function LandingHero({ editHref }: { editHref: string }) {
   return (
-    <section className="relative overflow-hidden bg-brand-ink">
-      {/* Gradient mesh. Three blurred fields rather than one image, so it scales
-          to any viewport without a 400KB download. */}
+    <section className="relative overflow-hidden border-b border-brand-ink/8 bg-white">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="drift absolute -left-40 -top-40 h-[34rem] w-[34rem] rounded-full bg-brand/40 blur-[110px]" />
+        <div className="drift absolute -right-52 -top-56 h-[42rem] w-[42rem] rounded-full bg-brand-bright/12 blur-[120px]" />
         <div
-          className="drift absolute -right-32 top-10 h-[30rem] w-[30rem] rounded-full bg-brand-bright/25 blur-[120px]"
-          style={{ animationDelay: "-6s" }}
+          className="drift absolute -left-56 top-24 h-[36rem] w-[36rem] rounded-full bg-brand-citrus/10 blur-[130px]"
+          style={{ animationDelay: "-8s" }}
         />
-        <div
-          className="drift absolute bottom-[-14rem] left-1/3 h-[28rem] w-[28rem] rounded-full bg-brand-citrus/20 blur-[130px]"
-          style={{ animationDelay: "-11s" }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_35%,#04211f_78%)]" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-5 pb-24 pt-20 sm:px-8 sm:pb-32 sm:pt-28">
-        <div className="mx-auto max-w-3xl text-center">
+      <div className="relative mx-auto max-w-[88rem] px-5 pb-0 pt-20 sm:px-8 sm:pt-28">
+        <div className="mx-auto max-w-4xl text-center">
           <p
-            className="rise mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/70 backdrop-blur"
-            style={{ animationDelay: "60ms" }}
+            className="rise inline-flex items-center gap-2 rounded-full border border-brand-ink/10 bg-brand-mist px-4 py-1.5 text-[13px] font-semibold text-brand-deep"
+            style={{ animationDelay: "40ms" }}
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-bright" />
-            Five designs. Every section swappable.
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            Five designs · thirty section layouts
           </p>
 
           <h1
-            className="rise mt-7 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
-            style={{ animationDelay: "140ms" }}
+            className="rise mt-8 text-balance text-[2.75rem] font-extrabold leading-[0.98] tracking-[-0.03em] text-brand-ink sm:text-7xl lg:text-[5.25rem]"
+            style={{ animationDelay: "120ms" }}
           >
-            Your college website,{" "}
-            <span className="bg-gradient-to-r from-brand-bright via-brand-citrus to-brand-coral bg-clip-text text-transparent">
-              live by Friday
+            Build your college site
+            <br className="hidden sm:block" />{" "}
+            <span className="relative whitespace-nowrap">
+              <span className="relative z-10">without building it</span>
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 bottom-1.5 z-0 h-3 rounded-sm bg-brand-citrus/35 sm:bottom-3 sm:h-5"
+              />
             </span>
           </h1>
 
           <p
-            className="rise mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-white/60 sm:text-lg"
-            style={{ animationDelay: "220ms" }}
+            className="rise mx-auto mt-7 max-w-2xl text-pretty text-lg leading-relaxed text-brand-ink/55 sm:text-xl"
+            style={{ animationDelay: "200ms" }}
           >
-            Pick a design, replace the words, press publish. No agency, no
-            six-week quote, no one on your staff learning a page builder. The
-            prospectus you already wrote is most of the work.
+            Choose a design, replace the words, press publish. The prospectus
+            you have already written is most of the work — the rest is an
+            afternoon, not a six-week quote.
           </p>
 
           <div
             className="rise mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            style={{ animationDelay: "300ms" }}
+            style={{ animationDelay: "280ms" }}
           >
             <Link
               href={editHref}
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-brand-ink shadow-xl shadow-black/30 transition hover:-translate-y-0.5 hover:shadow-2xl sm:w-auto"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-ink px-8 py-4 text-base font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand hover:shadow-xl sm:w-auto"
             >
-              Start editing
-              <svg viewBox="0 0 24 24" className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              Start editing — free
+              <svg viewBox="0 0 24 24" className="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
             <a
               href="#templates"
-              className="inline-flex w-full items-center justify-center rounded-full border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:border-white/40 hover:bg-white/10 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-brand-ink/15 bg-white px-8 py-4 text-base font-semibold text-brand-ink transition hover:-translate-y-0.5 hover:border-brand-ink/35 sm:w-auto"
             >
-              See the templates
+              Browse live demos
             </a>
           </div>
 
-          <p
-            className="rise mt-5 text-xs text-white/35"
-            style={{ animationDelay: "360ms" }}
-          >
-            Nothing to install. Your content is yours to export at any time.
+          <p className="rise mt-5 text-sm text-brand-ink/35" style={{ animationDelay: "340ms" }}>
+            No card. No install. Your content exports as JSON whenever you want it.
           </p>
         </div>
 
-        {/* Editor chrome. Suggests the product without shipping a screenshot
-            that goes stale the next time the UI moves. */}
-        <div
-          className="rise mx-auto mt-16 max-w-5xl sm:mt-20"
-          style={{ animationDelay: "440ms" }}
-        >
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black/50 backdrop-blur">
-            <div className="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-brand-coral/70" />
-              <span className="h-2.5 w-2.5 rounded-full bg-brand-citrus/70" />
-              <span className="h-2.5 w-2.5 rounded-full bg-brand-bright/70" />
-              <span className="ml-3 truncate rounded-md bg-black/30 px-3 py-1 text-[11px] text-white/40">
+        {/* Product visual, cropped by the section edge so it reads as a window
+            into the tool rather than a floating screenshot. */}
+        <div className="rise mx-auto mt-16 max-w-6xl sm:mt-20" style={{ animationDelay: "420ms" }}>
+          <div className="overflow-hidden rounded-t-3xl border border-b-0 border-brand-ink/10 bg-white shadow-[0_-1px_60px_-12px_rgba(4,33,31,0.22)]">
+            <div className="flex items-center gap-2 border-b border-brand-ink/8 bg-brand-mist/60 px-4 py-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-brand-coral/50" />
+              <span className="h-2.5 w-2.5 rounded-full bg-brand-citrus/50" />
+              <span className="h-2.5 w-2.5 rounded-full bg-brand-bright/50" />
+              <span className="ml-3 truncate rounded-md bg-white px-3 py-1 text-[11px] text-brand-ink/40 ring-1 ring-brand-ink/8">
                 yourcollege.xite.co.in
               </span>
-              <span className="ml-auto hidden rounded-md bg-brand-bright/15 px-2.5 py-1 text-[11px] font-semibold text-brand-bright sm:block">
+              <span className="ml-auto hidden items-center gap-1.5 rounded-md bg-brand/10 px-2.5 py-1 text-[11px] font-semibold text-brand-deep sm:flex">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                 Saved 10:32
               </span>
             </div>
-            <div className="grid gap-px bg-white/5 sm:grid-cols-[1fr_260px]">
-              <div className="space-y-3 bg-brand-ink/60 p-5">
-                <div className="h-28 rounded-lg bg-gradient-to-br from-brand/50 to-brand-deep" />
-                <div className="h-3 w-2/3 rounded-full bg-white/15" />
-                <div className="h-3 w-1/2 rounded-full bg-white/10" />
-                <div className="grid grid-cols-3 gap-3 pt-2">
+
+            <div className="grid gap-px bg-brand-ink/8 md:grid-cols-[1fr_300px]">
+              <div className="space-y-4 bg-white p-6">
+                <div className="h-36 rounded-xl bg-gradient-to-br from-brand-deep via-brand to-brand-bright" />
+                <div className="h-3.5 w-2/3 rounded-full bg-brand-ink/10" />
+                <div className="h-3.5 w-1/2 rounded-full bg-brand-ink/[0.07]" />
+                <div className="grid grid-cols-3 gap-4 pt-2">
                   {[0, 1, 2].map((i) => (
-                    <div key={i} className="h-16 rounded-lg bg-white/5" />
+                    <div key={i} className="space-y-2">
+                      <div className="h-20 rounded-lg bg-brand-mist" />
+                      <div className="h-2.5 w-3/4 rounded-full bg-brand-ink/[0.07]" />
+                    </div>
                   ))}
                 </div>
               </div>
-              <div className="space-y-3 bg-brand-ink/80 p-5">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-white/30">
+              <div className="space-y-4 bg-white p-6">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-brand-ink/35">
                   Edit section
                 </p>
                 {["Heading", "Intro", "Image"].map((label) => (
                   <div key={label} className="space-y-1.5">
-                    <p className="text-[11px] text-white/40">{label}</p>
-                    <div className="h-8 rounded-md border border-white/10 bg-white/5" />
+                    <p className="text-[11px] font-medium text-brand-ink/45">{label}</p>
+                    <div className="h-9 rounded-lg border border-brand-ink/10 bg-brand-mist/50" />
                   </div>
                 ))}
+                <div className="h-9 rounded-lg bg-brand-ink/90" />
               </div>
             </div>
           </div>

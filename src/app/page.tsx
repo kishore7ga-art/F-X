@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingHero } from "@/components/landing/LandingHero";
 import {
+  LandingCta,
   LandingFeatures,
   LandingFooter,
+  LandingSegments,
   LandingShowcase,
   LandingStats,
   LandingTemplates,
@@ -43,10 +45,12 @@ export default async function HomePage() {
       <LandingHeader editHref={editHref} />
       <main>
         <LandingHero editHref={editHref} />
-        <LandingFeatures />
         <LandingStats />
+        <LandingFeatures />
+        <LandingSegments />
         <LandingShowcase editHref={editHref} />
         <LandingTemplates editHref={editHref} />
+        <LandingCta editHref={editHref} />
       </main>
       <LandingFooter />
     </>
