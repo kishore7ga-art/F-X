@@ -28,7 +28,7 @@ async function loadOwnedSection(collegeSectionId: string, collegeId: string) {
   const row = await prisma.collegeSection.findFirst({
     where: { id: collegeSectionId, collegeId },
     include: {
-      section: { include: { variants: { orderBy: { variantName: "asc" } } } },
+      section: { include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } } },
       college: { select: { subdomain: true, name: true } },
     },
   });
@@ -166,7 +166,7 @@ export async function addSection(input: z.infer<typeof addSchema>) {
     prisma.page.findFirst({ where: { id: pageId, collegeId } }),
     prisma.section.findUnique({
       where: { id: sectionId },
-      include: { variants: { orderBy: { variantName: "asc" } } },
+      include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
     }),
   ]);
 

@@ -140,7 +140,7 @@ export async function getTemplatePreview(
       include: {
         sections: {
           orderBy: { defaultOrder: "asc" },
-          include: { variants: { orderBy: { variantName: "asc" } } },
+          include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
         },
       },
     }),
@@ -160,7 +160,8 @@ export async function getTemplatePreview(
   let displayOrder = 1;
 
   for (const section of template.sections) {
-    // First variant by name, matching provisionStarterSite's choice.
+    // Lead variant: sortOrder decides, which is what makes each template open
+    // with its own look.
     const variant = section.variants[0];
     if (!variant) continue;
     if (!isSupportedSectionType(section.sectionType as never)) continue;

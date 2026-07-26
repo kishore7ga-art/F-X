@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Almanac template">
+  <rect width="800" height="600" fill="#fef7ed"/>
+  <rect width="800" height="80" fill="#1c1917"/>
+  <rect x="36" y="30" width="180" height="16" rx="3" fill="#fef7ed" opacity=".92"/>
+  <g fill="#d4a017" opacity=".8">
+    <rect x="560" y="33" width="50" height="10" rx="2"/>
+    <rect x="626" y="33" width="50" height="10" rx="2"/>
+    <rect x="692" y="33" width="50" height="10" rx="2"/>
+  </g>
+  <rect y="80" width="300" height="230" fill="#7f1d1d"/>
+  <rect x="36" y="140" width="200" height="20" rx="3" fill="#fef7ed" opacity=".95"/>
+  <rect x="36" y="176" width="150" height="12" rx="3" fill="#d4a017"/>
+  <rect x="36" y="220" width="120" height="32" rx="3" fill="#fef7ed" opacity=".9"/>
+  <rect x="300" y="80" width="500" height="230" fill="#e7e0d5"/>
+  <g fill="#1c1917" opacity=".2">
+    <rect x="340" y="130" width="420" height="10" rx="2"/>
+    <rect x="340" y="158" width="420" height="10" rx="2"/>
+    <rect x="340" y="186" width="330" height="10" rx="2"/>
+  </g>
+  <rect x="36" y="356" width="4" height="180" fill="#7f1d1d" opacity=".5"/>
+  <g fill="#1c1917" opacity=".65">
+    <circle cx="38" cy="380" r="9"/>
+    <circle cx="38" cy="446" r="9"/>
+    <circle cx="38" cy="512" r="9"/>
+  </g>
+  <g fill="#1c1917" opacity=".3">
+    <rect x="68" y="374" width="300" height="10" rx="2"/>
+    <rect x="68" y="440" width="360" height="10" rx="2"/>
+    <rect x="68" y="506" width="270" height="10" rx="2"/>
+  </g>
+  <g fill="#e7e0d5">
+    <rect x="470" y="356" width="290" height="180" rx="4"/>
+  </g>
+  <g fill="#1c1917" opacity=".22">
+    <rect x="494" y="384" width="242" height="8" rx="2"/>
+    <rect x="494" y="412" width="242" height="8" rx="2"/>
+    <rect x="494" y="440" width="242" height="8" rx="2"/>
+    <rect x="494" y="468" width="242" height="8" rx="2"/>
+  </g>
+</svg>

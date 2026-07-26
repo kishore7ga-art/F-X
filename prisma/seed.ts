@@ -62,8 +62,14 @@ const FONT_PACKS = [
   { name: "Modern Sans", headingFont: "Poppins", bodyFont: "Inter" },
 ];
 
-/** Section types of the "Radian" template, with their design variants. */
-const TEMPLATE_SECTIONS = [
+/**
+ * Every design variant that exists, by section type.
+ *
+ * All templates carry the whole library so the per-section ↻ has somewhere to
+ * go inside any of them. What separates one template from the next is which
+ * variant leads — see TEMPLATES below.
+ */
+const VARIANT_LIBRARY = [
   {
     sectionType: SectionType.HERO,
     defaultOrder: 1,
@@ -133,10 +139,158 @@ const TEMPLATE_SECTIONS = [
   },
 ];
 
-const CONTENT: Record<SupportedSectionType, unknown> = {
+/**
+ * The gallery.
+ *
+ * Each template leads with a different variant of every section, which is what
+ * makes five entries built from one component library look like five designs
+ * rather than one design five times. `lead` sets sortOrder 0; the rest of the
+ * library follows in its declared order, so ↻ still reaches everything.
+ *
+ * Each also names a demo college — a published showcase seeded alongside it, so
+ * "View demo site" leads somewhere real instead of at the visitor's own empty
+ * site.
+ */
+type TemplateSpec = {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  demo: {
+    subdomain: string;
+    collegeName: string;
+    tagline: string;
+    city: string;
+    domain: string;
+    paletteName: string;
+    fontName: string;
+  };
+  lead: Record<SupportedSectionType, string>;
+};
+
+const TEMPLATES: TemplateSpec[] = [
+  {
+    name: "Radian",
+    description:
+      "A clean, content-first template for technical colleges and institutes.",
+    thumbnailUrl: "/seed/template-radian.svg",
+    demo: {
+      subdomain: "demo-radian",
+      collegeName: "Greenfield Institute of Technology",
+      tagline: "Engineering tomorrow, today",
+      city: "Greenfield, Karnataka 562109",
+      domain: "greenfield.edu.in",
+      paletteName: "Academic Blue",
+      fontName: "Classic Serif",
+    },
+    lead: {
+      [SectionType.HERO]: "hero_academic_masthead",
+      [SectionType.ABOUT]: "about_image_beside",
+      [SectionType.COURSES]: "courses_accordion",
+      [SectionType.FACULTY]: "faculty_circle_grid",
+      [SectionType.CONTACT]: "contact_cards_row",
+    },
+  },
+  {
+    name: "Meridian",
+    description:
+      "Spare and typographic. Wide margins, restrained colour, everything earning its place — for institutions that would rather read serious than loud.",
+    thumbnailUrl: "/seed/template-meridian.svg",
+    demo: {
+      subdomain: "demo-meridian",
+      collegeName: "Meridian School of Design",
+      tagline: "Make things that matter",
+      city: "Panaji, Goa 403001",
+      domain: "meridian.edu.in",
+      paletteName: "Academic Blue",
+      fontName: "Modern Sans",
+    },
+    lead: {
+      [SectionType.HERO]: "hero_minimal_text",
+      [SectionType.ABOUT]: "about_two_column",
+      [SectionType.COURSES]: "courses_compact_tiles",
+      [SectionType.FACULTY]: "faculty_minimal_table",
+      [SectionType.CONTACT]: "contact_centered",
+    },
+  },
+  {
+    name: "Beacon",
+    description:
+      "Full-bleed banners, big type and a dark closing panel. Built to be seen first and read second — suits admissions-led campaigns.",
+    thumbnailUrl: "/seed/template-beacon.svg",
+    demo: {
+      subdomain: "demo-beacon",
+      collegeName: "Beacon College of Management",
+      tagline: "Where ambition finds its footing",
+      city: "Pune, Maharashtra 411045",
+      domain: "beacon.edu.in",
+      paletteName: "Heritage Maroon",
+      fontName: "Modern Sans",
+    },
+    lead: {
+      [SectionType.HERO]: "hero_stacked_banner",
+      [SectionType.ABOUT]: "about_quote_lead",
+      [SectionType.COURSES]: "courses_card_grid",
+      [SectionType.FACULTY]: "faculty_overlay_tiles",
+      [SectionType.CONTACT]: "contact_dark_panel",
+    },
+  },
+  {
+    name: "Almanac",
+    description:
+      "Traditional and record-like: a dated timeline, a comparison table of programmes, faculty grouped by department. For institutions whose age is the point.",
+    thumbnailUrl: "/seed/template-almanac.svg",
+    demo: {
+      subdomain: "demo-almanac",
+      collegeName: "St. Alban's College",
+      tagline: "Learning, unbroken since 1892",
+      city: "Kochi, Kerala 682011",
+      domain: "stalbans.edu.in",
+      paletteName: "Heritage Maroon",
+      fontName: "Classic Serif",
+    },
+    lead: {
+      [SectionType.HERO]: "hero_side_panel",
+      [SectionType.ABOUT]: "about_timeline",
+      [SectionType.COURSES]: "courses_table",
+      [SectionType.FACULTY]: "faculty_department_groups",
+      [SectionType.CONTACT]: "contact_map_split",
+    },
+  },
+  {
+    name: "Harbour",
+    description:
+      "Warm and photographic — a split hero, stacked story cards, faces before titles. Reads like a place rather than a prospectus.",
+    thumbnailUrl: "/seed/template-harbour.svg",
+    demo: {
+      subdomain: "demo-harbour",
+      collegeName: "Harbour Community College",
+      tagline: "Start where you are",
+      city: "Visakhapatnam, Andhra Pradesh 530003",
+      domain: "harbour.edu.in",
+      paletteName: "Campus Green",
+      fontName: "Modern Sans",
+    },
+    lead: {
+      [SectionType.HERO]: "hero_split_image",
+      [SectionType.ABOUT]: "about_stacked_cards",
+      [SectionType.COURSES]: "courses_numbered_list",
+      [SectionType.FACULTY]: "faculty_photo_cards",
+      [SectionType.CONTACT]: "contact_full_width_map",
+    },
+  },
+];
+
+/**
+ * Section copy for a demo site. Parameterised rather than fixed: five
+ * showcases that all call themselves Greenfield would read as one site
+ * restyled, which is the opposite of what a gallery is for.
+ */
+const contentFor = (
+  d: TemplateSpec["demo"],
+): Record<SupportedSectionType, unknown> => ({
   [SectionType.HERO]: {
-    collegeName: "Greenfield Institute of Technology",
-    tagline: "Engineering tomorrow, today",
+    collegeName: d.collegeName,
+    tagline: d.tagline,
     intro:
       "A NAAC A+ accredited institute offering undergraduate and postgraduate programmes in engineering, management and applied sciences since 1998.",
     bannerImageUrl: "/seed/campus.svg",
@@ -144,9 +298,9 @@ const CONTENT: Record<SupportedSectionType, unknown> = {
     ctaHref: "/admissions",
   },
   [SectionType.ABOUT]: {
-    title: "About Greenfield",
+    title: `About ${d.collegeName}`,
     history:
-      "Founded in 1998 by the Greenfield Education Trust, the institute began with three engineering branches and 120 students. It now serves over 4,000 students across 14 departments on a 42-acre campus.",
+      `Founded in 1998, ${d.collegeName} began with three departments and 120 students. It now serves over 4,000 students across 14 departments on a 42-acre campus.`,
     mission:
       "To deliver rigorous, industry-relevant technical education that is accessible to students from every background.",
     vision:
@@ -155,7 +309,7 @@ const CONTENT: Record<SupportedSectionType, unknown> = {
     principalDesignation: "Principal",
     principalPhotoUrl: "/seed/principal.svg",
     principalMessage:
-      "Our students leave Greenfield with more than a degree — they leave with the habit of solving real problems. That is the promise we renew with every incoming batch.",
+      `Our students leave ${d.collegeName} with more than a degree — they leave with the habit of solving real problems. That is the promise we renew with every incoming batch.`,
   },
   [SectionType.COURSES]: {
     title: "Courses & Departments",
@@ -230,14 +384,13 @@ const CONTENT: Record<SupportedSectionType, unknown> = {
   },
   [SectionType.CONTACT]: {
     title: "Contact Us",
-    address:
-      "Greenfield Institute of Technology, NH-48, Bypass Road, Greenfield, Karnataka 562109",
+    address: `${d.collegeName}, NH-48, Bypass Road, ${d.city}`,
     phone: "+91 80 2345 6789",
-    email: "admissions@greenfield.edu.in",
+    email: `admissions@${d.domain}`,
     mapEmbedUrl: "",
     showContactForm: true,
   },
-};
+});
 
 /** Sections placed on each page of the seeded college, in display order. */
 const PAGE_LAYOUT: {
@@ -309,72 +462,173 @@ async function seedReferenceData() {
     ),
   );
 
-  // --- Template + its sections and variants --------------------------------
-  const template = await prisma.template.upsert({
-    where: { name: "Radian" },
-    update: {},
-    create: {
-      name: "Radian",
-      description:
-        "A clean, content-first template for technical colleges and institutes.",
-      thumbnailUrl: "/seed/template-radian.svg",
-      demoUrl: "/site/greenfield",
-    },
-  });
+  // --- Templates, each carrying the whole variant library -------------------
+  const templates = [];
 
-  const sectionsByType = new Map<
-    SupportedSectionType,
-    { id: string; variantIds: string[] }
-  >();
-
-  for (const spec of TEMPLATE_SECTIONS) {
-    const section = await prisma.section.upsert({
-      where: {
-        templateId_sectionType: {
-          templateId: template.id,
-          sectionType: spec.sectionType,
-        },
+  for (const spec of TEMPLATES) {
+    const template = await prisma.template.upsert({
+      where: { name: spec.name },
+      // Updated, not left alone: descriptions and thumbnails get revised, and a
+      // seed that only writes on first run leaves every existing database
+      // showing the old copy forever.
+      update: {
+        description: spec.description,
+        thumbnailUrl: spec.thumbnailUrl,
+        demoUrl: `/site/${spec.demo.subdomain}`,
       },
-      update: { defaultOrder: spec.defaultOrder, isRequired: spec.isRequired },
       create: {
-        templateId: template.id,
-        sectionType: spec.sectionType,
-        defaultOrder: spec.defaultOrder,
-        isRequired: spec.isRequired,
+        name: spec.name,
+        description: spec.description,
+        thumbnailUrl: spec.thumbnailUrl,
+        demoUrl: `/site/${spec.demo.subdomain}`,
       },
     });
 
-    const variantIds: string[] = [];
-    for (const variant of spec.variants) {
-      const row = await prisma.sectionVariant.upsert({
+    const sectionsByType = new Map<
+      SupportedSectionType,
+      { id: string; variantIds: string[] }
+    >();
+
+    for (const librarySpec of VARIANT_LIBRARY) {
+      const sectionType = librarySpec.sectionType as SupportedSectionType;
+
+      const section = await prisma.section.upsert({
         where: {
-          sectionId_componentKey: {
-            sectionId: section.id,
-            componentKey: variant.componentKey,
-          },
+          templateId_sectionType: { templateId: template.id, sectionType },
         },
-        update: { variantName: variant.variantName },
-        create: { sectionId: section.id, ...variant },
+        update: {
+          defaultOrder: librarySpec.defaultOrder,
+          isRequired: librarySpec.isRequired,
+        },
+        create: {
+          templateId: template.id,
+          sectionType,
+          defaultOrder: librarySpec.defaultOrder,
+          isRequired: librarySpec.isRequired,
+        },
       });
-      variantIds.push(row.id);
+
+      // This template's lead variant first, the rest of the library behind it.
+      // Same components everywhere, different face on each template.
+      const leadKey = spec.lead[sectionType];
+      const ordered = [
+        ...librarySpec.variants.filter((v) => v.componentKey === leadKey),
+        ...librarySpec.variants.filter((v) => v.componentKey !== leadKey),
+      ];
+      if (ordered[0]?.componentKey !== leadKey) {
+        throw new Error(
+          `${spec.name}: lead variant "${leadKey}" is not in the ${sectionType} library`,
+        );
+      }
+
+      const variantIds: string[] = [];
+      for (const [index, variant] of ordered.entries()) {
+        const row = await prisma.sectionVariant.upsert({
+          where: {
+            sectionId_componentKey: {
+              sectionId: section.id,
+              componentKey: variant.componentKey,
+            },
+          },
+          update: { variantName: variant.variantName, sortOrder: index },
+          create: { sectionId: section.id, ...variant, sortOrder: index },
+        });
+        variantIds.push(row.id);
+      }
+
+      sectionsByType.set(sectionType, { id: section.id, variantIds });
     }
 
-    sectionsByType.set(spec.sectionType as SupportedSectionType, {
-      id: section.id,
-      variantIds,
-    });
+    templates.push({ spec, template, sectionsByType });
   }
 
-  return { palettes, fonts, template, sectionsByType };
+  return { palettes, fonts, templates };
+}
+
+/**
+ * A published showcase site per template.
+ *
+ * Seeded in production too, unlike the demo *login* below: these carry no
+ * credentials, only content, so there is nothing to get in with. Without them
+ * the gallery's "View demo site" has nowhere to point, and a visitor deciding
+ * between five templates is choosing from thumbnails alone.
+ *
+ * Marked isDemo so open-access mode never hands one to a visitor as their own.
+ */
+async function seedDemoSites({
+  palettes,
+  fonts,
+  templates,
+}: Awaited<ReturnType<typeof seedReferenceData>>) {
+  for (const { spec, template, sectionsByType } of templates) {
+    const palette =
+      palettes.find((p) => p.name === spec.demo.paletteName) ?? palettes[0];
+    const font = fonts.find((f) => f.name === spec.demo.fontName) ?? fonts[0];
+
+    const shared = {
+      name: spec.demo.collegeName,
+      templateId: template.id,
+      themePaletteId: palette.id,
+      themeFontId: font.id,
+      // Published, or resolveSiteAccess hides it from everyone but its owner —
+      // and a demo has no owner to sign in as.
+      status: CollegeStatus.PUBLISHED,
+      isDemo: true,
+    };
+
+    const college = await prisma.college.upsert({
+      where: { subdomain: spec.demo.subdomain },
+      update: shared,
+      create: { subdomain: spec.demo.subdomain, ...shared },
+    });
+
+    // Rebuilt every run so a demo always shows the template's current lead
+    // variants rather than whatever it was first seeded with.
+    await prisma.collegeSection.deleteMany({ where: { collegeId: college.id } });
+    await prisma.page.deleteMany({ where: { collegeId: college.id } });
+
+    const content = contentFor(spec.demo);
+
+    for (const pageSpec of PAGE_LAYOUT) {
+      const page = await prisma.page.create({
+        data: {
+          collegeId: college.id,
+          slug: pageSpec.slug,
+          title: pageSpec.title,
+          navOrder: pageSpec.navOrder,
+        },
+      });
+
+      for (const [index, sectionType] of pageSpec.sections.entries()) {
+        const section = sectionsByType.get(sectionType);
+        if (!section) throw new Error(`Unseeded section type: ${sectionType}`);
+
+        await prisma.collegeSection.create({
+          data: {
+            collegeId: college.id,
+            sectionId: section.id,
+            // Index 0 is the lead variant — the template's signature look.
+            variantId: section.variantIds[0],
+            pageId: page.id,
+            displayOrder: index + 1,
+            isVisible: true,
+            content: parseSectionContent(sectionType, content[sectionType]),
+          },
+        });
+      }
+    }
+  }
 }
 
 /** Local-development fixture: one published-ready college with real content. */
 async function seedDemoCollege({
   palettes,
   fonts,
-  template,
-  sectionsByType,
+  templates,
 }: Awaited<ReturnType<typeof seedReferenceData>>) {
+  // The first template in the gallery; this fixture only needs a valid one.
+  const { template, sectionsByType } = templates[0];
+
   // --- Sample college ------------------------------------------------------
   const college = await prisma.college.upsert({
     where: { subdomain: "greenfield" },
@@ -431,7 +685,10 @@ async function seedDemoCollege({
           displayOrder: index + 1,
           isVisible: true,
           // Validated against the section's Zod schema before it is stored.
-          content: parseSectionContent(sectionType, CONTENT[sectionType]),
+          content: parseSectionContent(
+            sectionType,
+            contentFor(templates[0].spec.demo)[sectionType],
+          ),
         },
       });
     }
@@ -444,6 +701,10 @@ async function seedDemoCollege({
 
 async function main() {
   const reference = await seedReferenceData();
+
+  // Always, including production: these are the gallery's showcases and they
+  // carry no credentials, so there is nothing to sign in to.
+  await seedDemoSites(reference);
 
   if (INCLUDE_DEMO_COLLEGE) {
     await seedDemoCollege(reference);
@@ -460,6 +721,7 @@ async function main() {
     themePalettes: await prisma.themePalette.count(),
     themeFonts: await prisma.themeFont.count(),
     colleges: await prisma.college.count(),
+    demoSites: await prisma.college.count({ where: { isDemo: true } }),
     users: await prisma.user.count(),
     pages: await prisma.page.count(),
     collegeSections: await prisma.collegeSection.count(),

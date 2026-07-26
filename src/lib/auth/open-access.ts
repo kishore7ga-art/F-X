@@ -30,7 +30,11 @@ const SUBDOMAIN = process.env.OPEN_ACCESS_SUBDOMAIN || "main";
 const NAME = process.env.OPEN_ACCESS_COLLEGE_NAME || "My College";
 
 export async function openAccessCollege() {
+  // isDemo excluded deliberately: the seeded template showcases are older than
+  // any real college, so "oldest" alone would hand the first visitor a demo
+  // site to edit and quietly deface the gallery.
   const existing = await prisma.college.findFirst({
+    where: { isDemo: false },
     orderBy: { createdAt: "asc" },
   });
   if (existing) return existing;

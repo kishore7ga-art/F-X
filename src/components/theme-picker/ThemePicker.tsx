@@ -26,13 +26,17 @@ import {
 type ThemePickerProps = {
   collegeId: string;
   subdomain: string;
-  template: { id: string; name: string; description: string | null };
+  template: {
+    id: string;
+    name: string;
+    description: string | null;
+    /** This template's own showcase site, not the visitor's. */
+    demoUrl: string | null;
+  };
   palettes: PaletteOption[];
   fonts: FontOption[];
   initialPaletteId: string;
   initialFontId: string;
-  /** False until this college has a site to look at, which /site would 404 on. */
-  hasSite: boolean;
 };
 
 /** Screen 2 — template preview with theme selection. */
@@ -44,7 +48,6 @@ export function ThemePicker({
   fonts,
   initialPaletteId,
   initialFontId,
-  hasSite,
 }: ThemePickerProps) {
   const [paletteId, setPaletteId] = useState(initialPaletteId);
   const [fontId, setFontId] = useState(initialFontId);
@@ -209,11 +212,11 @@ export function ThemePicker({
               {isSaving ? "Saving…" : "Start with this design"}
             </button>
 
-            {/* Offered only once there is a site behind it — before that the
-                link led straight to a 404. */}
-            {hasSite ? (
+            {/* The template's own showcase, not `/site/${subdomain}` — that was
+                the visitor's site, which is empty at this point and 404ed. */}
+            {template.demoUrl ? (
               <Link
-                href={`/site/${subdomain}`}
+                href={template.demoUrl}
                 target="_blank"
                 className="block w-full rounded-lg border px-4 py-3 text-center text-sm font-semibold transition hover:bg-black/5"
               >

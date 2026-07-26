@@ -41,7 +41,7 @@ export async function startWithThisDesign(input: StartWithDesignInput) {
       include: {
         sections: {
           orderBy: { defaultOrder: "asc" },
-          include: { variants: { orderBy: { variantName: "asc" } } },
+          include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
         },
       },
     }),
@@ -121,7 +121,7 @@ export async function cycleTemplate() {
     include: {
       sections: {
         orderBy: { defaultOrder: "asc" },
-        include: { variants: { orderBy: { variantName: "asc" } } },
+        include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
       },
     },
   });

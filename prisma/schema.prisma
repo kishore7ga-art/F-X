@@ -44,6 +44,11 @@ model College {
   themePaletteId String?       @map("theme_palette_id")
   themeFontId    String?       @map("theme_font_id")
   status         CollegeStatus @default(DRAFT)
+  /// A showcase site for a template, seeded and published so the gallery has
+  /// something real to link to. Never handed to a visitor as their own site:
+  /// open-access mode skips these when adopting a college, or the first person
+  /// to arrive on a fresh install would be editing the demo.
+  isDemo         Boolean       @default(false) @map("is_demo")
   createdAt      DateTime      @default(now()) @map("created_at")
 
   template     Template?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
@@ -107,6 +112,12 @@ model SectionVariant {
   sectionId    String @map("section_id")
   variantName  String @map("variant_name")
   componentKey String @map("component_key")
+  /// Which variant a template leads with. The first in this order is the one a
+  /// new site is provisioned with and the one a template swap lands on, so it
+  /// is what gives each template its own look while every template still
+  /// offers the whole variant library to the ↻ button. Alphabetical order was
+  /// doing this job by accident, which made every template open identically.
+  sortOrder    Int    @default(0) @map("sort_order")
 
   section         Section          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   collegeSections CollegeSection[]

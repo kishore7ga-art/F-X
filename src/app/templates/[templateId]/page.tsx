@@ -20,9 +20,6 @@ export default async function TemplateThemePickerPage({
     requireCurrentCollege(),
   ]);
 
-  // Pages, not templateId: the "View demo site" link renders a page, and a
-  // college can carry a templateId while still having nothing to show.
-  const pageCount = await prisma.page.count({ where: { collegeId: college.id } });
 
   if (!template) notFound();
   if (palettes.length === 0 || fonts.length === 0) {
@@ -63,12 +60,12 @@ export default async function TemplateThemePickerPage({
           id: template.id,
           name: template.name,
           description: template.description,
+          demoUrl: template.demoUrl,
         }}
         palettes={paletteOptions}
         fonts={fontOptions}
         initialPaletteId={college.themePaletteId ?? paletteOptions[0].id}
         initialFontId={college.themeFontId ?? fontOptions[0].id}
-        hasSite={pageCount > 0}
       />
     </>
   );

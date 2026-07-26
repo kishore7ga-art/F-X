@@ -67,7 +67,7 @@ export async function getEditorPage(
         include: {
           sections: {
             orderBy: { defaultOrder: "asc" },
-            include: { variants: { orderBy: { variantName: "asc" } } },
+            include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
           },
         },
       },
@@ -88,7 +88,7 @@ export async function getEditorPage(
     where: { collegeId: college.id, pageId: currentPage.id },
     orderBy: { displayOrder: "asc" },
     include: {
-      section: { include: { variants: { orderBy: { variantName: "asc" } } } },
+      section: { include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } } },
       variant: true,
     },
   });
