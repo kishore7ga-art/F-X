@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { updateSectionContent } from "@/app/actions/sections";
+import { saveSectionContent } from "@/lib/api-client";
 import { FieldRenderer } from "@/components/editor/fields/FieldRenderer";
 import { VersionHistory } from "@/components/editor/VersionHistory";
 import type { EditorSection } from "@/lib/editor/queries";
@@ -60,12 +60,10 @@ export function SectionContentForm({
   const queue = useMemo(
     () =>
       new SaveQueue<Values>({
+        // Over HTTP rather than as a Server Action, so every save is a real
+        // request you can watch in the Network tab.
         send: (payload, trigger) =>
-          updateSectionContent({
-            collegeSectionId: section.id,
-            content: payload,
-            trigger,
-          }),
+          saveSectionContent(section.id, payload, trigger),
         onState: setSave,
         isRetryable: isRetryableSaveError,
       }),

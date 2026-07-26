@@ -140,6 +140,21 @@ if (!databaseUrl) {
   }
 }
 
+/**
+ * In a split deployment only the backend touches the schema. Two containers
+ * running `prisma migrate deploy` against one database at the same moment is
+ * how a half-applied migration happens, and the second one adds nothing.
+ */
+const SKIP_MIGRATIONS = process.env.SKIP_MIGRATIONS === "true";
+
+if (SKIP_MIGRATIONS) {
+  console.log(
+    `[start] SKIP_MIGRATIONS=true (role: ${process.env.SERVICE_ROLE ?? "unset"})` +
+      " — leaving schema and seed to the backend container.",
+  );
+  process.exit(await run("npx", ["next", "start"]));
+}
+
 let migrated = false;
 for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
   console.log(`[start] applying migrations (attempt ${attempt}/${MAX_ATTEMPTS})`);

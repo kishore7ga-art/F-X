@@ -1,0 +1,98 @@
+# Frontend and backend as SEPARATE Dokploy services.
+#
+#   docker compose -f docker-compose.split.yml up --build
+#
+# Same image, same repo, two containers with different jobs:
+#
+#   backend   owns the database. Runs migrations, seeds, and serves /api/*.
+#             Not exposed publicly — only the frontend and Traefik reach it.
+#   frontend  renders pages and proxies browser API calls to the backend.
+#
+# Why one image rather than two: this is a Next.js app whose pages are Server
+# Components. Their data access is not an HTTP client that can be pointed
+# elsewhere — it is direct Prisma calls inside the render. Splitting the code in
+# two would mean rewriting every page to fetch over HTTP first. Splitting the
+# *deployment* gets you the operational separation now — independent scaling,
+# restarts, and logs — without that rewrite, and the /api/v1 layer is the seam
+# to finish it along later.
+#
+# See DEPLOY-SPLIT.md for the Dokploy click-path.
+
+services:
+  backend:
+    build:
+      context: .
+    restart: unless-stopped
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      SERVICE_ROLE: backend
+      DATABASE_URL: ${DATABASE_URL:-postgresql://collegeadmin:${POSTGRES_PASSWORD}@db:5432/college_saas?schema=public}
+      SESSION_SECRET: ${SESSION_SECRET}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      # Only this container migrates and seeds. Two containers racing
+      # `prisma migrate deploy` against one database is how you get a half
+      # applied schema.
+      MIGRATE_RETRIES: ${MIGRATE_RETRIES:-5}
+      SEED_ON_START: ${SEED_ON_START:-true}
+    volumes:
+      - uploads:/app/public/uploads
+    networks:
+      - xite
+
+  frontend:
+    build:
+      context: .
+    restart: unless-stopped
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      SERVICE_ROLE: frontend
+      DATABASE_URL: ${DATABASE_URL:-postgresql://collegeadmin:${POSTGRES_PASSWORD}@db:5432/college_saas?schema=public}
+      SESSION_SECRET: ${SESSION_SECRET}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      # This container must not migrate or seed — the backend already did.
+      SKIP_MIGRATIONS: "true"
+      SEED_ON_START: "false"
+      # How the two find each other: `backend` is the service name, resolved by
+      # Docker's DNS on the shared network below. Never localhost — inside a
+      # container that is the container itself.
+      BACKEND_INTERNAL_URL: http://backend:3000
+    volumes:
+      - uploads:/app/public/uploads
+    networks:
+      - xite
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: collegeadmin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: college_saas
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collegeadmin -d college_saas"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - xite
+
+networks:
+  xite:
+
+volumes:
+  db_data:
+  uploads:

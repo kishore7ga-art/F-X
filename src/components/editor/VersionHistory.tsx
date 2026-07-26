@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 
-import {
-  listSectionHistory,
-  restoreSectionVersion,
-} from "@/app/actions/sections";
+import { fetchSectionHistory, restoreSection } from "@/lib/api-client";
 
 type Version = {
   id: string;
@@ -59,8 +56,8 @@ export function VersionHistory({
   useEffect(() => {
     if (!open) return;
     let live = true;
-    listSectionHistory({ collegeSectionId })
-      .then((rows) => {
+    fetchSectionHistory(collegeSectionId)
+      .then(({ versions: rows }) => {
         if (!live) return;
         setVersions(rows);
         setError(null);
@@ -140,12 +137,10 @@ export function VersionHistory({
                       startRestore(async () => {
                         setError(null);
                         try {
-                          await restoreSectionVersion({
-                            collegeSectionId,
-                            versionId: version.id,
-                          });
+                          await restoreSection(collegeSectionId, version.id);
                           setVersions(
-                            await listSectionHistory({ collegeSectionId }),
+                            (await fetchSectionHistory(collegeSectionId))
+                              .versions,
                           );
                           onRestored();
                         } catch (cause) {
