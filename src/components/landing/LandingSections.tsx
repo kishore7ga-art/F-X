@@ -283,15 +283,27 @@ export function LandingShowcase({ editHref }: { editHref: string }) {
   );
 }
 
-const TEMPLATES = [
-  { name: "Radian", note: "Clean and content-first" },
-  { name: "Meridian", note: "Spare and typographic" },
-  { name: "Beacon", note: "Bold, admissions-led" },
-  { name: "Almanac", note: "Traditional and record-like" },
-  { name: "Harbour", note: "Warm and photographic" },
-];
+/**
+ * One template as the landing page needs it.
+ *
+ * Read from the database rather than listed here. A hardcoded copy meant
+ * adding or renaming a template updated the gallery and the editor and left
+ * the front door advertising the old set.
+ */
+export type LandingTemplate = {
+  name: string;
+  description: string | null;
+  thumbnailUrl: string | null;
+  demoUrl: string | null;
+};
 
-export function LandingTemplates({ editHref }: { editHref: string }) {
+export function LandingTemplates({
+  editHref,
+  templates,
+}: {
+  editHref: string;
+  templates: LandingTemplate[];
+}) {
   return (
     <section id="templates" className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-[88rem] px-5 sm:px-8">
@@ -306,28 +318,32 @@ export function LandingTemplates({ editHref }: { editHref: string }) {
         </div>
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {TEMPLATES.map((template, i) => (
+          {templates.map((template, i) => (
             <a
               key={template.name}
-              href={`/site/demo-${template.name.toLowerCase()}`}
+              href={template.demoUrl ?? "/templates"}
               target="_blank"
               rel="noreferrer"
               className="rise group overflow-hidden rounded-2xl border border-brand-ink/10 transition duration-300 hover:-translate-y-1.5 hover:border-brand/40 hover:shadow-2xl hover:shadow-brand/10"
               style={{ animationDelay: `${i * 60}ms` }}
             >
               <div className="aspect-[4/3] overflow-hidden bg-brand-mist">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`/seed/template-${template.name.toLowerCase()}.svg`}
-                  alt={`${template.name} template`}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-                />
+                {template.thumbnailUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={template.thumbnailUrl}
+                    alt={`${template.name} template`}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                  />
+                ) : null}
               </div>
               <div className="flex items-center justify-between gap-3 p-5">
                 <div>
                   <h3 className="text-lg font-bold text-brand-ink">{template.name}</h3>
-                  <p className="mt-0.5 text-sm text-brand-ink/50">{template.note}</p>
+                  <p className="mt-0.5 line-clamp-2 text-sm text-brand-ink/50">
+                    {template.description}
+                  </p>
                 </div>
                 <span className="shrink-0 text-sm font-semibold text-brand opacity-0 transition group-hover:opacity-100">
                   View →
@@ -378,7 +394,11 @@ export function LandingCta({ editHref }: { editHref: string }) {
   );
 }
 
-export function LandingFooter() {
+export function LandingFooter({
+  templates,
+}: {
+  templates: LandingTemplate[];
+}) {
   const columns = [
     {
       heading: "Product",
@@ -391,10 +411,12 @@ export function LandingFooter() {
     },
     {
       heading: "Demo sites",
-      links: TEMPLATES.map((t) => ({
-        label: t.name,
-        href: `/site/demo-${t.name.toLowerCase()}`,
-      })),
+      links: templates
+        .filter((template) => template.demoUrl)
+        .map((template) => ({
+          label: template.name,
+          href: template.demoUrl as string,
+        })),
     },
     {
       heading: "Platform",
