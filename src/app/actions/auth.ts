@@ -82,20 +82,55 @@ export async function signup(
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        college: {
-          create: {
-            name: collegeName,
-            subdomain,
-            // New sites start as drafts; nothing is public until published.
-            status: "DRAFT",
-          },
-        },
-      },
+    /**
+     * Adopt an unclaimed college before creating one.
+     *
+     * An install that ran in open-access mode has a real college, with real
+     * content, and no user attached. Creating a second one here would strand
+     * the first: whoever built it signs up, lands on an empty site, and their
+     * work is intact but unreachable. The same rule the Google callback
+     * follows, so both ways in behave alike.
+     *
+     * The name and subdomain from the form still win — they are what this
+     * person just asked for.
+     */
+    const unclaimed = await prisma.college.findFirst({
+      where: { isDemo: false, users: { none: {} } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true },
     });
+
+    user = unclaimed
+      ? await prisma.user.create({
+          data: {
+            email,
+            passwordHash,
+            college: {
+              connect: { id: unclaimed.id },
+            },
+          },
+        })
+      : await prisma.user.create({
+          data: {
+            email,
+            passwordHash,
+            college: {
+              create: {
+                name: collegeName,
+                subdomain,
+                // New sites start as drafts; nothing is public until published.
+                status: "DRAFT",
+              },
+            },
+          },
+        });
+
+    if (unclaimed) {
+      await prisma.college.update({
+        where: { id: unclaimed.id },
+        data: { name: collegeName, subdomain },
+      });
+    }
   } catch (cause) {
     // A dead database should read as a service message, not a 500 whose text
     // Next strips in production.
@@ -107,7 +142,8 @@ export async function signup(
   }
 
   await createSession({ userId: user.id, collegeId: user.collegeId });
-  redirect("/templates");
+  // Into the flow, not past it — the same place every other way in lands.
+  redirect("/onboarding");
 }
 
 export async function login(
@@ -145,7 +181,11 @@ export async function login(
   if (!matches) return invalid;
 
   await createSession({ userId: user.id, collegeId: user.collegeId });
-  redirect(`/editor/${user.college.subdomain}`);
+  // Into the flow like every other way in. /onboarding prefills what it knows
+  // and /start carries a link straight back into an existing site, so a
+  // returning user loses a click and gains a sequence that is the same every
+  // time — which is worth more than the click.
+  redirect("/onboarding");
 }
 
 export async function logout() {
