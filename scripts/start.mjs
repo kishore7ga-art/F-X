@@ -90,10 +90,31 @@ function bundledDatabaseUrl() {
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  console.error(
-    "[start] DATABASE_URL is not set. The app will start but every page that " +
-      "touches the database will fail. Set it in your host's environment.",
-  );
+  /**
+   * Build it here rather than trusting compose to.
+   *
+   * The compose default nests one interpolation inside another's fallback —
+   * `${DATABASE_URL:-...${POSTGRES_PASSWORD}...}` — which not every Compose
+   * version expands. When it does not, the variable arrives as an empty string
+   * and the app reports "DATABASE_URL is not set" while the dashboard plainly
+   * shows a password sitting right there. Same inputs, same URL, no
+   * interpolation involved.
+   */
+  const fallback = bundledDatabaseUrl();
+
+  if (fallback) {
+    console.log(
+      "[start] DATABASE_URL was empty; using the bundled Postgres (db:5432) " +
+        "built from POSTGRES_PASSWORD.",
+    );
+    process.env.DATABASE_URL = fallback;
+  } else {
+    console.error(
+      "[start] DATABASE_URL is not set and POSTGRES_PASSWORD is not set " +
+        "either, so there is nothing to fall back to. The app will start but " +
+        "every page that touches the database will fail.",
+    );
+  }
 } else {
   const marker = PLACEHOLDER_MARKERS.find((m) => databaseUrl.includes(m));
 
