@@ -27,7 +27,7 @@ export default async function OnboardingPage() {
     <main className="min-h-dvh bg-white">
       <div className="mx-auto max-w-xl px-5 py-16 sm:py-24">
         <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-ink/35">
-          {isEditing ? "Your college" : "Step 2 of 3"}
+          Step 2 of 3
         </p>
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl">
           {isEditing ? "Change your details" : "Tell us about your college"}

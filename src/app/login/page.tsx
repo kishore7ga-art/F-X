@@ -49,7 +49,12 @@ export default async function LoginPage({
     getSession(),
   ]);
 
-  const onwards = college?.collegeType ? "/start" : "/onboarding";
+  // Always step 2, never a shortcut past it. Sending an already-onboarded
+  // college straight to /start meant the middle step existed only for people
+  // who had never used the product — and disappeared the moment they had.
+  // /onboarding prefills what it already knows, so passing through costs a
+  // returning visitor one click and keeps the flow the same every time.
+  const onwards = "/onboarding";
 
   // A real identity, not the shared open-access one. Nothing left to ask.
   const signedIn = Boolean(

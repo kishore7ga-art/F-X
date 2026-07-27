@@ -55,7 +55,7 @@ export async function GET(request: Request) {
   try {
     let user = await prisma.user.findUnique({
       where: { email: identity.email },
-      include: { college: { select: { subdomain: true, collegeType: true, templateId: true } } },
+      include: { college: { select: { subdomain: true } } },
     });
 
     if (!user) {
@@ -94,19 +94,14 @@ export async function GET(request: Request) {
           passwordHash: `google:${crypto.randomUUID()}`,
           collegeId,
         },
-        include: { college: { select: { subdomain: true, collegeType: true, templateId: true } } },
+        include: { college: { select: { subdomain: true } } },
       });
     }
 
-    // Resume wherever this college actually is in the flow.
-    const { collegeType, templateId, subdomain } = user.college;
-    const next = !collegeType
-      ? "/onboarding"
-      : templateId
-        ? `/editor/${subdomain}`
-        : "/start";
-
-    const response = NextResponse.redirect(new URL(next, url.origin), {
+    // Into step 2, the same as every other way in. Jumping a signed-in college
+    // straight to its editor made the route out of sign-in depend on how far
+    // along it was, which is two flows wearing one name.
+    const response = NextResponse.redirect(new URL("/onboarding", url.origin), {
       headers: NO_STORE,
     });
 
