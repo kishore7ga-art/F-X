@@ -139,7 +139,16 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "degraded",
-        database: "unreachable",
+        /**
+         * "unreachable" is only true when nothing answered.
+         *
+         * A rejected login means the database was reached, replied, and said
+         * no — the opposite of unreachable, and calling it that sends people
+         * hunting hostnames and Docker networks for a problem that is one
+         * wrong word in a connection string. The reason field was already
+         * right; the headline contradicted it.
+         */
+        database: kind === "auth" ? "rejected" : "unreachable",
         reason: kind,
         code,
         host,
