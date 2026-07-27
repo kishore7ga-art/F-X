@@ -76,6 +76,16 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   return payload as T;
 }
 
+/**
+ * A missing id would build `/api/v1/sections/` — a path that matches no route
+ * and comes back 404, which reads as "the backend is broken" rather than "this
+ * call had nothing to ask about". Fail here, where the cause is visible.
+ */
+function requireId(id: string | undefined | null): string {
+  if (!id) throw new ApiError("No section selected", 0);
+  return id;
+}
+
 /* Section endpoints, named so call sites read as intent rather than as URLs. */
 
 export const saveSectionContent = (
@@ -83,7 +93,7 @@ export const saveSectionContent = (
   content: unknown,
   trigger: string,
 ) =>
-  api<{ savedAt: string }>(`/api/v1/sections/${id}`, {
+  api<{ savedAt: string }>(`/api/v1/sections/${requireId(id)}`, {
     method: "PATCH",
     body: { content, trigger },
   });
@@ -96,10 +106,10 @@ export const fetchSectionHistory = (id: string) =>
       saveTrigger: string;
       isCurrent: boolean;
     }[];
-  }>(`/api/v1/sections/${id}`);
+  }>(`/api/v1/sections/${requireId(id)}`);
 
 export const restoreSection = (id: string, versionId: string) =>
-  api<{ savedAt: string }>(`/api/v1/sections/${id}`, {
+  api<{ savedAt: string }>(`/api/v1/sections/${requireId(id)}`, {
     method: "POST",
     body: { versionId },
   });
