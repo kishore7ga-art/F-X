@@ -36,11 +36,17 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_URL: ${APP_URL:-}
-      # The backend already migrated and seeded. A second container running
-      # `prisma migrate deploy` against the same database is how a schema lands
-      # half applied.
-      SKIP_MIGRATIONS: "true"
-      SEED_ON_START: "false"
+      # Defaults assume the backend owns the schema: two containers racing
+      # `prisma migrate deploy` against one database is how it lands half
+      # applied.
+      #
+      # Overridable because that assumption breaks on day one. Pointed at a
+      # brand-new database with no backend running yet, a frontend that refuses
+      # to migrate leaves an empty schema and a site with no templates, and
+      # nothing in the dashboard explains why. Set SKIP_MIGRATIONS=false and
+      # SEED_ON_START=true once to populate it, then put them back.
+      SKIP_MIGRATIONS: ${SKIP_MIGRATIONS:-true}
+      SEED_ON_START: ${SEED_ON_START:-false}
       # Empty keeps browser API calls same-origin, served by this container.
       # Set to https://api.xite.co.in to send them to the backend instead —
       # which then needs CORS_ORIGINS and cross-site cookies (see
