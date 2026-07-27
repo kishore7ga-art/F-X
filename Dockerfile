@@ -48,7 +48,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 # Not dead weight in a runtime image: tsx reads the `@/*` path alias from here,
 # and prisma/seed.ts reaches src/lib/sections/schemas, which imports by alias.
 # Without it the seed dies on "Cannot find module '@/generated/prisma/enums'",
