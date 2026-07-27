@@ -55,13 +55,33 @@ export async function getSession(): Promise<SessionPayload | null> {
   //
   // Only collegeId is ever read from a session; userId exists for the JWT's
   // sake, so a synthetic one costs nothing and needs no User row.
+  const store = await cookies();
+
   if (AUTH_DISABLED) {
+    /**
+     * A real session still wins.
+     *
+     * Open-access used to ignore cookies entirely, which made signing in with
+     * Google a gesture: the button worked, a session was issued, and the very
+     * next request threw it away and handed back the shared college. Someone
+     * who has told us who they are should get their own site.
+     *
+     * Anyone without a session still falls through to open access, so the door
+     * stays open — this adds an identity, it does not require one.
+     */
+    const signedIn = await verifySessionCookie(store.get(COOKIE_NAME)?.value);
+    if (signedIn) return signedIn;
+
     const college = await openAccessCollege();
     return { userId: `open-access:${college.id}`, collegeId: college.id };
   }
+  return verifySessionCookie(store.get(COOKIE_NAME)?.value);
+}
 
-  const store = await cookies();
-  const token = store.get(COOKIE_NAME)?.value;
+/** Reads a session out of a cookie value, or null if it is absent or bad. */
+async function verifySessionCookie(
+  token: string | undefined,
+): Promise<SessionPayload | null> {
   if (!token) return null;
 
   try {

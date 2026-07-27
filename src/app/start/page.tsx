@@ -33,7 +33,7 @@ export default async function StartPage() {
     <main className="min-h-dvh bg-white">
       <div className="mx-auto max-w-4xl px-5 py-16 sm:py-24">
         <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-ink/35">
-          Step 2 of 2
+          Step 3 of 3
         </p>
         <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl">
           How would you like to start, {college.name}?

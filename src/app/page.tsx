@@ -11,8 +11,6 @@ import {
   LandingStats,
   LandingTemplates,
 } from "@/components/landing/LandingSections";
-import { getCurrentCollege } from "@/lib/auth/current";
-
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -29,8 +27,6 @@ export const metadata: Metadata = {
  * not chosen yet.
  */
 export default async function HomePage() {
-  const college = await getCurrentCollege();
-
   // The entry point is the flow, not a deep link past it. Checking templateId
   // first sent anyone whose college already had a design straight to the
   // editor, skipping onboarding entirely — which made /start and /onboarding
@@ -39,11 +35,14 @@ export default async function HomePage() {
   //
   // Onboarding first, then the choice screen. /start carries a "continue
   // editing" link, so a returning site is still one click away.
-  const editHref = college
-    ? college.collegeType
-      ? "/start"
-      : "/onboarding"
-    : "/login";
+  // Always step 1. Signing in is optional there, and /login forwards anyone who
+  // already has an identity, so entering at the top costs a returning visitor
+  // nothing — and stops the sign-in screen being unreachable, which is what
+  // happened when this page tried to be clever about where to send people.
+  //
+  // It also means the landing page needs no database query at all: the public
+  // front door now renders the same for everyone.
+  const editHref = "/login";
 
   return (
     <>
