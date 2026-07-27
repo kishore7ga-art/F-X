@@ -56,7 +56,11 @@ export default async function LoginPage({
     session && !session.userId.startsWith("open-access:"),
   );
 
-  if (signedIn || (!AUTH_DISABLED && college)) redirect(onwards);
+  // Only real auth redirects away. In open-access this page is step 1 of a
+  // three-step flow, and a step that sometimes silently isn't there is not a
+  // flow — it skipped anyone already carrying a session, which after one
+  // successful sign-in is everyone.
+  if (!AUTH_DISABLED && college) redirect(onwards);
 
   if (AUTH_DISABLED) {
     return (
@@ -69,8 +73,9 @@ export default async function LoginPage({
             Sign in to XITE
           </h1>
           <p className="mt-3 text-base text-brand-ink/55">
-            Sign in so the site is yours, or carry on and set one up without an
-            account.
+            {signedIn
+              ? "You are signed in. This site is yours."
+              : "Sign in so the site is yours, or carry on and set one up without an account."}
           </p>
 
           {signInError ? (
@@ -83,7 +88,7 @@ export default async function LoginPage({
           ) : null}
 
           <div className="mt-8 space-y-4">
-            {googleEnabled ? (
+            {signedIn ? null : googleEnabled ? (
               <GoogleButton />
             ) : (
               <p className="rounded-xl border border-brand-ink/10 bg-brand-mist px-4 py-3 text-sm text-brand-ink/50">
@@ -91,25 +96,28 @@ export default async function LoginPage({
               </p>
             )}
 
-            <div className="flex items-center gap-4">
-              <span className="h-px flex-1 bg-brand-ink/10" />
-              <span className="text-xs font-medium uppercase tracking-widest text-brand-ink/35">
-                or
-              </span>
-              <span className="h-px flex-1 bg-brand-ink/10" />
-            </div>
+            {signedIn ? null : (
+              <div className="flex items-center gap-4">
+                <span className="h-px flex-1 bg-brand-ink/10" />
+                <span className="text-xs font-medium uppercase tracking-widest text-brand-ink/35">
+                  or
+                </span>
+                <span className="h-px flex-1 bg-brand-ink/10" />
+              </div>
+            )}
 
             <Link
               href={onwards}
               className="flex w-full items-center justify-center rounded-xl bg-brand-ink px-5 py-3.5 text-[15px] font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand"
             >
-              Continue without signing in
+              {signedIn ? "Continue" : "Continue without signing in"}
             </Link>
           </div>
 
           <p className="mt-8 text-xs leading-relaxed text-brand-ink/40">
-            Without an account the site is open to anyone with the link. Signing
-            in with Google claims it as yours.
+            {signedIn
+              ? "Your work is tied to your Google account and will be here next time."
+              : "Without an account the site is open to anyone with the link. Signing in with Google claims it as yours."}
           </p>
         </div>
       </main>

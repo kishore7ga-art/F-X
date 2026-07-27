@@ -2,17 +2,22 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { STATE_COOKIE } from "@/app/api/auth/google/start/route";
-import { createSession } from "@/lib/auth/session";
+import { createSessionToken, COOKIE_NAME, sessionCookieOptions } from "@/lib/auth/session";
 import { exchangeCode, googleEnabled } from "@/lib/auth/google";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+const NO_STORE = { "Cache-Control": "no-store, must-revalidate" };
+
 /** Sign-in failures land back on /login carrying a readable reason. */
 function back(request: Request, reason: string) {
   const url = new URL("/login", new URL(request.url).origin);
   url.searchParams.set("error", reason);
-  return NextResponse.redirect(url);
+  const response = NextResponse.redirect(url, { headers: NO_STORE });
+  // The attempt is over either way; a stale state would only fail the next one.
+  response.cookies.delete(STATE_COOKIE);
+  return response;
 }
 
 export async function GET(request: Request) {
@@ -29,7 +34,6 @@ export async function GET(request: Request) {
 
   const store = await cookies();
   const expected = store.get(STATE_COOKIE)?.value;
-  store.delete(STATE_COOKIE);
 
   // Single use, and it must be the one we minted.
   if (!expected || expected !== state) {
@@ -94,8 +98,6 @@ export async function GET(request: Request) {
       });
     }
 
-    await createSession({ userId: user.id, collegeId: user.collegeId });
-
     // Resume wherever this college actually is in the flow.
     const { collegeType, templateId, subdomain } = user.college;
     const next = !collegeType
@@ -104,7 +106,21 @@ export async function GET(request: Request) {
         ? `/editor/${subdomain}`
         : "/start";
 
-    return NextResponse.redirect(new URL(next, url.origin));
+    const response = NextResponse.redirect(new URL(next, url.origin), {
+      headers: NO_STORE,
+    });
+
+    // Set on the response rather than through ambient mutation: a cookie
+    // written the other way is not reliably carried onto a redirect, which
+    // would sign the person in and then immediately forget them.
+    response.cookies.set(
+      COOKIE_NAME,
+      await createSessionToken({ userId: user.id, collegeId: user.collegeId }),
+      sessionCookieOptions(),
+    );
+    response.cookies.delete(STATE_COOKIE);
+
+    return response;
   } catch (error) {
     console.error("[google] sign-in failed:", (error as Error).message);
     return back(request, "Could not complete sign-in");

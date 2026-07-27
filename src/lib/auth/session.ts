@@ -3,7 +3,7 @@ import { jwtVerify, SignJWT } from "jose";
 
 import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
 
-const COOKIE_NAME = "college_session";
+export const COOKIE_NAME = "college_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 export type SessionPayload = {
@@ -19,13 +19,24 @@ function secretKey() {
   return new TextEncoder().encode(secret);
 }
 
-export async function createSession(payload: SessionPayload) {
-  const token = await new SignJWT({ ...payload })
+/**
+ * Mints the signed token without touching cookies.
+ *
+ * Route handlers that end in a redirect must attach the cookie to the response
+ * they return; ambient cookie mutation is not reliably carried onto one.
+ */
+export async function createSessionToken(
+  payload: SessionPayload,
+): Promise<string> {
+  return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE_SECONDS}s`)
     .sign(secretKey());
+}
 
+/** Cookie attributes, shared by every place that writes the session. */
+export function sessionCookieOptions() {
   /**
    * `lax` is right while the API is same-origin, and silently wrong the moment
    * it is not: a lax cookie is never sent to a different origin, so moving the
@@ -37,14 +48,19 @@ export async function createSession(payload: SessionPayload) {
    */
   const crossOrigin = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
 
-  const store = await cookies();
-  store.set(COOKIE_NAME, token, {
+  return {
     httpOnly: true,
-    sameSite: crossOrigin ? "none" : "lax",
+    sameSite: (crossOrigin ? "none" : "lax") as "none" | "lax",
     secure: crossOrigin || process.env.NODE_ENV === "production",
     path: "/",
     maxAge: MAX_AGE_SECONDS,
-  });
+  };
+}
+
+export async function createSession(payload: SessionPayload) {
+  const token = await createSessionToken(payload);
+  const store = await cookies();
+  store.set(COOKIE_NAME, token, sessionCookieOptions());
 }
 
 export async function getSession(): Promise<SessionPayload | null> {
