@@ -42,6 +42,16 @@ export default async function StartPage() {
           Either way you land in the same editor, and you can change the design
           afterwards without losing a word.
         </p>
+        <p className="mt-2 text-sm text-brand-ink/45">
+          Not right?{" "}
+          <Link
+            href="/onboarding"
+            className="font-semibold text-brand-ink underline-offset-2 hover:underline"
+          >
+            Change your college name or type
+          </Link>
+          .
+        </p>
 
         {hasSite ? (
           <Link

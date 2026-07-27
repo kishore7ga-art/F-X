@@ -17,7 +17,16 @@ import { COLLEGE_TYPES } from "@/lib/college-types";
  * options with a line of context each read better open than collapsed, and it
  * keeps the whole form usable without JavaScript.
  */
-export function OnboardingForm({ defaultName }: { defaultName: string }) {
+export function OnboardingForm({
+  defaultName,
+  defaultType = null,
+  submitLabel = "Continue",
+}: {
+  defaultName: string;
+  /** Preselected when the college has answered before and is changing it. */
+  defaultType?: string | null;
+  submitLabel?: string;
+}) {
   const [state, action, pending] = useActionState<OnboardingState, FormData>(
     completeOnboarding,
     {},
@@ -65,7 +74,12 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
                 type="radio"
                 name="collegeType"
                 value={type.value}
-                defaultChecked={index === 0}
+                // Falls back to the first option only when nothing was chosen
+                // before, so revisiting shows the real answer rather than a
+                // default that looks like one.
+                defaultChecked={
+                  defaultType ? type.value === defaultType : index === 0
+                }
                 required
                 className="mt-0.5 h-4 w-4 accent-brand-ink"
               />
@@ -91,7 +105,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
         disabled={pending}
         className="w-full rounded-xl bg-brand-ink px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand disabled:opacity-50"
       >
-        {pending ? "Saving…" : "Continue"}
+        {pending ? "Saving…" : submitLabel}
       </button>
     </form>
   );
