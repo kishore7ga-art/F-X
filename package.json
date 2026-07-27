@@ -15,7 +15,9 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "check:shared": "node scripts/check-shared-files.mjs",
+    "prebuild": "node scripts/check-shared-files.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",
