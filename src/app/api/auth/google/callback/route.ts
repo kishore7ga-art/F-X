@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { STATE_COOKIE } from "@/app/api/auth/google/start/route";
 import { createSessionToken, COOKIE_NAME, sessionCookieOptions } from "@/lib/auth/session";
-import { exchangeCode, googleEnabled } from "@/lib/auth/google";
+import { appOrigin, exchangeCode, googleEnabled } from "@/lib/auth/google";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ const NO_STORE = { "Cache-Control": "no-store, must-revalidate" };
 
 /** Sign-in failures land back on /login carrying a readable reason. */
 function back(request: Request, reason: string) {
-  const url = new URL("/login", new URL(request.url).origin);
+  const url = new URL("/login", appOrigin(request));
   url.searchParams.set("error", reason);
   const response = NextResponse.redirect(url, { headers: NO_STORE });
   // The attempt is over either way; a stale state would only fail the next one.
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
     // Into step 2, the same as every other way in. Jumping a signed-in college
     // straight to its editor made the route out of sign-in depend on how far
     // along it was, which is two flows wearing one name.
-    const response = NextResponse.redirect(new URL("/onboarding", url.origin), {
+    const response = NextResponse.redirect(new URL("/onboarding", appOrigin(request)), {
       headers: NO_STORE,
     });
 

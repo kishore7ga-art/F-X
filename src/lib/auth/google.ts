@@ -27,15 +27,39 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? "";
 export const googleEnabled = Boolean(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET);
 
 /**
+ * The origin a browser actually reached us on.
+ *
+ * `new URL(request.url).origin` is the *container's* address behind a reverse
+ * proxy — localhost:3000 on Dokploy — so redirecting to it sends the browser
+ * somewhere that does not exist outside the container. Every redirect out of
+ * sign-in has to be built from the public origin instead.
+ *
+ * APP_URL first because it is unambiguous; the forwarded headers next, so this
+ * still works when nobody set it; request.url last, which is right only when
+ * there is no proxy at all.
+ */
+export function appOrigin(request: Request): string {
+  const configured = process.env.APP_URL?.replace(/\/$/, "");
+  if (configured) return configured;
+
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) {
+    const proto = request.headers.get("x-forwarded-proto") ?? "https";
+    return `${proto}://${host}`;
+  }
+
+  return new URL(request.url).origin;
+}
+
+/**
  * Where Google sends the browser back.
  *
  * Must match a URI registered in the Google Cloud console exactly, including
  * scheme and trailing path — Google compares the whole string.
  */
 export function redirectUri(request: Request): string {
-  const configured = process.env.APP_URL?.replace(/\/$/, "");
-  const origin = configured || new URL(request.url).origin;
-  return `${origin}/api/auth/google/callback`;
+  return `${appOrigin(request)}/api/auth/google/callback`;
 }
 
 export function authorizationUrl(request: Request, state: string): string {
