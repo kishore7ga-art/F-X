@@ -1,12 +1,15 @@
-import { PrismaPg } from "@prisma/adapter-pg";
-
 import { PrismaClient } from "@/generated/prisma/client";
-import { createPool } from "@/lib/db-pool";
 
 function createPrismaClient() {
-  // Prisma 7 requires an explicit driver adapter — `new PrismaClient()` with no
-  // arguments throws. The pool is cloud-tuned; see db-pool.ts.
-  return new PrismaClient({ adapter: new PrismaPg(createPool()) });
+  /**
+   * No driver adapter. Prisma publishes none for MongoDB — the connector talks
+   * to the cluster itself, so the connection string is passed straight through
+   * and db-pool.ts (a `pg` Pool, TLS inference, connection caps) has nothing
+   * left to do here.
+   */
+  return new PrismaClient({
+    datasourceUrl: process.env.DATABASE_URL,
+  });
 }
 
 const globalForPrisma = globalThis as unknown as {

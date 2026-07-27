@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
 }
 
 enum CollegeStatus {
@@ -36,13 +36,13 @@ enum SectionType {
 }
 
 model College {
-  id             String        @id @default(cuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
   name           String
   subdomain      String        @unique
   customDomain   String?       @unique @map("custom_domain")
-  templateId     String?       @map("template_id")
-  themePaletteId String?       @map("theme_palette_id")
-  themeFontId    String?       @map("theme_font_id")
+  templateId     String?       @map("template_id") @db.ObjectId
+  themePaletteId String?       @map("theme_palette_id") @db.ObjectId
+  themeFontId    String?       @map("theme_font_id") @db.ObjectId
   status         CollegeStatus @default(DRAFT)
   /// What kind of institution this is, from onboarding — see
   /// src/lib/college-types.ts for the values and the template each opens with.
@@ -75,10 +75,10 @@ model College {
 /// Login accounts. A college can have several staff accounts; each account
 /// belongs to exactly one college, which is the tenant boundary.
 model User {
-  id           String   @id @default(cuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
   email        String   @unique
   passwordHash String   @map("password_hash")
-  collegeId    String   @map("college_id")
+  collegeId    String   @map("college_id") @db.ObjectId
   createdAt    DateTime @default(now()) @map("created_at")
 
   college College @relation(fields: [collegeId], references: [id], onDelete: Cascade)
@@ -88,7 +88,7 @@ model User {
 }
 
 model Template {
-  id           String  @id @default(cuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
   name         String  @unique
   description  String?
   thumbnailUrl String? @map("thumbnail_url")
@@ -102,8 +102,8 @@ model Template {
 
 /// Master list of section types available in a template.
 model Section {
-  id           String      @id @default(cuid())
-  templateId   String      @map("template_id")
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  templateId   String      @map("template_id") @db.ObjectId
   sectionType  SectionType @map("section_type")
   defaultOrder Int         @map("default_order")
   isRequired   Boolean     @default(false) @map("is_required")
@@ -126,8 +126,8 @@ model Section {
 
 /// Design variants cycled through by the editor's refresh (↻) button.
 model SectionVariant {
-  id           String @id @default(cuid())
-  sectionId    String @map("section_id")
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  sectionId    String @map("section_id") @db.ObjectId
   variantName  String @map("variant_name")
   componentKey String @map("component_key")
   /// Which variant a template leads with. The first in this order is the one a
@@ -147,13 +147,13 @@ model SectionVariant {
 /// Each college's actual configured sections. `content` is validated in app code
 /// by a per-section-type Zod schema (see src/lib/sections/schemas.ts).
 model CollegeSection {
-  id           String  @id @default(cuid())
-  collegeId    String  @map("college_id")
-  sectionId    String  @map("section_id")
-  variantId    String  @map("variant_id")
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  collegeId    String  @map("college_id") @db.ObjectId
+  sectionId    String  @map("section_id") @db.ObjectId
+  variantId    String  @map("variant_id") @db.ObjectId
   /// Which page this section renders on. Spec Section 5 derives a page's section
   /// list "from college_sections.display_order per page", which needs this link.
-  pageId       String? @map("page_id")
+  pageId       String? @map("page_id") @db.ObjectId
   displayOrder Int     @map("display_order")
   isVisible    Boolean @default(true) @map("is_visible")
   content      Json    @default("{}")
@@ -190,8 +190,8 @@ model CollegeSection {
 /// anyone will ever read them, and unbounded JSONB copies of a page's content
 /// is a storage bill, not a feature.
 model CollegeSectionHistory {
-  id               String   @id @default(cuid())
-  collegeSectionId String   @map("college_section_id")
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  collegeSectionId String   @map("college_section_id") @db.ObjectId
   contentSnapshot  Json     @map("content_snapshot")
   savedAt          DateTime @default(now()) @map("saved_at")
   /// What caused this save: typing / drag / color / font / image / delete /
@@ -205,7 +205,7 @@ model CollegeSectionHistory {
 }
 
 model ThemePalette {
-  id     String @id @default(cuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
   name   String @unique
   /// { primary, secondary, accent, dark, light }
   colors Json
@@ -216,7 +216,7 @@ model ThemePalette {
 }
 
 model ThemeFont {
-  id          String @id @default(cuid())
+  id String @id @default(auto()) @map("_id") @db.ObjectId
   name        String @unique
   headingFont String @map("heading_font")
   bodyFont    String @map("body_font")
@@ -227,8 +227,8 @@ model ThemeFont {
 }
 
 model Page {
-  id        String @id @default(cuid())
-  collegeId String @map("college_id")
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  collegeId String @map("college_id") @db.ObjectId
   slug      String
   title     String
   navOrder  Int    @default(0) @map("nav_order")
