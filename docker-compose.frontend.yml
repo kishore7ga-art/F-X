@@ -20,7 +20,13 @@ services:
       # A runtime environment entry alone reaches the server and never the
       # browser. Changing it requires a rebuild, not a restart.
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        # Defaults to the deployed backend rather than empty. An empty value is
+        # not a neutral default here — it silently means "same origin", so the
+        # browser talks to the frontend and the split looks broken with nothing
+        # in any log to say why. This file only exists for the setup where the
+        # backend is its own service on its own domain, so that domain is the
+        # honest default. Override in the dashboard for another environment.
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.xite.co.in}
     restart: unless-stopped
     # Traefik reaches this over the Docker network; set port 3000 in Domains.
     expose:
@@ -52,15 +58,14 @@ services:
       # SEED_ON_START=true once to populate it, then put them back.
       SKIP_MIGRATIONS: ${SKIP_MIGRATIONS:-true}
       SEED_ON_START: ${SEED_ON_START:-false}
-      # Empty keeps browser API calls same-origin, served by this container.
-      # Set to https://api.xite.co.in to send them to the backend instead —
-      # which then needs CORS_ORIGINS and cross-site cookies (see
-      # DEPLOY-SPLIT.md).
-      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+      # Kept alongside the build arg so the value is visible to anything
+      # server-side that reads it. The browser gets it from the build above —
+      # this line alone would never reach the client.
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.xite.co.in}
       # How this service reaches the backend privately, over the shared Docker
       # network — no public hop, no CORS, no cross-site cookie. Reported by
       # /api/health so "are the two connected?" is a fact rather than a guess.
-      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-}
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://xite-api:4000}
     volumes:
       - uploads:/app/public/uploads
     networks:
