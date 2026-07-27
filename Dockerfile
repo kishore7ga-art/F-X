@@ -30,6 +30,15 @@ COPY . .
 # loader; the real DATABASE_URL is injected at runtime by compose.
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 RUN npx prisma generate
+
+# NEXT_PUBLIC_* is inlined into the client bundle by `next build`, not read at
+# runtime. Passing it only as a runtime `environment:` value means the browser
+# never sees it: the code compiles to an empty base URL and every call falls
+# back to same-origin, no matter what the dashboard says. It has to be present
+# here, during the build, or not at all.
+ARG NEXT_PUBLIC_API_BASE_URL=""
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
 RUN npm run build
 
 # ---- runtime ----------------------------------------------------------------

@@ -16,6 +16,11 @@ services:
   app:
     build:
       context: .
+      # Build-time, because Next inlines NEXT_PUBLIC_* into the client bundle.
+      # A runtime environment entry alone reaches the server and never the
+      # browser. Changing it requires a rebuild, not a restart.
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
     restart: unless-stopped
     # Traefik reaches this over the Docker network; set port 3000 in Domains.
     expose:

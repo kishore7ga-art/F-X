@@ -12,6 +12,11 @@ services:
   app:
     build:
       context: .
+      # Build-time, because Next inlines NEXT_PUBLIC_* into the client bundle.
+      # A runtime environment entry alone reaches the server and never the
+      # browser. Changing it requires a rebuild, not a restart.
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
     restart: unless-stopped
     # NOT published to the host. Dokploy's own dashboard occupies host port
     # 3000, so `ports: - "3000:3000"` fails with "port is already allocated"
