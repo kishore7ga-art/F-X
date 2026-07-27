@@ -140,6 +140,10 @@ export async function GET() {
         code,
         host,
         auth: AUTH_DISABLED ? "open" : "required",
+        // Reported on this branch too. A database outage is exactly when you
+        // need to know whether the two services can still see each other —
+        // omitting it here meant the field vanished the moment it mattered.
+        backend: await backendStatus(),
         hint: DATABASE_FAILURE_HINTS[kind],
         databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
       },
