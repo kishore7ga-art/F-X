@@ -11,6 +11,7 @@ import {
   templateNameFor,
 } from "@/lib/college-types";
 import { prisma } from "@/lib/db";
+import { isUntouched, personalize } from "@/lib/sections/personalize";
 import { isDatabaseUnavailable, DATABASE_UNAVAILABLE_MESSAGE } from "@/lib/db-errors";
 
 export type OnboardingState = { error?: string };
@@ -88,7 +89,12 @@ export async function completeOnboarding(
   try {
     const college = await prisma.college.findUnique({
       where: { id: session.collegeId },
-      select: { id: true, subdomain: true, _count: { select: { sections: true } } },
+      select: {
+        id: true,
+        name: true,
+        subdomain: true,
+        _count: { select: { sections: true } },
+      },
     });
     if (!college) return { error: "College not found" };
 
@@ -100,6 +106,8 @@ export async function completeOnboarding(
         ? await availableSubdomain(parsed.data.collegeName)
         : college.subdomain;
 
+    const previousName = college.name;
+
     await prisma.college.update({
       where: { id: college.id },
       data: {
@@ -108,6 +116,14 @@ export async function completeOnboarding(
         subdomain,
       },
     });
+
+    if (previousName !== parsed.data.collegeName) {
+      await renameThroughStarterCopy(
+        college.id,
+        previousName,
+        parsed.data.collegeName,
+      );
+    }
   } catch (cause) {
     if (isDatabaseUnavailable(cause)) {
       console.error("[onboarding] database unavailable");
@@ -117,6 +133,41 @@ export async function completeOnboarding(
   }
 
   redirect("/start");
+}
+
+/**
+ * Carries a new college name into the sections still showing starter copy.
+ *
+ * Answering "what is your college called" and then finding the old name across
+ * the site makes the answer look ignored. Provisioning substitutes the name
+ * once, at creation — so without this, changing it later fixes the heading in
+ * the dashboard and nothing on the page.
+ *
+ * Only sections byte-identical to their template's starter copy are touched. A
+ * section somebody has edited keeps every word of it, even the name: they may
+ * have written it deliberately, and no automatic tidy-up is worth overwriting a
+ * sentence a person typed.
+ */
+async function renameThroughStarterCopy(
+  collegeId: string,
+  previousName: string,
+  nextName: string,
+) {
+  const rows = await prisma.collegeSection.findMany({
+    where: { collegeId },
+    include: { section: { select: { defaultContent: true } } },
+  });
+
+  for (const row of rows) {
+    const starter = row.section.defaultContent;
+    if (!starter) continue;
+    if (!isUntouched(row.content, starter, previousName)) continue;
+
+    await prisma.collegeSection.update({
+      where: { id: row.id },
+      data: { content: personalize(starter, nextName) as never },
+    });
+  }
 }
 
 /**

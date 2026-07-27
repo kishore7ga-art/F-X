@@ -7,6 +7,7 @@ import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { stableStringify } from "@/lib/json-stable";
 import { defaultContentFor } from "@/lib/sections/defaults";
+import { personalize } from "@/lib/sections/personalize";
 import {
   isSupportedSectionType,
   parseSectionContent,
@@ -198,8 +199,11 @@ export async function addSection(input: z.infer<typeof addSchema>) {
         variantId,
         displayOrder: afterOrder + 1,
         isVisible: true,
-        content: (section.defaultContent ??
-          defaultContentFor(section.sectionType, college.name)) as never,
+        content: personalize(
+          section.defaultContent ??
+            defaultContentFor(section.sectionType, college.name),
+          college.name,
+        ) as never,
       },
     }),
   ]);

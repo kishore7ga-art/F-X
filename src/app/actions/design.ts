@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { defaultContentFor } from "@/lib/sections/defaults";
+import { personalize } from "@/lib/sections/personalize";
 import { isSupportedSectionType } from "@/lib/sections/schemas";
 import { DEFAULT_PAGES } from "@/lib/site/starter";
 
@@ -225,10 +226,13 @@ function starterContent(
   section: { sectionType: string; defaultContent?: unknown },
   collegeName: string,
 ) {
-  return (
+  const starter =
     (section.defaultContent as object | null) ??
-    defaultContentFor(section.sectionType as never, collegeName)
-  );
+    defaultContentFor(section.sectionType as never, collegeName);
+
+  // The token only exists in the template's copy; substituting it here is what
+  // puts the college's own name on the page it just created.
+  return personalize(starter, collegeName);
 }
 
 /** Creates the default pages and a starter set of sections for a new site. */

@@ -6,6 +6,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { createPool } from "../src/lib/db-pool";
 import { COLLEGE_TYPES } from "../src/lib/college-types";
+import { COLLEGE_NAME_TOKEN } from "../src/lib/sections/personalize";
 import { stableStringify } from "../src/lib/json-stable";
 import { defaultContentFor } from "../src/lib/sections/defaults";
 import { DEMO_LOGIN } from "../src/lib/auth/demo";
@@ -469,9 +470,15 @@ async function seedReferenceData() {
   const templates = [];
 
   for (const spec of TEMPLATES) {
-    // The same copy the template's demo site shows, so "Start with this
-    // design" delivers what the gallery promised.
-    const templateContent = contentFor(spec.demo);
+    // The demo site keeps its own identity; the starter copy every college
+    // receives carries a token where the name goes, plus neutral contact
+    // details, so a new site opens as itself rather than as Greenfield.
+    const templateContent = contentFor({
+      ...spec.demo,
+      collegeName: COLLEGE_NAME_TOKEN,
+      city: "Your city, State 000000",
+      domain: "yourcollege.edu",
+    });
 
     const template = await prisma.template.upsert({
       where: { name: spec.name },
