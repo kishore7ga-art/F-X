@@ -36,6 +36,11 @@ services:
       DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      # Named here or compose drops them: variables set in a dashboard are used
+      # for ${...} interpolation and then discarded unless listed.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APP_URL: ${APP_URL:-}
       # Only this container migrates and seeds. Two containers racing
       # `prisma migrate deploy` against one database is how you get a half
       # applied schema.
@@ -61,6 +66,11 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
       AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      # Named here or compose drops them: variables set in a dashboard are used
+      # for ${...} interpolation and then discarded unless listed.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APP_URL: ${APP_URL:-}
       # This container must not migrate or seed — the backend already did.
       SKIP_MIGRATIONS: "true"
       SEED_ON_START: "false"

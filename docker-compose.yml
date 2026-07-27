@@ -50,6 +50,11 @@ services:
       MIGRATE_FAIL_FAST: ${MIGRATE_FAIL_FAST:-false}
       SEED_ON_START: ${SEED_ON_START:-true}
       AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      # Named here or compose drops them: variables set in a dashboard are used
+      # for ${...} interpolation and then discarded unless listed.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APP_URL: ${APP_URL:-}
       OPEN_ACCESS_SUBDOMAIN: ${OPEN_ACCESS_SUBDOMAIN:-main}
       OPEN_ACCESS_COLLEGE_NAME: ${OPEN_ACCESS_COLLEGE_NAME:-My College}
     volumes:
