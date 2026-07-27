@@ -3,12 +3,13 @@
 // so the physical schema reads exactly like the spec draft.
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 enum CollegeStatus {

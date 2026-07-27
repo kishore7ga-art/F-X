@@ -1,4 +1,4 @@
-import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@/generated/prisma";
 
 function createPrismaClient() {
   /**
@@ -7,9 +7,10 @@ function createPrismaClient() {
    * and db-pool.ts (a `pg` Pool, TLS inference, connection caps) has nothing
    * left to do here.
    */
-  return new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
-  });
+  // Prisma 6 reads the connection string from the datasource block, which
+  // takes env("DATABASE_URL"). No driver adapter: none exists for MongoDB, and
+  // the connector talks to the cluster itself.
+  return new PrismaClient();
 }
 
 const globalForPrisma = globalThis as unknown as {

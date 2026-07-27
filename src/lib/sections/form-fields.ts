@@ -1,4 +1,4 @@
-import { SectionType } from "@/generated/prisma/enums";
+import { SectionType } from "@/generated/prisma";
 import type { SupportedSectionType } from "@/lib/sections/schemas";
 
 /**

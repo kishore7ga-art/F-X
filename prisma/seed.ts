@@ -1,25 +1,22 @@
 import "dotenv/config";
 
 import bcrypt from "bcryptjs";
-import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "../src/generated/prisma/client";
-import { createPool } from "../src/lib/db-pool";
+import { PrismaClient } from "../src/generated/prisma";
 import { COLLEGE_TYPES } from "../src/lib/college-types";
 import { COLLEGE_NAME_TOKEN } from "../src/lib/sections/personalize";
 import { stableStringify } from "../src/lib/json-stable";
 import { defaultContentFor } from "../src/lib/sections/defaults";
 import { DEMO_LOGIN } from "../src/lib/auth/demo";
-import { CollegeStatus, SectionType } from "../src/generated/prisma/enums";
+import { CollegeStatus, SectionType } from "../src/generated/prisma";
 import {
   parseSectionContent,
   type SupportedSectionType,
 } from "../src/lib/sections/schemas";
 
-// Same cloud-tuned pool the app uses, so seeding works against a managed
-// database (TLS) as well as local Postgres.
-const pool = createPool();
-const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+// The MongoDB connector manages its own connections; the connection string
+// comes from the datasource block, which reads DATABASE_URL.
+const prisma = new PrismaClient();
 
 const PALETTES = [
   {
@@ -807,5 +804,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-    await pool.end();
   });
