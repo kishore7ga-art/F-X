@@ -42,7 +42,18 @@ export default async function StartPage() {
           Either way you land in the same editor, and you can change the design
           afterwards without losing a word.
         </p>
-        <p className="mt-2 text-sm text-brand-ink/45">
+        {/* The address is shown because onboarding can change it: naming the
+            college derives a new subdomain while the site is still empty. That
+            happened silently, and someone who had bookmarked the old one found
+            a 404 with nothing explaining where it went. */}
+        <p className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-lg bg-brand-mist px-3 py-2 text-sm text-brand-ink/60">
+          <span className="font-semibold text-brand-ink">Your address</span>
+          <code className="rounded bg-white px-2 py-0.5 text-[13px]">
+            /site/{college.subdomain}
+          </code>
+        </p>
+
+        <p className="mt-3 text-sm text-brand-ink/45">
           Not right?{" "}
           <Link
             href="/onboarding"

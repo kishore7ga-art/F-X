@@ -54,7 +54,6 @@ export default async function TemplateThemePickerPage({
         href={`https://fonts.googleapis.com/css2?${previewFamilies}&display=swap`}
       />
       <ThemePicker
-        collegeId={college.id}
         subdomain={college.subdomain}
         template={{
           id: template.id,

@@ -24,7 +24,6 @@ import {
 } from "@/lib/theme/preview-message";
 
 type ThemePickerProps = {
-  collegeId: string;
   subdomain: string;
   template: {
     id: string;
@@ -41,7 +40,6 @@ type ThemePickerProps = {
 
 /** Screen 2 — template preview with theme selection. */
 export function ThemePicker({
-  collegeId,
   subdomain,
   template,
   palettes,
