@@ -52,6 +52,10 @@ services:
       # which then needs CORS_ORIGINS and cross-site cookies (see
       # DEPLOY-SPLIT.md).
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+      # How this service reaches the backend privately, over the shared Docker
+      # network — no public hop, no CORS, no cross-site cookie. Reported by
+      # /api/health so "are the two connected?" is a fact rather than a guess.
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-}
     volumes:
       - uploads:/app/public/uploads
     networks:

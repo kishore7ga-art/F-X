@@ -12,6 +12,62 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 /**
+ * Can this service reach the backend?
+ *
+ * Reported rather than assumed. "Are the two talking?" has been guesswork all
+ * day, answerable only by reading container logs — and a 502 from the browser
+ * says nothing about whether the frontend can see the API privately, which is
+ * a different question with a different fix.
+ *
+ * Unset means not split: this deployment serves its own /api/v1 and there is
+ * no second service to reach.
+ */
+function transportCode(error: unknown): string {
+  const cause = (error as { cause?: { code?: string } } | null)?.cause;
+  if (cause?.code) return cause.code;
+  const name = (error as Error | null)?.name;
+  return name && name !== "TypeError" ? name : "unreachable";
+}
+
+async function backendStatus() {
+  const base = (
+    process.env.BACKEND_INTERNAL_URL ??
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    ""
+  ).replace(/\/$/, "");
+
+  if (!base) return { configured: false as const };
+
+  const startedAt = Date.now();
+  try {
+    // Short deadline: this is a health probe, not a request anyone is waiting
+    // on. A backend that takes three seconds to answer is already the finding.
+    const response = await fetch(`${base}/api/health`, {
+      signal: AbortSignal.timeout(3000),
+      cache: "no-store",
+    });
+    return {
+      configured: true as const,
+      url: base,
+      reachable: response.ok,
+      status: response.status,
+      latencyMs: Date.now() - startedAt,
+    };
+  } catch (error) {
+    return {
+      configured: true as const,
+      url: base,
+      reachable: false,
+      // fetch wraps every transport failure as a bare TypeError, which says
+      // nothing — the syscall underneath is the whole diagnosis. ENOTFOUND is
+      // the wrong hostname, ECONNREFUSED the wrong port, TimeoutError an
+      // unroutable network, and those need three different fixes.
+      error: transportCode(error),
+    };
+  }
+}
+
+/**
  * Operational health check: `GET /api/health`.
  *
  * Exists so a failing deployment can be diagnosed from a browser, without
@@ -53,6 +109,7 @@ export async function GET() {
       host,
       auth: AUTH_DISABLED ? "open" : "required",
       templates,
+      backend: await backendStatus(),
       latencyMs: Date.now() - startedAt,
     });
   } catch (error) {
