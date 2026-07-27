@@ -48,16 +48,51 @@ export function SectionBlock({
       </div>
 
       {/*
-        Transparent click target covering the section body. An overlay rather
-        than a wrapping <button> because sections contain their own links and
-        form controls, which may not be nested inside a button — and inside the
+        Transparent target covering the section body. An overlay rather than a
+        wrapping <button> because sections contain their own links and form
+        controls, which may not be nested inside a button — and inside the
         editor those controls should not be clickable anyway.
+
+        Right-click opens the editor, leaving left-click free for inline
+        interactions inside the section later. Right-click does not exist on
+        touch, so a long press does the same thing, and the button stays
+        keyboard-reachable because an affordance nobody can tab to is not one.
       */}
       <button
         type="button"
-        onClick={() => selectSection(isSelected ? null : section.id)}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          selectSection(section.id, { x: event.clientX, y: event.clientY });
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          const box = event.currentTarget.getBoundingClientRect();
+          selectSection(isSelected ? null : section.id, {
+            x: box.left + 24,
+            y: box.top + 24,
+          });
+        }}
+        onPointerDown={(event) => {
+          if (event.pointerType !== "touch") return;
+          const { clientX: x, clientY: y } = event;
+          const timer = setTimeout(
+            () => selectSection(section.id, { x, y }),
+            450,
+          );
+          const cancel = () => {
+            clearTimeout(timer);
+            event.currentTarget?.removeEventListener("pointerup", cancel);
+            event.currentTarget?.removeEventListener("pointercancel", cancel);
+            event.currentTarget?.removeEventListener("pointermove", cancel);
+          };
+          event.currentTarget.addEventListener("pointerup", cancel);
+          event.currentTarget.addEventListener("pointercancel", cancel);
+          event.currentTarget.addEventListener("pointermove", cancel);
+        }}
         aria-label={`Edit ${section.label} content`}
-        className="absolute inset-0 z-10 h-full w-full cursor-pointer"
+        title="Right-click to edit this section"
+        className="absolute inset-0 z-10 h-full w-full cursor-context-menu"
       />
 
       {/* Left edge — reorder */}

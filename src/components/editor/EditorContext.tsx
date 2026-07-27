@@ -10,7 +10,11 @@ export type EditorContextValue = {
   sections: EditorSection[];
   addableSections: AddableSection[];
   selectedSectionId: string | null;
-  selectSection: (id: string | null) => void;
+  /**
+   * Opens the edit popup for a section. The point is where it was invoked, so
+   * the form appears at the cursor rather than in a fixed corner.
+   */
+  selectSection: (id: string | null, at?: { x: number; y: number }) => void;
   isPending: boolean;
   /** Runs a server action, surfacing failures instead of swallowing them. */
   run: (action: () => Promise<void>) => void;

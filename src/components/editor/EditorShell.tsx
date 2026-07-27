@@ -9,12 +9,20 @@ import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
 import { EditorContextProvider } from "@/components/editor/EditorContext";
 import { PageTabs } from "@/components/editor/PageTabs";
 import { PublishToggle } from "@/components/editor/PublishToggle";
-import { SectionContentForm } from "@/components/editor/SectionContentForm";
+import {
+  SectionEditPopup,
+  type PopupAnchor,
+} from "@/components/editor/SectionEditPopup";
 import type { EditorPageData } from "@/lib/editor/queries";
 
 /**
- * Screen 3 frame: page tabs on top, the live-rendered site as stacked section
- * blocks in the middle, and the content form in a right-hand panel.
+ * Screen 3 frame: page tabs on top and the live-rendered site as stacked
+ * section blocks filling the width beneath them.
+ *
+ * The edit form is a popup opened on the section it belongs to, not a panel
+ * alongside it — a sidebar that took a third of the canvas and stayed until
+ * dismissed meant the page was squeezed for exactly as long as you were
+ * looking at it.
  */
 export function EditorShell({
   data,
@@ -35,6 +43,9 @@ export function EditorShell({
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
   );
+  // Where the popup opens. Held beside the selection rather than inside it so
+  // the same section can be reopened at a different point.
+  const [anchor, setAnchor] = useState<PopupAnchor | null>(null);
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -62,7 +73,10 @@ export function EditorShell({
         sections,
         addableSections,
         selectedSectionId,
-        selectSection: setSelectedSectionId,
+        selectSection: (id, at) => {
+          setSelectedSectionId(id);
+          if (at) setAnchor(at);
+        },
         isPending,
         run,
       }}
@@ -139,46 +153,35 @@ export function EditorShell({
           </p>
         ) : null}
 
-        <div className="grid min-h-0 flex-1 lg:grid-cols-[1fr_380px]">
-          <div className="min-h-0 overflow-y-auto p-5">
-            <div className="mx-auto max-w-5xl overflow-hidden rounded-xl border bg-white shadow-sm">
-              {sections.length > 0 ? (
-                children
-              ) : (
-                <EmptyPage pageTitle={currentPage.title} />
-              )}
-            </div>
+        {/* The canvas is the whole width now. The edit form is a popup that
+            opens where it was asked for, rather than a panel that squeezed the
+            thing being edited for as long as it was open. */}
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          <div className="mx-auto max-w-5xl overflow-hidden rounded-xl border bg-white shadow-sm">
+            {sections.length > 0 ? (
+              children
+            ) : (
+              <EmptyPage pageTitle={currentPage.title} />
+            )}
           </div>
 
-          <aside className="min-h-0 overflow-hidden border-l bg-white lg:block">
-            {selectedSection ? (
-              <SectionContentForm
-                // Remount per section rather than resyncing state inside an
-                // effect: the form's state IS the section being edited, so a
-                // different section is a different form.
-                key={selectedSection.id}
-                section={selectedSection}
-                onClose={() => setSelectedSectionId(null)}
-              />
-            ) : (
-              <div className="p-6 text-sm text-black/45">
-                <p className="font-semibold text-black/70">
-                  Click a section to edit it
-                </p>
-                <ul className="mt-3 space-y-1.5 text-xs leading-relaxed">
-                  <li>▲ ▼ — reorder a section within this page</li>
-                  <li>↻ — swap the design, keeping your content</li>
-                  <li>◉ — show or hide the section</li>
-                  <li>+ — insert a new section below</li>
-                  <li className="pt-1.5">
-                    ↻ Try another template (top bar) — swaps every section at
-                    once, keeping your content and colours
-                  </li>
-                </ul>
-              </div>
-            )}
-          </aside>
+          <p className="mx-auto mt-4 max-w-5xl text-center text-xs text-black/40">
+            Right-click a section to edit it · ▲▼ reorder · ↻ swap design · ◉
+            show or hide · + add below
+          </p>
         </div>
+
+        {selectedSection && anchor ? (
+          <SectionEditPopup
+            // Remount per section rather than resyncing state inside an
+            // effect: the form's state IS the section being edited, so a
+            // different section is a different form.
+            key={selectedSection.id}
+            section={selectedSection}
+            anchor={anchor}
+            onClose={() => setSelectedSectionId(null)}
+          />
+        ) : null}
       </div>
     </EditorContextProvider>
   );
