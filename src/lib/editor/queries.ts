@@ -1,5 +1,5 @@
 import { SECTION_TYPE_LABELS } from "@/components/sections/registry";
-import { prisma } from "@/lib/db";
+import { serverApi } from "@/lib/api/server";
 import {
   isSupportedSectionType,
   type SupportedSectionType,
@@ -62,111 +62,87 @@ export type EditorPageData = {
   };
   sections: EditorSection[];
   addableSections: AddableSection[];
+  /** Whether there is more than one design to cycle through. */
+  templateCount: number;
 };
 
-/** Everything the section editor needs for one page of one college. */
+/** What `GET /api/v1/editor/:subdomain` answers with. */
+type EditorPayload = Omit<
+  EditorPageData,
+  "theme" | "sections" | "addableSections"
+> & {
+  theme: {
+    paletteColors: unknown;
+    headingFont: string | null;
+    bodyFont: string | null;
+  };
+  sections: (Omit<EditorSection, "label" | "sectionType"> & {
+    sectionType: string;
+  })[];
+  addableSections: { sectionId: string; sectionType: string }[];
+};
+
+/**
+ * Everything the section editor needs for one page of one college.
+ *
+ * The query behind this ran here, against the frontend's own database
+ * connection — a second copy of the same credential, which is one more place
+ * for it to be wrong than the data is worth. The backend owns it now.
+ *
+ * Labels and the theme are assembled on this side on purpose. Both are how the
+ * data is *shown*, the registry and palette parser already live here, and
+ * shipping either to the backend would mean a tenth file kept in step across
+ * two repos by hand.
+ */
 export async function getEditorPage(
   subdomain: string,
   pageSlug?: string,
 ): Promise<EditorPageData | null> {
-  const college = await prisma.college.findUnique({
-    where: { subdomain },
-    include: {
-      themePalette: true,
-      themeFont: true,
-      template: {
-        include: {
-          sections: {
-            orderBy: { defaultOrder: "asc" },
-            include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
-          },
-        },
-      },
-      pages: { orderBy: { navOrder: "asc" } },
-    },
-  });
+  const query = pageSlug ? `?page=${encodeURIComponent(pageSlug)}` : "";
+  const payload = await serverApi<EditorPayload>(
+    `/api/v1/editor/${encodeURIComponent(subdomain)}${query}`,
+  );
+  if (!payload) return null;
 
-  if (!college) return null;
-
-  const currentPage = pageSlug
-    ? college.pages.find((page) => page.slug === pageSlug)
-    : college.pages[0];
-
-  if (!currentPage) return null;
-
-  // Hidden sections are included — the editor must be able to switch them on.
-  const rows = await prisma.collegeSection.findMany({
-    where: { collegeId: college.id, pageId: currentPage.id },
-    orderBy: { displayOrder: "asc" },
-    include: {
-      section: { include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } } },
-      variant: true,
-    },
-  });
-
+  // The backend filters to supported types already; this narrows the string it
+  // sends back to the union, and drops anything a version skew leaves unknown
+  // rather than rendering a section with no label.
   const sections: EditorSection[] = [];
-  for (const row of rows) {
-    if (!isSupportedSectionType(row.section.sectionType)) continue;
+  for (const section of payload.sections) {
+    if (!isSupportedSectionType(section.sectionType)) continue;
     sections.push({
-      id: row.id,
-      sectionId: row.sectionId,
-      sectionType: row.section.sectionType,
-      label: SECTION_TYPE_LABELS[row.section.sectionType],
-      variantId: row.variantId,
-      componentKey: row.variant.componentKey,
-      variantName: row.variant.variantName,
-      displayOrder: row.displayOrder,
-      isVisible: row.isVisible,
-      content: row.content,
-      lastSavedAt: row.lastSavedAt?.toISOString() ?? null,
-      variants: row.section.variants.map((v) => ({
-        id: v.id,
-        variantName: v.variantName,
-        componentKey: v.componentKey,
-      })),
+      ...section,
+      sectionType: section.sectionType,
+      label: SECTION_TYPE_LABELS[section.sectionType],
     });
   }
 
-  const addableSections: AddableSection[] = (college.template?.sections ?? [])
-    .filter(
-      (section) =>
-        isSupportedSectionType(section.sectionType) &&
-        section.variants.length > 0,
-    )
-    .map((section) => ({
-      sectionId: section.id,
-      sectionType: section.sectionType as SupportedSectionType,
-      label: SECTION_TYPE_LABELS[section.sectionType as SupportedSectionType],
-    }));
+  const addableSections: AddableSection[] = [];
+  for (const section of payload.addableSections) {
+    if (!isSupportedSectionType(section.sectionType)) continue;
+    addableSections.push({
+      sectionId: section.sectionId,
+      sectionType: section.sectionType,
+      label: SECTION_TYPE_LABELS[section.sectionType],
+    });
+  }
 
   return {
-    college: {
-      id: college.id,
-      name: college.name,
-      subdomain: college.subdomain,
-      status: college.status,
-      templateName: college.template?.name ?? null,
-    },
+    college: payload.college,
     theme: {
-      colors: parsePaletteColors(college.themePalette?.colors),
-      fonts: college.themeFont
-        ? {
-            headingFont: college.themeFont.headingFont,
-            bodyFont: college.themeFont.bodyFont,
-          }
-        : DEFAULT_FONTS,
+      colors: parsePaletteColors(payload.theme.paletteColors),
+      fonts:
+        payload.theme.headingFont && payload.theme.bodyFont
+          ? {
+              headingFont: payload.theme.headingFont,
+              bodyFont: payload.theme.bodyFont,
+            }
+          : DEFAULT_FONTS,
     },
-    pages: college.pages.map(({ id, slug, title }) => ({ id, slug, title })),
-    currentPage: {
-      id: currentPage.id,
-      slug: currentPage.slug,
-      metaTitle: currentPage.metaTitle,
-      metaDescription: currentPage.metaDescription,
-      ogImage: currentPage.ogImage,
-      canonicalSlug: currentPage.canonicalSlug,
-      title: currentPage.title,
-    },
+    pages: payload.pages,
+    currentPage: payload.currentPage,
     sections,
     addableSections,
+    templateCount: payload.templateCount,
   };
 }

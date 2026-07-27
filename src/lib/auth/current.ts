@@ -1,24 +1,60 @@
 import { redirect } from "next/navigation";
 
+import { serverApi, ServerApiError } from "@/lib/api/server";
 import { getSession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
-import { databaseErrorCode, isDatabaseUnavailable } from "@/lib/db-errors";
 
-/** The signed-in user's college, or null when signed out. */
-export async function getCurrentCollege() {
+/**
+ * The signed-in college, fetched from the backend.
+ *
+ * This queried the frontend's own Prisma client, which meant the database was
+ * configured in two services and either copy could be wrong by itself. One was:
+ * sign-in succeeded against the backend and every page after it failed here, so
+ * the product authenticated people onto a screen that could not load. There is
+ * one credential now, in the service that owns the data.
+ *
+ * `createdAt` arrives as an ISO string rather than a Date — it crossed JSON to
+ * get here. Nothing reads it as a Date today, and typing it honestly is better
+ * than reviving one that would be a lie in the general case.
+ */
+export type CurrentCollege = {
+  id: string;
+  name: string;
+  subdomain: string;
+  customDomain: string | null;
+  templateId: string | null;
+  themePaletteId: string | null;
+  themeFontId: string | null;
+  status: string;
+  collegeType: string | null;
+  isDemo: boolean;
+  createdAt: string;
+};
+
+export async function getCurrentCollege(): Promise<CurrentCollege | null> {
+  // The cookie is verified here first, so a signed-out visitor costs no round
+  // trip — and, more importantly, a backend that is down cannot make the login
+  // page look like a broken one.
   const session = await getSession();
   if (!session) return null;
 
-  return prisma.college.findUnique({ where: { id: session.collegeId } });
+  const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
+  return payload?.college ?? null;
+}
+
+/** Same, but sends signed-out visitors to the login screen. */
+export async function requireCurrentCollege() {
+  const college = await getCurrentCollege();
+  if (!college) redirect("/login");
+  return college;
 }
 
 /**
- * Same, but never throws — for the sign-in and sign-up screens.
+ * Same again, but never throws — for the sign-in and sign-up screens.
  *
  * Those two pages exist to get someone out of a bad state, so they are the two
- * that must render in one. A stale cookie plus an unreachable database made
+ * that must render in one. A stale cookie plus an unreachable backend made
  * `/login` answer 500: the lookup threw inside the server render, and the only
- * page that could have fixed the cookie was the page that crashed on it.
+ * page that could have cleared the cookie was the page that crashed on it.
  *
  * Treating the failure as "signed out" is right rather than merely convenient —
  * we could not confirm who this is, and the answer to that is the login form.
@@ -27,19 +63,12 @@ export async function getCurrentCollegeOrNull() {
   try {
     return await getCurrentCollege();
   } catch (cause) {
-    if (isDatabaseUnavailable(cause)) {
-      console.error(`[auth] college lookup failed (${databaseErrorCode(cause)})`);
+    if (cause instanceof ServerApiError) {
+      console.error(`[auth] could not resolve college: ${cause.message}`);
       return null;
     }
     throw cause;
   }
-}
-
-/** Same, but sends signed-out visitors to the login screen. */
-export async function requireCurrentCollege() {
-  const college = await getCurrentCollege();
-  if (!college) redirect("/login");
-  return college;
 }
 
 /**
