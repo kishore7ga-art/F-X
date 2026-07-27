@@ -12,10 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Prisma's generated client. Machine-written, regenerated on every build,
-    // and not ours to fix — the v6 MongoDB output ships CommonJS requires the
-    // TypeScript rules reject.
-    "src/generated/**",
   ]),
 ]);
 
