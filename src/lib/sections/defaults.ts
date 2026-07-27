@@ -1,4 +1,4 @@
-import { SectionType } from "@/generated/prisma";
+import { SectionType } from "@/generated/prisma/enums";
 import {
   parseSectionContent,
   type SupportedSectionType,

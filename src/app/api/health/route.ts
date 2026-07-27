@@ -89,9 +89,7 @@ export async function GET() {
   const host = target ? `${target.host}:${target.port}` : null;
 
   try {
-    // A cheap round trip that works on either engine. `SELECT 1` was raw SQL,
-    // which the MongoDB client does not have.
-    await prisma.template.count();
+    await prisma.$queryRawUnsafe("SELECT 1");
 
     // Seeding is deliberately non-fatal, so "connected" on its own can still
     // mean a site nobody can build: a reachable database with no templates to

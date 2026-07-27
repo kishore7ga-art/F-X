@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { CollegeStatus } from "@/generated/prisma";
+import { CollegeStatus } from "@/generated/prisma/enums";
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 

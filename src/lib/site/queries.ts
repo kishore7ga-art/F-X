@@ -8,7 +8,7 @@ import {
   type FontPack,
   type PaletteColors,
 } from "@/lib/theme/theme";
-import type { SectionType } from "@/generated/prisma";
+import type { SectionType } from "@/generated/prisma/enums";
 
 export type RenderableSection = {
   id: string;

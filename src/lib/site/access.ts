@@ -1,4 +1,4 @@
-import { CollegeStatus } from "@/generated/prisma";
+import { CollegeStatus } from "@/generated/prisma/enums";
 import { getSession } from "@/lib/auth/session";
 import type { SitePageData } from "@/lib/site/queries";
 

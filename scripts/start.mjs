@@ -178,22 +178,8 @@ if (SKIP_MIGRATIONS) {
 
 let migrated = false;
 for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-  console.log(
-    `[start] applying schema (attempt ${attempt}/${MAX_ATTEMPTS})`,
-  );
-  /**
-   * MongoDB has no migration history — `prisma migrate deploy` is not
-   * implemented for it, and would fail every attempt until the retries ran out
-   * and the app started against a schema nobody had created. `db push`
-   * reconciles the schema directly, which is the only mechanism the connector
-   * offers.
-   */
-  const isMongo = (process.env.DATABASE_URL ?? "").startsWith("mongodb");
-  const schemaCommand = isMongo
-    ? ["prisma", "db", "push", "--skip-generate", "--accept-data-loss"]
-    : ["prisma", "migrate", "deploy"];
-
-  if ((await run("npx", schemaCommand)) === 0) {
+  console.log(`[start] applying migrations (attempt ${attempt}/${MAX_ATTEMPTS})`);
+  if ((await run("npx", ["prisma", "migrate", "deploy"])) === 0) {
     migrated = true;
     break;
   }
