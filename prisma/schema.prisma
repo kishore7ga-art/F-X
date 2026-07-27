@@ -44,6 +44,16 @@ model College {
   themePaletteId String?       @map("theme_palette_id")
   themeFontId    String?       @map("theme_font_id")
   status         CollegeStatus @default(DRAFT)
+  /// What kind of institution this is, from onboarding — see
+  /// src/lib/college-types.ts for the values and the template each opens with.
+  ///
+  /// Nullable on purpose. Every college that exists today predates onboarding,
+  /// and backfilling a guess would be inventing an answer nobody gave. Code
+  /// reading this must treat null as "not asked yet", not as an error.
+  ///
+  /// A String rather than an enum: adding an institution type should be a seed
+  /// change, not a migration, and the set is expected to grow.
+  collegeType    String?       @map("college_type")
   /// A showcase site for a template, seeded and published so the gallery has
   /// something real to link to. Never handed to a visitor as their own site:
   /// open-access mode skips these when adopting a college, or the first person

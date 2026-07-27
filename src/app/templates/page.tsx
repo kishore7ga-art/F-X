@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { SiteImage } from "@/components/site/SiteImage";
 import { requireCurrentCollege } from "@/lib/auth/current";
@@ -11,7 +12,11 @@ export const dynamic = "force-dynamic";
  * has an entry point. Expands when a second template is added.
  */
 export default async function TemplateGalleryPage() {
-  await requireCurrentCollege();
+  // The gallery now hangs off /start rather than being the first screen, so a
+  // college that has not been asked its name and type yet is sent back to be
+  // asked. Arriving here directly would otherwise skip onboarding entirely.
+  const college = await requireCurrentCollege();
+  if (!college.collegeType) redirect("/onboarding");
 
   const templates = await prisma.template.findMany({
     orderBy: { name: "asc" },

@@ -32,12 +32,18 @@ export default async function HomePage() {
   const college = await getCurrentCollege();
 
   // Where "Edit Template" goes depends on how far along the visitor is: back
-  // into a site they have already built, to the gallery if they have a college
-  // but no design yet, or to sign-in when there is no session at all.
+  // into a site they have already built, to the choice screen once onboarding
+  // is done, to onboarding if it is not, and to sign-in with no session.
+  //
+  // It deliberately no longer jumps straight to /templates. Picking a design is
+  // now one of two options on /start, and landing on the gallery would hide the
+  // other one.
   const editHref = college
     ? college.templateId
       ? `/editor/${college.subdomain}`
-      : "/templates"
+      : college.collegeType
+        ? "/start"
+        : "/onboarding"
     : "/login";
 
   return (

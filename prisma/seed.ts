@@ -5,6 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 import { createPool } from "../src/lib/db-pool";
+import { COLLEGE_TYPES } from "../src/lib/college-types";
 import { stableStringify } from "../src/lib/json-stable";
 import { defaultContentFor } from "../src/lib/sections/defaults";
 import { DEMO_LOGIN } from "../src/lib/auth/demo";
@@ -573,8 +574,15 @@ async function seedDemoSites({
       palettes.find((p) => p.name === spec.demo.paletteName) ?? palettes[0];
     const font = fonts.find((f) => f.name === spec.demo.fontName) ?? fonts[0];
 
+    // The type this template serves, so a demo is a worked example of the
+    // onboarding mapping rather than an untyped row.
+    const servedType = COLLEGE_TYPES.find(
+      (type) => type.templateName === spec.name,
+    );
+
     const shared = {
       name: spec.demo.collegeName,
+      collegeType: servedType?.value ?? null,
       templateId: template.id,
       themePaletteId: palette.id,
       themeFontId: font.id,
