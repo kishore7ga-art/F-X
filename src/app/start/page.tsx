@@ -24,6 +24,11 @@ export default async function StartPage() {
 
   const type = collegeType(college.collegeType);
 
+  // A college that already has a design is here because /start is now the front
+  // door, not because it wants to start over. Getting back into its own editor
+  // should not require picking a template again.
+  const hasSite = Boolean(college.templateId);
+
   return (
     <main className="min-h-dvh bg-white">
       <div className="mx-auto max-w-4xl px-5 py-16 sm:py-24">
@@ -37,6 +42,23 @@ export default async function StartPage() {
           Either way you land in the same editor, and you can change the design
           afterwards without losing a word.
         </p>
+
+        {hasSite ? (
+          <Link
+            href={`/editor/${college.subdomain}`}
+            className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-brand-ink/15 bg-brand-mist/60 px-6 py-5 transition hover:-translate-y-0.5 hover:border-brand-ink/40"
+          >
+            <span>
+              <span className="block text-base font-bold text-brand-ink">
+                Continue editing your site
+              </span>
+              <span className="mt-0.5 block text-sm text-brand-ink/55">
+                Pick up where you left off at /{college.subdomain}
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-bold text-brand-ink">→</span>
+          </Link>
+        ) : null}
 
         <div className="mt-12 grid gap-6 md:grid-cols-2">
           {/* Build Site — we pick, from the type they gave us. */}

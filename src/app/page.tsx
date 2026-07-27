@@ -31,19 +31,18 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const college = await getCurrentCollege();
 
-  // Where "Edit Template" goes depends on how far along the visitor is: back
-  // into a site they have already built, to the choice screen once onboarding
-  // is done, to onboarding if it is not, and to sign-in with no session.
+  // The entry point is the flow, not a deep link past it. Checking templateId
+  // first sent anyone whose college already had a design straight to the
+  // editor, skipping onboarding entirely — which made /start and /onboarding
+  // unreachable from the front door for exactly the people who had never seen
+  // them.
   //
-  // It deliberately no longer jumps straight to /templates. Picking a design is
-  // now one of two options on /start, and landing on the gallery would hide the
-  // other one.
+  // Onboarding first, then the choice screen. /start carries a "continue
+  // editing" link, so a returning site is still one click away.
   const editHref = college
-    ? college.templateId
-      ? `/editor/${college.subdomain}`
-      : college.collegeType
-        ? "/start"
-        : "/onboarding"
+    ? college.collegeType
+      ? "/start"
+      : "/onboarding"
     : "/login";
 
   return (

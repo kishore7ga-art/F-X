@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function SignupPage() {
   const college = await getCurrentCollege();
   if (college) {
-    redirect(college.templateId ? `/editor/${college.subdomain}` : "/start");
+    redirect(college.collegeType ? "/start" : "/onboarding");
   }
 
   return (

@@ -28,7 +28,7 @@ export default async function LoginPage({
   }
 
   if (college) {
-    redirect(college.templateId ? `/editor/${college.subdomain}` : "/start");
+    redirect(college.collegeType ? "/start" : "/onboarding");
   }
 
   return (
