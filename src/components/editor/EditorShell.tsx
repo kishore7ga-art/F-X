@@ -9,6 +9,7 @@ import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
 import { EditorContextProvider } from "@/components/editor/EditorContext";
 import { PageTabs } from "@/components/editor/PageTabs";
 import { PublishToggle } from "@/components/editor/PublishToggle";
+import { PageToolsPanel } from "@/components/editor/PageToolsPanel";
 import {
   SectionEditPopup,
   type PopupAnchor,
@@ -46,6 +47,7 @@ export function EditorShell({
   // Where the popup opens. Held beside the selection rather than inside it so
   // the same section can be reopened at a different point.
   const [anchor, setAnchor] = useState<PopupAnchor | null>(null);
+  const [pageToolsOpen, setPageToolsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -118,6 +120,32 @@ export function EditorShell({
               >
                 Change design
               </Link>
+              {/* Page-level tools, distinct from a section popup: this edits
+                  how the page is described to something that never sees it. */}
+              <button
+                type="button"
+                onClick={() => setPageToolsOpen((open) => !open)}
+                aria-expanded={pageToolsOpen}
+                title={`Page settings and SEO for ${currentPage.title}`}
+                className={`grid h-[30px] w-[30px] place-items-center rounded-md border transition hover:bg-black/5 ${
+                  pageToolsOpen ? "border-black bg-black/5" : ""
+                }`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7.5 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1.5a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 3.2 7.5a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H7.6A1.6 1.6 0 0 0 8.7 1.7V1.5a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1.1h.2a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.4 1.1Z" />
+                </svg>
+                <span className="sr-only">Page settings</span>
+              </button>
               <Link
                 href={`/site/${college.subdomain}`}
                 target="_blank"
@@ -170,6 +198,14 @@ export function EditorShell({
             show or hide · + add below
           </p>
         </div>
+
+        {pageToolsOpen ? (
+          <PageToolsPanel
+            key={currentPage.id}
+            page={currentPage}
+            onClose={() => setPageToolsOpen(false)}
+          />
+        ) : null}
 
         {selectedSection && anchor ? (
           <SectionEditPopup

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { DraftBanner } from "@/components/site/DraftBanner";
 import { SiteView } from "@/components/site/SiteView";
 import { resolveSiteAccess } from "@/lib/site/access";
+import { buildPageMetadata } from "@/lib/site/metadata";
 import { getSitePage } from "@/lib/site/queries";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +14,11 @@ export async function generateMetadata({
 }: PageProps<"/site/[subdomain]/[pageSlug]">): Promise<Metadata> {
   const { subdomain, pageSlug } = await params;
   const data = await getSitePage(subdomain, pageSlug);
-  return {
-    title: data ? `${data.currentPage.title} — ${data.college.name}` : "Not found",
-  };
+  if (!data) return { title: "Not found" };
+
+  // Same builder as the home page: SEO set on an inner page must reach <head>
+  // there too, or the panel would only work on one of the four.
+  return buildPageMetadata(data, subdomain);
 }
 
 /** Any non-home page of a college's public site (About, Admissions, ...). */

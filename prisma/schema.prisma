@@ -233,6 +233,20 @@ model Page {
   title     String
   navOrder  Int    @default(0) @map("nav_order")
 
+  /// Per-page SEO, set from the editor's page tools.
+  ///
+  /// Separate nullable columns rather than one Json blob: these four are fixed,
+  /// typed, and rendered straight into <head>, so a shape that has to be parsed
+  /// and re-validated on every request buys nothing. All nullable — every page
+  /// that exists predates them, and null means "fall back to the page title",
+  /// not "unset and broken".
+  metaTitle       String? @map("meta_title")
+  metaDescription String? @map("meta_description")
+  ogImage         String? @map("og_image")
+  /// Overrides the URL search engines should treat as canonical. Defaults to
+  /// the page's own slug when empty.
+  canonicalSlug   String? @map("canonical_slug")
+
   college  College          @relation(fields: [collegeId], references: [id], onDelete: Cascade)
   sections CollegeSection[]
 

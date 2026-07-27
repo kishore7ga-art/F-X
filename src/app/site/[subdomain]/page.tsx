@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { DraftBanner } from "@/components/site/DraftBanner";
 import { SiteView } from "@/components/site/SiteView";
 import { resolveSiteAccess } from "@/lib/site/access";
+import { buildPageMetadata } from "@/lib/site/metadata";
 import { getSitePage } from "@/lib/site/queries";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,9 @@ export async function generateMetadata({
 }: PageProps<"/site/[subdomain]">): Promise<Metadata> {
   const { subdomain } = await params;
   const data = await getSitePage(subdomain);
-  return { title: data ? data.college.name : "Site not found" };
+  if (!data) return { title: "Site not found" };
+
+  return buildPageMetadata(data, subdomain);
 }
 
 /** Home page of a college's public site. */

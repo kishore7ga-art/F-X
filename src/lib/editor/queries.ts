@@ -50,7 +50,16 @@ export type EditorPageData = {
   };
   theme: { colors: PaletteColors; fonts: FontPack };
   pages: { id: string; slug: string; title: string }[];
-  currentPage: { id: string; slug: string; title: string };
+  currentPage: {
+    id: string;
+    slug: string;
+    title: string;
+    /** Per-page SEO, edited from the page tools panel. */
+    metaTitle: string | null;
+    metaDescription: string | null;
+    ogImage: string | null;
+    canonicalSlug: string | null;
+  };
   sections: EditorSection[];
   addableSections: AddableSection[];
 };
@@ -151,6 +160,10 @@ export async function getEditorPage(
     currentPage: {
       id: currentPage.id,
       slug: currentPage.slug,
+      metaTitle: currentPage.metaTitle,
+      metaDescription: currentPage.metaDescription,
+      ogImage: currentPage.ogImage,
+      canonicalSlug: currentPage.canonicalSlug,
       title: currentPage.title,
     },
     sections,

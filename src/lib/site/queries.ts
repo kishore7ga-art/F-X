@@ -27,6 +27,14 @@ export type SiteNavPage = {
   title: string;
 };
 
+/** What the public page renders into <head>. */
+export type SiteSeo = {
+  metaTitle: string | null;
+  metaDescription: string | null;
+  ogImage: string | null;
+  canonicalSlug: string | null;
+};
+
 export type SitePageData = {
   college: {
     id: string;
@@ -37,6 +45,7 @@ export type SitePageData = {
   theme: { colors: PaletteColors; fonts: FontPack };
   pages: SiteNavPage[];
   currentPage: SiteNavPage;
+  seo: SiteSeo;
   sections: RenderableSection[];
 };
 
@@ -100,6 +109,12 @@ export async function getSitePage(
       id: currentPage.id,
       slug: currentPage.slug,
       title: currentPage.title,
+    },
+    seo: {
+      metaTitle: currentPage.metaTitle,
+      metaDescription: currentPage.metaDescription,
+      ogImage: currentPage.ogImage,
+      canonicalSlug: currentPage.canonicalSlug,
     },
     sections: collegeSections.map((row) => ({
       id: row.id,
@@ -196,6 +211,12 @@ export async function getTemplatePreview(
     },
     pages,
     currentPage: pages[0],
+    seo: {
+      metaTitle: null,
+      metaDescription: null,
+      ogImage: null,
+      canonicalSlug: null,
+    },
     sections,
   };
 }
