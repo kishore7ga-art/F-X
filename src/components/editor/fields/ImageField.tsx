@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 
 import { SiteImage } from "@/components/site/SiteImage";
+import { uploadImage } from "@/lib/api-client";
 
 export function ImageField({
   label,
@@ -21,17 +22,10 @@ export function ImageField({
     setError(null);
     setUploading(true);
     try {
-      const body = new FormData();
-      body.append("file", file);
-      const response = await fetch("/api/uploads", { method: "POST", body });
-      const payload = (await response.json()) as {
-        url?: string;
-        error?: string;
-      };
-      if (!response.ok || !payload.url) {
-        throw new Error(payload.error ?? "Upload failed");
-      }
-      onChange(payload.url);
+      // Through the API client, so the upload goes to the backend like every
+      // other call rather than to an endpoint this app no longer serves.
+      const { url } = await uploadImage(file);
+      onChange(url);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Upload failed");
     } finally {

@@ -108,6 +108,51 @@ export const fetchSectionHistory = (id: string) =>
     }[];
   }>(`/api/v1/sections/${requireId(id)}`);
 
+/**
+ * Uploads an image to the backend.
+ *
+ * multipart, so it does not go through `api()` — that sets a JSON content type
+ * and would strip the multipart boundary the server needs to parse the body.
+ */
+export async function uploadImage(file: File): Promise<{ url: string }> {
+  const body = new FormData();
+  body.append("file", file);
+
+  const startedAt = performance.now();
+  const response = await fetch(`${BASE}/api/uploads`, {
+    method: "POST",
+    body,
+    credentials: "include",
+  });
+
+  const ms = Math.round(performance.now() - startedAt);
+  const payload = (await response.json().catch(() => null)) as {
+    url?: string;
+    error?: string;
+  } | null;
+
+  console.info(
+    `%c[api] POST /api/uploads → ${response.status} (${ms}ms)`,
+    `color:${response.ok ? "#0d9488" : "#e11d48"};font-weight:600`,
+  );
+
+  if (!response.ok || !payload?.url) {
+    throw new ApiError(payload?.error ?? "Upload failed", response.status);
+  }
+
+  // The backend answers with a path relative to itself. Left as-is it would
+  // resolve against the frontend's origin, which no longer serves uploads at
+  // all — a broken image with a URL that looks perfectly reasonable.
+  return { url: absoluteAssetUrl(payload.url) };
+}
+
+/** Resolves a backend-relative asset path against the backend's origin. */
+export function absoluteAssetUrl(url: string): string {
+  if (!BASE) return url;
+  if (/^https?:\/\//.test(url)) return url;
+  return `${BASE}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
 export const restoreSection = (id: string, versionId: string) =>
   api<{ savedAt: string }>(`/api/v1/sections/${requireId(id)}`, {
     method: "POST",
