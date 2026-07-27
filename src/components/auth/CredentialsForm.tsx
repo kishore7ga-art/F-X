@@ -45,10 +45,22 @@ export function CredentialsForm({
         router.push(`/login?registered=1&email=${encodeURIComponent(email)}`);
       } else {
         const { next } = await loginRequest(email, password);
-        // The session cookie is set by the backend on the parent domain, so the
-        // server needs to re-render with it before the destination is guarded.
-        router.replace(next);
-        router.refresh();
+
+        /**
+         * A full page load, not a client navigation.
+         *
+         * The session was just set by another origin, and the destination is
+         * guarded server-side. `router.replace` can answer from the router
+         * cache — an RSC payload fetched while there was no session — which
+         * renders the signed-out version of a page you are now signed in to,
+         * or bounces straight back to /login. Calling `refresh` afterwards
+         * cannot help: the navigation has already happened.
+         *
+         * Going through the browser guarantees one request that carries the
+         * new cookie, which is exactly what the guard needs to see.
+         */
+        window.location.assign(next);
+        return;
       }
     } catch (cause) {
       setError(
