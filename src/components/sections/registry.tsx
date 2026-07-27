@@ -30,7 +30,7 @@ import { HeroImageSplit } from "@/components/sections/hero/HeroImageSplit";
 import { HeroMinimalText } from "@/components/sections/hero/HeroMinimalText";
 import { HeroSidePanel } from "@/components/sections/hero/HeroSidePanel";
 import { HeroStackedBanner } from "@/components/sections/hero/HeroStackedBanner";
-import { SectionType } from "@/generated/prisma/enums";
+import { SectionType } from "@/generated/prisma";
 import {
   safeParseSectionContent,
   type SectionContentMap,
