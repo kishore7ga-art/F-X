@@ -37,6 +37,16 @@ export async function createSessionToken(
 
 /** Cookie attributes, shared by every place that writes the session. */
 export function sessionCookieOptions() {
+  return { ...sessionCookieAttributes(), maxAge: MAX_AGE_SECONDS };
+}
+
+/**
+ * Everything that identifies the cookie, without its lifetime.
+ *
+ * Deletion has to match on these — name, path, domain — but must not carry a
+ * maxAge, which is what makes it a deletion rather than a rewrite.
+ */
+function sessionCookieAttributes() {
   /**
    * `lax` is right while the API is same-origin, and silently wrong the moment
    * it is not: a lax cookie is never sent to a different origin, so moving the
@@ -48,12 +58,22 @@ export function sessionCookieOptions() {
    */
   const crossOrigin = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
 
+  /**
+   * Must match what the backend sets, or the two write different cookies.
+   *
+   * The backend issues the session on the parent domain so both services see
+   * one login. A cookie written here without the same Domain is a *different*
+   * cookie to the browser, and deleting it would leave the backend's in place —
+   * signing out would appear to work and change nothing.
+   */
+  const domain = process.env.SESSION_COOKIE_DOMAIN;
+
   return {
     httpOnly: true,
     sameSite: (crossOrigin ? "none" : "lax") as "none" | "lax",
     secure: crossOrigin || process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: MAX_AGE_SECONDS,
+    ...(domain ? { domain } : {}),
   };
 }
 
@@ -91,7 +111,20 @@ export async function getSession(): Promise<SessionPayload | null> {
     const college = await openAccessCollege();
     return { userId: `open-access:${college.id}`, collegeId: college.id };
   }
-  return verifySessionCookie(store.get(COOKIE_NAME)?.value);
+  const session = await verifySessionCookie(store.get(COOKIE_NAME)?.value);
+
+  /**
+   * A session minted in open-access mode is not an identity.
+   *
+   * Turning AUTH_DISABLED off is how an operator closes the door, and it has to
+   * close behind the people already inside. These tokens carry a synthetic
+   * `open-access:` userId, no password was ever entered for one, and they stay
+   * cryptographically valid for a week — so without this, everyone who used the
+   * site while it was open keeps full edit and publish rights afterwards.
+   */
+  if (session?.userId.startsWith("open-access:")) return null;
+
+  return session;
 }
 
 /** Reads a session out of a cookie value, or null if it is absent or bad. */
@@ -116,5 +149,7 @@ async function verifySessionCookie(
 
 export async function destroySession() {
   const store = await cookies();
-  store.delete(COOKIE_NAME);
+  // Deleting needs the same name/path/domain the cookie was written with; a
+  // bare name misses a cookie scoped to the parent domain and leaves it valid.
+  store.delete({ name: COOKIE_NAME, ...sessionCookieAttributes() });
 }

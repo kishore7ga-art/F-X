@@ -76,6 +76,31 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   return payload as T;
 }
 
+/* Auth endpoints.
+ *
+ * These were Server Actions, which POST to the page's own URL as an RSC
+ * payload — so sign-in showed up in the Network tab as `POST /login` with a
+ * `text/x-component` body, and could not be pointed at the backend at all.
+ * As plain calls they go where every other call goes, and are readable in the
+ * Network tab like any API request.
+ */
+
+export const signupRequest = (email: string, password: string) =>
+  api<{ id: string; email: string }>("/api/v1/auth/signup", {
+    method: "POST",
+    body: { email, password },
+  });
+
+/** `next` is where the backend says this account should land. */
+export const loginRequest = (email: string, password: string) =>
+  api<{ subdomain: string; next: string }>("/api/v1/auth/login", {
+    method: "POST",
+    body: { email, password },
+  });
+
+export const logoutRequest = () =>
+  api<{ ok: true }>("/api/v1/auth/logout", { method: "POST" });
+
 /**
  * A missing id would build `/api/v1/sections/` — a path that matches no route
  * and comes back 404, which reads as "the backend is broken" rather than "this
