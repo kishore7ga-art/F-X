@@ -25,6 +25,34 @@ export function parseDatabaseHost(
   }
 }
 
+/**
+ * Which account and database a rejected connection was attempting.
+ *
+ * "The database rejected the credentials" names the symptom and leaves three
+ * candidates — wrong user, wrong password, wrong database — indistinguishable.
+ * Two services pointed at one database, one connecting and one not, is settled
+ * in seconds by comparing these; without them it is guesswork across a
+ * dashboard nobody can read from the outside.
+ *
+ * The password is never included. It is the one part of the string that is
+ * genuinely secret, and it is not needed to spot the mismatch.
+ */
+export function parseDatabaseIdentity(
+  connectionString: string | undefined,
+): { user: string | null; database: string | null } | null {
+  if (!connectionString) return null;
+  try {
+    const url = new URL(connectionString);
+    const database = url.pathname.replace(/^\//, "");
+    return {
+      user: decodeURIComponent(url.username) || null,
+      database: database ? decodeURIComponent(database) : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function probeDatabaseSocket(
   host: string,
   port: number,

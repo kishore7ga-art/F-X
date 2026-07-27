@@ -5,7 +5,11 @@ import {
   DATABASE_FAILURE_HINTS,
   type DatabaseFailureKind,
 } from "@/lib/db-errors";
-import { parseDatabaseHost, probeDatabaseSocket } from "@/lib/db-probe";
+import {
+  parseDatabaseHost,
+  parseDatabaseIdentity,
+  probeDatabaseSocket,
+} from "@/lib/db-probe";
 import { AUTH_DISABLED } from "@/lib/auth/open-access";
 import { prisma } from "@/lib/db";
 
@@ -139,6 +143,12 @@ export async function GET() {
         reason: kind,
         code,
         host,
+        // Only on the failure branch, and only when the credentials are what
+        // was rejected: enough to compare two services side by side, never the
+        // password.
+        ...(kind === "auth"
+          ? { attemptedAs: parseDatabaseIdentity(process.env.DATABASE_URL) }
+          : {}),
         auth: AUTH_DISABLED ? "open" : "required",
         // Reported on this branch too. A database outage is exactly when you
         // need to know whether the two services can still see each other —
