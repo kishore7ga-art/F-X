@@ -1,70 +1,61 @@
 import type { Metadata } from "next";
 
+import { Footer } from "@/components/landing/Footer";
+import { LandingPage } from "@/components/landing/LandingPage";
 import { listTemplatesForLanding } from "@/lib/site/templates";
 
-import { LandingHeader } from "@/components/landing/LandingHeader";
-import { LandingHero } from "@/components/landing/LandingHero";
-import type { LandingTemplate } from "@/components/landing/LandingSections";
-import {
-  LandingCta,
-  LandingFeatures,
-  LandingFooter,
-  LandingSegments,
-  LandingShowcase,
-  LandingStats,
-  LandingTemplates,
-} from "@/components/landing/LandingSections";
 export const dynamic = "force-dynamic";
 
+const TITLE = "XITE — College websites, live by Friday";
+const DESCRIPTION =
+  "Pick a design, replace the words, publish. Five designs, thirty section layouts, and content that survives every design change.";
+
 export const metadata: Metadata = {
-  title: "XITE — College websites, live by Friday",
-  description:
-    "Pick a design, replace the words, publish. Five templates, thirty section layouts, and content that survives every design change.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    type: "website",
+    siteName: "XITE",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
 };
 
 /**
  * The public front door.
  *
- * This used to redirect straight into the editor, which meant the product had
- * no page that explained itself — every visitor landed inside a tool they had
- * not chosen yet.
+ * A server component that fetches once and hands the result down. Only the
+ * animated shell below is a client component — the templates are already in the
+ * HTML, so the gallery is readable before a line of JavaScript has run, and
+ * search engines see the real content rather than an empty grid.
+ *
+ * `editHref` is always /login, deliberately. This page used to work out where
+ * to send people, which sent anyone with a design straight to the editor and
+ * made onboarding and the sign-in screen unreachable from the front door — for
+ * exactly the people who had never seen them. /login forwards anyone who
+ * already has an identity, so entering at the top costs a returning visitor
+ * nothing.
  */
 export default async function HomePage() {
-  // From the backend, and deliberately the one read that swallows its own
-  // failure — see listTemplatesForLanding. A marketing page must not 500
-  // because the database is restarting.
-  const templates: LandingTemplate[] = await listTemplatesForLanding();
-
-  // The entry point is the flow, not a deep link past it. Checking templateId
-  // first sent anyone whose college already had a design straight to the
-  // editor, skipping onboarding entirely — which made /start and /onboarding
-  // unreachable from the front door for exactly the people who had never seen
-  // them.
-  //
-  // Onboarding first, then the choice screen. /start carries a "continue
-  // editing" link, so a returning site is still one click away.
-  // Always step 1. Signing in is optional there, and /login forwards anyone who
-  // already has an identity, so entering at the top costs a returning visitor
-  // nothing — and stops the sign-in screen being unreachable, which is what
-  // happened when this page tried to be clever about where to send people.
-  //
-  // It also means the landing page needs no database query at all: the public
-  // front door now renders the same for everyone.
-  const editHref = "/login";
+  // The one read on this page that swallows its own failure — see
+  // listTemplatesForLanding. Someone arriving to find out what the product is
+  // should not meet a 500 because the database is restarting.
+  const templates = await listTemplatesForLanding();
 
   return (
     <>
-      <LandingHeader editHref={editHref} />
-      <main>
-        <LandingHero editHref={editHref} />
-        <LandingStats />
-        <LandingFeatures />
-        <LandingSegments />
-        <LandingShowcase editHref={editHref} />
-        <LandingTemplates editHref={editHref} templates={templates} />
-        <LandingCta editHref={editHref} />
-      </main>
-      <LandingFooter templates={templates} />
+      <LandingPage
+        templates={templates}
+        ctaHref="/login"
+        ctaLabel="Start building"
+      />
+      <Footer templates={templates} />
     </>
   );
 }

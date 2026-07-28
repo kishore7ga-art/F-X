@@ -75,10 +75,50 @@ body {
   animation: drift 18s ease-in-out infinite;
 }
 
-/* Nobody should have to watch a page breathe to read it. */
+/* The hero's headline, rising line by line from behind its own mask. In CSS
+   rather than JavaScript so it plays on first paint — an opening line that
+   waits for hydration is an opening line people have already scrolled past. */
+@keyframes heroLine {
+  from {
+    transform: translate3d(0, 110%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Exactly -50%: the track holds two copies of its content, so the reset lands
+   copy two precisely where copy one started and the seam is never on screen. */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* The scroll hint's travelling line. */
+@keyframes scrollLine {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.scroll-line {
+  animation: scrollLine 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+/* Nobody should have to watch a page breathe to read it.
+   Everything above is decoration; the content underneath is unaffected. */
 @media (prefers-reduced-motion: reduce) {
   .rise,
-  .drift {
-    animation: none;
+  .drift,
+  .scroll-line,
+  [style*="heroLine"] {
+    animation: none !important;
   }
 }
