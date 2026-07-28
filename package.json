@@ -18,7 +18,8 @@
     "db:studio": "prisma studio",
     "check:shared": "node scripts/check-shared-files.mjs",
     "prebuild": "node scripts/check-shared-files.mjs && node scripts/check-api-boundary.mjs",
-    "check:boundary": "node scripts/check-api-boundary.mjs"
+    "check:boundary": "node scripts/check-api-boundary.mjs",
+    "audit:responsive": "node scripts/audit-responsive.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",
@@ -47,6 +48,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
+    "playwright-core": "^1.62.0",
     "prisma": "^7.9.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",

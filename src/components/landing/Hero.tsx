@@ -48,7 +48,17 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
   }, []);
 
   return (
-    <section className="relative flex min-h-[92vh] items-center overflow-hidden pt-28 sm:min-h-screen">
+    // `svh` rather than `vh`, and shorter on small screens.
+    //
+    // `100vh` on a phone is the viewport with the browser chrome *hidden*, so a
+    // hero sized in it is taller than what you can actually see on load, and
+    // everything jumps the moment the URL bar retracts. `svh` is the smaller,
+    // stable measure — the height that is genuinely visible the whole time.
+    //
+    // 85 rather than 92 because measuring it at 390×1000 showed roughly 280px
+    // of dead space above the eyebrow: centred content inside a near-full-height
+    // box reads as generous on a desktop and as a loading state on a phone.
+    <section className="relative flex min-h-[85svh] items-center overflow-hidden pt-24 sm:min-h-svh sm:pt-28">
       {/* Ambient field. Sits behind everything and never intercepts a click. */}
       <div
         ref={parallaxRef}
