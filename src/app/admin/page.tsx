@@ -6,6 +6,7 @@ import {
   adminMe,
   adminOverview,
   adminSites,
+  adminStatus,
   type Health,
 } from "@/lib/admin/client";
 
@@ -26,11 +27,11 @@ export const metadata: Metadata = {
  * as signed in.
  */
 export default async function AdminPage() {
-  const admin = await adminMe();
+  const [admin, status] = await Promise.all([adminMe(), adminStatus()]);
 
   if (!admin) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-night px-5">
+      <main className="flex min-h-svh items-center justify-center bg-night px-5 py-12">
         <div className="w-full max-w-sm">
           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-chalk-dim/50">
             XITE
@@ -38,10 +39,39 @@ export default async function AdminPage() {
           <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.03em] text-chalk">
             Super Admin
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-chalk-dim">
-            Accounts are created from a terminal, not here. There is
-            deliberately no way to register.
-          </p>
+
+          {/*
+            The three states are genuinely different problems, and only one of
+            them is fixed by typing the password again. A login form that says
+            "incorrect password" when no account was ever created sends people
+            to reset a password that does not exist.
+          */}
+          {!status.configured ? (
+            <Setup
+              title="Not configured"
+              body="ADMIN_SESSION_SECRET is not set on the API, or it matches SESSION_SECRET. The panel refuses to run on the app's own signing key — a shared key would mean a forged college session is a forged admin session."
+              steps={[
+                "Generate one:  openssl rand -base64 32",
+                "Set ADMIN_SESSION_SECRET on the API service",
+                "Redeploy",
+              ]}
+            />
+          ) : !status.hasAccounts ? (
+            <Setup
+              title="No account yet"
+              body="The panel is configured and reachable, but no Super Admin has been created. There is deliberately no way to register — an account has to be put there by somebody with access to the deployment."
+              steps={[
+                "Set ADMIN_BOOTSTRAP_EMAIL and ADMIN_BOOTSTRAP_PASSWORD on the API service",
+                "Redeploy — the account is created once, at boot",
+                "Sign in, then remove both variables",
+              ]}
+            />
+          ) : (
+            <p className="mt-3 text-sm leading-relaxed text-chalk-dim">
+              Accounts are created from a terminal, not here. There is
+              deliberately no way to register.
+            </p>
+          )}
 
           <div className="mt-9">
             {/*
@@ -284,6 +314,41 @@ export default async function AdminPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+/**
+ * What to do about it, rather than what went wrong.
+ *
+ * Numbered because these genuinely are steps in order, and set in monospace
+ * because most of them are things to paste into a dashboard field.
+ */
+function Setup({
+  title,
+  body,
+  steps,
+}: {
+  title: string;
+  body: string;
+  steps: string[];
+}) {
+  return (
+    <div className="mt-5 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] p-5">
+      <p className="text-sm font-semibold text-amber-300">{title}</p>
+      <p className="mt-2 text-[13px] leading-relaxed text-chalk-dim">{body}</p>
+      <ol className="mt-4 space-y-2">
+        {steps.map((step, index) => (
+          <li key={step} className="flex gap-3 text-chalk-dim">
+            <span className="shrink-0 text-[13px] tabular-nums text-amber-300/70">
+              {index + 1}.
+            </span>
+            <span className="font-mono text-[12px] leading-relaxed">
+              {step}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }
 

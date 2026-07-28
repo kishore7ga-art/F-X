@@ -40,6 +40,33 @@ export type AdminSite = {
 };
 
 /**
+ * Whether the panel has been set up at all.
+ *
+ * Read before the login form is drawn, because "no account has ever been
+ * created" and "you typed the password wrong" are different problems and only
+ * one of them is fixed by trying again.
+ *
+ * Falls back to claiming setup is complete when the backend cannot be reached.
+ * Being wrong in that direction shows a login form that will not work; being
+ * wrong the other way tells somebody their account does not exist when it does,
+ * and sends them off to recreate one they already have.
+ */
+export async function adminStatus(): Promise<{
+  configured: boolean;
+  hasAccounts: boolean;
+}> {
+  try {
+    return (
+      (await serverApi<{ configured: boolean; hasAccounts: boolean }>(
+        "/api/v1/admin/status",
+      )) ?? { configured: true, hasAccounts: true }
+    );
+  } catch {
+    return { configured: true, hasAccounts: true };
+  }
+}
+
+/**
  * `null` means not signed in, which is a normal answer here rather than a
  * failure — the login page is what happens next, not an error screen.
  */
