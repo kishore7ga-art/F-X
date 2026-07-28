@@ -37,6 +37,33 @@ export class ServerApiError extends Error {
  * account.
  */
 export async function serverApi<T>(path: string): Promise<T | null> {
+  return request<T>(path, "GET");
+}
+
+/**
+ * POSTs to the backend as the current visitor, for Server Actions.
+ *
+ * Actions are writes, and a write that answers "nothing here" is not a shrug —
+ * so unlike the GET above, a 404 throws rather than returning null. An action
+ * that quietly did nothing and told the caller it succeeded is the worst of the
+ * available outcomes.
+ */
+export async function serverApiPost<T>(
+  path: string,
+  body?: unknown,
+): Promise<T> {
+  const result = await request<T>(path, "POST", body);
+  if (result === null) {
+    throw new ServerApiError("The backend had nothing to act on", 404);
+  }
+  return result;
+}
+
+async function request<T>(
+  path: string,
+  method: "GET" | "POST",
+  body?: unknown,
+): Promise<T | null> {
   if (!BASE) {
     throw new ServerApiError(
       "No backend configured — set BACKEND_INTERNAL_URL",
@@ -53,7 +80,12 @@ export async function serverApi<T>(path: string): Promise<T | null> {
   let response: Response;
   try {
     response = await fetch(`${BASE}${path}`, {
-      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      method,
+      headers: {
+        ...(cookieHeader ? { cookie: cookieHeader } : {}),
+        ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
       // Every one of these is per-visitor and per-request; a cached answer here
       // would show one college's editor to another.
       cache: "no-store",

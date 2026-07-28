@@ -1,8 +1,4 @@
 import { serverApi } from "@/lib/api/server";
-import { defaultContentFor } from "@/lib/sections/defaults";
-import { isSupportedSectionType } from "@/lib/sections/schemas";
-import { prisma } from "@/lib/db";
-import { DEFAULT_PAGES } from "@/lib/site/starter";
 import {
   DEFAULT_FONTS,
   parsePaletteColors,
@@ -132,99 +128,45 @@ export function isBuilt(
 }
 
 /**
- * The same page shape, but derived from a template instead of read from a
- * college's saved sections — nothing is written.
+ * What a template would look like on this college, without writing anything.
  *
- * Screen 2 asks a college with no site yet to judge a design, which it cannot
- * do from an empty frame: before this, `getSitePage` correctly returned null
- * for a college with no pages and the preview iframe 404ed at exactly the
- * moment the template most needed showing. This renders what "Start with this
- * design" is about to create, using the same starter pages, the same first
- * variant per section and the same default copy, so the preview is a promise
- * the action keeps.
+ * Screen 2 asks a college with no site yet to judge a design, which it cannot do
+ * from an empty frame: the site read correctly answers "nothing here" for a
+ * college with no pages, and the preview iframe went blank at exactly the moment
+ * the template most needed showing. The backend generates what "Start with this
+ * design" is about to create — same starter pages, same lead variant, same
+ * default copy — so the preview is a promise the action keeps.
  *
- * Still on Prisma, and knowingly. It is template-preview generation rather than
- * a site read, it shares `defaultContentFor` with the provisioning path, and
- * moving it belongs with the design endpoints rather than bolted onto the
- * public site read.
+ * It answers in the same shape as the site read, which is why one renderer draws
+ * both and this only has to map the theme.
  */
 export async function getTemplatePreview(
   subdomain: string,
   templateId: string,
 ): Promise<SitePageData | null> {
-  const [college, template] = await Promise.all([
-    prisma.college.findUnique({
-      where: { subdomain },
-      include: { themePalette: true, themeFont: true },
-    }),
-    prisma.template.findUnique({
-      where: { id: templateId },
-      include: {
-        sections: {
-          orderBy: { defaultOrder: "asc" },
-          include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
-        },
-      },
-    }),
-  ]);
-
-  if (!college || !template) return null;
-
-  // Ids that cannot collide with a real row: these sections are never saved,
-  // and treating one as a database id would silently edit the wrong thing.
-  const pages = DEFAULT_PAGES.map((page) => ({
-    id: `preview:${page.slug}`,
-    slug: page.slug,
-    title: page.title,
-  }));
-
-  const sections: RenderableSection[] = [];
-  let displayOrder = 1;
-
-  for (const section of template.sections) {
-    // Lead variant: sortOrder decides, which is what makes each template open
-    // with its own look.
-    const variant = section.variants[0];
-    if (!variant) continue;
-    if (!isSupportedSectionType(section.sectionType as never)) continue;
-
-    sections.push({
-      id: `preview:${section.id}`,
-      sectionType: section.sectionType,
-      componentKey: variant.componentKey,
-      variantId: variant.id,
-      variantName: variant.variantName,
-      displayOrder: displayOrder++,
-      isVisible: true,
-      content: defaultContentFor(section.sectionType as never, college.name),
-    });
-  }
+  const payload = await serverApi<Extract<SitePayload, { built: true }>>(
+    `/api/v1/sites/${encodeURIComponent(subdomain)}/preview` +
+      `?template=${encodeURIComponent(templateId)}`,
+  );
+  if (!payload) return null;
 
   return {
-    college: {
-      id: college.id,
-      name: college.name,
-      subdomain: college.subdomain,
-      status: college.status,
-    },
+    college: payload.college,
     theme: {
-      colors: parsePaletteColors(college.themePalette?.colors),
-      fonts: college.themeFont
-        ? {
-            headingFont: college.themeFont.headingFont,
-            bodyFont: college.themeFont.bodyFont,
-          }
-        : DEFAULT_FONTS,
+      colors: parsePaletteColors(payload.theme.paletteColors),
+      fonts:
+        payload.theme.headingFont && payload.theme.bodyFont
+          ? {
+              headingFont: payload.theme.headingFont,
+              bodyFont: payload.theme.bodyFont,
+            }
+          : DEFAULT_FONTS,
     },
-    pages,
-    currentPage: pages[0],
-    seo: {
-      metaTitle: null,
-      metaDescription: null,
-      ogImage: null,
-      canonicalSlug: null,
-    },
-    sections,
-    isOwnerPreview: false,
+    pages: payload.pages,
+    currentPage: payload.currentPage,
+    seo: payload.seo,
+    sections: payload.sections,
+    isOwnerPreview: payload.isOwnerPreview,
   };
 }
+

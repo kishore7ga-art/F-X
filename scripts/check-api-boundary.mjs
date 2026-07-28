@@ -34,9 +34,6 @@ const SRC = join(process.cwd(), "src");
 const PRISMA_ALLOWED = new Map([
   ["lib/db.ts", "the client itself — deleted last, with DATABASE_URL"],
   ["app/api/health/route.ts", "health probe: it exists to report on this very connection"],
-  ["lib/site/queries.ts", "batch 3 — getTemplatePreview only; the site read has moved"],
-  ["app/actions/onboarding.ts", "batch 2"],
-  ["app/actions/design.ts", "batch 3"],
   ["app/actions/sections.ts", "batch 4"],
   ["app/actions/publish.ts", "batch 5"],
   ["app/actions/page-seo.ts", "batch 5"],
