@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatedHeading } from "@/components/ui/AnimatedHeading";
-import { SECTION, TYPE } from "@/constants/tokens";
+import { SECTION } from "@/constants/tokens";
 import { useReveal } from "@/hooks/useReveal";
 import { cn } from "@/lib/cn";
 
@@ -36,15 +36,15 @@ export function Process() {
   });
 
   return (
-    <section id="how" className={SECTION.padding}>
+    <section id="how" className={cn(SECTION.padding, "border-t border-night-line")}>
       <div className={SECTION.container}>
         <div className="max-w-3xl">
-          <p className={cn(TYPE.eyebrow, "text-brand-ink/40")}>
-            01 — How it works
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-chalk-dim/50">
+            How it works
           </p>
           <AnimatedHeading
             text="Three steps, and none of them is a meeting."
-            className={cn(TYPE.h2, "mt-4 text-brand-ink")}
+            className="mt-5 text-[clamp(1.9rem,4.4vw,3.6rem)] font-extrabold leading-[1] tracking-[-0.035em] text-chalk"
           />
         </div>
 
@@ -53,13 +53,13 @@ export function Process() {
             <li
               key={step.title}
               data-step
-              className="group grid gap-4 border-t border-brand-ink/10 py-10 transition-colors duration-500 last:border-b hover:border-brand-ink/30 sm:grid-cols-[auto_1fr] sm:gap-10 lg:grid-cols-[6rem_1fr_1.2fr] lg:py-14"
+              className="group grid gap-4 border-t border-night-line py-10 transition-colors duration-500 last:border-b hover:border-chalk-dim/30 sm:grid-cols-[auto_1fr] sm:gap-10 lg:grid-cols-[6rem_1fr_1.2fr] lg:py-14"
             >
-              <span className="text-sm font-bold tabular-nums text-brand-ink/30 transition-colors duration-500 group-hover:text-brand-ink">
+              <span className="text-sm font-bold tabular-nums text-chalk-dim/40 transition-colors duration-500 group-hover:text-accent">
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <h3 className={cn(TYPE.h3, "text-brand-ink")}>{step.title}</h3>
-              <p className="max-w-xl text-[15px] leading-relaxed text-brand-ink/55 lg:text-base">
+              <h3 className="text-[clamp(1.25rem,2.1vw,1.85rem)] font-bold leading-tight tracking-[-0.02em] text-chalk">{step.title}</h3>
+              <p className="max-w-xl text-[15px] leading-relaxed text-chalk-dim lg:text-base">
                 {step.body}
               </p>
             </li>

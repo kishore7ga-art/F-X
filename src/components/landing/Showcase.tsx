@@ -1,163 +1,92 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 
-import { AnimatedHeading } from "@/components/ui/AnimatedHeading";
-import { SECTION, TYPE } from "@/constants/tokens";
+import { SECTION } from "@/constants/tokens";
 import { useReveal } from "@/hooks/useReveal";
 import type { TemplateSummary } from "@/lib/site/templates";
 import { cn } from "@/lib/cn";
 
 /**
- * The design gallery — the page's signature section.
+ * The templates, read live from the API.
  *
- * These are the five real templates, read live from the API, not a mock. That
- * is the point: the marketing page and the product cannot drift, because there
- * is nowhere for them to drift to.
+ * These are the five real rows, not a mock-up of five. The marketing page and
+ * the product cannot drift apart because there is nowhere for them to drift to
+ * — add a sixth template to the database and it appears here.
  *
- * Each card lifts and its thumbnail scales on hover, at different rates. The
- * difference is what creates depth: matching them would read as one flat
- * object moving, which is exactly the templated look this page is avoiding.
+ * Listed rather than tiled. A grid of thumbnails invites comparison of the
+ * pictures; a list of names with their section counts invites reading, which is
+ * the honest way to present five things that differ in layout rather than in
+ * colour.
  */
 export function Showcase({ templates }: { templates: TemplateSummary[] }) {
-  const gridRef = useReveal<HTMLDivElement>({
-    children: "[data-card]",
-    stagger: 0.09,
-    distance: 40,
-  });
+  const ref = useReveal<HTMLDivElement>({ children: "[data-row]", stagger: 0.07 });
 
   return (
-    <section id="templates" className={cn(SECTION.padding, "relative")}>
+    <section
+      id="templates"
+      className={cn(SECTION.padding, "border-t border-night-line")}
+    >
       <div className={SECTION.container}>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className={cn(TYPE.eyebrow, "text-brand-ink/40")}>
-              {templates.length > 0
-                ? `${String(templates.length).padStart(2, "0")} — Designs`
-                : "Designs"}
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-chalk-dim/50">
+              Templates
             </p>
-            <AnimatedHeading
-              text="Five designs. Thirty section layouts."
-              className={cn(TYPE.h2, "mt-4 text-brand-ink")}
-            />
+            <h2 className="mt-5 text-[clamp(1.9rem,4.4vw,3.6rem)] font-extrabold leading-[1] tracking-[-0.035em] text-chalk">
+              Five designs. Every one already responsive.
+            </h2>
           </div>
-          <p className={cn(TYPE.body, "max-w-md text-brand-ink/55")}>
-            Every one responsive, every one with a live demo. Switch between
-            them whenever you like — your words come with you.
+          <p className="max-w-sm text-[1.05rem] leading-relaxed text-chalk-dim">
+            Each has a live demo you can walk through before you commit to
+            anything.
           </p>
         </div>
 
         {templates.length === 0 ? (
-          // Says what happened rather than showing an empty grid that reads as
-          // a design with nothing in it.
-          <p className="mt-16 rounded-2xl border border-brand-ink/10 bg-brand-mist px-6 py-10 text-center text-sm text-brand-ink/50">
-            The design gallery is loading. Refresh in a moment.
+          <p className="mt-16 rounded-xl border border-night-line px-6 py-10 text-center text-sm text-chalk-dim/60">
+            The template list is loading. Refresh in a moment.
           </p>
         ) : (
-          <div
-            ref={gridRef}
-            className="mt-16 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:mt-24 lg:grid-cols-3"
-          >
+          <div ref={ref} className="mt-14 lg:mt-20">
             {templates.map((template, index) => (
-              <TemplateCard
+              <Link
                 key={template.id}
-                template={template}
-                index={index}
-              />
+                href={template.demoUrl ?? "#templates"}
+                data-row
+                className="group grid grid-cols-[auto_1fr_auto] items-baseline gap-5 border-t border-night-line py-7 transition-colors duration-500 last:border-b hover:border-chalk-dim/30 sm:gap-8 sm:py-9"
+              >
+                <span className="text-[11px] font-semibold tabular-nums text-chalk-dim/40 transition-colors duration-500 group-hover:text-accent">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+
+                <span className="min-w-0">
+                  <span className="block text-[clamp(1.3rem,2.6vw,2.1rem)] font-bold leading-tight tracking-[-0.025em] text-chalk">
+                    {template.name}
+                  </span>
+                  {template.description ? (
+                    <span className="mt-2 block max-w-xl truncate text-sm text-chalk-dim/70 sm:whitespace-normal">
+                      {template.description}
+                    </span>
+                  ) : null}
+                </span>
+
+                <span className="flex shrink-0 items-center gap-4 text-xs text-chalk-dim/50">
+                  <span className="hidden sm:inline">
+                    {template.sectionCount} sections
+                  </span>
+                  <span
+                    aria-hidden
+                    className="text-base transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1 group-hover:text-accent"
+                  >
+                    →
+                  </span>
+                </span>
+              </Link>
             ))}
           </div>
         )}
       </div>
     </section>
-  );
-}
-
-function TemplateCard({
-  template,
-  index,
-}: {
-  template: TemplateSummary;
-  index: number;
-}) {
-  const ref = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const fine = window.matchMedia("(pointer: fine)");
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!fine.matches || reduced.matches) return;
-
-    let frame = 0;
-    const move = (event: MouseEvent) => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const box = element.getBoundingClientRect();
-        // Tilt is tiny on purpose. Anything more and text on the card starts
-        // to look bent rather than the card looking tilted.
-        const x = (event.clientX - box.left) / box.width - 0.5;
-        const y = (event.clientY - box.top) / box.height - 0.5;
-        element.style.transform = `perspective(1000px) rotateX(${-y * 4}deg) rotateY(${x * 4}deg) translate3d(0,-6px,0)`;
-      });
-    };
-    const reset = () => {
-      cancelAnimationFrame(frame);
-      element.style.transform = "";
-    };
-
-    element.addEventListener("mousemove", move);
-    element.addEventListener("mouseleave", reset);
-    return () => {
-      cancelAnimationFrame(frame);
-      element.removeEventListener("mousemove", move);
-      element.removeEventListener("mouseleave", reset);
-    };
-  }, []);
-
-  return (
-    <Link
-      ref={ref}
-      href={template.demoUrl ?? "#templates"}
-      data-card
-      data-cursor
-      className="group block transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-brand-mist">
-        {template.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={template.thumbnailUrl}
-            alt={`The ${template.name} template`}
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
-          />
-        ) : (
-          <div
-            aria-hidden
-            className="flex h-full w-full items-center justify-center"
-          >
-            <span className="text-[clamp(3rem,6vw,5rem)] font-extrabold tracking-[-0.05em] text-brand-ink/8">
-              {String(index + 1).padStart(2, "0")}
-            </span>
-          </div>
-        )}
-        {/* Wipes up from the bottom edge on hover. */}
-        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-px w-0 bg-brand-ink transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:w-full" />
-      </div>
-
-      <div className="mt-5 flex items-baseline justify-between gap-4">
-        <h3 className={cn(TYPE.h3, "text-brand-ink")}>{template.name}</h3>
-        <span className="shrink-0 text-xs font-semibold text-brand-ink/40">
-          {template.sectionCount} sections
-        </span>
-      </div>
-      {template.description ? (
-        <p className="mt-2 text-sm leading-relaxed text-brand-ink/55">
-          {template.description}
-        </p>
-      ) : null}
-    </Link>
   );
 }

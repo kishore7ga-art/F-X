@@ -1,95 +1,38 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import Link from "next/link";
 
-import { AnimatedButton } from "@/components/ui/AnimatedButton";
-import { SECTION, TYPE } from "@/constants/tokens";
+import { SECTION } from "@/constants/tokens";
+import { useMagnetic } from "@/hooks/useMagnetic";
+
 
 /**
- * The opening statement.
+ * A thesis, not a feature list.
  *
- * The thesis is the type itself: a college website builder whose whole promise
- * is that the words survive every design change should open by treating words
- * as the object. So the headline arrives line by line from behind a mask, and
- * the only ornament is a field that drifts behind it.
+ * Two lines, because the product's whole argument fits in two: you can change
+ * the design as often as you like, and the words you wrote do not move. That is
+ * the guarantee the section editor actually makes — content is stored keyed by
+ * section type rather than by template — so the headline is a promise the code
+ * keeps rather than a claim the copy makes.
  *
- * The mask is done in CSS with a per-line transition rather than a library,
- * because it runs before hydration finishes — an opening line that waits for
- * JavaScript is an opening line people scroll past.
+ * One button. A second would imply the first was not the point.
  */
-const LINES = ["Your college", "website,", "built by Friday."];
-
-export function Hero({ ctaHref }: { ctaHref: string }) {
-  const parallaxRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = parallaxRef.current;
-    if (!element) return;
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) return;
-
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        // Only while the hero is on screen. Past that it is invisible work.
-        const y = window.scrollY;
-        if (y > window.innerHeight) return;
-        element.style.transform = `translate3d(0, ${y * 0.22}px, 0)`;
-      });
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, []);
+export function Hero({ ctaHref, ctaLabel }: { ctaHref: string; ctaLabel: string }) {
+  // The page's single magnetic element, on the page's single primary action.
+  const magneticRef = useMagnetic<HTMLDivElement>({ strength: 0.28, radius: 80 });
 
   return (
-    // `svh` rather than `vh`, and shorter on small screens.
-    //
-    // `100vh` on a phone is the viewport with the browser chrome *hidden*, so a
-    // hero sized in it is taller than what you can actually see on load, and
-    // everything jumps the moment the URL bar retracts. `svh` is the smaller,
-    // stable measure — the height that is genuinely visible the whole time.
-    //
-    // 85 rather than 92 because measuring it at 390×1000 showed roughly 280px
-    // of dead space above the eyebrow: centred content inside a near-full-height
-    // box reads as generous on a desktop and as a loading state on a phone.
-    <section className="relative flex min-h-[85svh] items-center overflow-hidden pt-24 sm:min-h-svh sm:pt-28">
-      {/* Ambient field. Sits behind everything and never intercepts a click. */}
-      <div
-        ref={parallaxRef}
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 will-change-transform"
-      >
-        <div className="drift absolute -right-40 -top-40 h-[38rem] w-[38rem] rounded-full bg-brand-bright/25 blur-[130px]" />
-        <div
-          className="drift absolute -left-52 top-1/3 h-[32rem] w-[32rem] rounded-full bg-brand-citrus/20 blur-[140px]"
-          style={{ animationDelay: "-6s" }}
-        />
-      </div>
-
+    <section className="relative flex min-h-[86svh] items-center overflow-hidden pt-32 sm:min-h-svh sm:pt-36">
       <div className={SECTION.container}>
-        <p
-          className="mb-8 inline-flex items-center gap-3 rounded-full border border-brand-ink/12 bg-white/60 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-ink/55 backdrop-blur"
-          style={{ animation: "rise 0.9s cubic-bezier(0.16,1,0.3,1) 0.15s both" }}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-brand-ink" />
-          For colleges, not web agencies
-        </p>
-
-        <h1 className={TYPE.display}>
-          <span className="sr-only">{LINES.join(" ")}</span>
-          {LINES.map((line, index) => (
+        <h1 className="text-[clamp(2.6rem,8.4vw,7.75rem)] font-extrabold leading-[0.92] tracking-[-0.045em] text-chalk">
+          <span className="sr-only">Change the design. Keep every word.</span>
+          {["Change the design.", "Keep every word."].map((line, index) => (
             <span key={line} aria-hidden className="block overflow-hidden">
               <span
                 className="block will-change-transform"
                 style={{
-                  animation: `heroLine 1.1s cubic-bezier(0.16,1,0.3,1) ${
-                    0.25 + index * 0.11
+                  animation: `heroLine 1.15s cubic-bezier(0.16,1,0.3,1) ${
+                    0.15 + index * 0.1
                   }s both`,
                 }}
               >
@@ -99,39 +42,47 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
           ))}
         </h1>
 
-        <div className="mt-10 flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-          <p
-            className={`${TYPE.body} max-w-xl text-brand-ink/60`}
-            style={{ animation: "rise 0.9s cubic-bezier(0.16,1,0.3,1) 0.7s both" }}
+        <div className="mt-14 grid gap-12 lg:mt-20 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div
+            className="max-w-xl"
+            style={{ animation: "rise 1s cubic-bezier(0.16,1,0.3,1) 0.55s both" }}
           >
-            Pick a design, replace the words, publish. Change the design again
-            next term — every sentence you wrote stays exactly where you put it.
-          </p>
+            {/* The credibility line. Every figure in it is countable in the
+                database: five templates seeded, thirty section layouts in the
+                variant library, three screens from signing up to a live site. */}
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-chalk-dim/70">
+              <span>5 templates</span>
+              <span className="text-accent">·</span>
+              <span>30 section layouts</span>
+              <span className="text-accent">·</span>
+              <span>3 screens to live</span>
+            </p>
+
+            <p className="mt-6 text-[clamp(1.05rem,1.4vw,1.3rem)] leading-relaxed text-chalk-dim">
+              XITE builds a college website from two questions and a design you
+              pick, then gets out of the way while you replace the words.
+            </p>
+          </div>
 
           <div
-            className="flex flex-wrap items-center gap-4"
-            style={{ animation: "rise 0.9s cubic-bezier(0.16,1,0.3,1) 0.82s both" }}
+            ref={magneticRef}
+            className="inline-block will-change-transform"
+            style={{ animation: "rise 1s cubic-bezier(0.16,1,0.3,1) 0.68s both" }}
           >
-            <AnimatedButton href={ctaHref}>Start building</AnimatedButton>
-            <AnimatedButton href="#templates" variant="outline">
-              See the designs
-            </AnimatedButton>
+            <Link
+              href={ctaHref}
+              className="group inline-flex items-center gap-3 rounded-full bg-accent px-8 py-4 text-[15px] font-semibold text-night transition-opacity duration-300 hover:opacity-90"
+            >
+              {ctaLabel}
+              <span
+                aria-hidden
+                className="transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1"
+              >
+                →
+              </span>
+            </Link>
           </div>
         </div>
-      </div>
-
-      {/* Scroll hint. Decorative, so it is hidden from assistive tech. */}
-      <div
-        aria-hidden
-        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-3 lg:flex"
-        style={{ animation: "rise 1s cubic-bezier(0.16,1,0.3,1) 1.1s both" }}
-      >
-        <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-brand-ink/35">
-          Scroll
-        </span>
-        <span className="h-12 w-px overflow-hidden bg-brand-ink/12">
-          <span className="scroll-line block h-full w-full bg-brand-ink/60" />
-        </span>
       </div>
     </section>
   );

@@ -42,6 +42,30 @@ body {
   --color-brand-citrus: #a3a3a3;
   --color-brand-coral: #737373;
   --color-brand-mist: #f5f5f5;
+
+  /* ---------------------------------------------------------------------
+     The landing page's dark surface.
+
+     Near-black rather than #000: pure black against large white type is a
+     contrast a screen renders as a vibration, and it leaves nowhere to go for
+     the raised panels — #0E1015 has to read as *lifted* off the page, which it
+     cannot do if the page is already at zero.
+
+     Text is warm off-white, not #FFF, for the same reason from the other
+     direction.
+
+     One accent, and it is spent in three places on the whole page: the primary
+     button, one underline, and the marker beside each key fact. Gold because
+     the subject is colleges and it carries that without costing anything, and
+     because the two colours an AI reaches for on a dark page — acid green and
+     vermilion — are defaults rather than decisions.
+     --------------------------------------------------------------------- */
+  --color-night: #07080b;
+  --color-night-raised: #0e1015;
+  --color-night-line: #1c1f27;
+  --color-chalk: #f2f0ec;
+  --color-chalk-dim: #a8a7a3;
+  --color-accent: #d9a441;
 }
 
 @keyframes rise {
