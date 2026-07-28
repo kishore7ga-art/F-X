@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { SiteImage } from "@/components/site/SiteImage";
 import { requireCurrentCollege } from "@/lib/auth/current";
-import { prisma } from "@/lib/db";
+import { listTemplates } from "@/lib/site/templates";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +18,7 @@ export default async function TemplateGalleryPage() {
   const college = await requireCurrentCollege();
   if (!college.collegeType) redirect("/onboarding");
 
-  const templates = await prisma.template.findMany({
-    orderBy: { name: "asc" },
-    include: { _count: { select: { sections: true } } },
-  });
+  const templates = await listTemplates();
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-12">
@@ -51,7 +48,7 @@ export default async function TemplateGalleryPage() {
                 {template.name}
               </h2>
               <p className="mt-1 text-xs text-black/55">
-                {template._count.sections} sections
+                {template.sectionCount} sections
               </p>
             </div>
           </Link>

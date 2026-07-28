@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { ThemePicker } from "@/components/theme-picker/ThemePicker";
 import { requireCurrentCollege } from "@/lib/auth/current";
-import { prisma } from "@/lib/db";
+import { getTemplateDetail } from "@/lib/site/templates";
 import { parsePaletteColors } from "@/lib/theme/theme";
 
 export const dynamic = "force-dynamic";
@@ -13,15 +13,16 @@ export default async function TemplateThemePickerPage({
 }: PageProps<"/templates/[templateId]">) {
   const { templateId } = await params;
 
-  const [template, palettes, fonts, college] = await Promise.all([
-    prisma.template.findUnique({ where: { id: templateId } }),
-    prisma.themePalette.findMany({ orderBy: { name: "asc" } }),
-    prisma.themeFont.findMany({ orderBy: { name: "asc" } }),
+  // One call for the template and both sets of theme options, where there were
+  // three separate queries against the frontend's own database connection.
+  const [detail, college] = await Promise.all([
+    getTemplateDetail(templateId),
     requireCurrentCollege(),
   ]);
 
+  if (!detail) notFound();
 
-  if (!template) notFound();
+  const { template, palettes, fonts } = detail;
   if (palettes.length === 0 || fonts.length === 0) {
     throw new Error("No theme palettes or font packs configured");
   }

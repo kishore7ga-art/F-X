@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PreviewThemeBridge } from "@/components/preview/PreviewThemeBridge";
 import { SiteView } from "@/components/site/SiteView";
 import { requireCollegeBySubdomain } from "@/lib/auth/current";
-import { getSitePage, getTemplatePreview } from "@/lib/site/queries";
+import { getSitePage, getTemplatePreview, isBuilt } from "@/lib/site/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -23,14 +23,18 @@ export default async function PreviewPage({
 
   await requireCollegeBySubdomain(subdomain);
 
-  let data = await getSitePage(subdomain, pageSlug);
+  const own = await getSitePage(subdomain, pageSlug);
 
   // A college that has not picked a design yet has no pages, so there is
   // genuinely nothing of its own to render. Screen 2 passes the template it is
   // offering, which is exactly what should fill the frame in that moment.
-  if (!data && templateId) {
-    data = await getTemplatePreview(subdomain, templateId);
-  }
+  // `isBuilt` covers both "no such site" and "site with nothing on it", which
+  // the backend now reports separately and which land here the same way.
+  const data = isBuilt(own)
+    ? own
+    : templateId
+      ? await getTemplatePreview(subdomain, templateId)
+      : null;
 
   if (!data) notFound();
 

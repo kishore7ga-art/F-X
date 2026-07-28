@@ -1,6 +1,7 @@
-import { prisma } from "@/lib/db";
+import { serverApi } from "@/lib/api/server";
 import { defaultContentFor } from "@/lib/sections/defaults";
 import { isSupportedSectionType } from "@/lib/sections/schemas";
+import { prisma } from "@/lib/db";
 import { DEFAULT_PAGES } from "@/lib/site/starter";
 import {
   DEFAULT_FONTS,
@@ -47,86 +48,87 @@ export type SitePageData = {
   currentPage: SiteNavPage;
   seo: SiteSeo;
   sections: RenderableSection[];
+  /** True when this is a draft being shown to the college that owns it. */
+  isOwnerPreview: boolean;
 };
 
+/** A college that exists but has not picked a design, so has nothing to render. */
+export type SiteNotBuilt = {
+  built: false;
+  college: { name: string; subdomain: string };
+};
+
+/** What `GET /api/v1/sites/:subdomain` answers with. */
+type SitePayload =
+  | SiteNotBuilt
+  | {
+      built: true;
+      college: SitePageData["college"];
+      theme: {
+        paletteColors: unknown;
+        headingFont: string | null;
+        bodyFont: string | null;
+      };
+      pages: SiteNavPage[];
+      currentPage: SiteNavPage;
+      seo: SiteSeo;
+      sections: RenderableSection[];
+      isOwnerPreview: boolean;
+    };
+
 /**
- * Everything needed to render one page of one college's site. A single query
- * path serves every tenant — this is the multi-tenant rendering engine.
+ * One page of one college's site, from the backend.
  *
- * `includeHidden` is used by the editor, which must show hidden sections so
- * they can be toggled back on.
+ * This was a Prisma query against the frontend's own connection, which is
+ * exactly why a wrong `DATABASE_URL` here turned every published site into a
+ * 500 while the API reported itself healthy. The multi-tenant read lives in the
+ * service that owns the data now.
+ *
+ * Draft visibility moved with it. The rule used to be applied afterwards, by
+ * the caller, against a payload it had already been given — which works only
+ * for as long as every caller remembers to ask. The backend decides it now, so
+ * an unpublished site is simply not in the answer.
+ *
+ * `null` means nothing to show; a `built: false` result means the college is
+ * real and one click from being a website, which is a different page.
  */
 export async function getSitePage(
   subdomain: string,
   pageSlug?: string,
-  options: { includeHidden?: boolean } = {},
-): Promise<SitePageData | null> {
-  const college = await prisma.college.findUnique({
-    where: { subdomain },
-    include: {
-      themePalette: true,
-      themeFont: true,
-      pages: { orderBy: { navOrder: "asc" } },
-    },
-  });
+): Promise<SitePageData | SiteNotBuilt | null> {
+  const query = pageSlug ? `?page=${encodeURIComponent(pageSlug)}` : "";
+  const payload = await serverApi<SitePayload>(
+    `/api/v1/sites/${encodeURIComponent(subdomain)}${query}`,
+  );
 
-  if (!college) return null;
-
-  const currentPage = pageSlug
-    ? college.pages.find((page) => page.slug === pageSlug)
-    : college.pages[0];
-
-  if (!currentPage) return null;
-
-  const collegeSections = await prisma.collegeSection.findMany({
-    where: {
-      collegeId: college.id,
-      pageId: currentPage.id,
-      ...(options.includeHidden ? {} : { isVisible: true }),
-    },
-    orderBy: { displayOrder: "asc" },
-    include: { section: true, variant: true },
-  });
+  if (!payload) return null;
+  if (!payload.built) return payload;
 
   return {
-    college: {
-      id: college.id,
-      name: college.name,
-      subdomain: college.subdomain,
-      status: college.status,
-    },
+    college: payload.college,
     theme: {
-      colors: parsePaletteColors(college.themePalette?.colors),
-      fonts: college.themeFont
-        ? {
-            headingFont: college.themeFont.headingFont,
-            bodyFont: college.themeFont.bodyFont,
-          }
-        : DEFAULT_FONTS,
+      colors: parsePaletteColors(payload.theme.paletteColors),
+      fonts:
+        payload.theme.headingFont && payload.theme.bodyFont
+          ? {
+              headingFont: payload.theme.headingFont,
+              bodyFont: payload.theme.bodyFont,
+            }
+          : DEFAULT_FONTS,
     },
-    pages: college.pages.map(({ id, slug, title }) => ({ id, slug, title })),
-    currentPage: {
-      id: currentPage.id,
-      slug: currentPage.slug,
-      title: currentPage.title,
-    },
-    seo: {
-      metaTitle: currentPage.metaTitle,
-      metaDescription: currentPage.metaDescription,
-      ogImage: currentPage.ogImage,
-      canonicalSlug: currentPage.canonicalSlug,
-    },
-    sections: collegeSections.map((row) => ({
-      id: row.id,
-      sectionType: row.section.sectionType,
-      componentKey: row.variant.componentKey,
-      variantId: row.variantId,
-      variantName: row.variant.variantName,
-      displayOrder: row.displayOrder,
-      isVisible: row.isVisible,
-      content: row.content,
-    })),
+    pages: payload.pages,
+    currentPage: payload.currentPage,
+    seo: payload.seo,
+    sections: payload.sections,
+    isOwnerPreview: payload.isOwnerPreview,
   };
+}
+
+/** Narrows the union above, so callers read as intent rather than as a field check. */
+export function isBuilt(
+  data: SitePageData | SiteNotBuilt | null,
+): data is SitePageData {
+  return data !== null && !("built" in data && data.built === false);
 }
 
 /**
@@ -140,6 +142,11 @@ export async function getSitePage(
  * design" is about to create, using the same starter pages, the same first
  * variant per section and the same default copy, so the preview is a promise
  * the action keeps.
+ *
+ * Still on Prisma, and knowingly. It is template-preview generation rather than
+ * a site read, it shares `defaultContentFor` with the provisioning path, and
+ * moving it belongs with the design endpoints rather than bolted onto the
+ * public site read.
  */
 export async function getTemplatePreview(
   subdomain: string,
@@ -218,5 +225,6 @@ export async function getTemplatePreview(
       canonicalSlug: null,
     },
     sections,
+    isOwnerPreview: false,
   };
 }
