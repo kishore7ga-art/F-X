@@ -13,7 +13,21 @@ import { useState } from "react";
  * fill, and one that has should not be told "wrong password" when the password
  * was right — that message sends people to reset a password that was fine.
  */
-export function AdminLoginForm() {
+export function AdminLoginForm({
+  /**
+   * Fills the form with the bootstrap credentials, and never ships to
+   * production.
+   *
+   * Anything this component can type into the password field is a string in
+   * the client bundle, which means it is readable by everyone who opens the
+   * page — a "fill the admin password" button on a public URL hands the panel
+   * to whoever views source. The server decides whether to pass these, and it
+   * only does so outside production.
+   */
+  autofill,
+}: {
+  autofill?: { email: string; password: string } | null;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
@@ -133,6 +147,26 @@ export function AdminLoginForm() {
       >
         {pending ? "Checking…" : "Sign in"}
       </button>
+
+      {autofill ? (
+        <div className="border-t border-night-line pt-5">
+          <button
+            type="button"
+            onClick={() => {
+              setEmail(autofill.email);
+              setPassword(autofill.password);
+              setError(null);
+            }}
+            className="w-full rounded-lg border border-night-line px-4 py-2.5 text-xs font-semibold text-chalk-dim transition-colors hover:border-chalk-dim/40 hover:text-chalk"
+          >
+            Fill bootstrap credentials
+          </button>
+          <p className="mt-3 text-[11px] leading-relaxed text-chalk-dim/50">
+            Development only — this button is not rendered in production,
+            because the password would be readable in the page source.
+          </p>
+        </div>
+      ) : null}
     </form>
   );
 }

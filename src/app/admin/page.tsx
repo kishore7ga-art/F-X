@@ -44,7 +44,23 @@ export default async function AdminPage() {
           </p>
 
           <div className="mt-9">
-            <AdminLoginForm />
+            {/*
+              Decided on the server, so the password is never in the bundle at
+              all in production — not hidden by a flag the client could flip,
+              simply absent from what was sent.
+            */}
+            <AdminLoginForm
+              autofill={
+                process.env.NODE_ENV !== "production" &&
+                process.env.ADMIN_BOOTSTRAP_EMAIL &&
+                process.env.ADMIN_BOOTSTRAP_PASSWORD
+                  ? {
+                      email: process.env.ADMIN_BOOTSTRAP_EMAIL,
+                      password: process.env.ADMIN_BOOTSTRAP_PASSWORD,
+                    }
+                  : null
+              }
+            />
           </div>
 
           <Link
