@@ -146,8 +146,9 @@ export function ProductInMotion() {
             data-reveal
             className="mt-6 max-w-xl text-[1.05rem] leading-relaxed text-chalk-dim"
           >
-            No save button, no lost afternoon, and no rewriting the prospectus
-            because somebody wanted a different look.
+            No save button and no lost afternoon. Fifty versions of every
+            section are kept, so undoing a bad Tuesday is a click rather than a
+            rewrite.
           </p>
         </div>
 

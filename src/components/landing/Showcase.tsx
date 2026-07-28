@@ -56,7 +56,7 @@ export function Showcase({ templates }: { templates: TemplateSummary[] }) {
             data-reveal
             className="mt-5 text-[clamp(1.9rem,4.4vw,3.6rem)] font-extrabold leading-[1] tracking-[-0.035em] text-chalk"
           >
-            Five designs. Pick one, change it later.
+            Five designs, each with a live demo.
           </h2>
         </div>
 

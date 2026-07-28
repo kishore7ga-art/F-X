@@ -103,13 +103,16 @@ export function LayoutLibrary() {
             >
               Thirty layouts. Five kinds of section.
             </h2>
+            {/* Says what this section alone knows — the shape of the library —
+                rather than restating the headline's promise a fourth time. */}
             <p
               data-reveal
               className="mt-6 max-w-md text-[1.05rem] leading-relaxed text-chalk-dim"
             >
-              Every section on your site has six designs to sit in. Swap one and
-              the words inside it do not move — the layout changes, the sentence
-              stays.
+              A hero can be a masthead, a split, or a single line of type. A
+              faculty list can be cards, a roster, or a table grouped by
+              department. Six ways to draw each of the five things a college
+              page is made of.
             </p>
 
             {/* The list a screen reader gets, and the one a search engine

@@ -20,11 +20,11 @@ const STEPS = [
   },
   {
     title: "Pick a design, or let us",
-    body: "Browse five designs with live demos, or take the one that suits your type of college. Either way you land in the editor with pages already built.",
+    body: "Take the one that suits your type of college, or browse them yourself. Either way you land in the editor with four pages already built — home, about, admissions, contact.",
   },
   {
     title: "Replace the words, publish",
-    body: "Type over the starter copy. Nothing to save — it files itself two seconds after you stop. Publish when you decide, not before.",
+    body: "Type over the starter copy. Your address is live at /site/your-college the moment you publish, and not one second before.",
   },
 ] as const;
 
@@ -43,7 +43,7 @@ export function Process() {
             How it works
           </p>
           <AnimatedHeading
-            text="Three steps, and none of them is a meeting."
+            text="Two questions, one design, and you are editing."
             className="mt-5 text-[clamp(1.9rem,4.4vw,3.6rem)] font-extrabold leading-[1] tracking-[-0.035em] text-chalk"
           />
         </div>

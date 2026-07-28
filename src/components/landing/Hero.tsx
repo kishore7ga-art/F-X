@@ -59,9 +59,14 @@ export function Hero({ ctaHref, ctaLabel }: { ctaHref: string; ctaLabel: string 
               <span>3 screens to live</span>
             </p>
 
+            {/* The page's point of view, and the strongest sentence on it.
+                It had a section of its own, which was the headline restated at
+                length — it does more work here, where it is the reason the
+                headline is true rather than a paraphrase of it. */}
             <p className="mt-6 text-[clamp(1.05rem,1.4vw,1.3rem)] leading-relaxed text-chalk-dim">
-              XITE builds a college website from two questions and a design you
-              pick, then gets out of the way while you replace the words.
+              A college website is not a design project. It is a few hundred
+              sentences that need to be correct and current — and the design is
+              the disposable part.
             </p>
           </div>
 

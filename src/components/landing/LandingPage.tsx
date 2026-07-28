@@ -2,9 +2,7 @@
 
 import { CTA } from "@/components/landing/CTA";
 import { Hero } from "@/components/landing/Hero";
-import { KeyFacts } from "@/components/landing/KeyFacts";
 import { Nav } from "@/components/landing/Nav";
-import { Philosophy } from "@/components/landing/Philosophy";
 import { Process } from "@/components/landing/Process";
 import { LayoutLibrary } from "@/components/landing/LayoutLibrary";
 import { ProductInMotion } from "@/components/landing/ProductInMotion";
@@ -54,8 +52,6 @@ export function LandingPage({
 
       <main id="main">
         <Hero ctaHref={ctaHref} ctaLabel={ctaLabel} />
-        <Philosophy />
-        <KeyFacts />
         <ProductInMotion />
         <LayoutLibrary />
         <Process />

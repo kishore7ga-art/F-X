@@ -14,18 +14,6 @@
  * one thing this codebase has already been bitten by twice.
  */
 
-/** 8px base. Every vertical rhythm on the page is a multiple of this. */
-export const SPACE = {
-  xs: 8,
-  sm: 16,
-  md: 24,
-  lg: 40,
-  xl: 64,
-  "2xl": 96,
-  "3xl": 144,
-  "4xl": 200,
-} as const;
-
 /**
  * Section rhythm as Tailwind classes rather than raw numbers.
  *
@@ -41,29 +29,6 @@ export const SECTION = {
   container: "mx-auto w-full max-w-[1400px] px-5 sm:px-8 lg:px-12",
   /** Narrower measure, for anything with a lot of prose in it. */
   containerNarrow: "mx-auto w-full max-w-[900px] px-5 sm:px-8",
-} as const;
-
-/**
- * Type scale.
- *
- * `clamp()` rather than breakpoint jumps: display type that steps between two
- * sizes reads as a layout bug at the boundary, and fluid scaling is the whole
- * difference between "responsive" and "designed for this width".
- */
-export const TYPE = {
-  /** Hero. Deliberately enormous, and tightened as it grows. */
-  display:
-    "text-[clamp(2.75rem,9vw,8.5rem)] font-extrabold leading-[0.86] tracking-[-0.045em]",
-  /** Section headings. */
-  h2: "text-[clamp(2rem,5vw,4.5rem)] font-extrabold leading-[0.95] tracking-[-0.035em]",
-  h3: "text-[clamp(1.35rem,2.2vw,2rem)] font-bold leading-[1.1] tracking-[-0.02em]",
-  /** Body copy, at a size that survives a large monitor. */
-  body: "text-[clamp(1rem,1.15vw,1.2rem)] leading-relaxed",
-  /** Eyebrows and labels. Letter-spaced because they are read as signage. */
-  eyebrow:
-    "text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em]",
-  /** Numerals in the statistics band. Tabular so counting does not reflow. */
-  stat: "text-[clamp(3rem,7vw,7rem)] font-extrabold leading-[0.85] tracking-[-0.04em] tabular-nums",
 } as const;
 
 /**
@@ -99,13 +64,3 @@ export const STAGGER = {
   loose: 0.14,
 } as const;
 
-/** Matches Tailwind's defaults, so JS and CSS agree about where a break is. */
-export const BREAKPOINT = {
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  "2xl": 1536,
-} as const;
-
-export type Breakpoint = keyof typeof BREAKPOINT;
