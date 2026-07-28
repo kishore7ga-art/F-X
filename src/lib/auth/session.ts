@@ -1,94 +1,26 @@
 import { cookies } from "next/headers";
-import { jwtVerify, SignJWT } from "jose";
 
-import { hostFromOrigin, sessionCookieScope } from "@/lib/auth/cookie-domain";
 import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
-
-export const COOKIE_NAME = "college_session";
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
-
-export type SessionPayload = {
-  userId: string;
-  collegeId: string;
-};
-
-function secretKey() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error("SESSION_SECRET must be set and at least 32 characters");
-  }
-  return new TextEncoder().encode(secret);
-}
+import {
+  COOKIE_NAME,
+  createSessionToken,
+  readSessionToken,
+  sessionCookieAttributes,
+  sessionCookieOptions,
+  type SessionPayload,
+} from "@/lib/auth/session-token";
 
 /**
- * Mints the signed token without touching cookies.
+ * The session, as seen from a request that has an ambient cookie jar.
  *
- * Route handlers that end in a redirect must attach the cookie to the response
- * they return; ambient cookie mutation is not reliably carried onto one.
+ * The token format and the cookie's attributes live in session-token.ts, which
+ * imports nothing from `next/headers` — because proxy.ts renews the session on
+ * every visit and cannot use `cookies()`. Both read one definition rather than
+ * keeping two in step by hand.
  */
-export async function createSessionToken(
-  payload: SessionPayload,
-): Promise<string> {
-  return new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE_SECONDS}s`)
-    .sign(secretKey());
-}
 
-/** Cookie attributes, shared by every place that writes the session. */
-export function sessionCookieOptions() {
-  return { ...sessionCookieAttributes(), maxAge: MAX_AGE_SECONDS };
-}
-
-/**
- * Everything that identifies the cookie, without its lifetime.
- *
- * Deletion has to match on these — name, path, domain — but must not carry a
- * maxAge, which is what makes it a deletion rather than a rewrite.
- */
-function sessionCookieAttributes() {
-  /**
-   * Must match what the backend sets, or the two write different cookies.
-   *
-   * The backend issues the session on the parent domain so both services see
-   * one login. A cookie written here without the same Domain is a *different*
-   * cookie to the browser, and deleting it would leave the backend's in place —
-   * signing out would appear to work and change nothing.
-   *
-   * So it is not read from a second environment variable and hoped over: the
-   * same shared helper the backend calls derives it from the same two
-   * hostnames, which this service already has to know to reach the API at all.
-   */
-  const domain = sessionCookieScope({
-    configured: process.env.SESSION_COOKIE_DOMAIN,
-    frontendHost: hostFromOrigin(process.env.APP_URL),
-    apiHost: hostFromOrigin(process.env.NEXT_PUBLIC_API_BASE_URL),
-  }).domain;
-
-  /**
-   * Keyed off the Domain, exactly as `cookieOptions()` in the backend is.
-   *
-   * This used to key off `NEXT_PUBLIC_API_BASE_URL` instead — "the API is on
-   * another origin, so the cookie must be `none`". Two things are wrong with
-   * that. SameSite is about *site*, not origin: localhost:3000 → localhost:4000
-   * and xite.co.in → api.xite.co.in are both same-site, and `lax` is sent on
-   * both. And `none` drags `secure` along with it, so merely naming a backend
-   * made local development write a Secure cookie over plain http — which only
-   * survives because browsers make an exception for localhost.
-   */
-  const crossSite = Boolean(domain);
-
-  return {
-    httpOnly: true,
-    // `none` is required only when the two really are different sites, and
-    // browsers accept `none` only alongside `secure`.
-    sameSite: (crossSite ? "none" : "lax") as "none" | "lax",
-    secure: crossSite || process.env.NODE_ENV === "production",
-    path: "/",
-    ...(domain ? { domain } : {}),
-  };
-}
+export { COOKIE_NAME, createSessionToken, sessionCookieOptions };
+export type { SessionPayload };
 
 export async function createSession(payload: SessionPayload) {
   const token = await createSessionToken(payload);
@@ -144,20 +76,7 @@ export async function getSession(): Promise<SessionPayload | null> {
 async function verifySessionCookie(
   token: string | undefined,
 ): Promise<SessionPayload | null> {
-  if (!token) return null;
-
-  try {
-    const { payload } = await jwtVerify(token, secretKey());
-    const userId = payload.userId;
-    const collegeId = payload.collegeId;
-    if (typeof userId !== "string" || typeof collegeId !== "string") {
-      return null;
-    }
-    return { userId, collegeId };
-  } catch {
-    // Expired or tampered token — treat as signed out.
-    return null;
-  }
+  return (await readSessionToken(token))?.payload ?? null;
 }
 
 export async function destroySession() {
