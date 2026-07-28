@@ -48,17 +48,6 @@ export function sessionCookieOptions() {
  */
 function sessionCookieAttributes() {
   /**
-   * `lax` is right while the API is same-origin, and silently wrong the moment
-   * it is not: a lax cookie is never sent to a different origin, so moving the
-   * API to api.xite.co.in would 401 every authenticated call while CORS looked
-   * perfectly configured.
-   *
-   * `none` requires `secure`, which is why it is keyed off having a
-   * cross-origin API rather than offered as a free-standing switch.
-   */
-  const crossOrigin = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
-
-  /**
    * Must match what the backend sets, or the two write different cookies.
    *
    * The backend issues the session on the parent domain so both services see
@@ -68,10 +57,29 @@ function sessionCookieAttributes() {
    */
   const domain = process.env.SESSION_COOKIE_DOMAIN;
 
+  /**
+   * Keyed off the Domain, exactly as `cookieOptions()` in the backend is.
+   *
+   * This used to key off `NEXT_PUBLIC_API_BASE_URL` instead — "the API is on
+   * another origin, so the cookie must be `none`". Two things are wrong with
+   * that. SameSite is about *site*, not origin: localhost:3000 → localhost:4000
+   * and xite.co.in → api.xite.co.in are both same-site, and `lax` is sent on
+   * both. And `none` drags `secure` along with it, so merely naming a backend
+   * made local development write a Secure cookie over plain http — which only
+   * survives because browsers make an exception for localhost.
+   *
+   * More to the point, the backend decided this from the Domain. Deciding it
+   * from something else here is how the two services end up disagreeing about
+   * a cookie they both have to write.
+   */
+  const crossSite = Boolean(domain);
+
   return {
     httpOnly: true,
-    sameSite: (crossOrigin ? "none" : "lax") as "none" | "lax",
-    secure: crossOrigin || process.env.NODE_ENV === "production",
+    // `none` is required only when the two really are different sites, and
+    // browsers accept `none` only alongside `secure`.
+    sameSite: (crossSite ? "none" : "lax") as "none" | "lax",
+    secure: crossSite || process.env.NODE_ENV === "production",
     path: "/",
     ...(domain ? { domain } : {}),
   };
