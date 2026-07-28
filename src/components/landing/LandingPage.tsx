@@ -9,6 +9,7 @@ import { Process } from "@/components/landing/Process";
 import { LayoutLibrary } from "@/components/landing/LayoutLibrary";
 import { ProductInMotion } from "@/components/landing/ProductInMotion";
 import { Showcase } from "@/components/landing/Showcase";
+import { LiquidCursor } from "@/components/ui/LiquidCursor";
 import { useLenis } from "@/hooks/useLenis";
 import type { TemplateSummary } from "@/lib/site/templates";
 
@@ -39,6 +40,7 @@ export function LandingPage({
 
   return (
     <div className="bg-night">
+      <LiquidCursor />
       <Nav ctaHref={ctaHref} ctaLabel={ctaLabel} />
 
       {/* First in the tab order: a page this long behind a fixed nav is
