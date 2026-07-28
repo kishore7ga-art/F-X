@@ -12,17 +12,17 @@
  * across a crash that nothing here can actually deliver.
  */
 
-/** What caused a save. Recorded per snapshot so history reads like a story. */
-export type SaveTrigger =
-  | "typing"
-  | "drag"
-  | "color"
-  | "font"
-  | "image"
-  | "delete"
-  | "resize"
-  | "section_update"
-  | "restore";
+/**
+ * What caused a save, re-exported from the shared contract.
+ *
+ * This was a hand-written union of the same nine strings the backend builds its
+ * zod enum from. They matched, and nothing made them match: a value added on
+ * one side alone meant the editor sending a trigger the API rejected, surfacing
+ * as a save that failed for no stated reason. Derived from one list now, so the
+ * question cannot come up.
+ */
+export type { SaveTrigger } from "@/lib/api-contract";
+import type { SaveTrigger } from "@/lib/api-contract";
 
 export type SaveState =
   | { status: "idle" }

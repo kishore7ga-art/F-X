@@ -1,4 +1,5 @@
 import { SECTION_TYPE_LABELS } from "@/components/sections/registry";
+import type { EditorPagePayload } from "@/lib/api-contract";
 import { serverApi } from "@/lib/api/server";
 import {
   isSupportedSectionType,
@@ -66,21 +67,16 @@ export type EditorPageData = {
   templateCount: number;
 };
 
-/** What `GET /api/v1/editor/:subdomain` answers with. */
-type EditorPayload = Omit<
-  EditorPageData,
-  "theme" | "sections" | "addableSections"
-> & {
-  theme: {
-    paletteColors: unknown;
-    headingFont: string | null;
-    bodyFont: string | null;
-  };
-  sections: (Omit<EditorSection, "label" | "sectionType"> & {
-    sectionType: string;
-  })[];
-  addableSections: { sectionId: string; sectionType: string }[];
-};
+/*
+ * What `GET /api/v1/editor/:subdomain` answers with used to be described here,
+ * derived from the view type above by subtraction: take EditorPageData, remove
+ * the three fields the frontend adds, put back what the wire actually carries.
+ * It was accurate and entirely unenforced — a field added to the backend's
+ * response, or dropped from it, changed nothing here and failed at runtime.
+ *
+ * `EditorPagePayload` in the shared contract is that description, in the one
+ * place the backend also annotates its own return with.
+ */
 
 /**
  * Everything the section editor needs for one page of one college.
@@ -99,7 +95,7 @@ export async function getEditorPage(
   pageSlug?: string,
 ): Promise<EditorPageData | null> {
   const query = pageSlug ? `?page=${encodeURIComponent(pageSlug)}` : "";
-  const payload = await serverApi<EditorPayload>(
+  const payload = await serverApi<EditorPagePayload>(
     `/api/v1/editor/${encodeURIComponent(subdomain)}${query}`,
   );
   if (!payload) return null;

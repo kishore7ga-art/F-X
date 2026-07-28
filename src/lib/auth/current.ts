@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import type { CollegePayload } from "@/lib/api-contract";
 import { serverApi, ServerApiError } from "@/lib/api/server";
 import { getSession } from "@/lib/auth/session";
 
@@ -12,23 +13,13 @@ import { getSession } from "@/lib/auth/session";
  * the product authenticated people onto a screen that could not load. There is
  * one credential now, in the service that owns the data.
  *
- * `createdAt` arrives as an ISO string rather than a Date — it crossed JSON to
- * get here. Nothing reads it as a Date today, and typing it honestly is better
- * than reviving one that would be a lie in the general case.
+ * The shape was then declared here a second time, by hand, to describe what
+ * that service sends — which is the same mistake one layer up: two definitions,
+ * no link, and a field added to the backend's `select` breaking this at runtime
+ * with both repos compiling. It is the shared contract now, which the backend
+ * annotates its own return with, so the two cannot disagree.
  */
-export type CurrentCollege = {
-  id: string;
-  name: string;
-  subdomain: string;
-  customDomain: string | null;
-  templateId: string | null;
-  themePaletteId: string | null;
-  themeFontId: string | null;
-  status: string;
-  collegeType: string | null;
-  isDemo: boolean;
-  createdAt: string;
-};
+export type CurrentCollege = CollegePayload;
 
 export async function getCurrentCollege(): Promise<CurrentCollege | null> {
   // The cookie is verified here first, so a signed-out visitor costs no round

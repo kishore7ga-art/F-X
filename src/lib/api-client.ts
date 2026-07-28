@@ -98,8 +98,11 @@ export const loginRequest = (email: string, password: string) =>
     body: { email, password },
   });
 
-export const logoutRequest = () =>
-  api<{ ok: true }>("/api/v1/auth/logout", { method: "POST" });
+/*
+ * No logoutRequest. Signing out clears the cookie through the server action in
+ * app/actions/auth.ts, which needs no client JavaScript and cannot half-fail
+ * the way a fetch can. The backend route it used to call has been removed.
+ */
 
 /**
  * A missing id would build `/api/v1/sections/` — a path that matches no route
