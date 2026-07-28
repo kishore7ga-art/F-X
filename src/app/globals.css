@@ -51,21 +51,32 @@ body {
      the raised panels — #0E1015 has to read as *lifted* off the page, which it
      cannot do if the page is already at zero.
 
-     Text is warm off-white, not #FFF, for the same reason from the other
-     direction.
+     One flat accent — the electric blue — and it is spent on actions only:
+     buttons, links, the marker beside a live figure. Violet and ember exist
+     solely as further stops inside the mesh gradient. Used flat they would make
+     this a three-accent page, which is a palette rather than a decision.
 
-     One accent, and it is spent in three places on the whole page: the primary
-     button, one underline, and the marker beside each key fact. Gold because
-     the subject is colleges and it carries that without costing anything, and
-     because the two colours an AI reaches for on a dark page — acid green and
-     vermilion — are defaults rather than decisions.
+     The page also breaks out onto light surfaces, so the paper/ink pair is
+     here too rather than being improvised per section.
      --------------------------------------------------------------------- */
-  --color-night: #07080b;
-  --color-night-raised: #0e1015;
-  --color-night-line: #1c1f27;
-  --color-chalk: #f2f0ec;
-  --color-chalk-dim: #a8a7a3;
-  --color-accent: #d9a441;
+  --color-night: #0e0e10;
+  --color-night-raised: #17171a;
+  --color-night-line: #2a2a2e;
+  --color-chalk: #ffffff;
+  --color-chalk-dim: #98989f;
+  --color-accent: #146ef5;
+  --color-accent-hover: #0d5bd1;
+  /* The two further stops of the mesh. Used only inside gradients — never as a
+     flat fill, or the page acquires three accents instead of one. */
+  --color-mesh-violet: #7c3aed;
+  --color-mesh-ember: #ff6b35;
+
+  /* Light surfaces, for the sections that break out of the dark. */
+  --color-paper: #ffffff;
+  --color-paper-sunk: #f4f3f2;
+  --color-ink: #101828;
+  --color-ink-dim: #667085;
+  --color-rule: #e4e4e7;
 }
 
 @keyframes rise {
@@ -174,7 +185,7 @@ body {
     from var(--edge-angle),
     transparent 0%,
     var(--color-accent) 18%,
-    #f3d99a 30%,
+    var(--color-mesh-violet) 30%,
     var(--color-accent) 42%,
     transparent 60%,
     transparent 100%
@@ -196,12 +207,46 @@ body {
   box-shadow: 0 0 34px -6px var(--color-accent);
 }
 
+/* ---------------------------------------------------------------------------
+   The gradient mesh behind the hero and the closing banner.
+
+   Three blurred radial blobs on one element rather than an animated
+   `background-position`: a position animation on a gradient this large forces
+   the browser to repaint the whole layer every frame, where transforming three
+   small pseudo-elements stays on the compositor. At 80px of blur nobody can
+   tell the difference except the frame counter.
+
+   Slow — half a minute a cycle. A mesh you can watch move is a mesh that
+   competes with the headline in front of it.
+   --------------------------------------------------------------------------- */
+@keyframes meshDrift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(6%, -4%, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-5%, 5%, 0) scale(0.96);
+  }
+}
+
+.mesh-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(80px);
+  will-change: transform;
+  animation: meshDrift 28s ease-in-out infinite;
+}
+
 /* Nobody should have to watch a page breathe to read it.
    Everything above is decoration; the content underneath is unaffected. */
 @media (prefers-reduced-motion: reduce) {
   .rise,
   .drift,
   .scroll-line,
+  .mesh-blob,
   .gradient-edge::before,
 
   [style*="heroLine"] {
