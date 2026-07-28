@@ -60,6 +60,11 @@ export function Footer({ templates }: { templates: TemplateSummary[] }) {
                 { href: "#templates", label: "All templates" },
                 { href: "/login", label: "Sign in" },
                 { href: "/api/health", label: "Service status" },
+                // Asked for "for now". A panel that can delete every college on
+                // the platform does not belong in the primary nav long-term —
+                // it is not a destination for visitors, and a link nobody but
+                // one person should follow is better off unadvertised.
+                { href: "/admin", label: "Admin" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link

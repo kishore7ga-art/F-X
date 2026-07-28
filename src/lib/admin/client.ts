@@ -1,0 +1,74 @@
+import { serverApi, ServerApiError } from "@/lib/api/server";
+
+/**
+ * The admin panel's reads, through the same server client as everything else.
+ *
+ * No direct database access, exactly as the rest of the frontend now works —
+ * the panel is a different audience, not a different rule.
+ */
+
+export type AdminOverview = {
+  colleges: { total: number; published: number; onboardingIncomplete: number };
+  users: number;
+  templates: {
+    id: string;
+    name: string;
+    colleges: number;
+    archived: boolean;
+  }[];
+  recentActions: {
+    id: string;
+    actorEmail: string;
+    action: string;
+    summary: string;
+    createdAt: string;
+  }[];
+};
+
+export type AdminSite = {
+  id: string;
+  name: string;
+  subdomain: string;
+  status: string;
+  templateName: string | null;
+  owners: number;
+  sections: number;
+  orphaned: boolean;
+  adoptable: boolean;
+  lastEditedAt: string | null;
+  createdAt: string;
+};
+
+/**
+ * `null` means not signed in, which is a normal answer here rather than a
+ * failure — the login page is what happens next, not an error screen.
+ */
+export async function adminMe(): Promise<{ email: string } | null> {
+  try {
+    const payload = await serverApi<{ admin: { email: string } }>(
+      "/api/v1/admin/me",
+    );
+    return payload?.admin ?? null;
+  } catch (cause) {
+    if (cause instanceof ServerApiError) return null;
+    throw cause;
+  }
+}
+
+export async function adminOverview(): Promise<AdminOverview | null> {
+  return serverApi<AdminOverview>("/api/v1/admin/overview");
+}
+
+export async function adminSites(): Promise<AdminSite[]> {
+  const payload = await serverApi<{ sites: AdminSite[] }>("/api/v1/admin/sites");
+  return payload?.sites ?? [];
+}
+
+/** The frontend's own health probe, shown plainly on the dashboard. */
+export type Health = {
+  status: string;
+  database: string;
+  reason?: string;
+  templates: number | null;
+  backend?: { reachable?: boolean; latencyMs?: number; url?: string };
+};
