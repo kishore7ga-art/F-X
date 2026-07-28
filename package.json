@@ -17,7 +17,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "check:shared": "node scripts/check-shared-files.mjs",
-    "prebuild": "node scripts/check-shared-files.mjs"
+    "prebuild": "node scripts/check-shared-files.mjs && node scripts/check-api-boundary.mjs",
+    "check:boundary": "node scripts/check-api-boundary.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.0",
