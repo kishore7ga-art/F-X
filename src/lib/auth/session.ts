@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { jwtVerify, SignJWT } from "jose";
 
+import { hostFromOrigin, sessionCookieScope } from "@/lib/auth/cookie-domain";
 import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
 
 export const COOKIE_NAME = "college_session";
@@ -54,8 +55,16 @@ function sessionCookieAttributes() {
    * one login. A cookie written here without the same Domain is a *different*
    * cookie to the browser, and deleting it would leave the backend's in place —
    * signing out would appear to work and change nothing.
+   *
+   * So it is not read from a second environment variable and hoped over: the
+   * same shared helper the backend calls derives it from the same two
+   * hostnames, which this service already has to know to reach the API at all.
    */
-  const domain = process.env.SESSION_COOKIE_DOMAIN;
+  const domain = sessionCookieScope({
+    configured: process.env.SESSION_COOKIE_DOMAIN,
+    frontendHost: hostFromOrigin(process.env.APP_URL),
+    apiHost: hostFromOrigin(process.env.NEXT_PUBLIC_API_BASE_URL),
+  }).domain;
 
   /**
    * Keyed off the Domain, exactly as `cookieOptions()` in the backend is.
@@ -67,10 +76,6 @@ function sessionCookieAttributes() {
    * both. And `none` drags `secure` along with it, so merely naming a backend
    * made local development write a Secure cookie over plain http — which only
    * survives because browsers make an exception for localhost.
-   *
-   * More to the point, the backend decided this from the Domain. Deciding it
-   * from something else here is how the two services end up disagreeing about
-   * a cookie they both have to write.
    */
   const crossSite = Boolean(domain);
 
