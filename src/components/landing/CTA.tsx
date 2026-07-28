@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { GradientButton } from "@/components/ui/GradientButton";
 import { SECTION } from "@/constants/tokens";
 import { useMagnetic } from "@/hooks/useMagnetic";
 import { useReveal } from "@/hooks/useReveal";
@@ -35,18 +36,17 @@ export function CTA({ ctaHref, ctaLabel }: { ctaHref: string; ctaLabel: string }
 
           <div data-reveal className="mt-12 flex justify-center">
             <div ref={magneticRef} className="inline-block will-change-transform">
-              <Link
-                href={ctaHref}
-                className="group inline-flex items-center gap-3 rounded-full bg-accent px-8 py-4 text-[15px] font-semibold text-night transition-opacity duration-300 hover:opacity-90"
-              >
-                {ctaLabel}
-                <span
-                  aria-hidden
-                  className="transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1"
-                >
-                  →
-                </span>
-              </Link>
+              <GradientButton asChild variant="gradient">
+                <Link href={ctaHref}>
+                  {ctaLabel}
+                  <span
+                    aria-hidden
+                    className="transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-1"
+                  >
+                    →
+                  </span>
+                </Link>
+              </GradientButton>
             </div>
           </div>
 

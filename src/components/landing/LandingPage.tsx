@@ -6,6 +6,7 @@ import { KeyFacts } from "@/components/landing/KeyFacts";
 import { Nav } from "@/components/landing/Nav";
 import { Philosophy } from "@/components/landing/Philosophy";
 import { Process } from "@/components/landing/Process";
+import { LayoutLibrary } from "@/components/landing/LayoutLibrary";
 import { ProductInMotion } from "@/components/landing/ProductInMotion";
 import { Showcase } from "@/components/landing/Showcase";
 import { useLenis } from "@/hooks/useLenis";
@@ -54,6 +55,7 @@ export function LandingPage({
         <Philosophy />
         <KeyFacts />
         <ProductInMotion />
+        <LayoutLibrary />
         <Process />
         <Showcase templates={templates} />
         <CTA ctaHref={ctaHref} ctaLabel={ctaLabel} />

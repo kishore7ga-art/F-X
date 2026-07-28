@@ -136,12 +136,74 @@ body {
   animation: scrollLine 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
 }
 
+/* ---------------------------------------------------------------------------
+   The gradient edge on the primary button.
+
+   A registered custom property is the whole trick: `--edge-angle` is declared
+   with a type, so the browser knows it is an angle and can interpolate it.
+   Declared as a plain variable it would be a string, and a string cannot be
+   animated — the gradient would jump from 0deg to 360deg and look static.
+
+   Two layers. The conic sweep is the border, drawn on a padded pseudo-element
+   behind the button; a second, blurred copy sits under it as the glow, and only
+   that one changes on hover. The button's own background covers the middle,
+   which is what turns a filled gradient into a ring.
+   --------------------------------------------------------------------------- */
+@property --edge-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes edgeSpin {
+  to {
+    --edge-angle: 360deg;
+  }
+}
+
+/* The ring. One pseudo-element, sized 1.5px larger than the button on every
+   side, with the button's own background painting over the middle — which is
+   what turns a filled gradient into a border. */
+.gradient-edge::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--edge-angle),
+    transparent 0%,
+    var(--color-accent) 18%,
+    #f3d99a 30%,
+    var(--color-accent) 42%,
+    transparent 60%,
+    transparent 100%
+  );
+  animation: edgeSpin 4.5s linear infinite;
+}
+
+/* The glow is a box-shadow, deliberately, and not a blurred copy of the ring.
+   `filter` creates a stacking context, which promotes the blurred element out
+   from behind the button and paints it over the label — the button ends up
+   with a gold smear across its own text. A shadow tints outwards without
+   joining the stacking order at all. */
+.gradient-edge {
+  box-shadow: 0 0 22px -8px var(--color-accent);
+  transition: box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gradient-edge:hover {
+  box-shadow: 0 0 34px -6px var(--color-accent);
+}
+
 /* Nobody should have to watch a page breathe to read it.
    Everything above is decoration; the content underneath is unaffected. */
 @media (prefers-reduced-motion: reduce) {
   .rise,
   .drift,
   .scroll-line,
+  .gradient-edge::before,
+
   [style*="heroLine"] {
     animation: none !important;
   }
