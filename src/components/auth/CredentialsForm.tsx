@@ -7,14 +7,45 @@ import { Mail, Lock, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 
 import { ApiError, loginRequest, signupRequest } from "@/lib/api-client";
 
+function GoogleButton() {
+  return (
+    <a
+      href="/api/auth/google/start"
+      className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-800 transition shadow-xs hover:bg-slate-50 hover:shadow-md hover:border-slate-300 active:scale-[0.99]"
+    >
+      <svg viewBox="0 0 18 18" className="h-5 w-5 shrink-0" aria-hidden="true">
+        <path
+          fill="#4285F4"
+          d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"
+        />
+        <path
+          fill="#34A853"
+          d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z"
+        />
+        <path
+          fill="#FBBC05"
+          d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z"
+        />
+        <path
+          fill="#EA4335"
+          d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z"
+        />
+      </svg>
+      <span>Continue with Google</span>
+    </a>
+  );
+}
+
 export function CredentialsForm({
   mode,
   notice,
   initialEmail = "",
+  showGoogleButton = false,
 }: {
   mode: "login" | "signup";
   notice?: string | null;
   initialEmail?: string;
+  showGoogleButton?: boolean;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState(initialEmail);
@@ -70,18 +101,38 @@ export function CredentialsForm({
             </span>
           </Link>
 
-          <h1 className="mt-6 text-3xl font-extrabold text-slate-900 tracking-tight">
-            {isSignup ? "Create your account" : "Welcome back"}
+          <div className="mt-4">
+            <span className="inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-blue-700 border border-blue-200">
+              Step 1 of 3
+            </span>
+          </div>
+
+          <h1 className="mt-3 text-3xl font-extrabold text-slate-900 tracking-tight">
+            {isSignup ? "Create your account" : "Sign in to XITE"}
           </h1>
           <p className="mt-2 text-sm font-semibold text-slate-500">
             {isSignup
               ? "Sign up to create and publish your official college website."
-              : "Sign in to manage your college website & pages."}
+              : "Sign in to claim your college site or set one up right away."}
           </p>
         </div>
 
-        {/* Card Container */}
+        {/* White Card Container */}
         <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-[0_20px_60px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+          {/* Google Sign-in Button */}
+          {showGoogleButton && (
+            <div className="mb-6">
+              <GoogleButton />
+              <div className="mt-6 flex items-center gap-4">
+                <span className="h-px flex-1 bg-slate-200" />
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                  or
+                </span>
+                <span className="h-px flex-1 bg-slate-200" />
+              </div>
+            </div>
+          )}
+
           {/* Quick Demo Autofill Pill */}
           {!isSignup && (
             <button
@@ -93,7 +144,7 @@ export function CredentialsForm({
                 <Sparkles className="h-4 w-4 text-blue-600 shrink-0" />
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-blue-900 truncate">
-                    Fill Demo Admin Login
+                    Fill Demo Admin Credentials
                   </p>
                   <p className="text-[11px] font-medium text-blue-700 truncate">
                     admin@greenfield.edu.in
@@ -113,10 +164,10 @@ export function CredentialsForm({
             </div>
           ) : null}
 
-          <form onSubmit={submit} className="space-y-5">
-            {/* Email Field */}
+          {/* Email & Password Form */}
+          <form onSubmit={submit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -136,9 +187,8 @@ export function CredentialsForm({
               </div>
             </div>
 
-            {/* Password Field */}
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
                   Password
                 </label>
@@ -160,7 +210,7 @@ export function CredentialsForm({
                 />
               </div>
               {isSignup ? (
-                <p className="mt-1.5 text-[11px] font-semibold text-slate-400">
+                <p className="mt-1 text-[11px] font-semibold text-slate-400">
                   Must be at least 8 characters long
                 </p>
               ) : null}
@@ -175,25 +225,25 @@ export function CredentialsForm({
               </div>
             ) : null}
 
-            {/* Submit Button */}
+            {/* Single Primary Submit Button */}
             <button
               type="submit"
               disabled={pending}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 py-3.5 text-sm font-extrabold text-white transition-all duration-200 hover:bg-black hover:shadow-lg disabled:opacity-50 active:scale-[0.99] cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3.5 text-sm font-extrabold text-white transition-all duration-200 hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 active:scale-[0.99] cursor-pointer shadow-md"
             >
               <span>
                 {pending
                   ? "Please wait…"
                   : isSignup
                     ? "Create account"
-                    : "Sign in to Dashboard"}
+                    : "Sign in"}
               </span>
               {!pending && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
 
           {/* Toggle Footer */}
-          <div className="mt-8 border-t border-slate-100 pt-6 text-center text-xs font-semibold text-slate-500">
+          <div className="mt-6 border-t border-slate-100 pt-5 text-center text-xs font-semibold text-slate-500">
             {isSignup ? "Already have an account? " : "New to XITE Platform? "}
             <Link
               href={isSignup ? "/login" : "/signup"}
