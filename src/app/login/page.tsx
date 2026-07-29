@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 
 import { CredentialsForm } from "@/components/auth/CredentialsForm";
 import { getCurrentCollegeOrNull } from "@/lib/auth/current";
@@ -15,26 +16,33 @@ function GoogleButton() {
   return (
     <a
       href="/api/auth/google/start"
-      className="flex w-full items-center justify-center gap-3 rounded-xl border border-brand-ink/15 bg-white px-5 py-3.5 text-[15px] font-semibold text-brand-ink transition hover:-translate-y-0.5 hover:border-brand-ink/40 hover:shadow-md"
+      className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-extrabold text-slate-800 transition shadow-xs hover:bg-slate-50 hover:shadow-md hover:border-slate-300"
     >
       <svg viewBox="0 0 18 18" className="h-5 w-5" aria-hidden="true">
-        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" />
-        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z" />
-        <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z" />
-        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
+        <path
+          fill="#4285F4"
+          d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z"
+        />
+        <path
+          fill="#34A853"
+          d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z"
+        />
+        <path
+          fill="#FBBC05"
+          d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z"
+        />
+        <path
+          fill="#EA4335"
+          d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z"
+        />
       </svg>
-      Continue with Google
+      <span>Continue with Google</span>
     </a>
   );
 }
 
 /**
  * Step 1 of the flow.
- *
- * In open-access mode this used to redirect straight past itself, which meant
- * the Google button existed and was never once rendered. It shows now — with
- * the way past it stated plainly, because signing in is optional here and
- * hiding that would make the screen look like a wall.
  */
 export default async function LoginPage({
   searchParams,
@@ -48,81 +56,89 @@ export default async function LoginPage({
     getSession(),
   ]);
 
-  // Always step 2, never a shortcut past it. Sending an already-onboarded
-  // college straight to /start meant the middle step existed only for people
-  // who had never used the product — and disappeared the moment they had.
-  // /onboarding prefills what it already knows, so passing through costs a
-  // returning visitor one click and keeps the flow the same every time.
   const onwards = "/onboarding";
 
-  // A real identity, not the shared open-access one. Nothing left to ask.
   const signedIn = Boolean(
     session && !session.userId.startsWith("open-access:"),
   );
 
-  // Only real auth redirects away. In open-access this page is step 1 of a
-  // three-step flow, and a step that sometimes silently isn't there is not a
-  // flow — it skipped anyone already carrying a session, which after one
-  // successful sign-in is everyone.
   if (!AUTH_DISABLED && college) redirect(onwards);
 
   if (AUTH_DISABLED) {
     return (
-      <main className="min-h-dvh bg-white">
-        <div className="mx-auto max-w-md px-5 py-16 sm:py-24">
-          <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-ink/35">
-            Step 1 of 3
-          </p>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl">
-            Sign in to XITE
-          </h1>
-          <p className="mt-3 text-base text-brand-ink/55">
-            {signedIn
-              ? "You are signed in. This site is yours."
-              : "Sign in so the site is yours, or carry on and set one up without an account."}
-          </p>
-
-          {signInError ? (
-            <p
-              role="alert"
-              className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+      <main className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-white to-slate-100/60 flex items-center justify-center p-4 sm:p-6 font-sans text-slate-900">
+        <div className="w-full max-w-md">
+          {/* Brand Header */}
+          <div className="text-center mb-8">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2.5 rounded-2xl bg-white px-4 py-2 shadow-md border border-slate-200/80 transition hover:scale-105"
             >
-              {signInError}
-            </p>
-          ) : null}
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-sm">
+                X
+              </div>
+              <span className="font-extrabold text-lg text-slate-900 tracking-tight">
+                XITE Platform
+              </span>
+            </Link>
 
-          <div className="mt-8 space-y-4">
+            <span className="mt-6 inline-block rounded-full bg-blue-50 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-blue-700 border border-blue-200">
+              Step 1 of 3
+            </span>
+
+            <h1 className="mt-3 text-3xl font-extrabold text-slate-900 tracking-tight">
+              Sign in to XITE
+            </h1>
+            <p className="mt-2 text-sm font-semibold text-slate-500">
+              {signedIn
+                ? "You are currently signed in. Manage your college site."
+                : "Sign in to claim your college site or set one up right away."}
+            </p>
+          </div>
+
+          {/* White Theme Card */}
+          <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-7 sm:p-9 shadow-[0_20px_60px_rgba(0,0,0,0.08)] backdrop-blur-xl space-y-6">
+            {signInError ? (
+              <div
+                role="alert"
+                className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-700"
+              >
+                {signInError}
+              </div>
+            ) : null}
+
             {signedIn ? null : googleEnabled ? (
               <GoogleButton />
             ) : (
-              <p className="rounded-xl border border-brand-ink/10 bg-brand-mist px-4 py-3 text-sm text-brand-ink/50">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs font-semibold text-slate-500 text-center">
                 Google sign-in is not configured on this deployment.
-              </p>
+              </div>
             )}
 
             {signedIn ? null : (
               <div className="flex items-center gap-4">
-                <span className="h-px flex-1 bg-brand-ink/10" />
-                <span className="text-xs font-medium uppercase tracking-widest text-brand-ink/35">
+                <span className="h-px flex-1 bg-slate-200" />
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                   or
                 </span>
-                <span className="h-px flex-1 bg-brand-ink/10" />
+                <span className="h-px flex-1 bg-slate-200" />
               </div>
             )}
 
             <Link
               href={onwards}
-              className="flex w-full items-center justify-center rounded-xl bg-brand-ink px-5 py-3.5 text-[15px] font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3.5 text-sm font-extrabold text-white transition hover:bg-blue-700 shadow-md hover:shadow-lg active:scale-[0.99]"
             >
-              {signedIn ? "Continue" : "Continue without signing in"}
+              <span>{signedIn ? "Continue to Onboarding" : "Continue to Demo Setup"}</span>
+              <ArrowRight className="h-4 w-4" />
             </Link>
-          </div>
 
-          <p className="mt-8 text-xs leading-relaxed text-brand-ink/40">
-            {signedIn
-              ? "Your work is tied to your Google account and will be here next time."
-              : "Without an account the site is open to anyone with the link. Signing in with Google claims it as yours."}
-          </p>
+            <p className="text-center text-xs font-medium leading-relaxed text-slate-400 pt-2">
+              {signedIn
+                ? "Your work is safely tied to your account and saved automatically."
+                : "Without signing in, your demo site is accessible via your custom link."}
+            </p>
+          </div>
         </div>
       </main>
     );

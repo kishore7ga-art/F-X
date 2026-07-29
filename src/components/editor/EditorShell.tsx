@@ -544,7 +544,7 @@ export function EditorShell({
                 "w-full overflow-hidden rounded-2xl border border-neutral-800 bg-white shadow-2xl transition-all duration-300 min-h-[calc(100vh-8rem)]",
                 deviceMode === "desktop" && "max-w-5xl",
                 deviceMode === "tablet" && "max-w-[768px]",
-                deviceMode === "mobile" && "max-w-[390px] rounded-[40px] border-4 border-neutral-700 shadow-[0_0_60px_rgba(0,0,0,0.9)]"
+                deviceMode === "mobile" && "max-w-[390px] rounded-[40px] border-4 border-neutral-700 shadow-[0_0_60px_rgba(0,0,0,0.9)] overflow-x-hidden"
               )}
             >
               {sections.length > 0 ? (
