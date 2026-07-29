@@ -17,8 +17,7 @@ export function HeaderNavbar() {
           <div className="flex flex-col">
             <span className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
               XITE
-              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-400 border border-blue-500/30 flex items-center gap-1">
-                <img src="/xite-logo.png" alt="XITE Logo" className="h-3 w-3 object-contain" />
+              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-400 border border-blue-500/30">
                 Builder
               </span>
             </span>
@@ -52,12 +51,13 @@ export function HeaderNavbar() {
           >
             Sign In
           </Link>
-          <Link
-            href="/start"
-            className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 border border-white/20 flex items-center gap-1.5"
-          >
-            <span>Start Building</span>
-            <img src="/xite-logo.png" alt="XITE Logo" className="h-4 w-4 object-contain" />
+
+          {/* Lit up border button */}
+          <Link href="/start" className="p-[3px] relative inline-block group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
+            <div className="px-5 py-2 bg-black rounded-full relative group transition duration-200 text-white text-xs font-bold hover:bg-transparent flex items-center justify-center">
+              Start Building
+            </div>
           </Link>
         </div>
 
@@ -99,10 +99,12 @@ export function HeaderNavbar() {
           <Link
             href="/start"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-2.5 text-center text-xs font-bold text-white shadow-lg flex items-center justify-center gap-2"
+            className="p-[3px] relative block text-center"
           >
-            <span>Start Building</span>
-            <img src="/xite-logo.png" alt="XITE Logo" className="h-4 w-4 object-contain" />
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
+            <div className="py-2.5 bg-black rounded-[10px] relative group transition duration-200 text-white text-xs font-bold hover:bg-transparent flex items-center justify-center">
+              Start Building
+            </div>
           </Link>
         </div>
       )}

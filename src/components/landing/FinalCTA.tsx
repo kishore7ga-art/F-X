@@ -48,12 +48,11 @@ export function FinalCTA({
           </p>
 
           <div data-reveal className="mt-10">
-            <Link
-              href={ctaHref}
-              className="inline-flex items-center gap-2.5 rounded-full bg-accent px-8 py-3.5 text-[15px] font-semibold text-white transition-transform duration-150 ease-out hover:scale-[1.03] hover:bg-accent-hover active:scale-[0.98]"
-            >
-              <span>{ctaLabel}</span>
-              <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
+            <Link href={ctaHref} className="p-[3px] relative inline-block group">
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
+              <div className="px-8 py-3 bg-black rounded-full relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
+                {ctaLabel}
+              </div>
             </Link>
           </div>
         </div>

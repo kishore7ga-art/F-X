@@ -14,7 +14,7 @@ export default function XiteHero() {
       <div className="mx-auto max-w-6xl px-6 relative z-10 text-center">
         {/* Top Badge */}
         <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold text-blue-400 mb-8 backdrop-blur-md shadow-lg">
-          <img src="/xite-logo.png" alt="XITE Logo" className="h-4 w-4 object-contain" />
+          <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
           <span>The #1 No-Code Website Builder for Colleges</span>
         </div>
 
@@ -33,20 +33,18 @@ export default function XiteHero() {
 
         {/* CTA Buttons */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href="/start"
-            className="flex items-center gap-2.5 rounded-xl bg-blue-600 px-7 py-4 text-base font-bold text-white transition-all hover:bg-blue-500 hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/30"
-          >
-            <span>Start Building Free</span>
-            <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
+          <Link href="/start" className="p-[3px] relative inline-block group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
+            <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
+              Start Building Free
+            </div>
           </Link>
 
-          <Link
-            href="/templates"
-            className="flex items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900/80 px-7 py-4 text-base font-bold text-neutral-200 transition-all hover:bg-neutral-800 hover:text-white hover:border-neutral-600"
-          >
-            <Layout className="h-4 w-4 text-purple-400" />
-            <span>See Templates</span>
+          <Link href="/templates" className="p-[3px] relative inline-block group">
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-800 rounded-xl" />
+            <div className="px-8 py-3 bg-neutral-950 rounded-[10px] relative group transition duration-200 text-neutral-200 font-bold text-base hover:bg-transparent flex items-center justify-center">
+              See Templates
+            </div>
           </Link>
         </div>
 

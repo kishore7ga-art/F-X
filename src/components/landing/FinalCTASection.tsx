@@ -24,19 +24,18 @@ export default function FinalCTASection() {
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href="/start"
-            className="flex items-center gap-2.5 rounded-xl bg-blue-600 px-8 py-4 text-base font-bold text-white transition-all hover:bg-blue-500 hover:scale-105 active:scale-95 shadow-xl shadow-blue-600/30"
-          >
-            <span>Start Your Free Trial</span>
-            <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
+          <Link href="/start" className="p-[3px] relative inline-block group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
+            <div className="px-8 py-3.5 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
+              Start Your Free Trial
+            </div>
           </Link>
 
-          <Link
-            href="/templates"
-            className="flex items-center gap-2 rounded-xl border border-neutral-700 bg-neutral-900/80 px-8 py-4 text-base font-bold text-neutral-200 transition-all hover:bg-neutral-800 hover:text-white"
-          >
-            <span>Book a Demo</span>
+          <Link href="/templates" className="p-[3px] relative inline-block group">
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-800 rounded-xl" />
+            <div className="px-8 py-3.5 bg-black rounded-[10px] relative group transition duration-200 text-neutral-200 font-bold text-base hover:bg-transparent flex items-center justify-center">
+              Book a Demo
+            </div>
           </Link>
         </div>
 

@@ -105,29 +105,22 @@ export function HeroSection() {
                                         ...transitionVariants,
                                     }}
                                     className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
-                                    <div
-                                        key={1}
-                                        className="bg-foreground/10 rounded-[14px] border p-0.5">
-                                        <Button
-                                            asChild
-                                            size="lg"
-                                            className="rounded-xl px-5 text-base font-bold bg-white text-black hover:bg-neutral-200">
-                                            <Link href="/start" className="flex items-center gap-2">
-                                                <span className="text-nowrap">Start Building</span>
-                                                <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
-                                            </Link>
-                                        </Button>
-                                    </div>
-                                    <Button
-                                        key={2}
-                                        asChild
-                                        size="lg"
-                                        variant="ghost"
-                                        className="h-10.5 rounded-xl px-5 font-semibold text-neutral-300 hover:text-white hover:bg-white/10">
-                                        <Link href="/templates">
-                                            <span className="text-nowrap">View Templates</span>
+                                    <div key={1}>
+                                        <Link href="/start" className="p-[3px] relative inline-block group">
+                                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
+                                            <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
+                                                Start Building
+                                            </div>
                                         </Link>
-                                    </Button>
+                                    </div>
+                                    <div key={2}>
+                                        <Link href="/templates" className="p-[3px] relative inline-block group">
+                                            <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-800 rounded-xl" />
+                                            <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-neutral-300 font-semibold text-base hover:bg-transparent flex items-center justify-center">
+                                                View Templates
+                                            </div>
+                                        </Link>
+                                    </div>
                                 </AnimatedGroup>
                             </div>
                         </div>

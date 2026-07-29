@@ -227,16 +227,19 @@ export function CredentialsForm({
             <button
               type="submit"
               disabled={pending}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3.5 text-sm font-extrabold text-white transition-all duration-200 hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 active:scale-[0.99] cursor-pointer shadow-md"
+              className="w-full p-[3px] relative group cursor-pointer disabled:opacity-50"
             >
-              <span>
-                {pending
-                  ? "Please wait…"
-                  : isSignup
-                    ? "Create account"
-                    : "Sign in"}
-              </span>
-              {!pending && <ArrowRight className="h-4 w-4" />}
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl" />
+              <div className="w-full py-3.5 bg-black rounded-[14px] relative group transition duration-200 text-white font-extrabold text-sm hover:bg-transparent flex items-center justify-center gap-2">
+                <span>
+                  {pending
+                    ? "Please wait…"
+                    : isSignup
+                      ? "Create account"
+                      : "Sign in"}
+                </span>
+                {!pending && <ArrowRight className="h-4 w-4" />}
+              </div>
             </button>
           </form>
 

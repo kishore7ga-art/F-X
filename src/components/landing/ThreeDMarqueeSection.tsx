@@ -57,18 +57,17 @@ export function ThreeDMarqueeDemoSecond() {
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-          <Link
-            href="/start"
-            className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-7 py-3.5 text-base font-bold text-white shadow-2xl transition-transform hover:scale-105 focus:outline-none border border-blue-400/30 flex items-center gap-2"
-          >
-            <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
-            <span>Start Building</span>
+          <Link href="/start" className="p-[3px] relative inline-block group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
+            <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
+              Start Building
+            </div>
           </Link>
-          <Link
-            href="/templates"
-            className="rounded-xl border border-white/30 bg-black/60 px-7 py-3.5 text-base font-bold text-white backdrop-blur-md transition-transform hover:scale-105 hover:bg-black/80 focus:outline-none shadow-2xl"
-          >
-            🎨 Explore Templates
+          <Link href="/templates" className="p-[3px] relative inline-block group">
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-800 rounded-xl" />
+            <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
+              Explore Templates
+            </div>
           </Link>
         </div>
       </div>
