@@ -192,7 +192,7 @@ const HeroHeader = () => {
                 <div className={cn(
                     'mx-auto mt-2 max-w-6xl px-6 transition-all duration-500 lg:px-12',
                     isScrolled
-                        ? 'bg-white max-w-4xl rounded-2xl border border-black/10 shadow-lg lg:px-5'
+                        ? 'bg-black/85 max-w-4xl rounded-full border border-white/15 backdrop-blur-xl shadow-2xl lg:px-5'
                         : 'bg-transparent'
                 )}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
@@ -214,17 +214,12 @@ const HeroHeader = () => {
                         </div>
 
                         <div className="absolute inset-0 m-auto hidden size-fit lg:block">
-                            <ul className="flex gap-8 text-sm">
+                            <ul className="flex gap-8 text-sm font-semibold">
                                 {menuItems.map((item, index) => (
                                     <li key={index}>
                                         <Link
                                             href={item.href}
-                                            className={cn(
-                                                'block duration-150 hover:opacity-100',
-                                                isScrolled
-                                                    ? 'text-neutral-600 hover:text-black'
-                                                    : 'text-white/80 hover:text-white'
-                                            )}>
+                                            className="block text-white/80 hover:text-white transition-colors">
                                             <span>{item.name}</span>
                                         </Link>
                                     </li>

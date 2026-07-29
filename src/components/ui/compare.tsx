@@ -78,29 +78,24 @@ export const Compare = ({
     return () => stopAutoplay();
   }, [startAutoplay, stopAutoplay]);
 
-  function mouseEnterHandler() {
+  function mouseEnterHandler(e: React.MouseEvent) {
     setIsMouseOver(true);
+    setIsDragging(true);
     stopAutoplay();
+    handleMove(e.clientX);
   }
 
   function mouseLeaveHandler() {
     setIsMouseOver(false);
-    if (slideMode === "hover") {
-      setSliderXPercent(initialSliderPercentage);
-    }
-    if (slideMode === "drag") {
-      setIsDragging(false);
-    }
+    setIsDragging(false);
     startAutoplay();
   }
 
   const handleStart = useCallback(
     (clientX: number) => {
-      if (slideMode === "drag" || slideMode === "hover") {
-        setIsDragging(true);
-      }
+      setIsDragging(true);
     },
-    [slideMode]
+    []
   );
 
   const handleEnd = useCallback(() => {
@@ -110,16 +105,14 @@ export const Compare = ({
   const handleMove = useCallback(
     (clientX: number) => {
       if (!sliderRef.current) return;
-      if (slideMode === "hover" || (slideMode === "drag" && isDragging)) {
-        const rect = sliderRef.current.getBoundingClientRect();
-        const x = clientX - rect.left;
-        const percent = (x / rect.width) * 100;
-        requestAnimationFrame(() => {
-          setSliderXPercent(Math.max(0, Math.min(100, percent)));
-        });
-      }
+      const rect = sliderRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const percent = (x / rect.width) * 100;
+      requestAnimationFrame(() => {
+        setSliderXPercent(Math.max(0, Math.min(100, percent)));
+      });
     },
-    [slideMode, isDragging]
+    []
   );
 
   const handleMouseDown = useCallback(
@@ -128,8 +121,12 @@ export const Compare = ({
   );
   const handleMouseUp = useCallback(() => handleEnd(), [handleEnd]);
   const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => handleMove(e.clientX),
-    [handleMove]
+    (e: React.MouseEvent) => {
+      if (isMouseOver || isDragging) {
+        handleMove(e.clientX);
+      }
+    },
+    [handleMove, isMouseOver, isDragging]
   );
 
   const handleTouchStart = useCallback(
