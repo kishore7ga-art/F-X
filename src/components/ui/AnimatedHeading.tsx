@@ -79,8 +79,10 @@ export function AnimatedHeading({
     return () => observer.disconnect();
   }, [text, delay, once]);
 
+  const TagComp = Tag as any;
+
   return (
-    <Tag ref={ref} className={cn(className)}>
+    <TagComp ref={ref} className={cn(className)}>
       {/* One accessible copy of the heading. Everything visible is aria-hidden,
           so assistive tech reads a sentence rather than a list of words. */}
       <span className="sr-only">{text}</span>
@@ -98,6 +100,6 @@ export function AnimatedHeading({
           </span>
         ))}
       </span>
-    </Tag>
+    </TagComp>
   );
 }

@@ -1,22 +1,28 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState, useRef, useEffect } from "react";
+import {
+  Edit3,
+  ArrowUp,
+  ArrowDown,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Copy,
+  Trash2,
+} from "lucide-react";
 
 import {
   cycleSectionVariant,
   moveSection,
   toggleSectionVisibility,
 } from "@/app/actions/sections";
-import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
 import { useEditor } from "@/components/editor/EditorContext";
 import type { EditorSection } from "@/lib/editor/queries";
+import { getVariant } from "@/components/sections/registry";
+import { cn } from "@/lib/utils";
 
-/**
- * Editing chrome wrapped around one live-rendered section.
- *
- * Layout itself stays untouchable — the only affordances are reorder, swap
- * variant, add, show/hide and edit content.
- */
 export function SectionBlock({
   section,
   isFirst,
@@ -28,103 +34,102 @@ export function SectionBlock({
   isLast: boolean;
   children: ReactNode;
 }) {
-  const { selectedSectionId, selectSection, run, isPending } = useEditor();
+  const {
+    selectedSectionId,
+    selectSection,
+    run,
+    isPending,
+    liveContentMap,
+    liveStylesMap,
+  } = useEditor();
+
+  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
 
   const isSelected = selectedSectionId === section.id;
   const canRefresh = section.variants.length > 1;
-
   const args = { collegeSectionId: section.id };
+
+  const variant = getVariant(section.componentKey);
+  const liveContent = liveContentMap[section.id];
+  const liveStyle = liveStylesMap[section.id] ?? {};
+
+  const contentToRender = variant && liveContent ? variant.render(liveContent) : children;
+
+  useEffect(() => {
+    function closeContextMenu() {
+      setContextMenuPos(null);
+    }
+    window.addEventListener("click", closeContextMenu);
+    return () => window.removeEventListener("click", closeContextMenu);
+  }, []);
 
   return (
     <div
-      className={`group relative border-2 transition ${
+      id={liveStyle.sectionIdAnchor ?? `section-${section.id}`}
+      style={{
+        backgroundColor: liveStyle.backgroundColor,
+        borderRadius: liveStyle.borderRadius,
+      }}
+      className={cn(
+        "group relative transition-all duration-200 border-2 select-none",
         isSelected
-          ? "border-blue-600"
-          : "border-transparent hover:border-blue-300"
-      }`}
+          ? "border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.3)] z-30 ring-2 ring-blue-500/20"
+          : "border-transparent hover:border-blue-400/60"
+      )}
     >
-      <div className={section.isVisible ? "" : "opacity-40 grayscale"}>
-        {children}
+      {/* SECTION NAME BADGE ON TOP-LEFT OF SELECTION OUTLINE */}
+      <div
+        className={cn(
+          "absolute -top-3.5 left-4 z-40 flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-0.5 text-[11px] font-bold text-white shadow-lg transition-all duration-200",
+          isSelected ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100"
+        )}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+        <span>{section.label}</span>
+        <span className="text-[10px] text-blue-200 font-mono">({section.variantName})</span>
       </div>
 
-      {/*
-        Transparent target covering the section body. An overlay rather than a
-        wrapping <button> because sections contain their own links and form
-        controls, which may not be nested inside a button — and inside the
-        editor those controls should not be clickable anyway.
+      <div className={section.isVisible ? "" : "opacity-40 grayscale"}>
+        {contentToRender}
+      </div>
 
-        Right-click opens the editor, leaving left-click free for inline
-        interactions inside the section later. Right-click does not exist on
-        touch, so a long press does the same thing, and the button stays
-        keyboard-reachable because an affordance nobody can tab to is not one.
-      */}
+      {/* OVERLAY INTERACTION TARGET */}
       <button
         type="button"
+        onClick={(event) => {
+          selectSection(section.id, { x: event.clientX, y: event.clientY });
+        }}
+        onDoubleClick={(event) => {
+          selectSection(section.id, { x: event.clientX, y: event.clientY });
+        }}
         onContextMenu={(event) => {
           event.preventDefault();
           selectSection(section.id, { x: event.clientX, y: event.clientY });
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          const box = event.currentTarget.getBoundingClientRect();
-          selectSection(isSelected ? null : section.id, {
-            x: box.left + 24,
-            y: box.top + 24,
-          });
-        }}
-        onPointerDown={(event) => {
-          if (event.pointerType !== "touch") return;
-          const { clientX: x, clientY: y } = event;
-          const timer = setTimeout(
-            () => selectSection(section.id, { x, y }),
-            450,
-          );
-          const cancel = () => {
-            clearTimeout(timer);
-            event.currentTarget?.removeEventListener("pointerup", cancel);
-            event.currentTarget?.removeEventListener("pointercancel", cancel);
-            event.currentTarget?.removeEventListener("pointermove", cancel);
-          };
-          event.currentTarget.addEventListener("pointerup", cancel);
-          event.currentTarget.addEventListener("pointercancel", cancel);
-          event.currentTarget.addEventListener("pointermove", cancel);
+          setContextMenuPos({ x: event.clientX, y: event.clientY });
         }}
         aria-label={`Edit ${section.label} content`}
-        title="Right-click to edit this section"
-        className="absolute inset-0 z-10 h-full w-full cursor-context-menu"
+        title="Click to edit section in Property Panel"
+        className="absolute inset-0 z-10 h-full w-full cursor-pointer"
       />
 
-      {/* Left edge — reorder */}
-      <div className="pointer-events-none absolute left-2 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
-        <ArrowButton
-          direction="up"
-          disabled={isFirst || isPending}
-          onClick={() => run(() => moveSection({ ...args, direction: "up" }))}
-        />
-        <ArrowButton
-          direction="down"
-          disabled={isLast || isPending}
-          onClick={() => run(() => moveSection({ ...args, direction: "down" }))}
-        />
-      </div>
-
-      {/* Top-right — refresh, add, visibility */}
-      <div className="absolute right-2 top-2 z-20 flex items-center gap-1.5 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
-        <span className="rounded bg-black/70 px-2 py-1 text-[11px] font-semibold text-white">
-          {section.label} · {section.variantName}
-        </span>
+      {/* TOP-RIGHT FLOATING ACTION BAR */}
+      <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+        <IconButton
+          label="Edit Properties"
+          onClick={(e) => {
+            selectSection(section.id, { x: e.clientX, y: e.clientY });
+          }}
+          className="bg-blue-600 text-white hover:bg-blue-500 border-blue-500 shadow-lg"
+        >
+          <Edit3 className="h-3.5 w-3.5" />
+        </IconButton>
 
         <IconButton
-          label={
-            canRefresh
-              ? "Swap design (keeps your content)"
-              : "Only one design available"
-          }
+          label={canRefresh ? "Swap design" : "Only one design available"}
           disabled={!canRefresh || isPending}
           onClick={() => run(() => cycleSectionVariant(args))}
         >
-          ↻
+          <RefreshCw className="h-3.5 w-3.5" />
         </IconButton>
 
         <IconButton
@@ -132,44 +137,77 @@ export function SectionBlock({
           disabled={isPending}
           onClick={() => run(() => toggleSectionVisibility(args))}
         >
-          {section.isVisible ? "◉" : "○"}
+          {section.isVisible ? (
+            <Eye className="h-3.5 w-3.5 text-emerald-400" />
+          ) : (
+            <EyeOff className="h-3.5 w-3.5 text-amber-400" />
+          )}
         </IconButton>
-
-        <AddSectionMenu afterOrder={section.displayOrder} />
       </div>
 
-      {!section.isVisible ? (
-        <span className="absolute left-2 top-2 z-20 rounded bg-black/70 px-2 py-1 text-[11px] font-semibold text-white">
-          Hidden
-        </span>
-      ) : null}
-    </div>
-  );
-}
+      {/* RIGHT CLICK CONTEXT MENU */}
+      {contextMenuPos && (
+        <div
+          style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
+          className="fixed z-50 min-w-[160px] rounded-xl border border-neutral-800 bg-neutral-950 p-1.5 font-sans text-xs text-neutral-200 shadow-2xl backdrop-blur-xl"
+        >
+          <button
+            onClick={() => selectSection(section.id)}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white"
+          >
+            <Edit3 className="h-3.5 w-3.5 text-blue-400" />
+            Edit Section
+          </button>
+          <button
+            disabled={isFirst || isPending}
+            onClick={() => run(() => moveSection({ ...args, direction: "up" }))}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white disabled:opacity-30"
+          >
+            <ArrowUp className="h-3.5 w-3.5" />
+            Move Up
+          </button>
+          <button
+            disabled={isLast || isPending}
+            onClick={() => run(() => moveSection({ ...args, direction: "down" }))}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white disabled:opacity-30"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+            Move Down
+          </button>
+          <button
+            disabled={!canRefresh || isPending}
+            onClick={() => run(() => cycleSectionVariant(args))}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white disabled:opacity-30"
+          >
+            <RefreshCw className="h-3.5 w-3.5 text-purple-400" />
+            Swap Design
+          </button>
+          <button
+            disabled={isPending}
+            onClick={() => run(() => toggleSectionVisibility(args))}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white"
+          >
+            {section.isVisible ? (
+              <>
+                <EyeOff className="h-3.5 w-3.5 text-amber-400" />
+                Hide Section
+              </>
+            ) : (
+              <>
+                <Eye className="h-3.5 w-3.5 text-emerald-400" />
+                Show Section
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
-function ArrowButton({
-  direction,
-  disabled,
-  onClick,
-}: {
-  direction: "up" | "down";
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick();
-      }}
-      title={`Move section ${direction}`}
-      aria-label={`Move section ${direction}`}
-      className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md bg-white/95 text-sm font-bold text-black/70 shadow ring-1 ring-black/10 transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
-    >
-      {direction === "up" ? "▲" : "▼"}
-    </button>
+      {!section.isVisible && (
+        <span className="absolute left-3 top-3 z-20 rounded-md bg-amber-500/90 px-2.5 py-1 text-[10px] font-bold text-black shadow-md uppercase tracking-wider">
+          Hidden Section
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -177,11 +215,13 @@ function IconButton({
   label,
   disabled,
   onClick,
+  className,
   children,
 }: {
   label: string;
   disabled?: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -190,11 +230,14 @@ function IconButton({
       disabled={disabled}
       onClick={(event) => {
         event.stopPropagation();
-        onClick();
+        onClick(event);
       }}
       title={label}
       aria-label={label}
-      className="flex h-8 w-8 items-center justify-center rounded-md bg-white/95 text-sm text-black/70 shadow ring-1 ring-black/10 transition hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
+      className={cn(
+        "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg bg-black/90 text-neutral-300 shadow-lg border border-neutral-800 backdrop-blur-md transition hover:bg-neutral-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30",
+        className
+      )}
     >
       {children}
     </button>

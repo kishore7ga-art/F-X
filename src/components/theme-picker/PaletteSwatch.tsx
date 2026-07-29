@@ -6,8 +6,6 @@ export type PaletteOption = {
   colors: PaletteColors;
 };
 
-/** One pre-made colour combination. Colleges pick a whole palette, never an
- * individual colour — that is what keeps published sites looking designed. */
 export function PaletteSwatch({
   palette,
   selected,
@@ -29,22 +27,24 @@ export function PaletteSwatch({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`w-full rounded-lg border-2 p-3 text-left transition ${
+      className={`w-full rounded-xl border-2 p-3 text-left transition-all duration-200 cursor-pointer ${
         selected
-          ? "border-black bg-black/[0.03]"
-          : "border-black/10 hover:border-black/30"
+          ? "border-black bg-black/[0.03] shadow-sm"
+          : "border-neutral-200 hover:border-neutral-400 bg-white"
       }`}
     >
       <div className="flex gap-1.5">
         {swatches.map((color, index) => (
           <span
             key={`${color}-${index}`}
-            className="h-7 flex-1 rounded"
+            className="h-8 flex-1 rounded-md shadow-inner transition-transform"
             style={{ backgroundColor: color }}
           />
         ))}
       </div>
-      <span className="mt-2 block text-xs font-semibold">{palette.name}</span>
+      <span className="mt-2.5 block text-xs font-bold text-neutral-800">
+        {palette.name}
+      </span>
     </button>
   );
 }

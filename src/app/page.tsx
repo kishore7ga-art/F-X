@@ -1,61 +1,78 @@
 import type { Metadata } from "next";
-
-import { Footer } from "@/components/landing/Footer";
-import { LandingPage } from "@/components/landing/LandingPage";
-import { listTemplatesForLanding } from "@/lib/site/templates";
+import { HeaderNavbar } from "@/components/landing/HeaderNavbar";
+import { HeroSection } from "@/components/ui/hero-section-1";
+import MacbookScrollDemo from "@/components/macbook-scroll-demo";
+import { CinematicFooter } from "@/components/ui/motion-footer";
+import SparklesSection from "@/components/landing/SparklesSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import FeaturesRevealSection from "@/components/landing/FeaturesRevealSection";
+import CoverSection from "@/components/landing/CoverSection";
+import TimelineSection from "@/components/landing/TimelineSection";
+import CompareSection from "@/components/landing/CompareSection";
+import PointerHighlightSection from "@/components/landing/PointerHighlightSection";
+import { ThreeDMarqueeDemoSecond } from "@/components/landing/ThreeDMarqueeSection";
+import TabsSection from "@/components/landing/TabsSection";
+import { SectionWrapper } from "@/components/landing/SectionWrapper";
+import { SmoothScrollProvider } from "@/components/landing/SmoothScrollProvider";
 
 export const dynamic = "force-dynamic";
 
-const TITLE = "XITE — College websites, live by Friday";
-const DESCRIPTION =
-  "Pick a design, replace the words, publish. Five designs, thirty section layouts, and content that survives every design change.";
+const TITLE = "Build Modern College Websites Without Writing Code — XITE";
 
 export const metadata: Metadata = {
   title: TITLE,
-  description: DESCRIPTION,
-  openGraph: {
-    title: TITLE,
-    description: DESCRIPTION,
-    type: "website",
-    siteName: "XITE",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-  },
-  robots: { index: true, follow: true },
 };
 
-/**
- * The public front door.
- *
- * A server component that fetches once and hands the result down. Only the
- * animated shell below is a client component — the templates are already in the
- * HTML, so the gallery is readable before a line of JavaScript has run, and
- * search engines see the real content rather than an empty grid.
- *
- * `editHref` is always /login, deliberately. This page used to work out where
- * to send people, which sent anyone with a design straight to the editor and
- * made onboarding and the sign-in screen unreachable from the front door — for
- * exactly the people who had never seen them. /login forwards anyone who
- * already has an identity, so entering at the top costs a returning visitor
- * nothing.
- */
-export default async function HomePage() {
-  // The one read on this page that swallows its own failure — see
-  // listTemplatesForLanding. Someone arriving to find out what the product is
-  // should not meet a 500 because the database is restarting.
-  const templates = await listTemplatesForLanding();
-
+export default function HomePage() {
   return (
-    <>
-      <LandingPage
-        templates={templates}
-        ctaHref="/login"
-        ctaLabel="Start building"
-      />
-      <Footer templates={templates} />
-    </>
+    <SmoothScrollProvider>
+      <main className="bg-black text-white selection:bg-blue-600 selection:text-white">
+        <HeaderNavbar />
+        
+        <HeroSection />
+        
+        <SectionWrapper>
+          <MacbookScrollDemo />
+        </SectionWrapper>
+        
+        <SectionWrapper>
+          <SparklesSection />
+        </SectionWrapper>
+        
+        <SectionWrapper id="features">
+          <FeaturesRevealSection />
+        </SectionWrapper>
+        
+        <SectionWrapper id="builder">
+          <TabsSection />
+        </SectionWrapper>
+        
+        <SectionWrapper>
+          <CoverSection />
+        </SectionWrapper>
+        
+        <SectionWrapper>
+          <PointerHighlightSection />
+        </SectionWrapper>
+        
+        <SectionWrapper id="compare">
+          <CompareSection />
+        </SectionWrapper>
+        
+        <SectionWrapper id="templates">
+          <TimelineSection />
+        </SectionWrapper>
+        
+        <SectionWrapper>
+          <ThreeDMarqueeDemoSecond />
+        </SectionWrapper>
+        
+        <SectionWrapper id="testimonials">
+          <TestimonialsSection />
+        </SectionWrapper>
+        
+        <CinematicFooter />
+      </main>
+    </SmoothScrollProvider>
   );
 }

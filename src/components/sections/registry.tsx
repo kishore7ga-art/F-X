@@ -55,7 +55,7 @@ function variant<T extends SupportedSectionType>(
   return {
     sectionType,
     render(rawContent: unknown) {
-      const content = safeParseSectionContent(sectionType, rawContent);
+      const content = (safeParseSectionContent(sectionType, rawContent) ?? rawContent) as SectionContentMap[T];
       if (!content) return null;
       return <Component content={content} />;
     },

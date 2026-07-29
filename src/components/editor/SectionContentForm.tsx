@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { saveSectionContent } from "@/lib/api-client";
 import { FieldRenderer } from "@/components/editor/fields/FieldRenderer";
 import { VersionHistory } from "@/components/editor/VersionHistory";
+import { useEditor } from "@/components/editor/EditorContext";
 import type { EditorSection } from "@/lib/editor/queries";
 import {
   isRetryableSaveError,
@@ -44,6 +45,7 @@ export function SectionContentForm({
   section: EditorSection;
   onClose: () => void;
 }) {
+  const { updateSectionContent } = useEditor();
   const fields = SECTION_FORM_FIELDS[section.sectionType];
 
   const [values, setValues] = useState<Values>(
@@ -105,26 +107,26 @@ export function SectionContentForm({
   }
 
   return (
-    <div className="flex h-full flex-col bg-white" key={section.id}>
-      <header className="flex items-start justify-between gap-3 border-b px-4 py-3">
+    <div className="flex h-full max-h-inherit flex-col overflow-hidden bg-white dark:bg-neutral-950" key={section.id}>
+      <header className="shrink-0 flex items-start justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-black/40">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
             Edit section
           </p>
-          <h2 className="text-sm font-bold">{section.label}</h2>
-          <p className="text-xs text-black/45">Design: {section.variantName}</p>
+          <h2 className="text-sm font-bold text-neutral-900 dark:text-white">{section.label}</h2>
+          <p className="text-xs text-neutral-500">Design: {section.variantName}</p>
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close editor panel"
-          className="rounded p-1 text-black/40 transition hover:bg-black/5 hover:text-black"
+          className="rounded p-1 text-neutral-400 transition hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
         >
           ✕
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto max-h-[60vh] px-4 py-4">
         {fields.map((field) => (
           <FieldRenderer
             key={field.name}
@@ -135,7 +137,7 @@ export function SectionContentForm({
         ))}
       </div>
 
-      <footer className="space-y-2 border-t px-4 py-3">
+      <footer className="shrink-0 space-y-2 border-t border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-neutral-50 dark:bg-neutral-900/50">
         <SaveIndicator state={save} onRetry={() => queue.flush()} />
         <VersionHistory
           collegeSectionId={section.id}

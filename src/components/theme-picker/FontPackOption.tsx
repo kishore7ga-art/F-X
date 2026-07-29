@@ -5,7 +5,6 @@ export type FontOption = {
   bodyFont: string;
 };
 
-/** One pre-made heading/body font pairing. */
 export function FontPackOption({
   font,
   selected,
@@ -20,25 +19,25 @@ export function FontPackOption({
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`w-full rounded-lg border-2 p-3 text-left transition ${
+      className={`w-full rounded-xl border-2 p-3.5 text-left transition-all duration-200 cursor-pointer ${
         selected
-          ? "border-black bg-black/[0.03]"
-          : "border-black/10 hover:border-black/30"
+          ? "border-black bg-black/[0.03] shadow-sm"
+          : "border-neutral-200 hover:border-neutral-400 bg-white"
       }`}
     >
       <span
-        className="block text-lg font-bold leading-tight"
+        className="block text-lg font-bold leading-snug text-neutral-900"
         style={{ fontFamily: `'${font.headingFont}', Georgia, serif` }}
       >
         {font.headingFont}
       </span>
       <span
-        className="block text-sm opacity-70"
+        className="block text-xs text-neutral-600 mt-0.5"
         style={{ fontFamily: `'${font.bodyFont}', system-ui, sans-serif` }}
       >
         {font.bodyFont} — body text sample
       </span>
-      <span className="mt-2 block text-xs font-semibold opacity-50">
+      <span className="mt-2.5 block text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
         {font.name}
       </span>
     </button>

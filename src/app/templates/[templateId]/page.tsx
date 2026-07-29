@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { ThemePicker } from "@/components/theme-picker/ThemePicker";
 import { requireCurrentCollege } from "@/lib/auth/current";
-import { getTemplateDetail } from "@/lib/site/templates";
+import { getTemplateDetail, listTemplates } from "@/lib/site/templates";
 import { parsePaletteColors } from "@/lib/theme/theme";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +13,10 @@ export default async function TemplateThemePickerPage({
 }: PageProps<"/templates/[templateId]">) {
   const { templateId } = await params;
 
-  // One call for the template and both sets of theme options, where there were
-  // three separate queries against the frontend's own database connection.
-  const [detail, college] = await Promise.all([
+  const [detail, college, allTemplates] = await Promise.all([
     getTemplateDetail(templateId),
     requireCurrentCollege(),
+    listTemplates(),
   ]);
 
   if (!detail) notFound();
@@ -40,8 +39,6 @@ export default async function TemplateThemePickerPage({
     bodyFont: font.bodyFont,
   }));
 
-  // Load every font pack's families so the picker can render each option in
-  // its own typeface.
   const previewFamilies = Array.from(
     new Set(fonts.flatMap((f) => [f.headingFont, f.bodyFont])),
   )
@@ -62,6 +59,7 @@ export default async function TemplateThemePickerPage({
           description: template.description,
           demoUrl: template.demoUrl,
         }}
+        allTemplates={allTemplates}
         palettes={paletteOptions}
         fonts={fontOptions}
         initialPaletteId={college.themePaletteId ?? paletteOptions[0].id}
