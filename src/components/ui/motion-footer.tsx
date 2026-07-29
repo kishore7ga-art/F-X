@@ -351,15 +351,19 @@ export function CinematicFooter() {
             <div ref={linksRef} className="flex flex-col items-center gap-6 w-full">
               {/* Secondary text-link pills */}
               <div className="flex flex-wrap justify-center gap-3 md:gap-6 w-full mt-2">
-                {["Privacy Policy", "Terms of Service", "Support"].map((label) => (
+                {[
+                  { label: "Privacy Policy", href: "/privacy" },
+                  { label: "Terms of Service", href: "/terms" },
+                  { label: "Support", href: "/support" },
+                ].map((item) => (
                   <MagneticButton
-                    key={label}
+                    key={item.label}
                     as="a"
-                    href="#"
-                    className="footer-glass-pill px-6 py-3 rounded-full font-medium text-xs md:text-sm"
+                    href={item.href}
+                    className="footer-glass-pill px-6 py-3 rounded-full font-medium text-xs md:text-sm transition-colors hover:text-white"
                     style={{ color: "#98989f" }}
                   >
-                    {label}
+                    {item.label}
                   </MagneticButton>
                 ))}
               </div>
