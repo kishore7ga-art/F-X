@@ -32,47 +32,47 @@ export default function HomePage() {
         
         <HeroSection />
         
-        <SectionWrapper>
+        <SectionWrapper variant="flip-3d">
           <MacbookScrollDemo />
         </SectionWrapper>
         
-        <SectionWrapper>
+        <SectionWrapper variant="blur-reveal">
           <SparklesSection />
         </SectionWrapper>
         
-        <SectionWrapper id="features">
+        <SectionWrapper id="features" variant="bounce-up">
           <FeaturesRevealSection />
         </SectionWrapper>
         
-        <SectionWrapper id="builder">
+        <SectionWrapper id="builder" variant="scale-up">
           <TabsSection />
         </SectionWrapper>
         
-        <SectionWrapper>
+        <SectionWrapper variant="rotate-in">
           <CoverSection />
         </SectionWrapper>
         
-        <SectionWrapper>
+        <SectionWrapper variant="slide-left">
           <PointerHighlightSection />
         </SectionWrapper>
         
-        <SectionWrapper>
+        <SectionWrapper variant="flip-3d">
           <HeroScrollDemo />
         </SectionWrapper>
         
-        <SectionWrapper id="compare">
+        <SectionWrapper id="compare" variant="slide-right">
           <CompareSection />
         </SectionWrapper>
         
-        <SectionWrapper id="templates">
+        <SectionWrapper id="templates" variant="blur-reveal">
           <TimelineSection />
         </SectionWrapper>
         
-        <SectionWrapper>
+        <SectionWrapper variant="rotate-in">
           <ThreeDMarqueeDemoSecond />
         </SectionWrapper>
         
-        <SectionWrapper id="testimonials">
+        <SectionWrapper id="testimonials" variant="scale-up">
           <TestimonialsSection />
         </SectionWrapper>
         
