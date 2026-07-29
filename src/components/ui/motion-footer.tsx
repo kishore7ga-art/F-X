@@ -341,15 +341,21 @@ export function CinematicFooter() {
           </div>
 
           {/* ── Main content ── */}
-          <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 mt-20 w-full max-w-5xl mx-auto">
+          <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 py-8 w-full max-w-5xl mx-auto">
             <h2
               ref={headingRef}
-              className="text-5xl md:text-8xl font-black footer-text-glow tracking-tighter mb-12 text-center"
+              className="text-5xl md:text-8xl font-black footer-text-glow tracking-tighter text-center py-4 leading-tight mb-6"
             >
               Ready to begin?
             </h2>
 
             <div ref={linksRef} className="flex flex-col items-center gap-6 w-full">
+              <Link href="/start" className="p-[3px] relative inline-block group">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
+                <div className="px-8 py-3 bg-black rounded-full relative group transition duration-200 text-white text-sm font-bold hover:bg-transparent flex items-center justify-center">
+                  Start Building Free
+                </div>
+              </Link>
             </div>
           </div>
 
