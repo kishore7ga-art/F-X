@@ -6,9 +6,9 @@ export function SVGMaskEffectDemo() {
     <div className="flex h-[42rem] w-full items-center justify-center overflow-hidden bg-black">
       <MaskContainer
         revealText={
-          <p className="mx-auto max-w-5xl text-center text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-neutral-300 leading-tight">
+          <span>
             The future of college web design is zero code and instant publishing. Build NAAC compliant websites in minutes.
-          </p>
+          </span>
         }
         className="h-[42rem] rounded-md border border-neutral-800 text-white"
       >

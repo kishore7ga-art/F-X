@@ -1,12 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export const MaskContainer = ({
   children,
   revealText,
-  size = 40,
+  size = 0,
   revealSize = 600,
   className,
 }: {
@@ -17,9 +16,9 @@ export const MaskContainer = ({
   className?: string;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const [mousePosition, setMousePosition] = useState<{ x: number | null; y: number | null }>({
-    x: null,
-    y: null,
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
   });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -38,33 +37,35 @@ export const MaskContainer = ({
     };
   }, []);
 
-  const currentMaskSize = isHovered ? revealSize : size;
-  const posX = mousePosition.x !== null ? mousePosition.x : 0;
-  const posY = mousePosition.y !== null ? mousePosition.y : 0;
+  const maskRadius = isHovered ? revealSize : size;
+  const maskStyle: React.CSSProperties = {
+    WebkitMaskImage: `radial-gradient(circle ${maskRadius}px at ${mousePosition.x}px ${mousePosition.y}px, black 0%, black 65%, transparent 100%)`,
+    maskImage: `radial-gradient(circle ${maskRadius}px at ${mousePosition.x}px ${mousePosition.y}px, black 0%, black 65%, transparent 100%)`,
+    transition: "mask-image 0.2s ease-out, -webkit-mask-image 0.2s ease-out",
+  };
 
   return (
     <div
       ref={containerRef}
-      className={cn("h-full w-full relative font-sans overflow-hidden bg-black", className)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={cn("h-full w-full relative font-sans overflow-hidden bg-black cursor-pointer", className)}
     >
-      <motion.div
-        className="w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-b from-neutral-900 via-black to-neutral-950 text-white z-20 pointer-events-none"
-        style={{
-          WebkitMaskImage: `radial-gradient(${currentMaskSize}px circle at ${posX}px ${posY}px, black 0%, transparent 100%)`,
-          maskImage: `radial-gradient(${currentMaskSize}px circle at ${posX}px ${posY}px, black 0%, transparent 100%)`,
-        }}
+      {/* SPOTLIGHT REVEAL LAYER */}
+      <div
+        className="w-full h-full flex items-center justify-center absolute inset-0 bg-neutral-950 text-white z-20 pointer-events-none"
+        style={maskStyle}
       >
-        <div
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className="max-w-5xl mx-auto text-center text-white font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl cursor-pointer pointer-events-auto px-6 py-12 leading-tight"
-        >
+        <div className="max-w-5xl mx-auto text-center text-white font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl px-6 py-12 leading-tight">
           {children}
         </div>
-      </motion.div>
+      </div>
 
+      {/* BASE TEXT LAYER */}
       <div className="w-full h-full flex items-center justify-center text-neutral-400 px-6 py-12 bg-black z-10">
-        {revealText}
+        <div className="max-w-5xl mx-auto text-center font-black text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-neutral-300 leading-tight">
+          {revealText}
+        </div>
       </div>
     </div>
   );
