@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { HeaderNavbar } from "@/components/landing/HeaderNavbar";
 import { HeroSection } from "@/components/ui/hero-section-1";
 import SVGMaskEffectDemo from "@/components/svg-mask-effect-demo";
+import WobbleCardDemo from "@/components/wobble-card-demo";
 import { CinematicFooter } from "@/components/ui/motion-footer";
 import SparklesSection from "@/components/landing/SparklesSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
@@ -34,6 +35,10 @@ export default function HomePage() {
         
         <SectionWrapper variant="flip-3d">
           <SVGMaskEffectDemo />
+        </SectionWrapper>
+        
+        <SectionWrapper variant="rotate-in">
+          <WobbleCardDemo />
         </SectionWrapper>
         
         <SectionWrapper variant="blur-reveal">

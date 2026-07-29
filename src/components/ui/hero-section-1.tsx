@@ -75,7 +75,7 @@ export function HeroSection() {
                         <div className="mx-auto max-w-7xl px-6">
                             <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
                                 <AnimatedGroup variants={transitionVariants}>
-                                    <Link href="/start" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-neutral-900/80 px-4 py-1.5 text-xs font-medium text-neutral-300 backdrop-blur-md shadow-md hover:border-white/20 transition group mb-4">
+                                    <Link href="/onboarding" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-neutral-900/80 px-4 py-1.5 text-xs font-medium text-neutral-300 backdrop-blur-md shadow-md hover:border-white/20 transition group mb-4">
                                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black border border-white/20 p-0.5 shrink-0 group-hover:scale-105 transition-transform">
                                             <img src="/xite-logo.png" alt="XITE Logo" className="h-full w-full object-contain" />
                                         </div>
@@ -110,7 +110,7 @@ export function HeroSection() {
                                     }}
                                     className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
                                     <div key={1}>
-                                        <Link href="/start" className="p-[3px] relative inline-block group">
+                                        <Link href="/onboarding" className="p-[3px] relative inline-block group">
                                             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
                                             <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
                                                 Start Building

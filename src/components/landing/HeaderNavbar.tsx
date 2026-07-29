@@ -84,7 +84,7 @@ export function HeaderNavbar() {
           </Link>
 
           {/* Lit up border button */}
-          <Link href="/start" className="p-[3px] relative inline-block group">
+          <Link href="/onboarding" className="p-[3px] relative inline-block group">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
             <div className="px-5 py-2 bg-black rounded-full relative group transition duration-200 text-white text-xs font-bold hover:bg-transparent flex items-center justify-center">
               Start Building
@@ -128,7 +128,7 @@ export function HeaderNavbar() {
           </a>
           <hr className="border-white/10 my-1" />
           <Link
-            href="/start"
+            href="/onboarding"
             onClick={() => setIsMobileMenuOpen(false)}
             className="p-[3px] relative block text-center"
           >
