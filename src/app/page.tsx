@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { HeaderNavbar } from "@/components/landing/HeaderNavbar";
 import { HeroSection } from "@/components/ui/hero-section-1";
-import MacbookScrollDemo from "@/components/macbook-scroll-demo";
+import SVGMaskEffectDemo from "@/components/svg-mask-effect-demo";
 import { CinematicFooter } from "@/components/ui/motion-footer";
 import SparklesSection from "@/components/landing/SparklesSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
@@ -33,7 +33,7 @@ export default function HomePage() {
         <HeroSection />
         
         <SectionWrapper variant="flip-3d">
-          <MacbookScrollDemo />
+          <SVGMaskEffectDemo />
         </SectionWrapper>
         
         <SectionWrapper variant="blur-reveal">
