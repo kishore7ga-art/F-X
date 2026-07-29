@@ -14,6 +14,7 @@ import { ThreeDMarqueeDemoSecond } from "@/components/landing/ThreeDMarqueeSecti
 import TabsSection from "@/components/landing/TabsSection";
 import { SectionWrapper } from "@/components/landing/SectionWrapper";
 import { SmoothScrollProvider } from "@/components/landing/SmoothScrollProvider";
+import { HeroScrollDemo } from "@/components/landing/HeroScrollDemo";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,10 @@ export default function HomePage() {
         
         <SectionWrapper>
           <PointerHighlightSection />
+        </SectionWrapper>
+        
+        <SectionWrapper>
+          <HeroScrollDemo />
         </SectionWrapper>
         
         <SectionWrapper id="compare">
