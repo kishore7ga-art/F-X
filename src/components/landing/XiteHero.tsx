@@ -14,7 +14,7 @@ export default function XiteHero() {
       <div className="mx-auto max-w-6xl px-6 relative z-10 text-center">
         {/* Top Badge */}
         <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold text-blue-400 mb-8 backdrop-blur-md shadow-lg">
-          <Sparkles className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
+          <img src="/xite-logo.png" alt="XITE Logo" className="h-4 w-4 object-contain" />
           <span>The #1 No-Code Website Builder for Colleges</span>
         </div>
 
@@ -34,11 +34,11 @@ export default function XiteHero() {
         {/* CTA Buttons */}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
-            href="/onboarding"
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-7 py-4 text-base font-bold text-white transition-all hover:bg-blue-500 hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/30"
+            href="/start"
+            className="flex items-center gap-2.5 rounded-xl bg-blue-600 px-7 py-4 text-base font-bold text-white transition-all hover:bg-blue-500 hover:scale-105 active:scale-95 shadow-lg shadow-blue-600/30"
           >
             <span>Start Building Free</span>
-            <ArrowRight className="h-4 w-4" />
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
           </Link>
 
           <Link

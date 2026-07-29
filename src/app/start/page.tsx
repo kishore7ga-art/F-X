@@ -23,13 +23,16 @@ export default async function StartPage() {
         
         {/* Header Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-6 border-b border-slate-100 pb-6 mb-8">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
-              Step 3 of 3
-            </p>
-            <h1 className="mt-1.5 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-              How would you like to start, {college.name}?
-            </h1>
+          <div className="flex items-center gap-3">
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-9 w-9 object-contain rounded-xl shadow-xs" />
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
+                Step 3 of 3
+              </p>
+              <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+                How would you like to start, {college.name}?
+              </h1>
+            </div>
           </div>
           
           <div className="flex flex-wrap items-center gap-3">

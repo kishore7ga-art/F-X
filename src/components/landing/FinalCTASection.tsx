@@ -25,11 +25,11 @@ export default function FinalCTASection() {
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
-            href="/onboarding"
-            className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-base font-bold text-white transition-all hover:bg-blue-500 hover:scale-105 active:scale-95 shadow-xl shadow-blue-600/30"
+            href="/start"
+            className="flex items-center gap-2.5 rounded-xl bg-blue-600 px-8 py-4 text-base font-bold text-white transition-all hover:bg-blue-500 hover:scale-105 active:scale-95 shadow-xl shadow-blue-600/30"
           >
             <span>Start Your Free Trial</span>
-            <ArrowRight className="h-4 w-4" />
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
           </Link>
 
           <Link

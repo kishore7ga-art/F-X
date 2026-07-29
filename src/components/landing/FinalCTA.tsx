@@ -50,9 +50,10 @@ export function FinalCTA({
           <div data-reveal className="mt-10">
             <Link
               href={ctaHref}
-              className="inline-block rounded-full bg-accent px-8 py-3.5 text-[15px] font-semibold text-white transition-transform duration-150 ease-out hover:scale-[1.03] hover:bg-accent-hover active:scale-[0.98]"
+              className="inline-flex items-center gap-2.5 rounded-full bg-accent px-8 py-3.5 text-[15px] font-semibold text-white transition-transform duration-150 ease-out hover:scale-[1.03] hover:bg-accent-hover active:scale-[0.98]"
             >
-              {ctaLabel}
+              <span>{ctaLabel}</span>
+              <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
             </Link>
           </div>
         </div>

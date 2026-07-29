@@ -58,10 +58,11 @@ export function ThreeDMarqueeDemoSecond() {
 
         <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
           <Link
-            href="/onboarding"
-            className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-7 py-3.5 text-base font-bold text-white shadow-2xl transition-transform hover:scale-105 focus:outline-none border border-blue-400/30"
+            href="/start"
+            className="rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-7 py-3.5 text-base font-bold text-white shadow-2xl transition-transform hover:scale-105 focus:outline-none border border-blue-400/30 flex items-center gap-2"
           >
-            🚀 Start Building
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
+            <span>Start Building</span>
           </Link>
           <Link
             href="/templates"

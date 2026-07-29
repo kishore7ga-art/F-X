@@ -97,9 +97,10 @@ export function Nav({ ctaHref, ctaLabel }: { ctaHref: string; ctaLabel: string }
           <div className="ml-auto flex items-center gap-3 lg:ml-0">
             <Link
               href={ctaHref}
-              className="hidden rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-night transition-opacity duration-300 hover:opacity-85 sm:block"
+              className="hidden rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-night transition-opacity duration-300 hover:opacity-85 sm:inline-flex items-center gap-2"
             >
-              {ctaLabel}
+              <span>{ctaLabel}</span>
+              <img src="/xite-logo.png" alt="XITE Logo" className="h-4 w-4 object-contain" />
             </Link>
 
             <button

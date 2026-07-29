@@ -112,8 +112,9 @@ export function HeroSection() {
                                             asChild
                                             size="lg"
                                             className="rounded-xl px-5 text-base font-bold bg-white text-black hover:bg-neutral-200">
-                                            <Link href="/onboarding">
+                                            <Link href="/start" className="flex items-center gap-2">
                                                 <span className="text-nowrap">Start Building</span>
+                                                <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />
                                             </Link>
                                         </Button>
                                     </div>

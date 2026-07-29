@@ -10,14 +10,15 @@ export function HeaderNavbar() {
     <header className="fixed inset-x-0 top-4 z-50 mx-auto max-w-6xl px-4">
       <nav className="flex items-center justify-between rounded-full border border-white/15 bg-black/75 px-6 py-3 shadow-2xl backdrop-blur-xl transition-all duration-300">
         {/* Brand Logo */}
-        <Link href="#" className="flex items-center gap-3 group">
+        <Link href="/" className="flex items-center gap-3 group">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/60 p-1 border border-white/20 shadow-md group-hover:scale-105 transition-transform">
             <img src="/xite-logo.png" alt="XITE Logo" className="h-full w-full object-contain rounded-md" />
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
               XITE
-              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-400 border border-blue-500/30">
+              <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                <img src="/xite-logo.png" alt="XITE Logo" className="h-3 w-3 object-contain" />
                 Builder
               </span>
             </span>
@@ -52,10 +53,11 @@ export function HeaderNavbar() {
             Sign In
           </Link>
           <Link
-            href="/onboarding"
-            className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 border border-white/20"
+            href="/start"
+            className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 border border-white/20 flex items-center gap-1.5"
           >
-            Start Building 🚀
+            <span>Start Building</span>
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-4 w-4 object-contain" />
           </Link>
         </div>
 
@@ -95,11 +97,12 @@ export function HeaderNavbar() {
           </a>
           <hr className="border-white/10 my-1" />
           <Link
-            href="/onboarding"
+            href="/start"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-2.5 text-center text-xs font-bold text-white shadow-lg"
+            className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 py-2.5 text-center text-xs font-bold text-white shadow-lg flex items-center justify-center gap-2"
           >
-            Start Building 🚀
+            <span>Start Building</span>
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-4 w-4 object-contain" />
           </Link>
         </div>
       )}
