@@ -13,6 +13,14 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
       touchMultiplier: 1.2,
     });
 
+    if (typeof window !== "undefined") {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+      lenis.scrollTo(0, { immediate: true });
+    }
+
     function raf(time: number) {
       lenis.raf(time);
       requestAnimationFrame(raf);
