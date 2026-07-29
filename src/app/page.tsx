@@ -16,9 +16,6 @@ import { SectionWrapper } from "@/components/landing/SectionWrapper";
 import { SmoothScrollProvider } from "@/components/landing/SmoothScrollProvider";
 import { HeroScrollDemo } from "@/components/landing/HeroScrollDemo";
 
-import { BackgroundLinesDemo } from "@/components/landing/BackgroundLinesSection";
-import { SVGMaskEffectDemo } from "@/components/landing/SVGMaskEffectSection";
-
 export const dynamic = "force-dynamic";
 
 const TITLE = "Build Modern College Websites Without Writing Code — XITE";
@@ -57,14 +54,6 @@ export default function HomePage() {
         
         <SectionWrapper variant="slide-left">
           <PointerHighlightSection />
-        </SectionWrapper>
-        
-        <SectionWrapper variant="rotate-in">
-          <BackgroundLinesDemo />
-        </SectionWrapper>
-        
-        <SectionWrapper variant="scale-up">
-          <SVGMaskEffectDemo />
         </SectionWrapper>
         
         <SectionWrapper variant="flip-3d">

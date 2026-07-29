@@ -8,7 +8,12 @@ export default function PointerHighlightSection() {
       <div className="mx-auto max-w-6xl py-16 text-4xl font-black tracking-tight text-white md:text-6xl lg:text-7xl xl:text-8xl leading-none">
         The best way to launch <br className="hidden sm:inline" />
         your institution online is to{" "}
-        <span className="text-blue-500 underline decoration-blue-500/40 decoration-4 underline-offset-8">build with XITE</span>
+        <PointerHighlight
+          rectangleClassName="border-blue-500 rounded-xl bg-blue-500/15"
+          pointerClassName="text-blue-400"
+        >
+          <span className="text-blue-400 px-3 py-1">build with XITE</span>
+        </PointerHighlight>
       </div>
     </section>
   );
