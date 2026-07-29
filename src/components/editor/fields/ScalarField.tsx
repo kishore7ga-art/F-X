@@ -3,7 +3,7 @@
 import type { FieldDef } from "@/lib/sections/form-fields";
 
 const inputClass =
-  "mt-1 w-full rounded border border-black/15 px-2.5 py-1.5 text-sm outline-none focus:border-black";
+  "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 font-medium placeholder-slate-400 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 shadow-xs transition";
 
 /** Renders the non-list, non-image field kinds. */
 export function ScalarField({

@@ -8,40 +8,30 @@ import {
 } from "@/app/actions/onboarding";
 import { COLLEGE_TYPES } from "@/lib/college-types";
 
-/**
- * Two questions, because two is what the next screen needs to act without
- * asking again: the name that goes on the site, and the type that picks the
- * template.
- *
- * The type is radio inputs styled as cards rather than a <select> — five
- * options with a line of context each read better open than collapsed, and it
- * keeps the whole form usable without JavaScript.
- */
 export function OnboardingForm({
   defaultName,
   defaultType = null,
   submitLabel = "Continue",
 }: {
   defaultName: string;
-  /** Preselected when the college has answered before and is changing it. */
   defaultType?: string | null;
   submitLabel?: string;
 }) {
   const [state, action, pending] = useActionState<OnboardingState, FormData>(
     completeOnboarding,
-    {},
+    {}
   );
 
   return (
-    <form action={action} className="space-y-8">
+    <form action={action} className="space-y-7">
       <div>
         <label
           htmlFor="collegeName"
-          className="block text-sm font-semibold text-brand-ink"
+          className="block text-sm font-bold text-slate-900"
         >
           What is your college called?
         </label>
-        <p className="mt-1 text-sm text-brand-ink/50">
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
           This becomes the name on your site, and your web address.
         </p>
         <input
@@ -50,44 +40,41 @@ export function OnboardingForm({
           required
           maxLength={120}
           defaultValue={defaultName}
-          placeholder="Greenfield Institute of Technology"
+          placeholder="e.g. Crescent Institute of Technology"
           autoComplete="organization"
-          className="mt-3 w-full rounded-xl border border-brand-ink/15 px-4 py-3 text-base outline-none transition focus:border-brand-ink"
+          className="mt-2.5 w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 text-sm sm:text-base text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-slate-900 focus:bg-white focus:ring-1 focus:ring-slate-900 shadow-sm"
         />
       </div>
 
       <fieldset>
-        <legend className="text-sm font-semibold text-brand-ink">
+        <legend className="text-sm font-bold text-slate-900">
           What kind of institution is it?
         </legend>
-        <p className="mt-1 text-sm text-brand-ink/50">
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
           We use this to pick a starting design. You can change it later.
         </p>
 
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {COLLEGE_TYPES.map((type, index) => (
             <label
               key={type.value}
-              className="group flex cursor-pointer items-start gap-3 rounded-xl border border-brand-ink/15 p-4 transition hover:border-brand-ink/40 has-[:checked]:border-brand-ink has-[:checked]:bg-brand-mist"
+              className="group flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-slate-300 hover:shadow-md has-[:checked]:border-slate-900 has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-slate-900"
             >
               <input
                 type="radio"
                 name="collegeType"
                 value={type.value}
-                // Falls back to the first option only when nothing was chosen
-                // before, so revisiting shows the real answer rather than a
-                // default that looks like one.
                 defaultChecked={
                   defaultType ? type.value === defaultType : index === 0
                 }
                 required
-                className="mt-0.5 h-4 w-4 accent-brand-ink"
+                className="mt-0.5 h-4 w-4 accent-slate-900"
               />
               <span>
-                <span className="block text-sm font-semibold text-brand-ink">
+                <span className="block text-sm font-bold text-slate-900">
                   {type.label}
                 </span>
-                <span className="mt-0.5 block text-xs text-brand-ink/50">
+                <span className="mt-0.5 block text-xs text-slate-500 leading-snug">
                   {type.hint}
                 </span>
               </span>
@@ -97,13 +84,15 @@ export function OnboardingForm({
       </fieldset>
 
       {state.error ? (
-        <p className="text-sm font-medium text-red-600">{state.error}</p>
+        <p className="text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-xl p-3">
+          {state.error}
+        </p>
       ) : null}
 
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-brand-ink px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand disabled:opacity-50"
+        className="w-full rounded-2xl bg-slate-900 px-6 py-3.5 text-base font-bold text-white shadow-lg transition-all hover:bg-slate-800 hover:shadow-xl active:scale-[0.99] disabled:opacity-50 mt-2"
       >
         {pending ? "Saving…" : submitLabel}
       </button>

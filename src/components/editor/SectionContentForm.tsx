@@ -17,10 +17,8 @@ import { SECTION_FORM_FIELDS } from "@/lib/sections/form-fields";
 
 type Values = Record<string, unknown>;
 
-/** A picked image or flipped toggle is finished the moment it happens. */
 const IMMEDIATE_KINDS = new Set(["image", "boolean"]);
 
-/** Which trigger a field's save is recorded under in version history. */
 const TRIGGER_BY_KIND: Record<string, SaveTrigger> = {
   image: "image",
   boolean: "section_update",
@@ -30,14 +28,6 @@ const TRIGGER_BY_KIND: Record<string, SaveTrigger> = {
 const clockOf = (at: number) =>
   new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-/**
- * Content-edit form for the selected section.
- *
- * No Save button: edits go into the editor's save queue, which debounces,
- * coalesces, retries, and holds work when the connection drops. All of that
- * lives in lib/editor/save-queue so the other mutating actions can share it
- * rather than each growing their own copy.
- */
 export function SectionContentForm({
   section,
   onClose,
@@ -49,12 +39,12 @@ export function SectionContentForm({
   const fields = SECTION_FORM_FIELDS[section.sectionType];
 
   const [values, setValues] = useState<Values>(
-    () => (section.content as Values) ?? {},
+    () => (section.content as Values) ?? {}
   );
   const [save, setSave] = useState<SaveState>(() =>
     section.lastSavedAt
       ? { status: "saved", at: new Date(section.lastSavedAt).getTime(), fresh: false }
-      : { status: "idle" },
+      : { status: "idle" }
   );
 
   const latest = useRef(values);
@@ -62,31 +52,20 @@ export function SectionContentForm({
   const queue = useMemo(
     () =>
       new SaveQueue<Values>({
-        // Over HTTP rather than as a Server Action, so every save is a real
-        // request you can watch in the Network tab.
         send: (payload, trigger) =>
           saveSectionContent(section.id, payload, trigger),
         onState: setSave,
         isRetryable: isRetryableSaveError,
       }),
-    [section.id],
+    [section.id]
   );
 
-  // Flush anything still queued before this form goes away, so closing the
-  // panel mid-sentence keeps the sentence.
   useEffect(() => {
     return () => {
       queue.flush();
       queue.dispose();
     };
   }, [queue]);
-
-  // There is deliberately no effect syncing `values` from `section.content`.
-  // Every save revalidates and sends content back, and re-seeding from it would
-  // overwrite whatever was typed while the request was in flight — the editor
-  // would eat words at the speed someone types well. Selecting a different
-  // section remounts this form (see the `key` in EditorShell), so the initial
-  // state above is always the right starting point.
 
   function kindOf(name: string) {
     return fields.find((field) => field.name === name)?.kind ?? "text";
@@ -96,37 +75,20 @@ export function SectionContentForm({
     const next = { ...latest.current, [name]: value };
     latest.current = next;
     setValues(next);
+    updateSectionContent(section.id, next);
 
     const kind = kindOf(name);
     queue.push(
       section.id,
       next,
       TRIGGER_BY_KIND[kind] ?? "typing",
-      IMMEDIATE_KINDS.has(kind),
+      IMMEDIATE_KINDS.has(kind)
     );
   }
 
   return (
-    <div className="flex h-full max-h-inherit flex-col overflow-hidden bg-white dark:bg-neutral-950" key={section.id}>
-      <header className="shrink-0 flex items-start justify-between gap-3 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
-            Edit section
-          </p>
-          <h2 className="text-sm font-bold text-neutral-900 dark:text-white">{section.label}</h2>
-          <p className="text-xs text-neutral-500">Design: {section.variantName}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close editor panel"
-          className="rounded p-1 text-neutral-400 transition hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white"
-        >
-          ✕
-        </button>
-      </header>
-
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto max-h-[60vh] px-4 py-4">
+    <div className="flex h-full max-h-inherit flex-col overflow-hidden bg-white text-slate-900 font-sans" key={section.id}>
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto max-h-[55vh] px-4 py-3">
         {fields.map((field) => (
           <FieldRenderer
             key={field.name}
@@ -137,7 +99,7 @@ export function SectionContentForm({
         ))}
       </div>
 
-      <footer className="shrink-0 space-y-2 border-t border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-neutral-50 dark:bg-neutral-900/50">
+      <footer className="shrink-0 space-y-2 border-t border-slate-200 px-4 py-3 bg-slate-50">
         <SaveIndicator state={save} onRetry={() => queue.flush()} />
         <VersionHistory
           collegeSectionId={section.id}
@@ -157,7 +119,7 @@ function SaveIndicator({
 }) {
   if (state.status === "offline") {
     return (
-      <p className="text-xs text-amber-700">
+      <p className="text-xs text-amber-700 font-medium">
         Offline — {state.queued} change{state.queued === 1 ? "" : "s"} waiting.
         They will save when the connection returns.
       </p>
@@ -167,11 +129,11 @@ function SaveIndicator({
   if (state.status === "error") {
     return (
       <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-red-600">Not saved — {state.message}</p>
+        <p className="text-xs font-semibold text-red-600">Not saved — {state.message}</p>
         <button
           type="button"
           onClick={onRetry}
-          className="shrink-0 rounded border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+          className="shrink-0 rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-bold text-red-700 transition hover:bg-red-100"
         >
           Retry
         </button>
@@ -180,16 +142,16 @@ function SaveIndicator({
   }
 
   if (state.status === "saving" || state.status === "pending") {
-    return <p className="text-xs text-black/45">Saving…</p>;
+    return <p className="text-xs text-slate-500 font-medium">Saving…</p>;
   }
 
   if (state.status === "saved") {
     return state.fresh ? (
-      <p className="text-xs text-green-700">Saved successfully</p>
+      <p className="text-xs text-emerald-600 font-semibold">Saved successfully</p>
     ) : (
-      <p className="text-xs text-black/45">Last saved {clockOf(state.at)}</p>
+      <p className="text-xs text-slate-400 font-medium">Last saved {clockOf(state.at)}</p>
     );
   }
 
-  return <p className="text-xs text-black/35">Changes save as you type</p>;
+  return <p className="text-xs text-slate-400 font-medium">Changes save as you type</p>;
 }

@@ -5,40 +5,30 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Set up your college — XITE" };
 
-/**
- * Asked once per college, not once per person: a second college needs its own
- * name and type, and there is no sensible answer to inherit from the first.
- *
- * It no longer bounces a college that has already answered. The flow routes
- * those to /start on its own, so the redirect was not saving anyone a step —
- * it only made the page unreachable for the one person who went looking for
- * it, which is exactly who wants to change the answer. Arriving here with a
- * type already set prefills it and reads as editing rather than setup.
- */
 export default async function OnboardingPage() {
   const college = await requireCurrentCollege();
   const isEditing = Boolean(college.collegeType);
 
-  // "My College" is the placeholder open-access assigns before anyone has been
-  // asked. Offering it back as a prefilled answer would invite accepting it.
   const defaultName = college.name === "My College" ? "" : college.name;
 
   return (
-    <main className="min-h-dvh bg-white">
-      <div className="mx-auto max-w-xl px-5 py-16 sm:py-24">
-        <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-brand-ink/35">
+    <main className="min-h-dvh bg-slate-50/50 flex flex-col justify-center py-16 px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-10 shadow-xl shadow-slate-200/50">
+        <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
           Step 2 of 3
         </p>
-        <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-ink sm:text-4xl">
+        
+        <h1 className="mt-3 text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
           {isEditing ? "Change your details" : "Tell us about your college"}
         </h1>
-        <p className="mt-3 text-base text-brand-ink/55">
+        
+        <p className="mt-2.5 text-sm sm:text-base text-slate-500 leading-relaxed">
           {isEditing
             ? "Your site keeps everything you have written — only the name and type change."
             : "Two questions, then you can start building."}
         </p>
 
-        <div className="mt-10">
+        <div className="mt-8">
           <OnboardingForm
             defaultName={defaultName}
             defaultType={college.collegeType}

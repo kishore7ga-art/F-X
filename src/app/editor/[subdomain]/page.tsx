@@ -4,6 +4,8 @@ import { getVariant } from "@/components/sections/registry";
 import { EditorShell } from "@/components/editor/EditorShell";
 import { SectionBlock } from "@/components/editor/SectionBlock";
 import { SiteFrame } from "@/components/site/SiteFrame";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { requireCollegeBySubdomain } from "@/lib/auth/current";
 import { AUTH_DISABLED } from "@/lib/auth/open-access";
 import { getEditorPage } from "@/lib/editor/queries";
@@ -37,12 +39,16 @@ export default async function EditorPage({
       canSignOut={!AUTH_DISABLED}
       canCycleTemplate={data.templateCount > 1}
     >
-      {/*
-        Sections are rendered on the server with the very same components the
-        public site uses, then handed to the client block wrapper as children.
-        The editor shows the real site, not a mock of it.
-      */}
       <SiteFrame colors={theme.colors} fonts={theme.fonts}>
+        {/* Render real college header navbar */}
+        <SiteHeader
+          collegeName={college.name}
+          subdomain={college.subdomain}
+          pages={data.pages}
+          currentSlug={data.currentPage.slug}
+          isEditor={true}
+        />
+
         {sections.map((section, index) => {
           const variant = getVariant(section.componentKey);
           return (
@@ -60,6 +66,9 @@ export default async function EditorPage({
             </SectionBlock>
           );
         })}
+
+        {/* Render real college footer */}
+        <SiteFooter collegeName={college.name} />
       </SiteFrame>
     </EditorShell>
   );
