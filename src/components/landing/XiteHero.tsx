@@ -14,7 +14,9 @@ export default function XiteHero() {
       <div className="mx-auto max-w-6xl px-6 relative z-10 text-center">
         {/* Top Badge */}
         <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-semibold text-blue-400 mb-8 backdrop-blur-md shadow-lg">
-          <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black border border-blue-400/40 p-0.5 shrink-0">
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-full w-full object-contain" />
+          </div>
           <span>The #1 No-Code Website Builder for Colleges</span>
         </div>
 

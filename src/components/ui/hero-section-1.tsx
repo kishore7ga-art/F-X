@@ -77,10 +77,16 @@ export function HeroSection() {
                         <div className="mx-auto max-w-7xl px-6">
                             <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
                                 <AnimatedGroup variants={transitionVariants}>
-
+                                    <Link href="/start" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-neutral-900/80 px-4 py-1.5 text-xs font-medium text-neutral-300 backdrop-blur-md shadow-md hover:border-white/20 transition group mb-4">
+                                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-black border border-white/20 p-0.5 shrink-0 group-hover:scale-105 transition-transform">
+                                            <img src="/xite-logo.png" alt="XITE Logo" className="h-full w-full object-contain" />
+                                        </div>
+                                        <span>Build Modern College Websites</span>
+                                        <ChevronRight className="h-3.5 w-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+                                    </Link>
 
                                     <h1
-                                        className="mt-8 max-w-4xl mx-auto text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem] font-bold tracking-tight">
+                                        className="mt-4 max-w-4xl mx-auto text-balance text-6xl md:text-7xl lg:mt-8 xl:text-[5.25rem] font-bold tracking-tight">
                                         Build Modern College Websites <br className="hidden sm:inline" />
                                         <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
                                             Without Writing Code
