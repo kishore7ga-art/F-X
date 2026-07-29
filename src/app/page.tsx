@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <SmoothScrollProvider>
-      <main className="bg-black text-white selection:bg-blue-600 selection:text-white">
+      <main className="bg-black text-white selection:bg-blue-600 selection:text-white overflow-x-hidden w-full max-w-full relative">
         <HeaderNavbar />
         
         <HeroSection />

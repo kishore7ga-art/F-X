@@ -64,7 +64,7 @@ export function SectionWrapper({
   const isSpring = variant === "bounce-up" || variant === "slide-left" || variant === "slide-right";
 
   return (
-    <div style={{ perspective: "1200px" }}>
+    <div className="overflow-x-clip w-full max-w-full" style={{ perspective: "1200px" }}>
       <motion.div
         id={id}
         className={className}
