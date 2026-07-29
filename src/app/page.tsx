@@ -37,7 +37,7 @@ export default function HomePage() {
           <SVGMaskEffectDemo />
         </SectionWrapper>
         
-        <SectionWrapper variant="rotate-in">
+        <SectionWrapper variant="scale-up">
           <WobbleCardDemo />
         </SectionWrapper>
         

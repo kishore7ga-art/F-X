@@ -23,8 +23,8 @@ export default function FinalCTASection() {
           Join leading colleges using XITE to launch NAAC-ready, responsive websites in record time.
         </p>
 
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/onboarding" className="p-[3px] relative inline-block group">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Link href="/start" className="p-[3px] relative inline-block group">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
             <div className="px-8 py-3.5 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center">
               Start Your Free Trial

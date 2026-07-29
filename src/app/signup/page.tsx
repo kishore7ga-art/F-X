@@ -10,7 +10,7 @@ export const metadata = { title: "Create your account — XITE" };
 export default async function SignupPage() {
   const college = await getCurrentCollegeOrNull();
   if (college) {
-    redirect(college.subdomain ? `/editor/${college.subdomain}` : "/onboarding");
+    redirect(college.collegeType ? "/start" : "/onboarding");
   }
 
   return <CredentialsForm mode="signup" />;
