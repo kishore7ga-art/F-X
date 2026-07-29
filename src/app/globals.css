@@ -24,6 +24,15 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Custom Navy Blue Cursor for the entire website */
+html, body, *, *::before, *::after {
+  cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="%230a192f" stroke="%23ffffff" stroke-width="0.8" stroke-linejoin="round" d="M4.5.79v22.42l6.56-6.57h9.29L4.5.79z"></path></svg>') 4 1, auto !important;
+}
+
+button, a, input, select, textarea, [role="button"], [type="button"], [type="submit"], .cursor-pointer {
+  cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="%231e3a8a" stroke="%23ffffff" stroke-width="0.8" stroke-linejoin="round" d="M4.5.79v22.42l6.56-6.57h9.29L4.5.79z"></path></svg>') 4 1, pointer !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
