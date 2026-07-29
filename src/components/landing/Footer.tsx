@@ -21,9 +21,12 @@ export function Footer({ templates }: { templates: TemplateSummary[] }) {
       <div className={cn(SECTION.container, "py-16 lg:py-20")}>
         <div className="grid gap-12 lg:grid-cols-[1.5fr_1fr_1fr]">
           <div>
-            <p className="text-base font-extrabold tracking-[-0.03em] text-chalk">
-              XITE
-            </p>
+            <div className="flex items-center gap-2.5">
+              <img src="/xite-logo.png" alt="XITE Logo" className="h-6 w-6 object-contain rounded-md" />
+              <p className="text-base font-extrabold tracking-[-0.03em] text-chalk">
+                XITE
+              </p>
+            </div>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-chalk-dim/70">
               College websites built from two questions and a design you pick.
               Change the design whenever you like — the words stay where you put

@@ -61,9 +61,10 @@ export function Nav({ ctaHref, ctaLabel }: { ctaHref: string; ctaLabel: string }
         <div className={cn(SECTION.container, "flex items-center gap-8")}>
           <Link
             href="/"
-            className="text-lg font-extrabold tracking-[-0.04em] text-chalk"
+            className="flex items-center gap-2.5 text-lg font-extrabold tracking-[-0.04em] text-chalk group"
           >
-            XITE
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-6 w-6 object-contain rounded-md transition-transform group-hover:scale-105" />
+            <span>XITE</span>
           </Link>
 
           {/* The philosophy strip. Three words, set as signage rather than as a

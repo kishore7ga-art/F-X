@@ -440,6 +440,9 @@ export function EditorShell({
           <header className="z-30 flex h-14 items-center justify-between border-b border-neutral-800 bg-black/80 px-6 backdrop-blur-md">
             {/* Left: Branding & Subdomain */}
             <div className="flex items-center gap-3">
+              <Link href="/" className="flex items-center gap-2 group shrink-0" title="XITE Home">
+                <img src="/xite-logo.png" alt="XITE Logo" className="h-6 w-6 object-contain rounded-md transition-transform group-hover:scale-105" />
+              </Link>
               <div className="flex items-center gap-2">
                 <h1 className="text-xs font-bold text-white leading-tight">
                   {college.name}

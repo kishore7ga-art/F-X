@@ -14,6 +14,11 @@ export default async function OnboardingPage() {
   return (
     <main className="min-h-dvh bg-slate-50/50 flex flex-col justify-center py-16 px-4 sm:px-6">
       <div className="mx-auto w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-10 shadow-xl shadow-slate-200/50">
+        <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+          <img src="/xite-logo.png" alt="XITE Logo" className="h-8 w-8 object-contain rounded-lg shadow-sm" />
+          <span className="text-xl font-black tracking-tight text-slate-900">XITE</span>
+        </div>
+
         <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-slate-400">
           Step 2 of 3
         </p>

@@ -93,9 +93,7 @@ export function CredentialsForm({
             href="/"
             className="inline-flex items-center gap-2.5 rounded-2xl bg-white px-4 py-2 shadow-md border border-slate-200/80 transition hover:scale-105"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-sm">
-              X
-            </div>
+            <img src="/xite-logo.png" alt="XITE Logo" className="h-8 w-8 object-contain rounded-xl shadow-xs" />
             <span className="font-extrabold text-lg text-slate-900 tracking-tight">
               XITE Platform
             </span>

@@ -13,14 +13,14 @@ export function HeroImageSplit({ content }: { content: HeroContent }) {
       : "/hero-madras-college.jpg";
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[var(--site-light)] to-white px-4 sm:px-6 py-8 sm:py-24">
+    <section className="relative overflow-hidden bg-[var(--site-bg)] text-[var(--site-dark)] px-4 sm:px-6 py-8 sm:py-24 transition-colors duration-300">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
           {/* Left Hero Copy */}
           <div className="lg:col-span-7 space-y-4 sm:space-y-6">
             {/* Accreditation Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-bold text-blue-700 border border-blue-200/80 shadow-xs">
-              <ShieldCheck className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50/10 px-3 py-1 sm:px-3.5 sm:py-1.5 text-[11px] sm:text-xs font-bold text-blue-500 border border-blue-500/20 shadow-xs">
+              <ShieldCheck className="h-3.5 w-3.5 text-blue-500 shrink-0" />
               <span>NAAC A+ Accredited Institution</span>
             </div>
 
@@ -64,7 +64,7 @@ export function HeroImageSplit({ content }: { content: HeroContent }) {
 
               <a
                 href="#courses"
-                className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-3.5 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition shadow-xs"
+                className="inline-flex items-center gap-2 rounded-xl sm:rounded-2xl border border-[var(--site-card-border)] bg-[var(--site-card-bg)] px-4 py-3 sm:px-6 sm:py-3.5 text-xs sm:text-sm font-bold text-[var(--site-dark)] hover:opacity-90 transition shadow-xs"
               >
                 <span>Explore Programmes</span>
               </a>
@@ -73,18 +73,18 @@ export function HeroImageSplit({ content }: { content: HeroContent }) {
 
           {/* Right Hero Image Card */}
           <div className="lg:col-span-5 w-full">
-            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white shadow-xl transition-transform duration-500 hover:scale-[1.01]">
+            <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[var(--site-card-border)] bg-[var(--site-card-bg)] shadow-xl transition-transform duration-500 hover:scale-[1.01]">
               <SiteImage
                 src={imageSrc}
                 alt={collegeName}
                 className="h-56 sm:h-80 lg:h-[420px] w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-md p-3 sm:p-4 border border-white/40 shadow-lg">
-                <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-slate-500">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 rounded-xl sm:rounded-2xl bg-black/80 backdrop-blur-md p-3 sm:p-4 border border-white/20 shadow-lg text-white">
+                <p className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-blue-300">
                   Campus Overview
                 </p>
-                <p className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">
+                <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
                   State-of-the-Art Research & Innovation Hub
                 </p>
               </div>
@@ -93,44 +93,44 @@ export function HeroImageSplit({ content }: { content: HeroContent }) {
         </div>
 
         {/* Quick Stats Bar */}
-        <div className="mt-8 sm:mt-16 grid grid-cols-2 gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-md sm:grid-cols-4">
-          <div className="flex items-center gap-2.5 sm:gap-3.5 border-r border-slate-100 last:border-0 pr-2 sm:pr-4">
-            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-blue-50 text-blue-600">
+        <div className="mt-8 sm:mt-16 grid grid-cols-2 gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[var(--site-card-border)] bg-[var(--site-card-bg)] p-4 sm:p-6 shadow-md sm:grid-cols-4 transition-colors duration-300">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 border-r border-[var(--site-card-border)] last:border-0 pr-2 sm:pr-4">
+            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-blue-500/15 text-blue-500">
               <Users className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <p className="text-base sm:text-2xl font-extrabold text-slate-900">4,000+</p>
-              <p className="text-[10px] sm:text-xs font-semibold text-slate-500">Active Students</p>
+              <p className="text-base sm:text-2xl font-extrabold text-[var(--site-dark)]">4,000+</p>
+              <p className="text-[10px] sm:text-xs font-semibold text-[var(--site-dark)] opacity-70">Active Students</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3.5 sm:border-r border-slate-100 last:border-0 pr-2 sm:pr-4">
-            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 sm:border-r border-[var(--site-card-border)] last:border-0 pr-2 sm:pr-4">
+            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-amber-500/15 text-amber-500">
               <GraduationCap className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <p className="text-base sm:text-2xl font-extrabold text-slate-900">14</p>
-              <p className="text-[10px] sm:text-xs font-semibold text-slate-500">Academic Depts</p>
+              <p className="text-base sm:text-2xl font-extrabold text-[var(--site-dark)]">14</p>
+              <p className="text-[10px] sm:text-xs font-semibold text-[var(--site-dark)] opacity-70">Academic Depts</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3.5 border-r border-slate-100 last:border-0 pr-2 sm:pr-4">
-            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-emerald-50 text-emerald-600">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 border-r border-[var(--site-card-border)] last:border-0 pr-2 sm:pr-4">
+            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-emerald-500/15 text-emerald-500">
               <Award className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <p className="text-base sm:text-2xl font-extrabold text-slate-900">98%</p>
-              <p className="text-[10px] sm:text-xs font-semibold text-slate-500">Placement Rate</p>
+              <p className="text-base sm:text-2xl font-extrabold text-[var(--site-dark)]">98%</p>
+              <p className="text-[10px] sm:text-xs font-semibold text-[var(--site-dark)] opacity-70">Placement Rate</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3.5 pr-2 sm:pr-4">
-            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-purple-50 text-purple-600">
+            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-purple-500/15 text-purple-500">
               <Building2 className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
             <div>
-              <p className="text-base sm:text-2xl font-extrabold text-slate-900">42-Acre</p>
-              <p className="text-[10px] sm:text-xs font-semibold text-slate-500">Green Campus</p>
+              <p className="text-base sm:text-2xl font-extrabold text-[var(--site-dark)]">42-Acre</p>
+              <p className="text-[10px] sm:text-xs font-semibold text-[var(--site-dark)] opacity-70">Green Campus</p>
             </div>
           </div>
         </div>

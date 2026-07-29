@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "College Website Platform",
-  description: "Pick a template, edit content, publish your college website.",
+  title: "XITE - College Website Builder & SaaS Platform",
+  description: "Pick a template, edit content, publish your college website with XITE.",
+  icons: {
+    icon: "/xite-logo.png",
+    shortcut: "/xite-logo.png",
+    apple: "/xite-logo.png",
+  },
 };
 
 export default function RootLayout({

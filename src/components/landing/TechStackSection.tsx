@@ -4,7 +4,7 @@ import { Code2, Cpu, Database, Server, ShieldCheck, Zap } from "lucide-react";
 
 export default function TechStackSection() {
   const stack = [
-    { icon: <Code2 className="h-5 w-5 text-blue-400" />, title: "React 19 & TypeScript", desc: "Type-safe component system with zero runtime type errors." },
+    { icon: <img src="/xite-logo.png" alt="XITE Logo" className="h-5 w-5 object-contain" />, title: "React 19 & TypeScript", desc: "Type-safe component system with zero runtime type errors." },
     { icon: <Cpu className="h-5 w-5 text-cyan-400" />, title: "Next.js 16 App Router", desc: "Turbopack powered SSR with sub-second page loads." },
     { icon: <Zap className="h-5 w-5 text-purple-400" />, title: "Tailwind CSS v4.0", desc: "Utility-first design engine with HSL theme token isolation." },
     { icon: <Database className="h-5 w-5 text-emerald-400" />, title: "PostgreSQL & Prisma ORM", desc: "Institutional grade relational database with JSONB content columns." },

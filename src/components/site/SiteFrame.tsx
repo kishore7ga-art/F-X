@@ -1,11 +1,12 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
 
 import type { PaletteColors, FontPack } from "@/lib/theme/theme";
 import { buildThemeStyle, googleFontsHref } from "@/lib/theme/theme";
 
 /**
- * Applies a college's palette + font pack as CSS custom properties. Everything
- * rendered inside inherits the theme; no section component hard-codes a colour.
+ * Applies a college's palette + font pack + Dark/Light theme mode as CSS custom properties.
  */
 export function SiteFrame({
   colors,
@@ -18,6 +19,31 @@ export function SiteFrame({
   children: ReactNode;
   className?: string;
 }) {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    // Initial check
+    const checkDark = () => {
+      const isDocDark = document.documentElement.classList.contains("dark");
+      const saved = localStorage.getItem("xite-theme-mode") === "dark";
+      setIsDark(isDocDark || saved);
+    };
+
+    checkDark();
+
+    // Listen to MutationObserver for class changes on <html>
+    const observer = new MutationObserver(() => {
+      checkDark();
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -28,11 +54,9 @@ export function SiteFrame({
       />
       <link rel="stylesheet" href={googleFontsHref(fonts)} />
       <div
-        // The theme picker's live preview mutates these CSS variables in place
-        // (see PreviewThemeBridge) instead of reloading the iframe.
         data-site-frame=""
-        style={buildThemeStyle(colors, fonts)}
-        className={`font-[family-name:var(--site-body-font)] bg-white text-[var(--site-dark)] ${className}`}
+        style={buildThemeStyle(colors, fonts, isDark)}
+        className={`font-[family-name:var(--site-body-font)] bg-[var(--site-bg)] text-[var(--site-dark)] transition-colors duration-300 min-h-screen ${className}`}
       >
         {children}
       </div>

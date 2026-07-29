@@ -12,10 +12,10 @@ export function SectionShell({
   background?: "light" | "white" | "dark" | "primary";
 }) {
   const backgrounds = {
-    light: "bg-[var(--site-light)] text-[var(--site-dark)]",
-    white: "bg-white text-[var(--site-dark)]",
-    dark: "bg-[var(--site-dark)] text-white",
-    primary: "bg-[var(--site-primary)] text-white",
+    light: "bg-[var(--site-light)] text-[var(--site-dark)] transition-colors duration-300",
+    white: "bg-[var(--site-card-bg)] text-[var(--site-dark)] transition-colors duration-300",
+    dark: "bg-[var(--site-dark)] text-[var(--site-light)] transition-colors duration-300",
+    primary: "bg-[var(--site-primary)] text-white transition-colors duration-300",
   } as const;
 
   return (
@@ -41,14 +41,14 @@ export function SectionHeading({
   return (
     <header className={align === "center" ? "text-center" : ""}>
       <h2
-        className="font-[family-name:var(--site-heading-font)] text-3xl font-bold sm:text-4xl"
-        style={{ color: tone === "onDark" ? "#ffffff" : "var(--site-primary)" }}
+        className="font-[family-name:var(--site-heading-font)] text-3xl font-extrabold sm:text-4xl tracking-tight"
+        style={{ color: tone === "onDark" ? "var(--site-dark)" : "var(--site-primary)" }}
       >
         {title}
       </h2>
       {subtitle ? (
         <p
-          className={`mt-3 max-w-2xl text-base opacity-80 ${align === "center" ? "mx-auto" : ""}`}
+          className={`mt-3 max-w-2xl text-base font-medium opacity-85 ${align === "center" ? "mx-auto" : ""}`}
         >
           {subtitle}
         </p>

@@ -33,28 +33,29 @@ export function parsePaletteColors(colors: unknown): PaletteColors {
 }
 
 /**
- * Palette + font pack expressed as CSS custom properties. Section components
- * only ever read these variables, never hard-coded colours — that is what keeps
- * a template's look consistent while the theme stays swappable.
+ * Palette + font pack expressed as CSS custom properties with Dark/Light mode support.
  */
 export function buildThemeStyle(
   colors: PaletteColors,
   fonts: FontPack,
+  isDark = false,
 ): CSSProperties {
   return {
-    "--site-primary": colors.primary,
-    "--site-secondary": colors.secondary,
+    "--site-primary": isDark ? "#60A5FA" : colors.primary,
+    "--site-secondary": isDark ? "#93C5FD" : colors.secondary,
     "--site-accent": colors.accent,
-    "--site-dark": colors.dark,
-    "--site-light": colors.light,
+    "--site-dark": isDark ? "#F8FAFC" : colors.dark,
+    "--site-light": isDark ? "#090D16" : colors.light,
+    "--site-bg": isDark ? "#090D16" : "#FFFFFF",
+    "--site-card-bg": isDark ? "#111827" : "#FFFFFF",
+    "--site-card-border": isDark ? "#1F2937" : "#E2E8F0",
     "--site-heading-font": `'${fonts.headingFont}', Georgia, serif`,
     "--site-body-font": `'${fonts.bodyFont}', system-ui, sans-serif`,
   } as CSSProperties;
 }
 
 /**
- * Google Fonts URL for a font pack. Built at request time from the DB values so
- * adding a row to `theme_fonts` needs no code change.
+ * Google Fonts URL for a font pack.
  */
 export function googleFontsHref(fonts: FontPack): string {
   const families = Array.from(
