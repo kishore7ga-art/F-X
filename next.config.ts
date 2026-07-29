@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(import.meta.dirname, "."),
   },
+  experimental: {
+    workerThreads: false,
+    cpus: 4,
+  },
 };
 
 export default nextConfig;
