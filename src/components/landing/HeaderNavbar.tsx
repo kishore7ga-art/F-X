@@ -1,13 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export function HeaderNavbar() {
+  const [isVisible, setIsVisible] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY <= 20) {
+        setIsVisible(true);
+      } else {
+        // Scroll Down -> Hide; Scroll Up -> Reveal
+        if (currentScrollY > lastScrollY && currentScrollY - lastScrollY > 5) {
+          setIsVisible(false);
+        } else if (lastScrollY - currentScrollY > 5) {
+          setIsVisible(true);
+        }
+      }
+
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="fixed inset-x-0 top-4 z-50 mx-auto max-w-6xl px-4">
+    <header
+      className={cn(
+        "fixed inset-x-0 top-4 z-50 mx-auto max-w-6xl px-4 transition-all duration-300 transform",
+        isVisible ? "translate-y-0 opacity-100" : "-translate-y-24 opacity-0 pointer-events-none"
+      )}
+    >
       <nav className="flex items-center justify-between rounded-full border border-white/15 bg-black/75 px-6 py-3 shadow-2xl backdrop-blur-xl transition-all duration-300">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-3 group">
