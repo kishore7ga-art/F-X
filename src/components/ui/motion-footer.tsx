@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -355,15 +356,15 @@ export function CinematicFooter() {
                   { label: "Privacy Policy", href: "/privacy" },
                   { label: "Terms of Service", href: "/terms" },
                   { label: "Support", href: "/support" },
-                ].map((item) => (
+                ].map(({ label, href }) => (
                   <MagneticButton
-                    key={item.label}
-                    as="a"
-                    href={item.href}
-                    className="footer-glass-pill px-6 py-3 rounded-full font-medium text-xs md:text-sm transition-colors hover:text-white"
+                    key={label}
+                    as={Link}
+                    href={href}
+                    className="footer-glass-pill px-6 py-3 rounded-full font-medium text-xs md:text-sm transition-all hover:text-white hover:border-white/30"
                     style={{ color: "#98989f" }}
                   >
-                    {item.label}
+                    {label}
                   </MagneticButton>
                 ))}
               </div>

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export const MaskContainer = ({
   children,
   revealText,
-  size = 10,
+  size = 40,
   revealSize = 600,
   className,
 }: {
@@ -30,51 +30,42 @@ export const MaskContainer = ({
   };
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.addEventListener("mousemove", updateMousePosition);
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("mousemove", updateMousePosition);
     return () => {
-      container.removeEventListener("mousemove", updateMousePosition);
+      el.removeEventListener("mousemove", updateMousePosition);
     };
   }, []);
 
-  const maskSize = isHovered ? revealSize : size;
+  const currentMaskSize = isHovered ? revealSize : size;
+  const posX = mousePosition.x !== null ? mousePosition.x : 0;
+  const posY = mousePosition.y !== null ? mousePosition.y : 0;
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
-      className={cn("h-[40rem] relative bg-black", className)}
-      animate={{
-        backgroundColor: isHovered ? "var(--slate-900)" : "var(--black)",
-      }}
+      className={cn("h-full w-full relative font-sans overflow-hidden bg-black", className)}
     >
       <motion.div
-        className="w-full h-full flex items-center justify-center text-6xl absolute inset-0 bg-black bg-grid-white/[0.2] text-white [mask-image:url(/mask.svg)] [mask-size:40px] [mask-repeat:no-repeat]"
-        animate={{
-          maskPosition: `${(mousePosition.x ?? 0) - maskSize / 2}px ${
-            (mousePosition.y ?? 0) - maskSize / 2
-          }px`,
-          WebkitMaskPosition: `${(mousePosition.x ?? 0) - maskSize / 2}px ${
-            (mousePosition.y ?? 0) - maskSize / 2
-          }px`,
-          maskSize: `${maskSize}px`,
-          WebkitMaskSize: `${maskSize}px`,
-        } as any}
-        transition={{ type: "tween", ease: "backOut", duration: 0.1 }}
+        className="w-full h-full flex items-center justify-center absolute inset-0 bg-gradient-to-b from-neutral-900 via-black to-neutral-950 text-white z-20 pointer-events-none"
+        style={{
+          WebkitMaskImage: `radial-gradient(${currentMaskSize}px circle at ${posX}px ${posY}px, black 0%, transparent 100%)`,
+          maskImage: `radial-gradient(${currentMaskSize}px circle at ${posX}px ${posY}px, black 0%, transparent 100%)`,
+        }}
       >
-        <div className="absolute inset-0 bg-black h-full w-full z-0 opacity-50" />
         <div
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          className="max-w-4xl mx-auto text-center text-white text-4xl font-bold relative z-20 pointer-events-auto"
+          className="max-w-4xl mx-auto text-center text-white font-bold text-3xl md:text-5xl cursor-pointer pointer-events-auto px-6 py-12"
         >
           {children}
         </div>
       </motion.div>
 
-      <div className="w-full h-full flex items-center justify-center text-white">
+      <div className="w-full h-full flex items-center justify-center text-neutral-400 px-6 py-12 bg-black z-10">
         {revealText}
       </div>
-    </motion.div>
+    </div>
   );
 };

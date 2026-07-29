@@ -1,188 +1,129 @@
-"use client";
-
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
+import { ArrowLeft, HelpCircle, Mail, MessageSquare, PhoneCall, Sparkles, BookOpen } from "lucide-react";
 import { HeaderNavbar } from "@/components/landing/HeaderNavbar";
 import { CinematicFooter } from "@/components/ui/motion-footer";
-import { LifeBuoy, Mail, MessageSquare, PhoneCall, CheckCircle2, ChevronDown } from "lucide-react";
-import { LitButton } from "@/components/ui/LitButton";
+
+export const metadata = {
+  title: "Support & Help Center — XITE College SaaS Platform",
+  description: "Get immediate support, FAQs, and help for XITE website builder.",
+};
 
 export default function SupportPage() {
-  const [submitted, setSubmitted] = useState(false);
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-  };
-
-  const faqs = [
-    {
-      q: "How fast can we launch our official college website?",
-      a: "Using XITE Visual Builder, you can choose a template, input your institution details, and publish a complete multi-page NAAC-compliant site in less than 30 minutes.",
-    },
-    {
-      q: "Can we connect our custom college domain (e.g., college.ac.in)?",
-      a: "Yes! XITE provides one-click CNAME domain binding with automatic SSL certification for custom .ac.in, .edu.in, and .org domains.",
-    },
-    {
-      q: "How do faculty members update notices or exam timetables?",
-      a: "Authorized staff can log in to the XITE Admin Editor, click on any section, edit text or upload PDFs directly, and hit 'Publish' for instant updates.",
-    },
-    {
-      q: "Is XITE compliant with NAAC & NIRF requirements?",
-      a: "Absolutely. All XITE templates feature pre-built mandatory disclosure pages, IQAC sections, NIRF report tabs, and accessible PDF document hosting.",
-    },
-  ];
-
   return (
-    <div className="bg-black text-white min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <main className="min-h-screen bg-black text-white selection:bg-blue-600 selection:text-white">
       <HeaderNavbar />
 
-      <main className="flex-1 max-w-6xl mx-auto px-6 pt-36 pb-20 w-full">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-400 mb-6 backdrop-blur-md">
-            <LifeBuoy className="h-4 w-4 text-emerald-400" />
-            <span>24/7 Institutional Technical Support</span>
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-6">
-            How can we help your institution?
-          </h1>
-          <p className="text-neutral-400 text-lg max-w-2xl mx-auto leading-relaxed">
-            Our engineering & design team is available round-the-clock to assist with website setup, domain binding, custom templates, and NAAC disclosures.
-          </p>
+      <div className="mx-auto max-w-5xl px-6 pt-32 pb-24">
+        {/* Back Link */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors mb-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to Home</span>
+        </Link>
+
+        {/* Header Badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-semibold text-emerald-400 mb-6">
+          <HelpCircle className="h-3.5 w-3.5" />
+          <span>24/7 Dedicated Institutional Support</span>
         </div>
 
-        {/* Contact Channels Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="p-6 rounded-2xl bg-neutral-900/60 border border-white/10 backdrop-blur-xl text-center">
-            <Mail className="h-8 w-8 text-blue-400 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-white mb-1">Email Support</h3>
-            <p className="text-xs text-neutral-400 mb-4">Direct assistance for web admins</p>
-            <a href="mailto:support@xite.co.in" className="text-blue-400 font-semibold text-sm hover:underline">
-              support@xite.co.in
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white mb-4">
+          How can we help your institution?
+        </h1>
+        <p className="text-base text-neutral-400 mb-12 max-w-2xl">
+          Get fast technical assistance, template setup guidance, domain DNS configuration support, or NAAC audit documentation help.
+        </p>
+
+        {/* Support Cards Grid */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-16">
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6 flex flex-col justify-between hover:border-neutral-700 transition">
+            <div>
+              <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-4">
+                <Mail className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Email Support</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+                Send your technical queries to our core engineering team for response within 1 hour.
+              </p>
+            </div>
+            <a href="mailto:support@xite.co.in" className="text-xs font-bold text-blue-400 hover:underline">
+              support@xite.co.in →
             </a>
           </div>
-          <div className="p-6 rounded-2xl bg-neutral-900/60 border border-white/10 backdrop-blur-xl text-center">
-            <PhoneCall className="h-8 w-8 text-emerald-400 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-white mb-1">Priority Helpline</h3>
-            <p className="text-xs text-neutral-400 mb-4">Immediate phone support for admins</p>
-            <span className="text-emerald-400 font-semibold text-sm">
-              +91 (044) 4800-XITE
-            </span>
-          </div>
-          <div className="p-6 rounded-2xl bg-neutral-900/60 border border-white/10 backdrop-blur-xl text-center">
-            <MessageSquare className="h-8 w-8 text-purple-400 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-white mb-1">Live Chat</h3>
-            <p className="text-xs text-neutral-400 mb-4">Available inside the XITE Visual Editor</p>
-            <span className="text-purple-400 font-semibold text-sm">
-              Live inside Dashboard
-            </span>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
-          {/* Ticket Form */}
-          <div className="bg-neutral-900/40 p-8 rounded-3xl border border-white/10 backdrop-blur-xl">
-            <h2 className="text-2xl font-bold text-white mb-2">Submit a Support Ticket</h2>
-            <p className="text-sm text-neutral-400 mb-6">Fill in your request and our technical team will respond within 2 hours.</p>
-
-            {submitted ? (
-              <div className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center py-10">
-                <CheckCircle2 className="h-12 w-12 text-emerald-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Ticket Submitted Successfully!</h3>
-                <p className="text-sm text-neutral-300">Ticket ID: #XITE-{Math.floor(100000 + Math.random() * 900000)}. Our support engineer will contact your email shortly.</p>
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="mt-6 text-xs text-blue-400 hover:underline"
-                >
-                  Submit another ticket
-                </button>
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6 flex flex-col justify-between hover:border-neutral-700 transition">
+            <div>
+              <div className="h-10 w-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4">
+                <MessageSquare className="h-5 w-5" />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Institution Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Madras Engineering College"
-                    className="w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white placeholder-neutral-500 focus:border-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Official Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="admin@college.ac.in"
-                    className="w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white placeholder-neutral-500 focus:border-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Issue Category</label>
-                  <select className="w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white focus:border-blue-500 outline-none">
-                    <option>Custom Domain Binding</option>
-                    <option>Visual Builder Assistance</option>
-                    <option>NAAC Disclosure Setup</option>
-                    <option>Account & Billing</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-300 mb-1">Description</label>
-                  <textarea
-                    rows={4}
-                    required
-                    placeholder="Describe your request or issue in detail..."
-                    className="w-full rounded-xl bg-black/60 border border-white/10 px-4 py-3 text-sm text-white placeholder-neutral-500 focus:border-blue-500 outline-none"
-                  ></textarea>
-                </div>
-                <LitButton type="submit" className="w-full mt-2">
-                  Submit Support Ticket
-                </LitButton>
-              </form>
-            )}
-          </div>
-
-          {/* FAQs Accordion */}
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">Frequently Asked Questions</h2>
-            <p className="text-sm text-neutral-400 mb-6">Quick answers to common institutional setup questions.</p>
-
-            <div className="space-y-4">
-              {faqs.map((faq, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-2xl bg-neutral-900/40 border border-white/10 overflow-hidden"
-                >
-                  <button
-                    onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                    className="w-full p-5 text-left flex items-center justify-between text-white font-semibold text-sm sm:text-base hover:bg-white/5 transition"
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown className={`h-5 w-5 text-neutral-400 transition-transform ${activeFaq === idx ? 'rotate-180 text-blue-400' : ''}`} />
-                  </button>
-                  {activeFaq === idx && (
-                    <div className="p-5 pt-0 text-xs sm:text-sm text-neutral-300 border-t border-white/5 leading-relaxed bg-black/30">
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              ))}
+              <h3 className="text-lg font-bold text-white mb-2">Live Chat</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+                Connect directly with website designers and domain experts inside the XITE Editor.
+              </p>
             </div>
+            <Link href="/start" className="text-xs font-bold text-purple-400 hover:underline">
+              Open Live Editor →
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6 flex flex-col justify-between hover:border-neutral-700 transition">
+            <div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4">
+                <PhoneCall className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Priority Helpline</h3>
+              <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+                Direct phone support for enterprise college plans and urgent NAAC deadline updates.
+              </p>
+            </div>
+            <span className="text-xs font-bold text-emerald-400">+91 (800) 456-XITE</span>
           </div>
         </div>
 
-        {/* Back Link */}
-        <div className="mt-12 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 text-white font-semibold hover:bg-white/20 transition">
-            ← Back to Home
-          </Link>
+        {/* FAQs */}
+        <div className="border-t border-neutral-800 pt-12 space-y-6">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6">
+            <BookOpen className="h-6 w-6 text-blue-400" /> Frequently Asked Questions
+          </h2>
+
+          <div className="space-y-4">
+            <details className="group rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between font-bold text-white text-sm sm:text-base">
+                <span>How do I map our custom college domain (e.g. roeverengg.edu.in)?</span>
+                <span className="shrink-0 transition group-open:-rotate-180">↓</span>
+              </summary>
+              <p className="mt-3 text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                In your domain registrar (GoDaddy, BigRock, NIC), point your CNAME record to `custom.xite.co.in`. Our automated SSL engine will issue an HTTPS certificate within 60 seconds.
+              </p>
+            </details>
+
+            <details className="group rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between font-bold text-white text-sm sm:text-base">
+                <span>Can multiple department HODs edit their own pages?</span>
+                <span className="shrink-0 transition group-open:-rotate-180">↓</span>
+              </summary>
+              <p className="mt-3 text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                Yes! XITE provides Role-Based Access Control (RBAC). The principal/admin can invite HODs with scoped access to edit only their department sections.
+              </p>
+            </details>
+
+            <details className="group rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer items-center justify-between font-bold text-white text-sm sm:text-base">
+                <span>Is content preserved when changing templates?</span>
+                <span className="shrink-0 transition group-open:-rotate-180">↓</span>
+              </summary>
+              <p className="mt-3 text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                Absolutely. XITE decouples institutional data schemas from theme presentations. You can switch between 10+ college templates anytime without losing a single word.
+              </p>
+            </details>
+          </div>
         </div>
-      </main>
+      </div>
 
       <CinematicFooter />
-    </div>
+    </main>
   );
 }
