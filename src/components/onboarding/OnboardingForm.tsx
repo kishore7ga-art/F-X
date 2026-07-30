@@ -8,6 +8,14 @@ import {
 } from "@/app/actions/onboarding";
 import { COLLEGE_TYPES } from "@/lib/college-types";
 
+const TYPE_ICONS: Record<string, string> = {
+  engineering: "⚙️",
+  arts_science: "🎨",
+  medical: "🏥",
+  management: "📊",
+  law: "⚖️",
+};
+
 export function OnboardingForm({
   defaultName,
   defaultType = null,
@@ -23,24 +31,24 @@ export function OnboardingForm({
   );
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="space-y-7">
       {/* College name passed as hidden field — already shown in heading */}
       <input type="hidden" name="collegeName" value={defaultName} />
 
       {/* Institution Type */}
       <fieldset>
-        <legend className="text-xs font-bold text-slate-900">
-          What kind of institution is it?<span className="text-blue-600 ml-0.5">*</span>
+        <legend className="text-sm font-bold text-slate-900">
+          Select your institution type
         </legend>
-        <p className="mt-0.5 text-[11px] sm:text-xs font-medium text-slate-400 mb-3">
-          We use this to pick a starting design. You can change it later.
+        <p className="mt-1 text-xs font-medium text-slate-400">
+          We&apos;ll use this to pick the best starting template. You can always change it later.
         </p>
 
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {COLLEGE_TYPES.map((type, index) => (
             <label
               key={type.value}
-              className="group flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3.5 transition-all hover:border-slate-300 hover:shadow-sm has-[:checked]:border-[#4285F4] has-[:checked]:bg-[#4285F4]/5 has-[:checked]:ring-1 has-[:checked]:ring-[#4285F4]/30"
+              className="group relative flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all hover:border-slate-300 hover:shadow-sm has-[:checked]:border-[#4285F4] has-[:checked]:bg-[#4285F4]/[0.04] has-[:checked]:shadow-sm has-[:checked]:shadow-[#4285F4]/10"
             >
               <input
                 type="radio"
@@ -50,15 +58,29 @@ export function OnboardingForm({
                   defaultType ? type.value === defaultType : index === 0
                 }
                 required
-                className="mt-0.5 h-4 w-4 accent-[#4285F4]"
+                className="sr-only"
               />
+
+              {/* Icon */}
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg group-has-[:checked]:bg-[#4285F4]/10 transition-colors">
+                {TYPE_ICONS[type.value] ?? "🏫"}
+              </span>
+
+              {/* Text */}
               <span>
-                <span className="block text-xs sm:text-sm font-bold text-slate-900">
+                <span className="block text-sm font-semibold text-slate-900">
                   {type.label}
                 </span>
                 <span className="mt-0.5 block text-[11px] text-slate-400 leading-snug">
                   {type.hint}
                 </span>
+              </span>
+
+              {/* Check indicator */}
+              <span className="absolute top-3 right-3 hidden h-5 w-5 items-center justify-center rounded-full bg-[#4285F4] text-white group-has-[:checked]:flex">
+                <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+                  <path d="M2.5 6.5L5 9L9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </span>
             </label>
           ))}
@@ -76,7 +98,7 @@ export function OnboardingForm({
       <button
         type="submit"
         disabled={pending}
-        className="mt-2 w-full rounded-xl bg-[#4285F4] py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#4285F4]/20 transition hover:bg-[#3367D6] hover:shadow-lg hover:shadow-[#4285F4]/30 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full rounded-xl bg-[#4285F4] py-3.5 px-4 text-sm font-semibold text-white shadow-md shadow-[#4285F4]/20 transition hover:bg-[#3367D6] hover:shadow-lg hover:shadow-[#4285F4]/30 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {pending ? "Saving…" : submitLabel}
       </button>
