@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState } from "react";
-import { Building2 } from "lucide-react";
 
 import {
   completeOnboarding,
@@ -25,33 +24,8 @@ export function OnboardingForm({
 
   return (
     <form action={action} className="space-y-6">
-      {/* College Name */}
-      <div>
-        <label
-          htmlFor="collegeName"
-          className="block text-xs font-bold text-slate-900 mb-1.5"
-        >
-          What is your college called?<span className="text-blue-600 ml-0.5">*</span>
-        </label>
-        <p className="text-[11px] sm:text-xs font-medium text-slate-400 mb-2.5">
-          This becomes the name on your site, and your web address.
-        </p>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
-            <Building2 className="h-4 w-4" />
-          </div>
-          <input
-            id="collegeName"
-            name="collegeName"
-            required
-            maxLength={120}
-            defaultValue={defaultName}
-            placeholder="e.g. Madras Engineering College"
-            autoComplete="organization"
-            className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
-          />
-        </div>
-      </div>
+      {/* College name passed as hidden field — already shown in heading */}
+      <input type="hidden" name="collegeName" value={defaultName} />
 
       {/* Institution Type */}
       <fieldset>
