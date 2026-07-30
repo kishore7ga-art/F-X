@@ -152,7 +152,10 @@ export function SectionBlock({
           className="fixed z-50 min-w-[160px] rounded-xl border border-neutral-800 bg-neutral-950 p-1.5 font-sans text-xs text-neutral-200 shadow-2xl backdrop-blur-xl"
         >
           <button
-            onClick={() => selectSection(section.id)}
+            onClick={() => {
+              openSectionPopup(section.id, { x: contextMenuPos.x, y: contextMenuPos.y });
+              setContextMenuPos(null);
+            }}
             className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white"
           >
             <Edit3 className="h-3.5 w-3.5 text-blue-400" />
