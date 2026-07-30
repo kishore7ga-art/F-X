@@ -17,8 +17,8 @@ export function AboutImageBeside({ content }: { content: AboutContent }) {
 
   return (
     <SectionShell background="white">
-      <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr]">
-        <div>
+      <div className="grid gap-8 md:gap-10 md:grid-cols-[minmax(0,320px)_1fr]">
+        <div className="w-full max-w-xs mx-auto md:max-w-none">
           {principalPhotoUrl ? (
             <SiteImage
               src={principalPhotoUrl}

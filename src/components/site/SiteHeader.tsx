@@ -41,7 +41,7 @@ export function SiteHeader({
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex flex-wrap items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1 shrink-0">
           {pages.map((page) => {
             const isActive = page.slug === currentSlug;
             const targetHref = isEditor
@@ -54,7 +54,7 @@ export function SiteHeader({
               <Link
                 key={page.id}
                 href={targetHref}
-                className={`rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all ${
+                className={`rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                   isActive
                     ? "text-[var(--site-dark)] shadow-sm"
                     : "text-white/85 hover:bg-white/10 hover:text-white"
@@ -74,7 +74,7 @@ export function SiteHeader({
         {/* Mobile Hamburger Menu Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="flex md:hidden h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition active:scale-95 shrink-0"
+          className="flex lg:hidden h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition active:scale-95 shrink-0"
           aria-label="Toggle Mobile Menu"
         >
           {mobileMenuOpen ? (
@@ -87,7 +87,7 @@ export function SiteHeader({
 
       {/* Mobile Slide-Down Dropdown Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden mt-3 pt-3 pb-2 border-t border-white/10 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="lg:hidden mt-3 pt-3 pb-2 border-t border-white/10 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
           {pages.map((page) => {
             const isActive = page.slug === currentSlug;
             const targetHref = isEditor
