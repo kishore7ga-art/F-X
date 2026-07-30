@@ -27,6 +27,12 @@ import {
   Eye,
   CheckCircle2,
   Clock,
+  BookOpen,
+  Briefcase,
+  Building2,
+  Microscope,
+  GraduationCap,
+  Users,
 } from "lucide-react";
 
 import { logout } from "@/app/actions/auth";
@@ -45,10 +51,16 @@ const PAGE_ICONS: Record<string, ReactNode> = {
   home: <Home className="h-[18px] w-[18px]" />,
   about: <Info className="h-[18px] w-[18px]" />,
   academics: <Layers className="h-[18px] w-[18px]" />,
+  courses: <BookOpen className="h-[18px] w-[18px]" />,
+  admissions: <FileText className="h-[18px] w-[18px]" />,
+  placements: <Briefcase className="h-[18px] w-[18px]" />,
+  facilities: <Building2 className="h-[18px] w-[18px]" />,
+  research: <Microscope className="h-[18px] w-[18px]" />,
   events: <Calendar className="h-[18px] w-[18px]" />,
+  faculty: <GraduationCap className="h-[18px] w-[18px]" />,
+  alumni: <Users className="h-[18px] w-[18px]" />,
   contact: <Mail className="h-[18px] w-[18px]" />,
   gallery: <ImageIcon className="h-[18px] w-[18px]" />,
-  admissions: <FileText className="h-[18px] w-[18px]" />,
   security: <Shield className="h-[18px] w-[18px]" />,
   settings: <Sliders className="h-[18px] w-[18px]" />,
 };
