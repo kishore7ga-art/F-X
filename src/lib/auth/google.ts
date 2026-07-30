@@ -80,6 +80,16 @@ export type GoogleIdentity = {
   email: string;
   name: string | null;
   emailVerified: boolean;
+  /**
+   * The raw token this identity was read out of.
+   *
+   * Returned so activation can forward it to the backend, which verifies it a
+   * second time rather than believing the email beside it. That is not
+   * belt-and-braces: the invite lives in the backend, and an endpoint that
+   * accepts a caller-supplied address is exactly the hole the address match is
+   * meant to close. Sign-in does not use this.
+   */
+  idToken: string;
 };
 
 /**
@@ -129,5 +139,6 @@ export async function exchangeCode(
     // Google sets this false for some workspace configurations; an unverified
     // address is not proof of anything.
     emailVerified: payload.email_verified === true,
+    idToken,
   };
 }
