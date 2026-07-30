@@ -40,10 +40,13 @@ import {
 } from "lucide-react";
 
 import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
+import { DesignThemePanel } from "@/components/editor/DesignThemePanel";
 import { EditorContextProvider, type SectionStyleOverride } from "@/components/editor/EditorContext";
 import { PublishToggle } from "@/components/editor/PublishToggle";
 import { SectionEditPopup } from "@/components/editor/SectionEditPopup";
 import type { EditorPageData } from "@/lib/editor/queries";
+import type { PaletteColors, FontPack } from "@/lib/theme/theme";
+import { buildThemeStyle, googleFontsHref } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -86,6 +89,11 @@ export function EditorShell({
   const [activeContextMenuPageId, setActiveContextMenuPageId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [activePanel, setActivePanel] = useState<"pages" | "design" | "assets" | null>("pages");
+  
+  // Live Palette and Fonts for instant real-time canvas updates
+  const [livePalette, setLivePalette] = useState<PaletteColors>(data.theme.colors);
+  const [liveFonts, setLiveFonts] = useState<FontPack>(data.theme.fonts);
+
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -208,6 +216,11 @@ export function EditorShell({
         run,
       }}
     >
+      {/* Dynamic Google Fonts Loader */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="stylesheet" href={googleFontsHref(liveFonts)} />
+
       <div
         className="flex h-screen w-screen overflow-hidden bg-[#09090B] text-white font-sans select-none"
         onClick={() => setActiveContextMenuPageId(null)}
@@ -236,12 +249,12 @@ export function EditorShell({
               <Layers className="h-4 w-4" />
             </button>
 
-            {/* Icon 2: Design */}
+            {/* Icon 2: Design (Palette / Theme styling) */}
             <button
               type="button"
               onClick={() => setActivePanel((prev) => (prev === "design" ? null : "design"))}
-              title="Design Variants"
-              aria-label="Design Variants"
+              title="Color Palettes & Fonts"
+              aria-label="Color Palettes & Fonts"
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                 activePanel === "design"
@@ -278,10 +291,12 @@ export function EditorShell({
           </div>
         </aside>
 
-        {/* ─── 2. TOGGLEABLE COMPACT PAGES PANEL (240px width, Black & White) ─── */}
-        <AnimatePresence>
+        {/* ─── 2. TOGGLEABLE SIDE PANELS (Pages & Design Theme) ─── */}
+        <AnimatePresence mode="wait">
+          {/* Panel 1: Pages Panel */}
           {activePanel === "pages" && (
             <motion.aside
+              key="pages-panel"
               initial={{ opacity: 0, x: -10, width: 0 }}
               animate={{ opacity: 1, x: 0, width: 240 }}
               exit={{ opacity: 0, x: -10, width: 0 }}
@@ -309,7 +324,7 @@ export function EditorShell({
                   </div>
                 </div>
 
-                {/* Compact Search Bar (40px height, 12px radius) */}
+                {/* Compact Search Bar */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-500" />
                   <input
@@ -321,7 +336,7 @@ export function EditorShell({
                   />
                 </div>
 
-                {/* Page Cards (48px height, 12px radius, Monochrome Selected State) */}
+                {/* Page Cards */}
                 <div className="flex-1 overflow-y-auto pr-0.5 space-y-1.5">
                   {filteredPages.map((page) => {
                     const isActive = page.slug === currentPage.slug;
@@ -343,7 +358,6 @@ export function EditorShell({
                               : "bg-[#111113] text-neutral-300 hover:bg-[#17171A] hover:text-white border border-[#26272B]/60"
                           )}
                         >
-                          {/* Left 3px Indicator for Selected Page */}
                           {isActive && (
                             <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-black" />
                           )}
@@ -371,7 +385,7 @@ export function EditorShell({
                           </button>
                         </Link>
 
-                        {/* Right Click Context Menu */}
+                        {/* Context Menu */}
                         {activeContextMenuPageId === page.id && (
                           <div
                             className="absolute right-1 top-10 z-50 w-40 rounded-xl border border-[#26272B] bg-[#111113] p-1 shadow-xl text-xs text-white"
@@ -430,7 +444,7 @@ export function EditorShell({
                 </div>
               </div>
 
-              {/* Compact Add Page Button */}
+              {/* Add Page Button */}
               <div className="pt-3 border-t border-[#1F1F23]">
                 <button
                   type="button"
@@ -446,11 +460,23 @@ export function EditorShell({
               </div>
             </motion.aside>
           )}
+
+          {/* Panel 2: Design & Theme Panel (Palettes & Fonts) */}
+          {activePanel === "design" && (
+            <DesignThemePanel
+              key="design-panel"
+              activePalette={livePalette}
+              activeFonts={liveFonts}
+              onSelectPalette={(palette) => setLivePalette(palette)}
+              onSelectFonts={(fonts) => setLiveFonts(fonts)}
+              onClose={() => setActivePanel(null)}
+            />
+          )}
         </AnimatePresence>
 
-        {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS) ─── */}
+        {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
         <main className="flex flex-1 flex-col overflow-hidden bg-[#09090B]">
-          {/* Top Toolbar (Monochrome Black & White) */}
+          {/* Top Toolbar */}
           <header className="z-20 flex h-14 items-center justify-between border-b border-[#26272B] bg-[#0B0B0C] px-5">
             <div className="flex items-center gap-2.5">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -553,13 +579,14 @@ export function EditorShell({
             </p>
           )}
 
-          {/* Canvas Live Preview Container */}
+          {/* Canvas Live Preview Container (Applies Live Theme Styles & Google Fonts) */}
           <div className="relative flex-1 overflow-y-auto bg-[#09090B] p-5 flex justify-center items-start">
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              style={buildThemeStyle(livePalette, liveFonts)}
               className={cn(
-                "w-full overflow-hidden rounded-2xl border border-[#26272B] bg-white shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
+                "w-full overflow-hidden rounded-2xl border border-[#26272B] bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
                 deviceMode === "desktop" && "max-w-6xl",
                 deviceMode === "tablet" && "max-w-[768px]",
                 deviceMode === "mobile" && "max-w-[390px] rounded-[36px] border-4 border-neutral-700 shadow-2xl overflow-x-hidden"
