@@ -724,7 +724,7 @@ export function EditorShell({
                       }
                     }}
                     aria-label="Delete Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-red-50 hover:text-red-600 active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 active:scale-95 transition-all"
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                   </button>
