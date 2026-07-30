@@ -158,7 +158,7 @@ export function SignUpForm() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ilaya Bharathi"
-                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
               </div>
@@ -178,7 +178,7 @@ export function SignUpForm() {
                     value={organization}
                     onChange={(e) => setOrganization(e.target.value)}
                     placeholder="Madras Engineering College"
-                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
               </div>
@@ -198,7 +198,7 @@ export function SignUpForm() {
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
                     placeholder="https://www.madrascollege.ac.in"
-                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
               </div>
@@ -219,7 +219,7 @@ export function SignUpForm() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="admin@madrascollege.ac.in"
-                      className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                      className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                     />
                   </div>
                 </div>
@@ -238,7 +238,7 @@ export function SignUpForm() {
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       placeholder="+91 98765 4321"
-                      className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                      className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                     />
                   </div>
                 </div>
@@ -260,7 +260,7 @@ export function SignUpForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-10 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-10 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                   <button
                     type="button"
