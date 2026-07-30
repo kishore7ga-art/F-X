@@ -37,7 +37,10 @@ import {
   FolderOpen,
   Settings,
   X,
+  LogOut,
 } from "lucide-react";
+
+import { logout } from "@/app/actions/auth";
 
 import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
 import { AssetsMediaPanel } from "@/components/editor/AssetsMediaPanel";
@@ -283,12 +286,26 @@ export function EditorShell({
             </button>
           </div>
 
-          {/* User Avatar Circle */}
-          <div className="relative flex flex-col items-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-800 border border-neutral-700 text-xs font-bold text-white shadow-inner">
-              {initialLetter}
+          {/* User Avatar & Sign Out */}
+          <div className="flex flex-col items-center gap-2">
+            {canSignOut && (
+              <form action={logout}>
+                <button
+                  type="submit"
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </form>
+            )}
+            <div className="relative flex flex-col items-center">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-800 border border-neutral-700 text-xs font-bold text-white shadow-inner">
+                {initialLetter}
+              </div>
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#09090B]" title="Active Session" />
             </div>
-            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#09090B]" title="Active Session" />
           </div>
         </aside>
 
@@ -560,7 +577,7 @@ export function EditorShell({
               </div>
             </div>
 
-            {/* Preview & Publish */}
+            {/* Preview, Publish & Sign Out */}
             <div className="flex items-center gap-3">
               {isPending && (
                 <span className="flex items-center gap-1.5 text-xs text-neutral-400 font-medium">
@@ -579,6 +596,19 @@ export function EditorShell({
               </Link>
 
               <PublishToggle collegeId={college.id} status={college.status} />
+
+              {canSignOut && (
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 hover:text-red-300 cursor-pointer"
+                    title="Sign Out"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </form>
+              )}
             </div>
           </header>
 

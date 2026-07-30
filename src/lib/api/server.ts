@@ -100,7 +100,8 @@ async function request<T>(
     );
   }
 
-  if (response.status === 204 || response.status === 404) return null;
+  if (method === "GET" && (response.status === 204 || response.status === 404)) return null;
+  if (method === "POST" && response.status === 204) return null;
 
   if (!response.ok) {
     const detail = (await response.json().catch(() => null)) as {

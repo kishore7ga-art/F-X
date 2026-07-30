@@ -2,24 +2,14 @@ import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { authorizationUrl, googleEnabled } from "@/lib/auth/google";
+import {
+  ACTIVATION_COOKIE,
+  authorizationUrl,
+  googleEnabled,
+  STATE_COOKIE,
+} from "@/lib/auth/google";
 
 export const dynamic = "force-dynamic";
-
-export const STATE_COOKIE = "google_oauth_state";
-
-/**
- * Carries an activation token across the round trip to Google.
- *
- * A cookie rather than the `state` parameter, which is the obvious place and the
- * wrong one. `state` travels to Google and comes back in a URL — it lands in
- * server logs, in browser history and in the Referer of anything the callback
- * page loads. An invite token is a credential that grants an account; it does not
- * belong in any of those. httpOnly keeps it out of scripts too.
- *
- * Absent for ordinary sign-in, which is how the callback tells the two apart.
- */
-export const ACTIVATION_COOKIE = "xite_activation_token";
 
 /**
  * Begins Google sign-in.

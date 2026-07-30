@@ -17,6 +17,9 @@ const JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/ce
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? "";
 
+export const STATE_COOKIE = "google_oauth_state";
+export const ACTIVATION_COOKIE = "xite_activation_token";
+
 /**
  * Whether to offer the button at all.
  *

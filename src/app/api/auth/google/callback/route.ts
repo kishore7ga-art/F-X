@@ -1,13 +1,15 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import {
-  ACTIVATION_COOKIE,
-  STATE_COOKIE,
-} from "@/app/api/auth/google/start/route";
 import { serverApiPost, ServerApiError } from "@/lib/api/server";
 import { createSessionToken, COOKIE_NAME, sessionCookieOptions } from "@/lib/auth/session";
-import { appOrigin, exchangeCode, googleEnabled } from "@/lib/auth/google";
+import {
+  ACTIVATION_COOKIE,
+  appOrigin,
+  exchangeCode,
+  googleEnabled,
+  STATE_COOKIE,
+} from "@/lib/auth/google";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";

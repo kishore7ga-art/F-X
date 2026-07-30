@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { logout as signOut } from "@/app/actions/auth";
 import { buildSiteForType } from "@/app/actions/onboarding";
 import { getCurrentCollegeOrNull } from "@/lib/auth/current";
 import { collegeType } from "@/lib/college-types";
@@ -63,6 +64,14 @@ export default async function StartPage() {
             >
               <span>Super Admin</span>
             </Link>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-100 cursor-pointer"
+              >
+                <span>Sign Out</span>
+              </button>
+            </form>
           </div>
         </div>
 
