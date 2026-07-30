@@ -189,7 +189,7 @@ export function DesignThemePanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2, ease: "easeInOut" }}
-      className="absolute left-[56px] top-0 bottom-0 z-40 flex w-[280px] flex-col justify-between border-r border-slate-200 bg-white p-4 shadow-2xl overflow-hidden select-none"
+      className="absolute left-[56px] top-0 bottom-0 z-40 flex w-[280px] flex-col justify-between bg-white p-4 shadow-2xl overflow-hidden select-none"
     >
       <div className="flex flex-col gap-4 overflow-hidden h-full">
         {/* Header bar */}

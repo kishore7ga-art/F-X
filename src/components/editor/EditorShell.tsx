@@ -248,7 +248,7 @@ export function EditorShell({
         onClick={() => setActiveContextMenuPageId(null)}
       >
         {/* ─── 1. LEFT ICON RAIL WITH ALL EDITOR CONTROLS & RIGHT-SIDE TOOLTIPS ─── */}
-        <aside className="z-50 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-3.5 overflow-y-auto">
+        <aside className="z-50 flex w-[56px] shrink-0 flex-col items-center justify-between bg-white py-3.5 overflow-y-auto">
           {/* Top Group: Brand & Primary Panels */}
           <div className="flex flex-col items-center gap-2.5">
             {/* Logo / Brand Indicator */}
@@ -398,7 +398,7 @@ export function EditorShell({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="absolute left-[56px] top-0 bottom-0 z-40 flex w-[260px] flex-col justify-between border-r border-slate-200 bg-white p-3.5 shadow-2xl overflow-hidden"
+              className="absolute left-[56px] top-0 bottom-0 z-40 flex w-[260px] flex-col justify-between bg-white p-3.5 shadow-2xl overflow-hidden"
             >
               <div className="flex flex-col gap-3.5 overflow-hidden">
                 {/* Header: Website Name & Page Count Badge */}
@@ -580,7 +580,7 @@ export function EditorShell({
         </AnimatePresence>
 
         {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
-        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-slate-50">
+        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-white">
 
           {actionError && (
             <p className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-xs font-medium text-red-400">
@@ -589,7 +589,7 @@ export function EditorShell({
           )}
 
           {/* Canvas Live Preview Container (Applies Live Theme Styles & Google Fonts) */}
-          <div className="relative flex-1 overflow-y-auto overscroll-contain bg-slate-50 flex justify-center items-start">
+          <div className="relative flex-1 overflow-y-auto overscroll-contain bg-white flex justify-center items-start">
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
