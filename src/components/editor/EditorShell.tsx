@@ -632,25 +632,19 @@ export function EditorShell({
             </motion.div>
           </div>
 
-          {/* Floating Section Toolbar (Shown when a section is clicked) */}
-          <AnimatePresence>
-            {selectedSection && (
-              <motion.div
-                initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-slate-800/80 bg-slate-900/95 backdrop-blur-xl px-3.5 py-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.25)] text-white"
-              >
+          {/* Floating Bottom-Center Viewport & Section Controls Toast Dock (International Design Standard) */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-xl px-3.5 py-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-all duration-300 ring-1 ring-black/5">
+            {selectedSection ? (
+              <>
                 {/* Active Section Info Badge */}
                 <div className="flex items-center gap-2 pl-1 pr-1.5">
-                  <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span className="text-[12px] font-bold text-slate-100 tracking-wide">
+                  <span className="flex h-2 w-2 rounded-full bg-blue-600 ring-4 ring-blue-500/20" />
+                  <span className="text-[12px] font-extrabold text-slate-900 tracking-tight">
                     {selectedSection.label}
                   </span>
                 </div>
 
-                <div className="h-4 w-px bg-slate-800" />
+                <div className="h-4 w-px bg-slate-200/80" />
 
                 {/* Edit Button */}
                 <button
@@ -659,107 +653,85 @@ export function EditorShell({
                     e.stopPropagation();
                     openSectionPopup(selectedSection.id, { x: e.clientX, y: e.clientY });
                   }}
-                  className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-500 active:scale-95 transition-all shadow-xs"
+                  className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                   <span>Edit</span>
                 </button>
 
-                {/* Duplicate Button (Icon with Tooltip) */}
-                <div className="group/btn relative flex items-center">
+                {/* Duplicate Button */}
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
+                  }}
+                  className="flex items-center gap-1.5 rounded-full bg-slate-100/90 border border-slate-200/80 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200/80 hover:text-slate-900 active:scale-95 transition-all disabled:opacity-40"
+                >
+                  <Copy className="h-3.5 w-3.5 text-slate-500" />
+                  <span>Duplicate</span>
+                </button>
+
+                {/* Delete Button */}
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete section "${selectedSection.label}"?`)) {
+                      run(() => deleteSection({ collegeSectionId: selectedSection.id }));
+                      setSelectedSectionId(null);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200/80 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-95 transition-all disabled:opacity-40"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </button>
+
+                {/* Variant Refresh / Swap Button */}
+                {selectedSection.variants.length > 1 && (
                   <button
                     type="button"
                     disabled={isPending}
                     onClick={(e) => {
                       e.stopPropagation();
-                      run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
+                      run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
                     }}
-                    aria-label="Duplicate Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 hover:bg-slate-800 hover:text-white active:scale-95 transition-all disabled:opacity-40"
+                    title="Swap Design Variant"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100/90 border border-slate-200/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900 active:scale-95 transition-all"
                   >
-                    <Copy className="h-3.5 w-3.5" />
+                    <RefreshCw className="h-3.5 w-3.5" />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-800 px-2 py-1 text-[10px] font-medium text-slate-200 shadow-md group-hover/btn:flex items-center whitespace-nowrap z-50">
-                    Duplicate
-                  </div>
-                </div>
-
-                {/* Variant Refresh / Swap Button (Icon with Tooltip) */}
-                {selectedSection.variants.length > 1 && (
-                  <div className="group/btn relative flex items-center">
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
-                      }}
-                      aria-label="Swap Design Variant"
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 hover:bg-slate-800 hover:text-white active:scale-95 transition-all disabled:opacity-40"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </button>
-                    <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-800 px-2 py-1 text-[10px] font-medium text-slate-200 shadow-md group-hover/btn:flex items-center whitespace-nowrap z-50">
-                      Swap Layout
-                    </div>
-                  </div>
                 )}
 
-                {/* Delete Button (Icon with Tooltip) */}
-                <div className="group/btn relative flex items-center">
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(`Delete section "${selectedSection.label}"?`)) {
-                        run(() => deleteSection({ collegeSectionId: selectedSection.id }));
-                        setSelectedSectionId(null);
-                      }
-                    }}
-                    aria-label="Delete Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-red-500/20 hover:text-red-400 active:scale-95 transition-all disabled:opacity-40"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden rounded-md bg-red-950 text-red-200 px-2 py-1 text-[10px] font-medium shadow-md group-hover/btn:flex items-center whitespace-nowrap z-50">
-                    Delete
-                  </div>
-                </div>
-
-                <div className="h-4 w-px bg-slate-800" />
+                <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
 
                 {/* Deselect / Close Button */}
                 <button
                   type="button"
                   onClick={() => setSelectedSectionId(null)}
                   title="Close Section Controls"
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-white active:scale-95 transition"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-900 active:scale-95 transition"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
-          {/* Floating Viewport Dock */}
-          <div
-            className={cn(
-              "fixed z-40 transition-all duration-300",
-              selectedSection
-                ? "bottom-6 right-6"
-                : "bottom-6 left-1/2 -translate-x-1/2"
-            )}
-          >
-            <div className="flex items-center rounded-full bg-white/90 backdrop-blur-xl p-1 border border-slate-200/90 shadow-lg shadow-slate-900/5">
+                <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
+              </>
+            ) : null}
+
+            {/* Segmented Viewport Switcher (Desktop / Tablet / Mobile) */}
+            <div className="flex items-center rounded-full bg-slate-100/90 p-0.5 border border-slate-200/80">
               <button
                 type="button"
                 onClick={() => setDeviceMode("desktop")}
                 aria-label="Desktop View"
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
+                  "flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "desktop"
-                    ? "bg-slate-900 text-white font-bold shadow-xs"
+                    ? "bg-white text-slate-900 font-bold shadow-xs"
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
@@ -770,9 +742,9 @@ export function EditorShell({
                 onClick={() => setDeviceMode("tablet")}
                 aria-label="Tablet View"
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
+                  "flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "tablet"
-                    ? "bg-slate-900 text-white font-bold shadow-xs"
+                    ? "bg-white text-slate-900 font-bold shadow-xs"
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
@@ -783,9 +755,9 @@ export function EditorShell({
                 onClick={() => setDeviceMode("mobile")}
                 aria-label="Mobile View"
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
+                  "flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "mobile"
-                    ? "bg-slate-900 text-white font-bold shadow-xs"
+                    ? "bg-white text-slate-900 font-bold shadow-xs"
                     : "text-slate-500 hover:text-slate-900"
                 )}
               >
