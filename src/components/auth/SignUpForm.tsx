@@ -119,11 +119,11 @@ export function SignUpForm() {
               </span>
             </Link>
 
-            {/* Top-Right Login Pill Button */}
+            {/* Top-Right Login Pill Button (Light Green) */}
             <div>
               <Link
                 href="/login"
-                className="rounded-full bg-blue-50/90 px-6 py-2.5 text-sm font-extrabold text-blue-600 transition hover:bg-blue-100 hover:shadow-xs shadow-2xs active:scale-[0.98]"
+                className="rounded-full bg-emerald-50 px-6 py-2.5 text-sm font-extrabold text-emerald-700 border border-emerald-200/60 transition hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-xs shadow-2xs active:scale-[0.98]"
               >
                 Login
               </Link>
