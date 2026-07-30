@@ -623,7 +623,7 @@ export function EditorShell({
             {selectedSection && (
               <>
                 <div className="flex items-center pl-0.5 pr-1">
-                  <span className="text-xs font-medium text-slate-700 tracking-tight whitespace-nowrap">
+                  <span className="text-xs font-medium text-slate-800 tracking-tight whitespace-nowrap">
                     {selectedSection.label}
                   </span>
                 </div>
@@ -726,9 +726,9 @@ export function EditorShell({
                   }}
                   aria-label={`Desktop View (${currentDesktopRes}px)`}
                   className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-bold transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
                     deviceMode === "desktop"
-                      ? "text-slate-900"
+                      ? "text-slate-800"
                       : "text-slate-400 hover:text-slate-800"
                   )}
                 >
@@ -754,9 +754,9 @@ export function EditorShell({
                   }}
                   aria-label={`Tablet View (${currentTabletRes}px)`}
                   className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-bold transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
                     deviceMode === "tablet"
-                      ? "text-slate-900"
+                      ? "text-slate-800"
                       : "text-slate-400 hover:text-slate-800"
                   )}
                 >
@@ -782,9 +782,9 @@ export function EditorShell({
                   }}
                   aria-label={`Mobile View (${currentMobileRes}px)`}
                   className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-bold transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
                     deviceMode === "mobile"
-                      ? "text-slate-900"
+                      ? "text-slate-800"
                       : "text-slate-400 hover:text-slate-800"
                   )}
                 >
