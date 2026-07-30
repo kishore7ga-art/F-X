@@ -147,49 +147,44 @@ export async function GET(request: Request) {
   }
 
   try {
-    let user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email: identity.email },
-      include: { college: { select: { subdomain: true } } },
+      select: { id: true, collegeId: true, status: true },
     });
 
-    if (!user) {
-      /**
-       * First sign-in. Adopt an unclaimed college before making a new one.
-       *
-       * An install that ran in open-access mode has a real college with real
-       * content and no user attached to it. Creating a second college here
-       * would strand the first: the person who built it would sign in and find
-       * an empty site, with their work intact but unreachable.
-       */
-      const unclaimed = await prisma.college.findFirst({
-        where: { isDemo: false, users: { none: {} } },
-        orderBy: { createdAt: "asc" },
-        select: { id: true },
-      });
-
-      const collegeId =
-        unclaimed?.id ??
-        (
-          await prisma.college.create({
-            data: {
-              name: identity.name ? `${identity.name}'s college` : "My College",
-              subdomain: `college-${Date.now().toString(36)}`,
-              status: "DRAFT",
-            },
-            select: { id: true },
-          })
-        ).id;
-
-      user = await prisma.user.create({
-        data: {
-          email: identity.email,
-          // Google is the credential. A random unusable hash keeps the column
-          // NOT NULL without inventing a password anyone could guess or reuse.
-          passwordHash: `google:${crypto.randomUUID()}`,
-          collegeId,
-        },
-        include: { college: { select: { subdomain: true } } },
-      });
+    /**
+     * Sign-in only. This no longer creates anything.
+     *
+     * It used to adopt an unclaimed college or make a new one, which meant
+     * anybody with a Google account got a College and a User for the cost of one
+     * click. With access now by approved request, leaving that in place would
+     * have made the whole flow decorative — request, review, invite, activation —
+     * because the queue could be walked straight around.
+     *
+     * Google proves who somebody is. It does not decide whether they may be here;
+     * an approved access request does. Somebody redeeming an invite is not
+     * affected, because the activation branch above returns before this runs —
+     * that ordering is what lets a first-time Google user in at all, and moving
+     * this check above it would lock every invited person out.
+     *
+     * One message for both cases. Splitting "no such account" from "deactivated"
+     * would disclose which addresses have accounts. Weaker here than on a
+     * password form — reaching this needs a completed OAuth flow, so only an
+     * address you already control can be probed — but there is no upside.
+     *
+     * `"ACTIVE"` is the enum member; UserStatus is SCREAMING_CASE like
+     * CollegeStatus and SectionType.
+     *
+     * Deleting the create path also removed this file's copy of the `adoptable`
+     * bug: that filter ignored the column, so a college whose last owner a Super
+     * Admin had deliberately removed was handed to the next arrival. The backend
+     * helper was fixed; this was the remaining copy.
+     */
+    if (!user || user.status !== "ACTIVE") {
+      return back(
+        request,
+        "That Google account does not have access. Request access first.",
+      );
     }
 
     // Into step 2, the same as every other way in. Jumping a signed-in college

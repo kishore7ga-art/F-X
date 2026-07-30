@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Mail, Lock, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 
-import { ApiError, loginRequest, signupRequest } from "@/lib/api-client";
+import { ApiError, loginRequest } from "@/lib/api-client";
 
 function GoogleButton() {
   return (
@@ -37,12 +37,10 @@ function GoogleButton() {
 }
 
 export function CredentialsForm({
-  mode,
   notice,
   initialEmail = "",
   showGoogleButton = false,
 }: {
-  mode: "login" | "signup";
   notice?: string | null;
   initialEmail?: string;
   showGoogleButton?: boolean;
@@ -52,8 +50,6 @@ export function CredentialsForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-
-  const isSignup = mode === "signup";
 
   function handleDemoFill() {
     setEmail("admin@greenfield.edu.in");
@@ -66,14 +62,9 @@ export function CredentialsForm({
     setPending(true);
 
     try {
-      if (isSignup) {
-        await signupRequest(email, password);
-        router.push(`/login?registered=1&email=${encodeURIComponent(email)}`);
-      } else {
-        const { next } = await loginRequest(email, password);
-        window.location.assign(next);
-        return;
-      }
+      const { next } = await loginRequest(email, password);
+      window.location.assign(next);
+      return;
     } catch (cause) {
       setError(
         cause instanceof ApiError && cause.status !== 0
@@ -106,12 +97,10 @@ export function CredentialsForm({
           </div>
 
           <h1 className="mt-3 text-3xl font-extrabold text-slate-900 tracking-tight">
-            {isSignup ? "Create your account" : "Sign in to XITE"}
+            Sign in to XITE
           </h1>
           <p className="mt-2 text-sm font-semibold text-slate-500">
-            {isSignup
-              ? "Sign up to create and publish your official college website."
-              : "Sign in to claim your college site or set one up right away."}
+            Access is by approved request. If you have an account, sign in here.
           </p>
         </div>
 
@@ -132,7 +121,7 @@ export function CredentialsForm({
           )}
 
           {/* Quick Demo Autofill Pill */}
-          {!isSignup && (
+          {(
             <button
               type="button"
               onClick={handleDemoFill}
@@ -200,18 +189,12 @@ export function CredentialsForm({
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  autoComplete={isSignup ? "new-password" : "current-password"}
-                  minLength={isSignup ? 8 : undefined}
+                  autoComplete="current-password"
                   placeholder="••••••••••••"
                   required
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-400"
                 />
               </div>
-              {isSignup ? (
-                <p className="mt-1 text-[11px] font-semibold text-slate-400">
-                  Must be at least 8 characters long
-                </p>
-              ) : null}
             </div>
 
             {error ? (
@@ -232,11 +215,7 @@ export function CredentialsForm({
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl" />
               <div className="w-full py-3.5 bg-black rounded-[14px] relative group transition duration-200 text-white font-extrabold text-sm hover:bg-transparent flex items-center justify-center gap-2">
                 <span>
-                  {pending
-                    ? "Please wait…"
-                    : isSignup
-                      ? "Create account"
-                      : "Sign in"}
+                  {pending ? "Please wait…" : "Sign in"}
                 </span>
                 {!pending && <ArrowRight className="h-4 w-4" />}
               </div>
@@ -245,12 +224,12 @@ export function CredentialsForm({
 
           {/* Toggle Footer */}
           <div className="mt-6 border-t border-slate-100 pt-5 text-center text-xs font-semibold text-slate-500">
-            {isSignup ? "Already have an account? " : "New to XITE Platform? "}
+            New to XITE Platform?
             <Link
-              href={isSignup ? "/login" : "/signup"}
+              href="/request-access"
               className="font-extrabold text-blue-600 hover:underline hover:text-blue-700 ml-1"
             >
-              {isSignup ? "Sign in" : "Create an account"}
+              Request access
             </Link>
           </div>
         </div>

@@ -22,7 +22,6 @@ export default async function LoginPage({
 
   return (
     <CredentialsForm
-      mode="login"
       initialEmail={typeof email === "string" ? email : ""}
       showGoogleButton={googleEnabled}
       notice={

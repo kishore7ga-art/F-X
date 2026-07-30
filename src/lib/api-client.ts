@@ -85,11 +85,11 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
  * Network tab like any API request.
  */
 
-export const signupRequest = (email: string, password: string) =>
-  api<{ id: string; email: string }>("/api/v1/auth/signup", {
-    method: "POST",
-    body: { email, password },
-  });
+/*
+ * No signupRequest. POST /api/v1/auth/signup is gone: access is by approved
+ * request, so the only way an account comes into existence is activation. The
+ * public entry point is `requestAccessRequest` below.
+ */
 
 /** `next` is where the backend says this account should land. */
 export const loginRequest = (email: string, password: string) =>

@@ -10,7 +10,7 @@ export const metadata = { title: "Request access — XITE" };
 /**
  * The way in, for somebody who does not have an account yet.
  *
- * Bounces anyone who already has a session, the same way /login and /signup do:
+ * Bounces anyone who already has a session, the same way /login does:
  * asking for access while signed in is a form that can only confuse. Where they
  * land follows the same rule those two use — /start once onboarding has asked
  * what kind of institution this is, /onboarding before that.

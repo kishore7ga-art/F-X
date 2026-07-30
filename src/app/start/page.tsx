@@ -92,24 +92,6 @@ export default async function StartPage() {
           </p>
         </div>
 
-        {/* Continue Editing Banner */}
-        {hasSite ? (
-          <Link
-            href={`/editor/${college.subdomain}`}
-            className="mt-8 flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-6 py-4.5 transition hover:border-slate-300 hover:bg-slate-100/80 shadow-sm"
-          >
-            <div>
-              <span className="block text-base font-bold text-slate-900">
-                Continue editing your site
-              </span>
-              <span className="mt-0.5 block text-xs sm:text-sm text-slate-500 font-medium">
-                Pick up where you left off at /{college.subdomain}
-              </span>
-            </div>
-            <span className="shrink-0 text-sm font-bold text-slate-900">→</span>
-          </Link>
-        ) : null}
-
         {/* Starting Choices Cards */}
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           {/* Build Site Card */}
