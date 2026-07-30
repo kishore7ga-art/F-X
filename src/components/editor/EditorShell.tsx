@@ -398,19 +398,14 @@ export function EditorShell({
                     <span>SEO & Page Settings</span>
                   </button>
 
-                  {canCycleTemplate && (
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => {
-                        run(() => cycleTemplate());
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-xs font-bold text-neutral-200 transition hover:bg-neutral-800 hover:text-white disabled:opacity-50"
-                    >
-                      <RefreshCw className="h-4 w-4 text-blue-400" />
-                      <span>Try another template</span>
-                    </button>
-                  )}
+                  <Link
+                    href="/templates"
+                    onClick={() => setActiveDrawer(null)}
+                    className="flex w-full items-center gap-2.5 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-xs font-bold text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
+                  >
+                    <RefreshCw className="h-4 w-4 text-blue-400" />
+                    <span>Try another template</span>
+                  </Link>
 
                   <Link
                     href="/templates"
