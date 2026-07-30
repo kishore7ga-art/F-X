@@ -48,6 +48,46 @@ import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
 const DESKTOP_RESOLUTIONS = [1200, 1440, 1920] as const;
 const TABLET_RESOLUTIONS = [768, 834, 1024] as const;
 const MOBILE_RESOLUTIONS = [390, 414, 360] as const;
+
+function CustomSwapIcon({ className = "h-4.5 w-4.5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <defs>
+        <pattern id="swapDotPattern" x="0" y="0" width="2.5" height="2.5" patternUnits="userSpaceOnUse">
+          <circle cx="1.25" cy="1.25" r="0.6" fill="currentColor" />
+        </pattern>
+      </defs>
+
+      {/* Top-Left Square with Dotted Grid */}
+      <rect x="2.5" y="2.5" width="9.5" height="9.5" fill="url(#swapDotPattern)" stroke="currentColor" strokeWidth="1.8" />
+
+      {/* Bottom-Right Hollow Square */}
+      <rect x="11.5" y="11.5" width="10" height="10" stroke="currentColor" strokeWidth="1.8" fill="none" />
+
+      {/* Curved L-Arrow underneath top-left square */}
+      <path
+        d="M4.5 14.5v3.5a1.5 1.5 0 0 0 1.5 1.5h4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.5 17l3 2.5-3 2.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
 import { AssetsMediaPanel } from "@/components/editor/AssetsMediaPanel";
 import { DesignThemePanel } from "@/components/editor/DesignThemePanel";
 import { EditorContextProvider, type SectionStyleOverride } from "@/components/editor/EditorContext";
@@ -660,9 +700,9 @@ export function EditorShell({
                         run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
                       }}
                       aria-label="Swap Design Variant"
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 active:scale-95 transition-all"
                     >
-                      <ArrowLeftRight className="h-4 w-4" strokeWidth={2.2} />
+                      <CustomSwapIcon className="h-4.5 w-4.5" />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Swap Design Layout
