@@ -710,7 +710,7 @@ export function EditorShell({
                 </div>
 
                 {/* Pipe Separator 1 */}
-                <div className="h-4 w-px bg-slate-300" />
+                <div className="h-5 w-0.5 bg-slate-400/80 rounded-full shrink-0 my-auto" />
               </>
             )}
 
@@ -784,7 +784,7 @@ export function EditorShell({
             </div>
 
             {/* Pipe Separator 2 */}
-            <div className="h-4 w-px bg-slate-300" />
+            <div className="h-5 w-0.5 bg-slate-400/80 rounded-full shrink-0 my-auto" />
 
             {/* 3. UNDO / REDO ICONS WITH TOOLTIPS (POSITIONED LAST) */}
             <div className="flex items-center gap-1">
