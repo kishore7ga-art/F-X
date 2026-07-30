@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Sparkles, Globe, User, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Sparkles, Globe, User, Building2, Phone, CheckCircle2 } from "lucide-react";
 
 import { loginAction } from "@/app/actions/auth";
 import { requestAccessRequest } from "@/lib/api-client";
 
 export function SignUpForm() {
   const [name, setName] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [website, setWebsite] = useState("");
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
@@ -27,7 +30,8 @@ export function SignUpForm() {
       await requestAccessRequest({
         name,
         email,
-        message: `Direct signup for ${name}`,
+        organization,
+        message: `Institution: ${organization} | Website: ${website} | Mobile: ${mobile}`,
       });
 
       const formData = new FormData();
@@ -41,12 +45,12 @@ export function SignUpForm() {
         return;
       }
 
-      setSuccessMessage("Account created successfully! Redirecting…");
+      setSuccessMessage("Access request submitted successfully! Redirecting…");
       setTimeout(() => {
         window.location.assign("/start");
       }, 1000);
     } catch {
-      setSuccessMessage("Account created! Welcome to XITE Platform.");
+      setSuccessMessage("Access request submitted! Welcome to XITE Platform.");
       setTimeout(() => {
         window.location.assign("/start");
       }, 1000);
@@ -58,10 +62,10 @@ export function SignUpForm() {
       {/* Full Screen 50% / 50% Split Layout */}
       <div className="w-full min-h-screen flex flex-col lg:flex-row">
         
-        {/* ─── LEFT 50% PANEL: SIGN UP FORM (EDGE TO EDGE WHITE) ─── */}
-        <div className="w-full lg:w-1/2 min-h-screen bg-white p-8 sm:p-12 lg:p-16 flex flex-col justify-between z-10">
+        {/* ─── LEFT 50% PANEL: REQUEST ACCESS FORM (EDGE TO EDGE WHITE) ─── */}
+        <div className="w-full lg:w-1/2 min-h-screen bg-white p-8 sm:p-12 lg:p-14 flex flex-col justify-between z-10 overflow-y-auto">
           {/* Header Bar */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
             {/* Top-Left Brand Logo */}
             <Link href="/" className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white font-extrabold text-xs shadow-xs">
@@ -85,20 +89,21 @@ export function SignUpForm() {
           </div>
 
           {/* Form Content Body (Centered) */}
-          <div className="mx-auto w-full max-w-sm py-8 sm:py-12">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Create your account
+          <div className="mx-auto w-full max-w-sm py-4">
+            <div className="text-center mb-6">
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                Request Access
               </h1>
-              <p className="mt-2 text-xs sm:text-sm font-medium text-slate-500">
-                Enter your details to register.
+              <p className="mt-1.5 text-xs sm:text-sm font-medium text-slate-500">
+                Fill in your institutional details to request portal access.
               </p>
             </div>
 
             {/* Form Fields */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* 1. Full Name */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Full Name<span className="text-blue-600 ml-0.5">*</span>
                 </label>
                 <div className="relative">
@@ -111,14 +116,55 @@ export function SignUpForm() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Harry Potter"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                   />
                 </div>
               </div>
 
+              {/* 2. Institution Name */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Email Address<span className="text-blue-600 ml-0.5">*</span>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Institution Name<span className="text-blue-600 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    <Building2 className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={organization}
+                    onChange={(e) => setOrganization(e.target.value)}
+                    placeholder="Greenfield Institute of Technology"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                  />
+                </div>
+              </div>
+
+              {/* 3. Website Address */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Website Address<span className="text-blue-600 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    <Globe className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="url"
+                    required
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    placeholder="https://greenfield.edu.in"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                  />
+                </div>
+              </div>
+
+              {/* 4. Email */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Email<span className="text-blue-600 ml-0.5">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
@@ -129,14 +175,35 @@ export function SignUpForm() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="harrypotter@crm.com"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                    placeholder="admin@greenfield.edu.in"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                   />
                 </div>
               </div>
 
+              {/* 5. Mobile Number */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Mobile Number<span className="text-blue-600 ml-0.5">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="+91 98765 43210"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                  />
+                </div>
+              </div>
+
+              {/* 6. Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
                   Password<span className="text-blue-600 ml-0.5">*</span>
                 </label>
                 <div className="relative">
@@ -150,7 +217,7 @@ export function SignUpForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10 py-2.5 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
                   />
                   <button
                     type="button"
@@ -163,7 +230,7 @@ export function SignUpForm() {
               </div>
 
               {/* Terms Checkbox */}
-              <div className="flex items-center text-xs font-medium text-slate-600 pt-1">
+              <div className="flex items-center text-xs font-medium text-slate-600 pt-0.5">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -188,19 +255,19 @@ export function SignUpForm() {
                 </div>
               )}
 
-              {/* Primary Dark Register Button */}
+              {/* Primary Dark Button: Request Access */}
               <button
                 type="submit"
                 disabled={pending}
-                className="mt-3 w-full rounded-xl bg-[#18191C] py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md transition hover:bg-black active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="mt-2 w-full rounded-xl bg-[#18191C] py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md transition hover:bg-black active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>{pending ? "Creating account…" : "Register"}</span>
+                <span>{pending ? "Submitting request…" : "Request Access"}</span>
               </button>
             </form>
           </div>
 
           {/* Footer Bar */}
-          <div className="flex items-center justify-between text-xs font-medium text-slate-400 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between text-xs font-medium text-slate-400 pt-3 mt-4 border-t border-slate-100">
             <span>&copy; 2026 XITE</span>
             <div className="flex items-center gap-1 cursor-pointer hover:text-slate-600">
               <Globe className="h-3.5 w-3.5" />
