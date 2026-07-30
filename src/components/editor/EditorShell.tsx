@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 
 import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
+import { AssetsMediaPanel } from "@/components/editor/AssetsMediaPanel";
 import { DesignThemePanel } from "@/components/editor/DesignThemePanel";
 import { EditorContextProvider, type SectionStyleOverride } from "@/components/editor/EditorContext";
 import { PublishToggle } from "@/components/editor/PublishToggle";
@@ -469,6 +470,14 @@ export function EditorShell({
               activeFonts={liveFonts}
               onSelectPalette={(palette) => setLivePalette(palette)}
               onSelectFonts={(fonts) => setLiveFonts(fonts)}
+              onClose={() => setActivePanel(null)}
+            />
+          )}
+
+          {/* Panel 3: Assets & Media Library Panel (Images, Videos, Logos, Buttons, Docs) */}
+          {activePanel === "assets" && (
+            <AssetsMediaPanel
+              key="assets-panel"
               onClose={() => setActivePanel(null)}
             />
           )}
