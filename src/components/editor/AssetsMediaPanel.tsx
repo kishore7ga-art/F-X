@@ -172,11 +172,11 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <motion.aside
-      initial={{ opacity: 0, x: -10, width: 0 }}
-      animate={{ opacity: 1, x: 0, width: 280 }}
-      exit={{ opacity: 0, x: -10, width: 0 }}
-      transition={{ duration: 0.18, ease: "easeInOut" }}
-      className="z-30 flex w-[280px] shrink-0 flex-col justify-between border-r border-slate-200 bg-white p-4 overflow-hidden select-none"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+      className="absolute left-[56px] top-0 bottom-0 z-30 flex w-[280px] flex-col justify-between border-r border-slate-200 bg-white p-4 shadow-2xl overflow-hidden select-none"
     >
       <div className="flex flex-col gap-3.5 overflow-hidden h-full">
         {/* Header */}

@@ -226,7 +226,7 @@ export function EditorShell({
       <link rel="stylesheet" href={googleFontsHref(liveFonts)} />
 
       <div
-        className="flex h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans select-none"
+        className="relative flex h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans select-none"
         onClick={() => setActiveContextMenuPageId(null)}
       >
         {/* ─── 1. LEFT ICON RAIL (56px width, Monochrome Black & White) ─── */}
@@ -309,17 +309,17 @@ export function EditorShell({
           </div>
         </aside>
 
-        {/* ─── 2. TOGGLEABLE SIDE PANELS (Pages & Design Theme) ─── */}
+        {/* ─── 2. TOGGLEABLE OVERLAY SIDE PANELS (Pages & Design Theme) ─── */}
         <AnimatePresence mode="wait">
           {/* Panel 1: Pages Panel */}
           {activePanel === "pages" && (
             <motion.aside
               key="pages-panel"
-              initial={{ opacity: 0, x: -10, width: 0 }}
-              animate={{ opacity: 1, x: 0, width: 240 }}
-              exit={{ opacity: 0, x: -10, width: 0 }}
-              transition={{ duration: 0.18, ease: "easeInOut" }}
-              className="z-30 flex w-[240px] shrink-0 flex-col justify-between border-r border-slate-200 bg-slate-50 p-3.5 overflow-hidden"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="absolute left-[56px] top-0 bottom-0 z-30 flex w-[260px] flex-col justify-between border-r border-slate-200 bg-white p-3.5 shadow-2xl overflow-hidden"
             >
               <div className="flex flex-col gap-3.5 overflow-hidden">
                 {/* Header: Website Name & Page Count Badge */}
