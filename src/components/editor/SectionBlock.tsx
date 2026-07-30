@@ -144,10 +144,10 @@ export function SectionBlock({
         borderRadius: liveStyle.borderRadius,
       }}
       className={cn(
-        "group relative transition-all duration-200 border-2 select-text rounded-xl",
+        "group relative transition-all duration-200 select-text rounded-none",
         isSelected
-          ? "border-slate-900 ring-4 ring-blue-500/20 z-30 shadow-lg"
-          : "border-transparent hover:border-slate-300/60"
+          ? "ring-2 ring-blue-600 ring-inset z-30"
+          : "hover:ring-1 hover:ring-blue-400/40 hover:ring-inset"
       )}
     >
 
