@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Sparkles, Globe, User, Building2, Phone, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Sparkles, Globe, User, Building2, Phone } from "lucide-react";
 
-import { loginAction } from "@/app/actions/auth";
 import { requestAccessRequest } from "@/lib/api-client";
 
 export function SignUpForm() {
@@ -17,13 +16,11 @@ export function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSuccessMessage(null);
     setPending(true);
 
     try {
@@ -33,27 +30,10 @@ export function SignUpForm() {
         organization,
         message: `Institution: ${organization} | Website: ${website} | Mobile: ${mobile}`,
       });
-
-      const formData = new FormData();
-      formData.append("email", email || "admin@madrascollege.ac.in");
-      formData.append("password", password || "madras123");
-
-      const result = await loginAction(undefined, formData);
-
-      if (result?.next) {
-        window.location.assign(result.next);
-        return;
-      }
-
-      setSuccessMessage("Access request submitted successfully! Redirecting…");
-      setTimeout(() => {
-        window.location.assign("/start");
-      }, 1000);
     } catch {
-      setSuccessMessage("Access request submitted! Welcome to XITE Platform.");
-      setTimeout(() => {
-        window.location.assign("/start");
-      }, 1000);
+      // continue to thank-you even if API call fails
+    } finally {
+      window.location.assign("/thank-you");
     }
   }
 
@@ -288,13 +268,6 @@ export function SignUpForm() {
               {error && (
                 <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
                   {error}
-                </div>
-              )}
-
-              {successMessage && (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-bold text-emerald-800">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>{successMessage}</span>
                 </div>
               )}
 
