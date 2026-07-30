@@ -62,10 +62,17 @@ export function CredentialsForm({
     setError(null);
     setPending(true);
 
-    const formData = new FormData(event.currentTarget);
-    const result = await loginAction(undefined, formData);
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const formData = new FormData(event.currentTarget);
+      const result = await loginAction(undefined, formData);
+      if (result?.error) {
+        setError(result.error);
+        setPending(false);
+      } else if (result?.next) {
+        window.location.assign(result.next);
+      }
+    } catch {
+      setError("Sign-in failed. Check your credentials and try again.");
       setPending(false);
     }
   }

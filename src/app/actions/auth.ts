@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { serverApiPost, ServerApiError } from "@/lib/api/server";
 import { COOKIE_NAME, destroySession, sessionCookieOptions } from "@/lib/auth/session";
 
-export type LoginState = { error?: string };
+export type LoginState = { success?: boolean; next?: string; error?: string };
 
 export async function loginAction(
   _prev: LoginState | undefined,
@@ -19,7 +19,6 @@ export async function loginAction(
     return { error: "Enter your email and password" };
   }
 
-  let next = "/start";
   try {
     const response = await serverApiPost<{ token?: string; subdomain: string; next: string }>(
       "/api/v1/auth/login",
@@ -31,15 +30,14 @@ export async function loginAction(
       store.set(COOKIE_NAME, response.token, sessionCookieOptions());
     }
 
-    next = response.next || `/editor/${response.subdomain}`;
+    const next = response.next || `/editor/${response.subdomain}`;
+    return { success: true, next };
   } catch (cause) {
     if (cause instanceof ServerApiError) {
       return { error: cause.message };
     }
     return { error: "Could not reach the server. Check your connection and try again." };
   }
-
-  redirect(next);
 }
 
 export async function logout() {
