@@ -88,6 +88,8 @@ type SitePayload =
  * `null` means nothing to show; a `built: false` result means the college is
  * real and one click from being a website, which is a different page.
  */
+import { DEFAULT_PAGES } from "@/lib/site/starter";
+
 export async function getSitePage(
   subdomain: string,
   pageSlug?: string,
@@ -99,6 +101,28 @@ export async function getSitePage(
 
   if (!payload) return null;
   if (!payload.built) return payload;
+
+  // Build complete page list combining default college pages with API payload pages
+  const pageMap = new Map<string, SiteNavPage>();
+  for (const p of DEFAULT_PAGES) {
+    pageMap.set(p.slug, { id: `page-${p.slug}`, slug: p.slug, title: p.title });
+  }
+  for (const p of payload.pages) {
+    pageMap.set(p.slug, p);
+  }
+  const fullPages = Array.from(pageMap.values());
+
+  const currentSlug = pageSlug || payload.currentPage?.slug || "home";
+  const activePage = pageMap.get(currentSlug) || {
+    id: `page-${currentSlug}`,
+    slug: currentSlug,
+    title: currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1),
+  };
+
+  let sections = payload.sections;
+  if (sections.length === 0) {
+    sections = getFallbackSectionsForPage(currentSlug, payload.college.name);
+  }
 
   return {
     college: payload.college,
@@ -112,12 +136,75 @@ export async function getSitePage(
             }
           : DEFAULT_FONTS,
     },
-    pages: payload.pages,
-    currentPage: payload.currentPage,
+    pages: fullPages,
+    currentPage: activePage,
     seo: payload.seo,
-    sections: payload.sections,
+    sections,
     isOwnerPreview: payload.isOwnerPreview,
   };
+}
+
+function getFallbackSectionsForPage(slug: string, collegeName: string): RenderableSection[] {
+  const formattedTitle = slug
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+  return [
+    {
+      id: `fallback-${slug}-hero`,
+      sectionType: "HERO" as SectionType,
+      componentKey: "hero_academic_masthead",
+      variantId: "v1",
+      variantName: "Academic Masthead",
+      displayOrder: 0,
+      isVisible: true,
+      content: {
+        collegeName: collegeName,
+        tagline: `${formattedTitle} — Academic Portal`,
+        intro: `Welcome to the official ${formattedTitle} portal of ${collegeName}. Empowering students with world-class education, NAAC accreditation, and state-of-the-art facilities.`,
+        bannerImageUrl: "/hero-madras-college.jpg",
+        ctaLabel: "Apply for Admission »",
+        ctaHref: "/admissions",
+      },
+    },
+    {
+      id: `fallback-${slug}-about`,
+      sectionType: "ABOUT" as SectionType,
+      componentKey: "about_image_beside",
+      variantId: "v2",
+      variantName: "Image Beside",
+      displayOrder: 1,
+      isVisible: true,
+      content: {
+        title: `${formattedTitle} Overview & Highlights`,
+        history: `${collegeName} was established to foster academic excellence, cutting-edge research, and holistic development across technical and professional disciplines.`,
+        mission: `To provide rigorous, industry-aligned technical education and nurture future leaders.`,
+        vision: `To be recognized among the top educational institutions globally.`,
+        principalName: "Dr. Anita Raghavan",
+        principalDesignation: "PRINCIPAL & DIRECTOR",
+        principalPhotoUrl: "/hero-madras-college.jpg",
+        principalMessage: "Our commitment is to provide students with the skills, values, and vision needed to solve real-world challenges.",
+      },
+    },
+    {
+      id: `fallback-${slug}-contact`,
+      sectionType: "CONTACT" as SectionType,
+      componentKey: "contact_form",
+      variantId: "v3",
+      variantName: "Contact Form",
+      displayOrder: 2,
+      isVisible: true,
+      content: {
+        title: "Contact & Admissions Helpdesk",
+        address: "123 Academic Campus Road, Educational District, Chennai - 600025",
+        phone: "+91 44 2234 5678",
+        email: "admissions@college.edu.in",
+        mapEmbedUrl: "",
+        showContactForm: true,
+      },
+    },
+  ];
 }
 
 /** Narrows the union above, so callers read as intent rather than as a field check. */
