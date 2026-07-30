@@ -135,7 +135,7 @@ export function ForgotPasswordForm() {
                   <button
                     type="submit"
                     disabled={pending}
-                    className="mt-2 w-full rounded-xl bg-[#4285F4] py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#4285F4]/20 transition hover:bg-[#3367D6] hover:shadow-lg hover:shadow-[#4285F4]/30 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                    className="mt-2 w-full rounded-xl bg-[#4285F4] py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#4285F4]/20 transition hover:bg-[#3367D6] hover:shadow-lg hover:shadow-[#4285F4]/30 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     <span>{pending ? "Sending reset link…" : "Send Reset Link"}</span>
                   </button>
@@ -178,7 +178,7 @@ export function ForgotPasswordForm() {
                   <button
                     type="button"
                     onClick={() => { setSent(false); setEmail(""); }}
-                    className="underline hover:text-emerald-900 cursor-pointer"
+                    className="underline hover:text-emerald-900"
                   >
                     try again
                   </button>.
@@ -200,7 +200,7 @@ export function ForgotPasswordForm() {
           {/* Footer Bar */}
           <div className="flex items-center justify-between text-xs font-medium text-slate-500 pt-4">
             <span>&copy; 2026 XITE</span>
-            <div className="flex items-center gap-1 cursor-pointer hover:text-slate-800">
+            <div className="flex items-center gap-1 hover:text-slate-800">
               <Globe className="h-3.5 w-3.5" />
               <span>ENG &or;</span>
             </div>
