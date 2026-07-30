@@ -15,6 +15,8 @@ import {
 
 import {
   cycleSectionVariant,
+  deleteSection,
+  duplicateSection,
   moveSection,
   toggleSectionVisibility,
 } from "@/app/actions/sections";
@@ -144,20 +146,81 @@ export function SectionBlock({
       className={cn(
         "group relative transition-all duration-200 border-2 select-text",
         isSelected
-          ? "border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.3)] z-30 ring-2 ring-blue-500/20"
-          : "border-transparent hover:border-blue-400/60"
+          ? "border-neutral-900 ring-2 ring-white/30 z-30"
+          : "border-transparent hover:border-neutral-400/50"
       )}
     >
-      {/* SECTION NAME BADGE ON TOP-LEFT OF SELECTION OUTLINE */}
+      {/* SECTION HOVER OVERLAY BAR (ONLY ON HOVER / SELECTION) */}
       <div
         className={cn(
-          "absolute -top-3.5 left-4 z-40 flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-0.5 text-[11px] font-bold text-white shadow-lg transition-all duration-200",
-          isSelected ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100"
+          "absolute -top-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-xl bg-[#111113] border border-[#26272B] px-3 py-1.5 shadow-xl text-xs font-semibold text-white transition-all duration-200 backdrop-blur-md",
+          isSelected
+            ? "opacity-100 scale-100"
+            : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
         )}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-        <span>{section.label}</span>
-        <span className="text-[10px] text-blue-200 font-mono">({section.variantName})</span>
+        <span className="text-neutral-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
+        <span className="font-bold text-white tracking-wide flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
+          {section.label}
+        </span>
+        <span className="text-neutral-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            openSectionPopup(section.id, { x: e.clientX, y: e.clientY });
+          }}
+          className="flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-black hover:bg-neutral-200 transition shadow-sm"
+        >
+          <Edit3 className="h-3 w-3" />
+          <span>Edit</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={(e) => {
+            e.stopPropagation();
+            run(() => duplicateSection(args));
+          }}
+          className="flex items-center gap-1 rounded-lg bg-[#17171A] border border-[#26272B] px-2.5 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800 hover:text-white transition disabled:opacity-50"
+        >
+          <Copy className="h-3 w-3 text-neutral-400" />
+          <span>Duplicate</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (confirm(`Delete ${section.label}?`)) {
+              run(() => deleteSection(args));
+            }
+          }}
+          title="Delete section"
+          className="flex items-center gap-1 rounded-lg bg-[#17171A] border border-[#26272B] px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20 hover:text-red-300 transition disabled:opacity-30"
+        >
+          <Trash2 className="h-3 w-3" />
+          <span>Delete</span>
+        </button>
+
+        {canRefresh && (
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={(e) => {
+              e.stopPropagation();
+              run(() => cycleSectionVariant(args));
+            }}
+            title="Swap Variant Design"
+            className="p-1 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-white transition"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </button>
+        )}
       </div>
 
       <div ref={contentWrapperRef} className={section.isVisible ? "" : "opacity-40 grayscale"}>
@@ -180,39 +243,6 @@ export function SectionBlock({
         aria-label={`Edit ${section.label} content`}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer"
       />
-
-      {/* TOP-RIGHT FLOATING ACTION BAR */}
-      <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
-        <IconButton
-          label="Edit Properties"
-          onClick={(e) => {
-            openSectionPopup(section.id, { x: e.clientX, y: e.clientY });
-          }}
-          className="bg-blue-600 text-white hover:bg-blue-500 border-blue-500 shadow-lg"
-        >
-          <Edit3 className="h-3.5 w-3.5" />
-        </IconButton>
-
-        <IconButton
-          label={canRefresh ? "Swap design" : "Only one design available"}
-          disabled={!canRefresh || isPending}
-          onClick={() => run(() => cycleSectionVariant(args))}
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </IconButton>
-
-        <IconButton
-          label={section.isVisible ? "Hide section" : "Show section"}
-          disabled={isPending}
-          onClick={() => run(() => toggleSectionVisibility(args))}
-        >
-          {section.isVisible ? (
-            <Eye className="h-3.5 w-3.5 text-emerald-400" />
-          ) : (
-            <EyeOff className="h-3.5 w-3.5 text-amber-400" />
-          )}
-        </IconButton>
-      </div>
 
       {!section.isVisible && (
         <span className="absolute left-3 top-3 z-20 rounded-md bg-amber-500/90 px-2.5 py-1 text-[10px] font-bold text-black shadow-md uppercase tracking-wider">

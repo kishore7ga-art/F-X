@@ -7,7 +7,7 @@ import { SectionContentForm } from "@/components/editor/SectionContentForm";
 import type { EditorSection } from "@/lib/editor/queries";
 import { motion } from "motion/react";
 
-const WIDTH = 420;
+const WIDTH = 520;
 const MARGIN = 16;
 
 export type PopupAnchor = { x: number; y: number };
@@ -64,32 +64,32 @@ export function SectionEditPopup({
       role="dialog"
       aria-modal="false"
       aria-label={`Edit ${section.label}`}
-      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+      initial={{ opacity: 0, scale: 0.96, y: -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-      transition={{ duration: 0.2 }}
+      exit={{ opacity: 0, scale: 0.96, y: -10 }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
       style={{ left: position.x, top: position.y, width: popupWidth }}
-      className="fixed z-50 flex max-h-[calc(100vh-32px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-[0_25px_60px_rgba(0,0,0,0.25)] backdrop-blur-2xl ring-1 ring-slate-900/5 font-sans max-w-[calc(100vw-32px)]"
+      className="fixed z-50 flex max-h-[calc(100vh-32px)] flex-col overflow-hidden rounded-3xl border border-[#26272B] bg-[#111113]/98 text-white shadow-[0_25px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans max-w-[calc(100vw-32px)]"
     >
-      {/* Light Header bar */}
-      <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50 px-4 py-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
-            <Sparkles className="h-4 w-4" />
+      {/* Dark Glass Header bar */}
+      <div className="flex items-center justify-between border-b border-[#26272B] bg-[#17171A] px-5 py-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-black shadow-md">
+            <Sparkles className="h-4 w-4 text-black" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight truncate">
-              Edit {section.label}
+            <h3 className="text-sm font-bold text-white tracking-tight truncate">
+              {section.label}
             </h3>
-            <p className="text-[10px] sm:text-xs font-semibold text-slate-500 truncate">
-              Design: {section.variantName}
+            <p className="text-xs font-medium text-neutral-400 truncate">
+              Section Editor &bull; {section.variantName}
             </p>
           </div>
         </div>
 
         <button
           onClick={onClose}
-          className="shrink-0 rounded-xl p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-900 transition"
+          className="shrink-0 rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 hover:text-white transition"
           title="Close editor popup (Esc)"
         >
           <X className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function SectionEditPopup({
       </div>
 
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto p-2">
         <SectionContentForm section={section} onClose={onClose} />
       </div>
     </motion.div>

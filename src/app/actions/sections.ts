@@ -157,6 +157,34 @@ export async function deleteSection(input: z.infer<typeof sectionRefSchema>) {
   revalidateEditor(row.college.subdomain);
 }
 
+// --- Duplicate ----------------------------------------------------------------
+
+export async function duplicateSection(input: z.infer<typeof sectionRefSchema>) {
+  const { collegeSectionId } = sectionRefSchema.parse(input);
+  const collegeId = await currentCollegeId();
+  const row = await loadOwnedSection(collegeSectionId, collegeId);
+
+  await prisma.$transaction([
+    prisma.collegeSection.updateMany({
+      where: { collegeId, pageId: row.pageId, displayOrder: { gt: row.displayOrder } },
+      data: { displayOrder: { increment: 1 } },
+    }),
+    prisma.collegeSection.create({
+      data: {
+        collegeId,
+        pageId: row.pageId,
+        sectionId: row.sectionId,
+        variantId: row.variantId,
+        displayOrder: row.displayOrder + 1,
+        isVisible: true,
+        content: JSON.parse(JSON.stringify(row.content ?? {})),
+      },
+    }),
+  ]);
+
+  revalidateEditor(row.college.subdomain);
+}
+
 // --- Add ----------------------------------------------------------------------
 
 const addSchema = z.object({

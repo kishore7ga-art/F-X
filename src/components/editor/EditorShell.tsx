@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, useMemo, type ReactNode } from "react";
 import {
   Home,
   Info,
@@ -13,67 +13,59 @@ import {
   Shield,
   Sliders,
   ExternalLink,
-  Menu,
-  X,
-  RefreshCw,
-  LogOut,
-  Settings,
-  Sparkles,
+  Search,
+  Plus,
   Undo2,
   Redo2,
   Monitor,
   Tablet,
   Smartphone,
   Eye,
-  CheckCircle2,
-  Clock,
   BookOpen,
   Briefcase,
   Building2,
   Microscope,
   GraduationCap,
   Users,
+  MoreVertical,
+  Edit2,
+  Copy,
+  EyeOff,
+  Trash2,
+  RefreshCw,
+  Palette,
+  FolderOpen,
+  Settings,
+  X,
 } from "lucide-react";
 
-import { logout } from "@/app/actions/auth";
-import { cycleTemplate } from "@/app/actions/design";
 import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
 import { EditorContextProvider, type SectionStyleOverride } from "@/components/editor/EditorContext";
-import { PageToolsPanel } from "@/components/editor/PageToolsPanel";
 import { PublishToggle } from "@/components/editor/PublishToggle";
-import { RightPropertyPanel } from "@/components/editor/RightPropertyPanel";
 import { SectionEditPopup } from "@/components/editor/SectionEditPopup";
-import type { EditorPageData, EditorSection } from "@/lib/editor/queries";
+import type { EditorPageData } from "@/lib/editor/queries";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
 const PAGE_ICONS: Record<string, ReactNode> = {
-  home: <Home className="h-[18px] w-[18px]" />,
-  about: <Info className="h-[18px] w-[18px]" />,
-  academics: <Layers className="h-[18px] w-[18px]" />,
-  courses: <BookOpen className="h-[18px] w-[18px]" />,
-  admissions: <FileText className="h-[18px] w-[18px]" />,
-  placements: <Briefcase className="h-[18px] w-[18px]" />,
-  facilities: <Building2 className="h-[18px] w-[18px]" />,
-  research: <Microscope className="h-[18px] w-[18px]" />,
-  events: <Calendar className="h-[18px] w-[18px]" />,
-  faculty: <GraduationCap className="h-[18px] w-[18px]" />,
-  alumni: <Users className="h-[18px] w-[18px]" />,
-  contact: <Mail className="h-[18px] w-[18px]" />,
-  gallery: <ImageIcon className="h-[18px] w-[18px]" />,
-  security: <Shield className="h-[18px] w-[18px]" />,
-  settings: <Sliders className="h-[18px] w-[18px]" />,
+  home: <Home className="h-3.5 w-3.5" />,
+  about: <Info className="h-3.5 w-3.5" />,
+  academics: <GraduationCap className="h-3.5 w-3.5" />,
+  courses: <BookOpen className="h-3.5 w-3.5" />,
+  admissions: <FileText className="h-3.5 w-3.5" />,
+  placements: <Briefcase className="h-3.5 w-3.5" />,
+  facilities: <Building2 className="h-3.5 w-3.5" />,
+  campus: <Building2 className="h-3.5 w-3.5" />,
+  research: <Microscope className="h-3.5 w-3.5" />,
+  events: <Calendar className="h-3.5 w-3.5" />,
+  faculty: <Users className="h-3.5 w-3.5" />,
+  alumni: <Users className="h-3.5 w-3.5" />,
+  contact: <Mail className="h-3.5 w-3.5" />,
+  gallery: <ImageIcon className="h-3.5 w-3.5" />,
+  security: <Shield className="h-3.5 w-3.5" />,
 };
 
-const FALLBACK_ICONS = [
-  <Home key="1" className="h-[18px] w-[18px]" />,
-  <Info key="2" className="h-[18px] w-[18px]" />,
-  <Layers key="3" className="h-[18px] w-[18px]" />,
-  <Calendar key="4" className="h-[18px] w-[18px]" />,
-  <Mail key="5" className="h-[18px] w-[18px]" />,
-  <ImageIcon key="6" className="h-[18px] w-[18px]" />,
-  <FileText key="7" className="h-[18px] w-[18px]" />,
-];
+const DEFAULT_PAGE_ICON = <Layers className="h-3.5 w-3.5" />;
 
 export function EditorShell({
   data,
@@ -90,19 +82,10 @@ export function EditorShell({
 
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedSectionAnchor, setSelectedSectionAnchor] = useState<{ x: number; y: number } | null>(null);
-  const [activeDrawer, setActiveDrawer] = useState<"pages" | "settings" | null>(null);
-
-  const selectSection = (id: string | null) => {
-    setSelectedSectionId(id);
-    setSelectedSectionAnchor(null);
-  };
-
-  const openSectionPopup = (id: string, at: { x: number; y: number }) => {
-    setSelectedSectionId(id);
-    setSelectedSectionAnchor(at);
-  };
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeContextMenuPageId, setActiveContextMenuPageId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [pageToolsOpen, setPageToolsOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<"pages" | "design" | "assets" | null>("pages");
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -117,10 +100,19 @@ export function EditorShell({
   }[]>([]);
   const [historyPointer, setHistoryPointer] = useState<number>(-1);
 
+  const selectSection = (id: string | null) => {
+    setSelectedSectionId(id);
+    setSelectedSectionAnchor(null);
+  };
+
+  const openSectionPopup = (id: string, at: { x: number; y: number }) => {
+    setSelectedSectionId(id);
+    setSelectedSectionAnchor(at);
+  };
+
   const updateSectionContent = (id: string, content: Record<string, unknown>) => {
     setLiveContentMap((prev) => {
       const next = { ...prev, [id]: content };
-      // Push state snapshot to history stack
       setHistory((hPrev) => {
         const sliced = hPrev.slice(0, historyPointer + 1);
         return [...sliced, { content: next, styles: liveStylesMap }];
@@ -183,6 +175,15 @@ export function EditorShell({
     });
   }
 
+  // Filtered pages for search bar
+  const filteredPages = useMemo(() => {
+    if (!searchQuery.trim()) return pages;
+    return pages.filter((p) =>
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [pages, searchQuery]);
+
   const initialLetter = college.name ? college.name.charAt(0).toUpperCase() : "N";
 
   return (
@@ -207,350 +208,361 @@ export function EditorShell({
         run,
       }}
     >
-      <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 text-neutral-100 font-sans">
-        {/* ─── 1. LEFT VERTICAL NAVIGATION RAIL (STACKED STYLED BUTTONS) ─── */}
-        <aside className="z-[105] flex w-16 flex-col items-center justify-between border-r border-neutral-800 bg-black py-4">
-          <div className="flex flex-col items-center gap-3">
-            {/* BUTTON 1: PAGES & NAVIGATION (LAYERS ICON) */}
+      <div
+        className="flex h-screen w-screen overflow-hidden bg-[#09090B] text-white font-sans select-none"
+        onClick={() => setActiveContextMenuPageId(null)}
+      >
+        {/* ─── 1. LEFT ICON RAIL (56px width, Monochrome Black & White) ─── */}
+        <aside className="z-40 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-[#1F1F23] bg-[#09090B] py-4">
+          <div className="flex flex-col items-center gap-4">
+            {/* Logo / Brand Indicator */}
+            <Link href="/" className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-black shadow-md hover:bg-neutral-200 transition-colors" title="XITE Dashboard">
+              <span className="font-extrabold text-sm">X</span>
+            </Link>
+
+            {/* Icon 1: Pages */}
             <button
               type="button"
-              onClick={() => setActiveDrawer((prev) => (prev === "pages" ? null : "pages"))}
-              title="Website Pages & Navigation"
+              onClick={() => setActivePanel((prev) => (prev === "pages" ? null : "pages"))}
+              title="Website Pages"
               aria-label="Website Pages"
               className={cn(
-                "group relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-200",
-                activeDrawer === "pages"
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400"
-                  : "bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white border border-neutral-800"
+                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                activePanel === "pages"
+                  ? "bg-white text-black shadow-md font-bold"
+                  : "text-neutral-400 hover:bg-[#17171A] hover:text-white"
               )}
             >
-              <Layers className="h-5 w-5" />
-              <span className="absolute left-16 z-[115] whitespace-nowrap rounded-md bg-black px-2.5 py-1 text-xs font-semibold text-white shadow-xl opacity-0 transition-opacity pointer-events-none group-hover:opacity-100 border border-neutral-800">
-                Website Pages
-              </span>
+              <Layers className="h-4 w-4" />
             </button>
 
-            {/* BUTTON 2: PUBLISHING & SITE SETTINGS (SLIDERS ICON) */}
+            {/* Icon 2: Design */}
             <button
               type="button"
-              onClick={() => setActiveDrawer((prev) => (prev === "settings" ? null : "settings"))}
-              title="Publishing & Site Options"
-              aria-label="Publishing & Site Options"
+              onClick={() => setActivePanel((prev) => (prev === "design" ? null : "design"))}
+              title="Design Variants"
+              aria-label="Design Variants"
               className={cn(
-                "group relative flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-200",
-                activeDrawer === "settings"
-                  ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30 border border-purple-400"
-                  : "bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white border border-neutral-800"
+                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                activePanel === "design"
+                  ? "bg-white text-black shadow-md font-bold"
+                  : "text-neutral-400 hover:bg-[#17171A] hover:text-white"
               )}
             >
-              <Sliders className="h-5 w-5" />
-              <span className="absolute left-16 z-[115] whitespace-nowrap rounded-md bg-black px-2.5 py-1 text-xs font-semibold text-white shadow-xl opacity-0 transition-opacity pointer-events-none group-hover:opacity-100 border border-neutral-800">
-                Publish & Settings
-              </span>
+              <Palette className="h-4 w-4" />
+            </button>
+
+            {/* Icon 3: Assets */}
+            <button
+              type="button"
+              onClick={() => setActivePanel((prev) => (prev === "assets" ? null : "assets"))}
+              title="Assets & Media"
+              aria-label="Assets"
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                activePanel === "assets"
+                  ? "bg-white text-black shadow-md font-bold"
+                  : "text-neutral-400 hover:bg-[#17171A] hover:text-white"
+              )}
+            >
+              <FolderOpen className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="flex flex-col items-center gap-2">
-            <button
-              onClick={() => setActiveDrawer((prev) => (prev === "settings" ? null : "settings"))}
-              title={`${college.name} Settings`}
-              className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-rose-600 via-rose-500 to-red-400 text-xs font-bold text-white shadow-md transition-transform hover:scale-105 active:scale-95"
-            >
+          {/* User Avatar Circle */}
+          <div className="relative flex flex-col items-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-800 border border-neutral-700 text-xs font-bold text-white shadow-inner">
               {initialLetter}
-            </button>
+            </div>
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#09090B]" title="Active Session" />
           </div>
         </aside>
 
-        {/* ─── LEFT SLIDING SIDE PANEL: PAGES DRAWER ─── */}
+        {/* ─── 2. TOGGLEABLE COMPACT PAGES PANEL (240px width, Black & White) ─── */}
         <AnimatePresence>
-          {activeDrawer === "pages" && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
-              className="fixed left-16 top-0 bottom-0 z-[100] w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
+          {activePanel === "pages" && (
+            <motion.aside
+              initial={{ opacity: 0, x: -10, width: 0 }}
+              animate={{ opacity: 1, x: 0, width: 240 }}
+              exit={{ opacity: 0, x: -10, width: 0 }}
+              transition={{ duration: 0.18, ease: "easeInOut" }}
+              className="z-30 flex w-[240px] shrink-0 flex-col justify-between border-r border-[#1F1F23] bg-[#0B0B0C] p-3.5 overflow-hidden"
             >
-              <div className="space-y-5">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600 text-white">
-                      <Layers className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white tracking-wide">Website Pages</h3>
-                      <p className="text-xs text-neutral-400 font-mono">{pages.length} pages configured</p>
-                    </div>
+              <div className="flex flex-col gap-3.5 overflow-hidden">
+                {/* Header: Website Name & Page Count Badge */}
+                <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3">
+                  <h2 className="text-xs font-bold text-white tracking-tight truncate max-w-[130px]">
+                    {college.name || "Kaveri Institute"}
+                  </h2>
+                  <div className="flex items-center gap-1.5">
+                    <span className="shrink-0 rounded-full bg-[#17171A] border border-[#26272B] px-2 py-0.5 text-[10px] font-mono text-neutral-300">
+                      {pages.length} Pages
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActivePanel(null)}
+                      className="rounded-md p-1 text-neutral-500 hover:bg-[#17171A] hover:text-white transition"
+                      title="Close panel"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setActiveDrawer(null)}
-                    className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-white transition"
-                    title="Close Drawer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
                 </div>
 
-                {/* Pages List */}
-                <nav className="flex flex-col gap-2">
-                  {pages.map((page, index) => {
+                {/* Compact Search Bar (40px height, 12px radius) */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="text"
+                    placeholder="Search pages..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-[40px] w-full rounded-[12px] border border-[#26272B] bg-[#111113] pl-8 pr-2 text-xs font-medium text-white placeholder-neutral-500 outline-none transition focus:border-white focus:ring-1 focus:ring-white"
+                  />
+                </div>
+
+                {/* Page Cards (48px height, 12px radius, Monochrome Selected State) */}
+                <div className="flex-1 overflow-y-auto pr-0.5 space-y-1.5">
+                  {filteredPages.map((page) => {
                     const isActive = page.slug === currentPage.slug;
-                    const icon =
-                      PAGE_ICONS[page.slug.toLowerCase()] ??
-                      FALLBACK_ICONS[index % FALLBACK_ICONS.length];
+                    const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
 
                     return (
-                      <Link
-                        key={page.id}
-                        href={`/editor/${college.subdomain}?page=${page.slug}`}
-                        prefetch={true}
-                        onClick={() => setActiveDrawer(null)}
-                        aria-current={isActive ? "page" : undefined}
-                        className={cn(
-                          "flex items-center gap-3 rounded-xl px-4 py-3 text-xs font-bold transition",
-                          isActive
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                            : "text-neutral-300 hover:bg-neutral-900 hover:text-white border border-neutral-800/60"
+                      <div key={page.id} className="relative group">
+                        <Link
+                          href={`/editor/${college.subdomain}?page=${page.slug}`}
+                          prefetch={true}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            setActiveContextMenuPageId(page.id);
+                          }}
+                          className={cn(
+                            "relative flex h-[48px] w-full items-center justify-between rounded-[12px] px-3 text-xs font-medium transition-colors duration-150",
+                            isActive
+                              ? "bg-white text-black font-bold shadow-md shadow-white/5"
+                              : "bg-[#111113] text-neutral-300 hover:bg-[#17171A] hover:text-white border border-[#26272B]/60"
+                          )}
+                        >
+                          {/* Left 3px Indicator for Selected Page */}
+                          {isActive && (
+                            <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-black" />
+                          )}
+
+                          <div className="flex items-center gap-2.5 truncate">
+                            <span className={isActive ? "text-black" : "text-neutral-400"}>
+                              {icon}
+                            </span>
+                            <span className="truncate capitalize">{page.title}</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
+                            }}
+                            className={cn(
+                              "rounded-md p-1 opacity-0 group-hover:opacity-100 transition",
+                              isActive ? "text-neutral-700 hover:bg-neutral-200" : "text-neutral-500 hover:bg-neutral-800 hover:text-white"
+                            )}
+                          >
+                            <MoreVertical className="h-3 w-3" />
+                          </button>
+                        </Link>
+
+                        {/* Right Click Context Menu */}
+                        {activeContextMenuPageId === page.id && (
+                          <div
+                            className="absolute right-1 top-10 z-50 w-40 rounded-xl border border-[#26272B] bg-[#111113] p-1 shadow-xl text-xs text-white"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newTitle = prompt("Rename page:", page.title);
+                                if (newTitle) alert(`Renamed page to ${newTitle}`);
+                                setActiveContextMenuPageId(null);
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-[#17171A] hover:text-white transition"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                              <span>Rename</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                alert(`Duplicated ${page.title}`);
+                                setActiveContextMenuPageId(null);
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-[#17171A] hover:text-white transition"
+                            >
+                              <Copy className="h-3 w-3" />
+                              <span>Duplicate</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                alert(`Toggled visibility for ${page.title}`);
+                                setActiveContextMenuPageId(null);
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-[#17171A] hover:text-amber-400 transition"
+                            >
+                              <EyeOff className="h-3 w-3" />
+                              <span>Hide</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Delete page ${page.title}?`)) alert(`Deleted page ${page.title}`);
+                                setActiveContextMenuPageId(null);
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-red-400 hover:bg-red-500/10 transition"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
                         )}
-                      >
-                        <span className={isActive ? "text-white" : "text-neutral-400"}>
-                          {icon}
-                        </span>
-                        <span className="capitalize">{page.title}</span>
-                        {isActive && (
-                          <span className="ml-auto h-2 w-2 rounded-full bg-white animate-pulse" />
-                        )}
-                      </Link>
+                      </div>
                     );
                   })}
-                </nav>
+                </div>
               </div>
-            </motion.div>
+
+              {/* Compact Add Page Button */}
+              <div className="pt-3 border-t border-[#1F1F23]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = prompt("Enter new page title:");
+                    if (name) alert(`Adding page "${name}"`);
+                  }}
+                  className="flex h-[40px] w-full items-center justify-center gap-1.5 rounded-[10px] border border-[#26272B] bg-[#111113] text-xs font-semibold text-neutral-200 transition-colors hover:border-white hover:bg-white hover:text-black group"
+                >
+                  <Plus className="h-3.5 w-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                  <span>Add Page</span>
+                </button>
+              </div>
+            </motion.aside>
           )}
         </AnimatePresence>
 
-        {/* ─── LEFT SLIDING SIDE PANEL: SETTINGS & PUBLISH DRAWER ─── */}
-        <AnimatePresence>
-          {activeDrawer === "settings" && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
-              className="fixed left-16 top-0 bottom-0 z-[100] w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
-            >
-              <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-purple-600 text-white">
-                      <Sliders className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white tracking-wide">{college.name}</h3>
-                      <p className="text-xs text-neutral-400 font-mono">/site/{college.subdomain}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveDrawer(null)}
-                    className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-white transition"
-                    title="Close Drawer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* 1. PUBLISH & VIEW SITE SECTION */}
-                <div className="space-y-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                    Publishing & Status
-                  </p>
-                  <div className="flex items-center justify-between rounded-xl bg-neutral-900/90 p-3.5 border border-neutral-800 shadow-sm">
-                    <PublishToggle collegeId={college.id} status={college.status} />
-                  </div>
-
-                  <Link
-                    href={`/site/${college.subdomain}`}
-                    target="_blank"
-                    onClick={() => setActiveDrawer(null)}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-2.5 text-xs font-bold text-black transition hover:bg-neutral-200 shadow-md"
-                  >
-                    <span>View site</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-
-                {/* 2. PAGE & TEMPLATE TOOLS */}
-                <div className="space-y-2.5 pt-3 border-t border-neutral-800/80">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-                    Tools & Customization
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPageToolsOpen((open) => !open);
-                      setActiveDrawer(null);
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-xs font-bold text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
-                  >
-                    <Settings className="h-4 w-4 text-neutral-400" />
-                    <span>SEO & Page Settings</span>
-                  </button>
-
-                  <Link
-                    href="/templates"
-                    onClick={() => setActiveDrawer(null)}
-                    className="flex w-full items-center gap-2.5 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-xs font-bold text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
-                  >
-                    <RefreshCw className="h-4 w-4 text-blue-400" />
-                    <span>Try another template</span>
-                  </Link>
-
-                  <Link
-                    href="/templates"
-                    onClick={() => setActiveDrawer(null)}
-                    className="flex w-full items-center gap-2.5 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3 text-xs font-bold text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
-                  >
-                    <Sparkles className="h-4 w-4 text-purple-400" />
-                    <span>Change design</span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* 3. FOOTER SIGN OUT */}
-              {canSignOut && (
-                <div className="border-t border-neutral-800 pt-4 mt-6">
-                  <form action={logout}>
-                    <button
-                      type="submit"
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 py-2.5 text-xs font-bold text-red-400 transition hover:bg-red-500/20"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Sign out</span>
-                    </button>
-                  </form>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ─── 2. MAIN WORKSPACE AREA ─── */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-neutral-900/60">
-          {/* TOP TOOLBAR BAR */}
-          <header className="z-30 flex h-14 items-center justify-between border-b border-neutral-800 bg-black/80 px-6 backdrop-blur-md">
-            {/* Left: Branding & Subdomain */}
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center gap-2 group shrink-0" title="XITE Home">
-                <img src="/xite-logo.png" alt="XITE Logo" className="h-6 w-6 object-contain rounded-md transition-transform group-hover:scale-105" />
-              </Link>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xs font-bold text-white leading-tight">
-                  {college.name}
-                </h1>
-                <span className="text-[10px] text-neutral-400 font-mono">
-                  /site/{college.subdomain}
-                </span>
-              </div>
+        {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS) ─── */}
+        <main className="flex flex-1 flex-col overflow-hidden bg-[#09090B]">
+          {/* Top Toolbar (Monochrome Black & White) */}
+          <header className="z-20 flex h-14 items-center justify-between border-b border-[#26272B] bg-[#0B0B0C] px-5">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+              <h1 className="text-xs font-semibold text-white capitalize tracking-wide">
+                {currentPage.title} Page
+              </h1>
             </div>
 
-            {/* Center: Undo/Redo & Responsive Device Modes */}
-            <div className="flex items-center gap-4">
-              {/* Undo / Redo buttons */}
-              <div className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900/90 p-1">
+            {/* Undo/Redo & Viewports */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 rounded-lg border border-[#26272B] bg-[#111113] p-1">
                 <button
+                  type="button"
                   onClick={undo}
                   disabled={!canUndo}
-                  title="Undo (Ctrl+Z)"
-                  className="rounded-md p-1.5 text-neutral-400 hover:text-white disabled:opacity-30 transition"
+                  title="Undo"
+                  className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-white disabled:opacity-30 transition"
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
                 <button
+                  type="button"
                   onClick={redo}
                   disabled={!canRedo}
-                  title="Redo (Ctrl+Y)"
-                  className="rounded-md p-1.5 text-neutral-400 hover:text-white disabled:opacity-30 transition"
+                  title="Redo"
+                  className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-white disabled:opacity-30 transition"
                 >
                   <Redo2 className="h-3.5 w-3.5" />
                 </button>
               </div>
 
-              {/* Responsive Device Viewport Switcher */}
-              <div className="flex items-center gap-1 rounded-lg border border-neutral-800 bg-neutral-900/90 p-1">
+              <div className="flex items-center gap-1 rounded-lg border border-[#26272B] bg-[#111113] p-1">
                 <button
+                  type="button"
                   onClick={() => setDeviceMode("desktop")}
-                  title="Desktop View (Full Width)"
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition",
+                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                     deviceMode === "desktop"
-                      ? "bg-neutral-800 text-white shadow-xs"
-                      : "text-neutral-400 hover:text-neutral-200"
+                      ? "bg-white text-black font-bold shadow-xs"
+                      : "text-neutral-400 hover:text-white"
                   )}
                 >
                   <Monitor className="h-3.5 w-3.5" />
-                  <span className="hidden lg:inline">Desktop</span>
+                  <span className="hidden md:inline">Desktop</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDeviceMode("tablet")}
-                  title="Tablet View (768px)"
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition",
+                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                     deviceMode === "tablet"
-                      ? "bg-neutral-800 text-white shadow-xs"
-                      : "text-neutral-400 hover:text-neutral-200"
+                      ? "bg-white text-black font-bold shadow-xs"
+                      : "text-neutral-400 hover:text-white"
                   )}
                 >
                   <Tablet className="h-3.5 w-3.5" />
-                  <span className="hidden lg:inline">Tablet</span>
+                  <span className="hidden md:inline">Tablet</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDeviceMode("mobile")}
-                  title="Mobile Phone View (390px)"
                   className={cn(
-                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition",
+                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                     deviceMode === "mobile"
-                      ? "bg-neutral-800 text-white shadow-xs"
-                      : "text-neutral-400 hover:text-neutral-200"
+                      ? "bg-white text-black font-bold shadow-xs"
+                      : "text-neutral-400 hover:text-white"
                   )}
                 >
                   <Smartphone className="h-3.5 w-3.5" />
-                  <span className="hidden lg:inline">Mobile</span>
+                  <span className="hidden md:inline">Mobile</span>
                 </button>
               </div>
             </div>
 
-            {/* Right: Saving Indicator */}
+            {/* Preview & Publish */}
             <div className="flex items-center gap-3">
               {isPending && (
                 <span className="flex items-center gap-1.5 text-xs text-neutral-400 font-medium">
-                  <RefreshCw className="h-3 w-3 animate-spin text-blue-400" />
+                  <RefreshCw className="h-3 w-3 animate-spin text-white" />
                   Saving…
                 </span>
               )}
+
+              <Link
+                href={`/site/${college.subdomain}`}
+                target="_blank"
+                className="flex items-center gap-1.5 rounded-lg border border-[#26272B] bg-[#111113] px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
+              >
+                <Eye className="h-3.5 w-3.5 text-white" />
+                <span>Preview</span>
+              </Link>
+
+              <PublishToggle collegeId={college.id} status={college.status} />
             </div>
           </header>
 
           {actionError && (
-            <p className="bg-red-500/10 border-b border-red-500/20 px-6 py-2 text-xs font-medium text-red-400">
+            <p className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-xs font-medium text-red-400">
               {actionError}
             </p>
           )}
 
-
-
-          {/* CANVAS CONTAINER */}
-          <div className="relative flex-1 overflow-y-auto bg-neutral-900/60 p-6 flex justify-center items-start">
+          {/* Canvas Live Preview Container */}
+          <div className="relative flex-1 overflow-y-auto bg-[#09090B] p-5 flex justify-center items-start">
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className={cn(
-                "w-full overflow-hidden rounded-2xl border border-neutral-800 bg-white shadow-2xl transition-all duration-300 min-h-[calc(100vh-8rem)]",
-                deviceMode === "desktop" && "max-w-5xl",
+                "w-full overflow-hidden rounded-2xl border border-[#26272B] bg-white shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
+                deviceMode === "desktop" && "max-w-6xl",
                 deviceMode === "tablet" && "max-w-[768px]",
-                deviceMode === "mobile" && "max-w-[390px] rounded-[40px] border-4 border-neutral-700 shadow-[0_0_60px_rgba(0,0,0,0.9)] overflow-x-hidden"
+                deviceMode === "mobile" && "max-w-[390px] rounded-[36px] border-4 border-neutral-700 shadow-2xl overflow-x-hidden"
               )}
             >
               {sections.length > 0 ? (
@@ -560,9 +572,9 @@ export function EditorShell({
               )}
             </motion.div>
           </div>
-        </div>
+        </main>
 
-        {/* ─── FLOATING IN-PLACE SECTION EDIT POPUP ─── */}
+        {/* Floating Section Edit Popup */}
         <AnimatePresence>
           {selectedSection && selectedSectionAnchor && (
             <SectionEditPopup
@@ -576,15 +588,6 @@ export function EditorShell({
             />
           )}
         </AnimatePresence>
-
-        {/* Page SEO Panel */}
-        {pageToolsOpen && (
-          <PageToolsPanel
-            key={currentPage.id}
-            page={currentPage}
-            onClose={() => setPageToolsOpen(false)}
-          />
-        )}
       </div>
     </EditorContextProvider>
   );
@@ -597,7 +600,7 @@ function EmptyPage({ pageTitle }: { pageTitle: string }) {
         {pageTitle} has no sections yet
       </p>
       <p className="mt-1 text-xs text-neutral-500">
-        Use the + button on another page, or add one below.
+        Add a section below to build this page.
       </p>
       <div className="mt-6 flex justify-center">
         <AddSectionMenu afterOrder={0} />

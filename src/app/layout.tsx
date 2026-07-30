@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function RootLayout({
       className="h-full antialiased dark scroll-smooth bg-black text-white overflow-x-hidden w-full max-w-full font-sans"
     >
       <head>
-        <script
+        <Script
+          id="scroll-restoration"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               if ('scrollRestoration' in history) {
