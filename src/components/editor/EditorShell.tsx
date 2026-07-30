@@ -597,8 +597,8 @@ export function EditorShell({
             </motion.div>
           </div>
 
-          {/* Floating Bottom-Center Viewport, History & Section Controls Toast Dock */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-xl px-3 py-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-all duration-300 ring-1 ring-black/5">
+          {/* Floating Bottom-Center Viewport, History & Section Controls Toast Dock (Light Green Theme) */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/95 backdrop-blur-xl px-3.5 py-2 shadow-[0_20px_50px_rgba(16,185,129,0.15)] transition-all duration-300 ring-1 ring-emerald-500/10">
             {/* Undo & Redo History Controls */}
             <div className="flex items-center gap-0.5 pr-0.5">
               {/* Undo */}
@@ -608,13 +608,13 @@ export function EditorShell({
                   onClick={undo}
                   disabled={!canUndo}
                   aria-label="Undo"
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 transition-all"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-emerald-800 hover:bg-emerald-100 hover:text-emerald-950 disabled:opacity-30 transition-all"
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-emerald-950 px-2 py-1 text-[10px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
                   Undo
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-emerald-950" />
                 </div>
               </div>
 
@@ -625,29 +625,29 @@ export function EditorShell({
                   onClick={redo}
                   disabled={!canRedo}
                   aria-label="Redo"
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 transition-all"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-emerald-800 hover:bg-emerald-100 hover:text-emerald-950 disabled:opacity-30 transition-all"
                 >
                   <Redo2 className="h-3.5 w-3.5" />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-emerald-950 px-2 py-1 text-[10px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
                   Redo
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-emerald-950" />
                 </div>
               </div>
             </div>
 
-            <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
+            <div className="h-4 w-px bg-emerald-200 mx-0.5" />
             {selectedSection ? (
               <>
                 {/* Active Section Info Badge */}
                 <div className="flex items-center gap-2 pl-1 pr-1.5">
-                  <span className="flex h-2 w-2 rounded-full bg-blue-600 ring-4 ring-blue-500/20" />
-                  <span className="text-[12px] font-extrabold text-slate-900 tracking-tight">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-600 ring-4 ring-emerald-500/20" />
+                  <span className="text-[12px] font-extrabold text-emerald-950 tracking-tight">
                     {selectedSection.label}
                   </span>
                 </div>
 
-                <div className="h-4 w-px bg-slate-200/80" />
+                <div className="h-4 w-px bg-emerald-200" />
 
                 {/* Edit Button */}
                 <button
@@ -656,7 +656,7 @@ export function EditorShell({
                     e.stopPropagation();
                     openSectionPopup(selectedSection.id, { x: e.clientX, y: e.clientY });
                   }}
-                  className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
+                  className="flex items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 active:scale-95 transition-all shadow-xs"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                   <span>Edit</span>
@@ -670,9 +670,9 @@ export function EditorShell({
                     e.stopPropagation();
                     run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
                   }}
-                  className="flex items-center gap-1.5 rounded-full bg-slate-100/90 border border-slate-200/80 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200/80 hover:text-slate-900 active:scale-95 transition-all disabled:opacity-40"
+                  className="flex items-center gap-1.5 rounded-full bg-white/80 border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-white active:scale-95 transition-all disabled:opacity-40"
                 >
-                  <Copy className="h-3.5 w-3.5 text-slate-500" />
+                  <Copy className="h-3.5 w-3.5 text-emerald-600" />
                   <span>Duplicate</span>
                 </button>
 
@@ -687,7 +687,7 @@ export function EditorShell({
                       setSelectedSectionId(null);
                     }
                   }}
-                  className="flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200/80 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 hover:text-red-700 active:scale-95 transition-all disabled:opacity-40"
+                  className="flex items-center gap-1.5 rounded-full bg-red-100/80 border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200 active:scale-95 transition-all disabled:opacity-40"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>Delete</span>
@@ -703,30 +703,30 @@ export function EditorShell({
                       run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
                     }}
                     title="Swap Design Variant"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100/90 border border-slate-200/80 text-slate-700 hover:bg-slate-200 hover:text-slate-900 active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 border border-emerald-200 text-emerald-800 hover:bg-white active:scale-95 transition-all"
                   >
                     <RefreshCw className="h-3.5 w-3.5" />
                   </button>
                 )}
 
-                <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
+                <div className="h-4 w-px bg-emerald-200 mx-0.5" />
 
                 {/* Deselect / Close Button */}
                 <button
                   type="button"
                   onClick={() => setSelectedSectionId(null)}
                   title="Close Section Controls"
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-900 active:scale-95 transition"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-emerald-600 hover:bg-emerald-100 hover:text-emerald-950 active:scale-95 transition"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
 
-                <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
+                <div className="h-4 w-px bg-emerald-200 mx-0.5" />
               </>
             ) : null}
 
             {/* Segmented Viewport Switcher (Desktop / Tablet / Mobile) */}
-            <div className="flex items-center rounded-full bg-slate-100/90 p-0.5 border border-slate-200/80">
+            <div className="flex items-center rounded-full bg-emerald-100/80 p-0.5 border border-emerald-200/90">
               <button
                 type="button"
                 onClick={() => setDeviceMode("desktop")}
@@ -734,8 +734,8 @@ export function EditorShell({
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "desktop"
-                    ? "bg-white text-slate-900 font-bold shadow-xs"
-                    : "text-slate-500 hover:text-slate-900"
+                    ? "bg-emerald-700 text-white font-bold shadow-xs"
+                    : "text-emerald-700 hover:text-emerald-950"
                 )}
               >
                 <Monitor className="h-3.5 w-3.5" />
@@ -747,8 +747,8 @@ export function EditorShell({
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "tablet"
-                    ? "bg-white text-slate-900 font-bold shadow-xs"
-                    : "text-slate-500 hover:text-slate-900"
+                    ? "bg-emerald-700 text-white font-bold shadow-xs"
+                    : "text-emerald-700 hover:text-emerald-950"
                 )}
               >
                 <Tablet className="h-3.5 w-3.5" />
@@ -760,8 +760,8 @@ export function EditorShell({
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "mobile"
-                    ? "bg-white text-slate-900 font-bold shadow-xs"
-                    : "text-slate-500 hover:text-slate-900"
+                    ? "bg-emerald-700 text-white font-bold shadow-xs"
+                    : "text-emerald-700 hover:text-emerald-950"
                 )}
               >
                 <Smartphone className="h-3.5 w-3.5" />
