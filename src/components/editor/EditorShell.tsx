@@ -268,7 +268,7 @@ export function EditorShell({
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              transition={{ duration: 0.1, ease: "easeOut" }}
               className="fixed left-16 top-0 bottom-0 z-[100] w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
             >
               <div className="space-y-5">
@@ -304,6 +304,7 @@ export function EditorShell({
                       <Link
                         key={page.id}
                         href={`/editor/${college.subdomain}?page=${page.slug}`}
+                        prefetch={true}
                         onClick={() => setActiveDrawer(null)}
                         aria-current={isActive ? "page" : undefined}
                         className={cn(
@@ -336,7 +337,7 @@ export function EditorShell({
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
+              transition={{ duration: 0.1, ease: "easeOut" }}
               className="fixed left-16 top-0 bottom-0 z-[100] w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
             >
               <div className="space-y-6">

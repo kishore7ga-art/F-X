@@ -50,6 +50,7 @@ export function PageTabs({
           <Link
             key={page.id}
             href={`/editor/${subdomain}?page=${page.slug}`}
+            prefetch={true}
             aria-current={isActive ? "page" : undefined}
             title={page.title}
             className={`grid h-9 w-9 place-items-center rounded-full transition ${
