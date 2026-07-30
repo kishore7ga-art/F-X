@@ -728,8 +728,8 @@ export function EditorShell({
                   className={cn(
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "desktop"
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-800 hover:text-black hover:bg-slate-200/70"
+                      ? "bg-slate-200 text-slate-900 border border-slate-300/90 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                   )}
                 >
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
@@ -756,8 +756,8 @@ export function EditorShell({
                   className={cn(
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "tablet"
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-800 hover:text-black hover:bg-slate-200/70"
+                      ? "bg-slate-200 text-slate-900 border border-slate-300/90 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                   )}
                 >
                   <Tablet className="h-4 w-4" strokeWidth={2.2} />
@@ -784,8 +784,8 @@ export function EditorShell({
                   className={cn(
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "mobile"
-                      ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-800 hover:text-black hover:bg-slate-200/70"
+                      ? "bg-slate-200 text-slate-900 border border-slate-300/90 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                   )}
                 >
                   <Smartphone className="h-4 w-4" strokeWidth={2.2} />
