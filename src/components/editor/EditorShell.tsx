@@ -597,8 +597,8 @@ export function EditorShell({
             </motion.div>
           </div>
 
-          {/* Floating Bottom-Center Viewport, History & Section Controls Toast Dock (Light Green Theme with Projected Floating Shadow) */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-emerald-300/80 bg-emerald-50/95 backdrop-blur-xl px-4 py-2 shadow-[0_24px_60px_-10px_rgba(16,185,129,0.3),0_12px_24px_-6px_rgba(0,0,0,0.12)] transition-all duration-300 ring-4 ring-emerald-500/10 hover:-translate-y-0.5 hover:shadow-[0_30px_70px_-10px_rgba(16,185,129,0.38),0_16px_32px_-6px_rgba(0,0,0,0.15)]">
+          {/* Floating Bottom-Center Viewport, History & Section Controls Toast Dock (Light Green Theme with Projected Slightly Black Shadow) */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-emerald-300/80 bg-emerald-50/95 backdrop-blur-xl px-4 py-2 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.22),0_8px_16px_-4px_rgba(0,0,0,0.12)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.28),0_12px_20px_-4px_rgba(0,0,0,0.16)]">
             {/* Undo & Redo History Controls */}
             <div className="flex items-center gap-0.5 pr-0.5">
               {/* Undo */}
