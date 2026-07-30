@@ -34,9 +34,16 @@ export function Reveal({
 }) {
   // Reveals its own children rather than itself, so a heading and the paragraph
   // under it arrive in sequence instead of together.
-  const ref = useReveal({ children: ":scope > *", stagger, delay, distance });
+  // `useReveal` is generic over the element it attaches to, so naming the type
+  // here is all that is needed — no cast.
+  const ref = useReveal<HTMLDivElement>({
+    children: ":scope > *",
+    stagger,
+    delay,
+    distance,
+  });
   return (
-    <div ref={ref as unknown as React.Ref<HTMLDivElement>} className={className}>
+    <div ref={ref} className={className}>
       {children}
     </div>
   );

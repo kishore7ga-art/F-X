@@ -1,63 +1,87 @@
 import type { Metadata } from "next";
-
+import { HeaderNavbar } from "@/components/landing/HeaderNavbar";
+import { HeroSection } from "@/components/ui/hero-section-1";
+import SVGMaskEffectDemo from "@/components/svg-mask-effect-demo";
+import WobbleCardDemo from "@/components/wobble-card-demo";
+import { CinematicFooter } from "@/components/ui/motion-footer";
+import SparklesSection from "@/components/landing/SparklesSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import FeaturesRevealSection from "@/components/landing/FeaturesRevealSection";
+import CoverSection from "@/components/landing/CoverSection";
+import TimelineSection from "@/components/landing/TimelineSection";
+import CompareSection from "@/components/landing/CompareSection";
+import PointerHighlightSection from "@/components/landing/PointerHighlightSection";
+import { ThreeDMarqueeDemoSecond } from "@/components/landing/ThreeDMarqueeSection";
+import TabsSection from "@/components/landing/TabsSection";
+import { SectionWrapper } from "@/components/landing/SectionWrapper";
 import { SmoothScrollProvider } from "@/components/landing/SmoothScrollProvider";
-import { StudioClosing } from "@/components/landing/studio/StudioClosing";
-import { StudioHero } from "@/components/landing/studio/StudioHero";
-import { StudioNav } from "@/components/landing/studio/StudioNav";
-import {
-  StudioFigures,
-  StudioIndex,
-  StudioMarquee,
-  StudioProcess,
-} from "@/components/landing/studio/StudioSections";
-import { StudioTemplates } from "@/components/landing/studio/StudioTemplates";
+import { HeroScrollDemo } from "@/components/landing/HeroScrollDemo";
 
 export const dynamic = "force-dynamic";
 
-const TITLE = "XITE — Websites for colleges, without the website part";
+const TITLE = "Build Modern College Websites Without Writing Code — XITE";
 
 export const metadata: Metadata = {
   title: TITLE,
-  description:
-    "Pick a design, fill in forms, publish. A website builder for colleges: thirty section layouts, five finished templates, and no code.",
 };
 
-/**
- * The landing page, rebuilt in the studio-site idiom.
- *
- * Seven sections where there were thirteen. The previous composition stacked one
- * effect per section — mask reveal, wobble cards, sparkles, pointer highlight,
- * 3D marquee, compare slider — each impressive alone and, together, a page with
- * no hierarchy: everything was the loudest thing. The genre this now follows gets
- * its weight from type, space and one accent, so there is somewhere for the eye
- * to rest and the 3D hero is the only moving thing above the fold.
- *
- * Nothing is copied from any particular studio's site. The look is a widely used
- * idiom — near-black surface, oversized tight-tracked display type, hairline
- * rules, monospace signage — and every token, figure and line of copy here is
- * this project's own. The palette is the one the design system already documents:
- * monochrome with `#146ef5` spent only on actions.
- *
- * `SmoothScrollProvider` stays at the root, unchanged: it owns the single Lenis
- * instance and keeps ScrollTrigger in step with it.
- *
- * The thirteen old sections are still in the repo and still imported by nothing
- * else. Left in place rather than deleted — this is a look being tried, and
- * removing the previous one in the same change would make going back a
- * reconstruction rather than a revert.
- */
 export default function HomePage() {
   return (
     <SmoothScrollProvider>
-      <main className="min-h-svh bg-night text-chalk antialiased selection:bg-accent selection:text-night">
-        <StudioNav />
-        <StudioHero />
-        <StudioMarquee />
-        <StudioIndex />
-        <StudioTemplates />
-        <StudioProcess />
-        <StudioFigures />
-        <StudioClosing />
+      <main className="bg-black text-white selection:bg-blue-600 selection:text-white overflow-x-hidden w-full max-w-full relative">
+        <HeaderNavbar />
+        
+        <HeroSection />
+        
+        <SectionWrapper variant="flip-3d">
+          <SVGMaskEffectDemo />
+        </SectionWrapper>
+        
+        <SectionWrapper variant="scale-up">
+          <WobbleCardDemo />
+        </SectionWrapper>
+        
+        <SectionWrapper variant="blur-reveal">
+          <SparklesSection />
+        </SectionWrapper>
+        
+        <SectionWrapper id="features" variant="bounce-up">
+          <FeaturesRevealSection />
+        </SectionWrapper>
+        
+        <SectionWrapper id="builder" variant="scale-up">
+          <TabsSection />
+        </SectionWrapper>
+        
+        <SectionWrapper variant="rotate-in">
+          <CoverSection />
+        </SectionWrapper>
+        
+        <SectionWrapper variant="slide-left">
+          <PointerHighlightSection />
+        </SectionWrapper>
+        
+        <SectionWrapper variant="flip-3d">
+          <HeroScrollDemo />
+        </SectionWrapper>
+        
+        <SectionWrapper id="compare" variant="slide-right">
+          <CompareSection />
+        </SectionWrapper>
+        
+        <SectionWrapper id="templates" variant="blur-reveal">
+          <TimelineSection />
+        </SectionWrapper>
+        
+        <SectionWrapper variant="rotate-in">
+          <ThreeDMarqueeDemoSecond />
+        </SectionWrapper>
+        
+        <SectionWrapper id="testimonials" variant="scale-up">
+          <TestimonialsSection />
+        </SectionWrapper>
+        
+        <CinematicFooter />
       </main>
     </SmoothScrollProvider>
   );

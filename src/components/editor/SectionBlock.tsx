@@ -109,7 +109,6 @@ export function SectionBlock({
           setContextMenuPos({ x: event.clientX, y: event.clientY });
         }}
         aria-label={`Edit ${section.label} content`}
-        title="Double-click to open edit popup modal"
         className="absolute inset-0 z-10 h-full w-full cursor-pointer"
       />
 
