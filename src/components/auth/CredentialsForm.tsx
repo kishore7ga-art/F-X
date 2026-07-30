@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Mail, Lock, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 
-import { ApiError, loginRequest } from "@/lib/api-client";
+import { loginAction } from "@/app/actions/auth";
+import { ApiError } from "@/lib/api-client";
 
 function GoogleButton() {
   return (
@@ -61,21 +62,10 @@ export function CredentialsForm({
     setError(null);
     setPending(true);
 
-    try {
-      const { next } = await loginRequest(email, password);
-      window.location.assign(next);
-      return;
-    } catch (cause) {
-      // In local dev mode, fallback to /start if backend session/fetch fails
-      if (process.env.NODE_ENV !== "production") {
-        window.location.assign("/start");
-        return;
-      }
-      setError(
-        cause instanceof ApiError && cause.status !== 0
-          ? cause.message
-          : "Could not reach the server. Check your connection and try again.",
-      );
+    const formData = new FormData(event.currentTarget);
+    const result = await loginAction(undefined, formData);
+    if (result?.error) {
+      setError(result.error);
       setPending(false);
     }
   }

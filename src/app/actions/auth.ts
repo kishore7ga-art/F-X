@@ -1,20 +1,47 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { destroySession } from "@/lib/auth/session";
+import { serverApiPost, ServerApiError } from "@/lib/api/server";
+import { COOKIE_NAME, destroySession, sessionCookieOptions } from "@/lib/auth/session";
 
-/**
- * Signing out is the only auth action left in the frontend.
- *
- * Sign-in and sign-up moved to the backend (`POST /api/v1/auth/login` and
- * `/signup`), because a Server Action posts to this origin as an RSC payload —
- * which made authentication the one thing that could not be sent to the API
- * service, and the one call you could not read in the Network tab.
- *
- * This one stays: it only clears a cookie and redirects, touches no database,
- * and as an action it needs no client JavaScript to work.
- */
+export type LoginState = { error?: string };
+
+export async function loginAction(
+  _prev: LoginState | undefined,
+  formData: FormData,
+): Promise<LoginState> {
+  const email = formData.get("email")?.toString() || "";
+  const password = formData.get("password")?.toString() || "";
+
+  if (!email || !password) {
+    return { error: "Enter your email and password" };
+  }
+
+  let next = "/start";
+  try {
+    const response = await serverApiPost<{ token?: string; subdomain: string; next: string }>(
+      "/api/v1/auth/login",
+      { email, password },
+    );
+
+    if (response.token) {
+      const store = await cookies();
+      store.set(COOKIE_NAME, response.token, sessionCookieOptions());
+    }
+
+    next = response.next || `/editor/${response.subdomain}`;
+  } catch (cause) {
+    if (cause instanceof ServerApiError) {
+      return { error: cause.message };
+    }
+    return { error: "Could not reach the server. Check your connection and try again." };
+  }
+
+  redirect(next);
+}
+
 export async function logout() {
   await destroySession();
   redirect("/login");
