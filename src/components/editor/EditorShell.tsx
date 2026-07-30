@@ -679,7 +679,7 @@ export function EditorShell({
                       run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
                     }}
                     aria-label="Duplicate Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-amber-500 hover:bg-amber-50 hover:text-amber-600 active:scale-95 transition-all"
                   >
                     <Copy className="h-4 w-4" strokeWidth={2.2} />
                   </button>
