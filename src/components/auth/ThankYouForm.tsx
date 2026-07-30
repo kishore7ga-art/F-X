@@ -122,15 +122,17 @@ export function ThankYouForm() {
 
             </div>
 
-            {/* Back link */}
+            {/* Homepage link */}
             <div className="mt-8 flex items-center justify-center">
-              <Link
-                href="/request-access"
+              <a
+                href="https://xite.co.in"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Submit another request
-              </Link>
+                Go to xite.co.in
+              </a>
             </div>
           </div>
 
