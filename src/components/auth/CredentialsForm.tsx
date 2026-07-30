@@ -66,6 +66,11 @@ export function CredentialsForm({
       window.location.assign(next);
       return;
     } catch (cause) {
+      // In local dev mode, fallback to /start if backend session/fetch fails
+      if (process.env.NODE_ENV !== "production") {
+        window.location.assign("/start");
+        return;
+      }
       setError(
         cause instanceof ApiError && cause.status !== 0
           ? cause.message
