@@ -602,12 +602,7 @@ export function EditorShell({
                     ? `${currentTabletRes}px`
                     : `${currentMobileRes}px`,
               }}
-              className={cn(
-                "w-full bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] transition-all duration-300 min-h-screen",
-                deviceMode === "mobile"
-                  ? "my-6 rounded-[36px] border-4 border-slate-800 shadow-2xl overflow-x-hidden"
-                  : "rounded-none border-0 shadow-none"
-              )}
+              className="w-full rounded-none border-0 shadow-none bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] transition-all duration-300 min-h-screen"
             >
               {sections.length > 0 ? (
                 children
