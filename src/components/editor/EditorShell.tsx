@@ -623,7 +623,7 @@ export function EditorShell({
             {selectedSection && (
               <>
                 <div className="flex items-center pl-0.5 pr-1">
-                  <span className="text-xs font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
+                  <span className="text-xs font-medium text-slate-700 tracking-tight whitespace-nowrap">
                     {selectedSection.label}
                   </span>
                 </div>
