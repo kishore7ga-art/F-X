@@ -229,276 +229,82 @@ export function EditorShell({
         className="flex h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans select-none"
         onClick={() => setActiveContextMenuPageId(null)}
       >
-        {/* ─── 1. LEFT ICON RAIL (56px width, Monochrome Black & White) ─── */}
-        <aside className="z-40 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-4">
-          <div className="flex flex-col items-center gap-4">
-            {/* Logo / Brand Indicator */}
-            <Link href="/" className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md hover:bg-slate-200 transition-colors" title="XITE Dashboard">
-              <span className="font-extrabold text-sm">X</span>
+        {/* ─── 1. LEFT ICON RAIL (48px, white bg, icon-only, no expanding panels) ─── */}
+        <aside className="z-40 flex w-[48px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-4">
+          {/* Top Icon Group */}
+          <div className="flex flex-col items-center gap-1">
+            {/* Add / Create */}
+            <button type="button" title="Add Section" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition">
+              <Plus className="h-[18px] w-[18px]" />
+            </button>
+
+            {/* Pages */}
+            <Link
+              href={`/editor/${college.subdomain}`}
+              title="Pages"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+            >
+              <Layers className="h-[18px] w-[18px]" />
             </Link>
 
-            {/* Icon 1: Pages */}
-            <button
-              type="button"
-              onClick={() => setActivePanel((prev) => (prev === "pages" ? null : "pages"))}
-              title="Website Pages"
-              aria-label="Website Pages"
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                activePanel === "pages"
-                  ? "bg-slate-900 text-white shadow-md font-bold"
-                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
-              )}
-            >
-              <Layers className="h-4 w-4" />
+            {/* Sections */}
+            <button type="button" title="Sections" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition">
+              <Sliders className="h-[18px] w-[18px]" />
             </button>
 
-            {/* Icon 2: Design (Palette / Theme styling) */}
-            <button
-              type="button"
-              onClick={() => setActivePanel((prev) => (prev === "design" ? null : "design"))}
-              title="Color Palettes & Fonts"
-              aria-label="Color Palettes & Fonts"
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                activePanel === "design"
-                  ? "bg-slate-900 text-white shadow-md font-bold"
-                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
-              )}
-            >
-              <Palette className="h-4 w-4" />
+            {/* Assets */}
+            <button type="button" title="Assets & Media" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition">
+              <FolderOpen className="h-[18px] w-[18px]" />
             </button>
 
-            {/* Icon 3: Assets */}
-            <button
-              type="button"
-              onClick={() => setActivePanel((prev) => (prev === "assets" ? null : "assets"))}
-              title="Assets & Media"
-              aria-label="Assets"
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                activePanel === "assets"
-                  ? "bg-slate-900 text-white shadow-md font-bold"
-                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
-              )}
-            >
-              <FolderOpen className="h-4 w-4" />
+            {/* Settings */}
+            <button type="button" title="Settings" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition">
+              <Settings className="h-[18px] w-[18px]" />
             </button>
           </div>
 
-          {/* User Avatar & Sign Out */}
+          {/* Middle Icon Group (separated) */}
+          <div className="flex flex-col items-center gap-1">
+            {/* Code */}
+            <button type="button" title="Code" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition">
+              <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+              </svg>
+            </button>
+
+            {/* Design / Palette */}
+            <button type="button" title="Design & Theme" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition">
+              <Palette className="h-[18px] w-[18px]" />
+            </button>
+
+            {/* Preview */}
+            <Link
+              href={`/site/${college.subdomain}`}
+              target="_blank"
+              title="Preview Site"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+            >
+              <Eye className="h-[18px] w-[18px]" />
+            </Link>
+          </div>
+
+          {/* Bottom Icon Group */}
           <div className="flex flex-col items-center gap-2">
-            {canSignOut && (
-              <form action={logout}>
-                <button
-                  type="submit"
-                  title="Sign Out"
-                  aria-label="Sign Out"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </form>
-            )}
+            {/* Export / Download */}
+            <button type="button" title="Export" className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition">
+              <ExternalLink className="h-[18px] w-[18px]" />
+            </button>
+
+            {/* User Avatar */}
             <div className="relative flex flex-col items-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 border border-slate-300 text-xs font-bold text-slate-900 shadow-inner">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white">
                 {initialLetter}
               </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Active Session" />
+              <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white" title="Active" />
             </div>
           </div>
         </aside>
 
-        {/* ─── 2. TOGGLEABLE SIDE PANELS (Pages & Design Theme) ─── */}
-        <AnimatePresence mode="wait">
-          {/* Panel 1: Pages Panel */}
-          {activePanel === "pages" && (
-            <motion.aside
-              key="pages-panel"
-              initial={{ opacity: 0, x: -10, width: 0 }}
-              animate={{ opacity: 1, x: 0, width: 240 }}
-              exit={{ opacity: 0, x: -10, width: 0 }}
-              transition={{ duration: 0.18, ease: "easeInOut" }}
-              className="z-30 flex w-[240px] shrink-0 flex-col justify-between border-r border-slate-200 bg-slate-50 p-3.5 overflow-hidden"
-            >
-              <div className="flex flex-col gap-3.5 overflow-hidden">
-                {/* Header: Website Name & Page Count Badge */}
-                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                  <h2 className="text-xs font-bold text-slate-900 tracking-tight truncate max-w-[130px]">
-                    {college.name || "Kaveri Institute"}
-                  </h2>
-                  <div className="flex items-center gap-1.5">
-                    <span className="shrink-0 rounded-full bg-slate-200 border border-slate-200 px-2 py-0.5 text-[10px] font-mono text-slate-500">
-                      {pages.length} Pages
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setActivePanel(null)}
-                      className="rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-900 transition"
-                      title="Close panel"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Compact Search Bar */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search pages..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-[40px] w-full rounded-[12px] border border-slate-200 bg-slate-100 pl-8 pr-2 text-xs font-medium text-slate-900 placeholder-neutral-500 outline-none transition focus:border-white focus:ring-1 focus:ring-white"
-                  />
-                </div>
-
-                {/* Page Cards */}
-                <div className="flex-1 overflow-y-auto pr-0.5 space-y-1.5">
-                  {filteredPages.map((page) => {
-                    const isActive = page.slug === currentPage.slug;
-                    const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
-
-                    return (
-                      <div key={page.id} className="relative group">
-                        <Link
-                          href={`/editor/${college.subdomain}?page=${page.slug}`}
-                          prefetch={true}
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            setActiveContextMenuPageId(page.id);
-                          }}
-                          className={cn(
-                            "relative flex h-[48px] w-full items-center justify-between rounded-[12px] px-3 text-xs font-medium transition-colors duration-150",
-                            isActive
-                              ? "bg-slate-900 text-white font-bold shadow-md shadow-slate-200"
-                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60"
-                          )}
-                        >
-                          {isActive && (
-                            <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-black" />
-                          )}
-
-                          <div className="flex items-center gap-2.5 truncate">
-                            <span className={isActive ? "text-black" : "text-slate-400"}>
-                              {icon}
-                            </span>
-                            <span className="truncate capitalize">{page.title}</span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
-                            }}
-                            className={cn(
-                              "rounded-md p-1 opacity-0 group-hover:opacity-100 transition",
-                              isActive ? "text-slate-400 hover:bg-slate-200" : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
-                            )}
-                          >
-                            <MoreVertical className="h-3 w-3" />
-                          </button>
-                        </Link>
-
-                        {/* Context Menu */}
-                        {activeContextMenuPageId === page.id && (
-                          <div
-                            className="absolute right-1 top-10 z-50 w-40 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-xl text-xs text-slate-900"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newTitle = prompt("Rename page:", page.title);
-                                if (newTitle) alert(`Renamed page to ${newTitle}`);
-                                setActiveContextMenuPageId(null);
-                              }}
-                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-200 hover:text-slate-900 transition"
-                            >
-                              <Edit2 className="h-3 w-3" />
-                              <span>Rename</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                alert(`Duplicated ${page.title}`);
-                                setActiveContextMenuPageId(null);
-                              }}
-                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-200 hover:text-slate-900 transition"
-                            >
-                              <Copy className="h-3 w-3" />
-                              <span>Duplicate</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                alert(`Toggled visibility for ${page.title}`);
-                                setActiveContextMenuPageId(null);
-                              }}
-                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-200 hover:text-amber-400 transition"
-                            >
-                              <EyeOff className="h-3 w-3" />
-                              <span>Hide</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`Delete page ${page.title}?`)) alert(`Deleted page ${page.title}`);
-                                setActiveContextMenuPageId(null);
-                              }}
-                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-red-400 hover:bg-red-500/10 transition"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                              <span>Delete</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Add Page Button */}
-              <div className="pt-3 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const name = prompt("Enter new page title:");
-                    if (name) alert(`Adding page "${name}"`);
-                  }}
-                  className="flex h-[40px] w-full items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-600 transition-colors hover:border-white hover:bg-white hover:text-black group"
-                >
-                  <Plus className="h-3.5 w-3.5 text-slate-400 group-hover:text-black transition-colors" />
-                  <span>Add Page</span>
-                </button>
-              </div>
-            </motion.aside>
-          )}
-
-          {/* Panel 2: Design & Theme Panel (Palettes & Fonts) */}
-          {activePanel === "design" && (
-            <DesignThemePanel
-              key="design-panel"
-              activePalette={livePalette}
-              activeFonts={liveFonts}
-              onSelectPalette={(palette) => setLivePalette(palette)}
-              onSelectFonts={(fonts) => setLiveFonts(fonts)}
-              onClose={() => setActivePanel(null)}
-            />
-          )}
-
-          {/* Panel 3: Assets & Media Library Panel (Images, Videos, Logos, Buttons, Docs) */}
-          {activePanel === "assets" && (
-            <AssetsMediaPanel
-              key="assets-panel"
-              onClose={() => setActivePanel(null)}
-            />
-          )}
-        </AnimatePresence>
 
         {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
         <main className="flex flex-1 flex-col overflow-hidden bg-slate-50">
