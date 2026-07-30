@@ -88,8 +88,6 @@ type SitePayload =
  * `null` means nothing to show; a `built: false` result means the college is
  * real and one click from being a website, which is a different page.
  */
-import { DEFAULT_PAGES } from "@/lib/site/starter";
-
 export async function getSitePage(
   subdomain: string,
   pageSlug?: string,
@@ -102,22 +100,20 @@ export async function getSitePage(
   if (!payload) return null;
   if (!payload.built) return payload;
 
-  // Build complete page list combining default college pages with API payload pages
-  const pageMap = new Map<string, SiteNavPage>();
-  for (const p of DEFAULT_PAGES) {
-    pageMap.set(p.slug, { id: `page-${p.slug}`, slug: p.slug, title: p.title });
-  }
-  for (const p of payload.pages) {
-    pageMap.set(p.slug, p);
-  }
-  const fullPages = Array.from(pageMap.values());
+  /*
+   * The nav lists the pages the college has, and nothing else.
+   *
+   * Unioning `DEFAULT_PAGES` over the payload put a link in every visitor's
+   * navigation for pages that may not exist: `/site/<sub>/<slug>` calls
+   * `notFound()` when the backend has no such page, so a college provisioned
+   * before the starter list grew to twelve pages published a header with eight
+   * links straight to a 404. A page has to exist to be linked to.
+   */
+  const fullPages = payload.pages;
 
   const currentSlug = pageSlug || payload.currentPage?.slug || "home";
-  const activePage = pageMap.get(currentSlug) || {
-    id: `page-${currentSlug}`,
-    slug: currentSlug,
-    title: currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1),
-  };
+  const activePage =
+    fullPages.find((page) => page.slug === currentSlug) ?? payload.currentPage;
 
   let sections = payload.sections;
   if (sections.length === 0) {
@@ -163,7 +159,7 @@ function getFallbackSectionsForPage(slug: string, collegeName: string): Renderab
         collegeName: collegeName,
         tagline: `${formattedTitle} — Academic Portal`,
         intro: `Welcome to the official ${formattedTitle} portal of ${collegeName}. Empowering students with world-class education, NAAC accreditation, and state-of-the-art facilities.`,
-        bannerImageUrl: "/hero-madras-college.jpg",
+        bannerImageUrl: "/madras-graduation.png",
         ctaLabel: "Apply for Admission »",
         ctaHref: "/admissions",
       },
@@ -183,7 +179,7 @@ function getFallbackSectionsForPage(slug: string, collegeName: string): Renderab
         vision: `To be recognized among the top educational institutions globally.`,
         principalName: "Dr. Anita Raghavan",
         principalDesignation: "PRINCIPAL & DIRECTOR",
-        principalPhotoUrl: "/hero-madras-college.jpg",
+        principalPhotoUrl: "/seed/principal.svg",
         principalMessage: "Our commitment is to provide students with the skills, values, and vision needed to solve real-world challenges.",
       },
     },

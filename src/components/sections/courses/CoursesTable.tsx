@@ -22,7 +22,7 @@ export function CoursesTable({ content }: { content: CoursesContent }) {
             {courses.map((course, index) => (
               <tr
                 key={`${course.name}-${index}`}
-                className={index % 2 ? "bg-[var(--site-light)]" : "bg-white"}
+                className={index % 2 ? "bg-[var(--site-light)]" : "bg-[var(--site-card-bg)]"}
               >
                 <td className="px-5 py-4 align-top">
                   <span className="font-semibold">{course.name}</span>

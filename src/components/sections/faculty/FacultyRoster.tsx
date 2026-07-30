@@ -10,7 +10,7 @@ export function FacultyRoster({ content }: { content: FacultyContent }) {
     <SectionShell background="light">
       <SectionHeading title={title} subtitle={subtitle} />
 
-      <ul className="mt-10 divide-y rounded-xl bg-white shadow-sm">
+      <ul className="mt-10 divide-y rounded-xl bg-[var(--site-card-bg)] shadow-sm">
         {members.map((member, index) => (
           <li
             key={`${member.name}-${index}`}

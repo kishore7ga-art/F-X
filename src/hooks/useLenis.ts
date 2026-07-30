@@ -16,36 +16,7 @@ import { useEffect } from "react";
  * ScrollTrigger, so handing the instance around would only invite a second
  * component to start driving it.
  */
-export type LenisFeel = {
-  /** Longer reads as heavier. */
-  duration?: number;
-  /** Below 1 slows the wheel down without making it feel laggy. */
-  wheelMultiplier?: number;
-  touchMultiplier?: number;
-};
-
-/**
- * The landing page's tuning, which was arrived at by feel and is worth keeping.
- *
- * These are the values `SmoothScrollProvider` was running with before it was
- * folded into this hook — "slow, ultra-smooth, luxurious", per its own comment.
- * They are the default rather than the hook's older 1.15/1.6 pair specifically so
- * that unifying the two implementations changed how the page is *wired* without
- * changing how it *feels*; a scroll that suddenly moves differently would look
- * like the regression rather than the fix.
- */
-const DEFAULT_FEEL: Required<LenisFeel> = {
-  duration: 2.2,
-  wheelMultiplier: 0.65,
-  touchMultiplier: 1.2,
-};
-
-export function useLenis(enabled = true, feel: LenisFeel = {}) {
-  const { duration, wheelMultiplier, touchMultiplier } = {
-    ...DEFAULT_FEEL,
-    ...feel,
-  };
-
+export function useLenis(enabled = true) {
   useEffect(() => {
     if (!enabled) return;
 
@@ -71,13 +42,13 @@ export function useLenis(enabled = true, feel: LenisFeel = {}) {
       gsap.registerPlugin(ScrollTrigger);
 
       lenis = new Lenis({
-        duration,
+        // Long enough to feel weighted, short enough that a flick still lands.
+        duration: 1.15,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        wheelMultiplier,
         // Touch devices already have momentum scrolling that people know; a
         // second one layered on top fights their thumb.
-        touchMultiplier,
+        smoothWheel: true,
+        touchMultiplier: 1.6,
       });
 
       lenis.on("scroll", ScrollTrigger.update);
@@ -98,5 +69,5 @@ export function useLenis(enabled = true, feel: LenisFeel = {}) {
       });
       lenis?.destroy();
     };
-  }, [enabled, duration, wheelMultiplier, touchMultiplier]);
+  }, [enabled]);
 }

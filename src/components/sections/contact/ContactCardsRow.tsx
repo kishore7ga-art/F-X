@@ -20,7 +20,7 @@ export function ContactCardsRow({ content }: { content: ContactContent }) {
         {cards.map((card) => (
           <div
             key={card.label}
-            className="rounded-xl border-b-4 bg-white p-6 text-center shadow-sm"
+            className="rounded-xl border-b-4 bg-[var(--site-card-bg)] p-6 text-center shadow-sm"
             style={{ borderBottomColor: "var(--site-accent)" }}
           >
             <h3

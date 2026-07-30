@@ -59,7 +59,7 @@ export function ContactDarkPanel({ content }: { content: ContactContent }) {
         </div>
 
         {showContactForm ? (
-          <div className="rounded-xl bg-white p-1">
+          <div className="rounded-xl bg-[var(--site-card-bg)] p-1">
             <ContactForm />
           </div>
         ) : null}

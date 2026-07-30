@@ -5,7 +5,6 @@ import {
   isSupportedSectionType,
   type SupportedSectionType,
 } from "@/lib/sections/schemas";
-import { DEFAULT_PAGES } from "@/lib/site/starter";
 import {
   DEFAULT_FONTS,
   parsePaletteColors,
@@ -124,30 +123,21 @@ export async function getEditorPage(
     });
   }
 
-  // Build complete page list combining default college pages with API payload pages
-  const pageMap = new Map<string, { id: string; slug: string; title: string }>();
-  for (const p of DEFAULT_PAGES) {
-    pageMap.set(p.slug, { id: `page-${p.slug}`, slug: p.slug, title: p.title });
-  }
-  for (const p of payload.pages) {
-    pageMap.set(p.slug, p);
-  }
-  const fullPages = Array.from(pageMap.values());
-
-  const currentSlug = pageSlug || payload.currentPage?.slug || "home";
-  const activePage = pageMap.get(currentSlug) || {
-    id: `page-${currentSlug}`,
-    slug: currentSlug,
-    title: currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1),
-  };
-
-  const currentPage = {
-    ...activePage,
-    metaTitle: payload.currentPage?.metaTitle ?? null,
-    metaDescription: payload.currentPage?.metaDescription ?? null,
-    ogImage: payload.currentPage?.ogImage ?? null,
-    canonicalSlug: payload.currentPage?.canonicalSlug ?? null,
-  };
+  /*
+   * The pages the college actually has, and nothing else.
+   *
+   * This used to union `DEFAULT_PAGES` over the payload so the switcher always
+   * showed the full set. Every page that only existed in that union was a tab
+   * that 404'd the whole editor when clicked: the link carries `?page=<slug>`,
+   * the backend has no such row, `GET /api/v1/editor` answers 404, and
+   * `getEditorPage` returning null lands on `notFound()`. Colleges provisioned
+   * before the starter list grew from four pages to twelve had eight of those.
+   *
+   * A page missing from here is a page missing from the database, which is a
+   * backfill (see xite-B's `backfill_default_pages` migration), not something
+   * the view layer can paper over.
+   */
+  const pages = payload.pages;
 
   return {
     college: payload.college,
@@ -161,8 +151,8 @@ export async function getEditorPage(
             }
           : DEFAULT_FONTS,
     },
-    pages: fullPages,
-    currentPage,
+    pages,
+    currentPage: payload.currentPage,
     sections,
     addableSections,
     templateCount: payload.templateCount,

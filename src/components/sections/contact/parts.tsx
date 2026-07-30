@@ -66,7 +66,7 @@ export function ContactForm() {
           id="message"
           name="message"
           rows={4}
-          className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--site-secondary)]"
+          className="mt-1 w-full rounded-md border border-black/10 bg-[var(--site-card-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--site-secondary)]"
         />
       </div>
       <button
@@ -110,7 +110,7 @@ function Field({
         id={name}
         name={name}
         type={type}
-        className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--site-secondary)]"
+        className="mt-1 w-full rounded-md border border-black/10 bg-[var(--site-card-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--site-secondary)]"
       />
     </div>
   );

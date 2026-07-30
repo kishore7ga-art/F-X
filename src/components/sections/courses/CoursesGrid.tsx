@@ -13,7 +13,7 @@ export function CoursesGrid({ content }: { content: CoursesContent }) {
         {courses.map((course, index) => (
           <article
             key={`${course.name}-${index}`}
-            className="flex flex-col rounded-xl bg-white p-6 shadow-sm transition hover:shadow-md"
+            className="flex flex-col rounded-xl bg-[var(--site-card-bg)] p-6 shadow-sm transition hover:shadow-md"
           >
             <h3
               className="font-[family-name:var(--site-heading-font)] text-lg font-semibold leading-snug"

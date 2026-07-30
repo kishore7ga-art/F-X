@@ -16,10 +16,16 @@ export function AboutTwoColumn({ content }: { content: AboutContent }) {
     principalMessage,
   } = content;
 
+  // `hero-madras-college` joins the rejected list because it is a banner: seeded
+  // content put it in the principal slot, where it renders a campus wide shot as
+  // somebody's portrait.
   const photoSrc =
-    principalPhotoUrl && !principalPhotoUrl.includes("svg") && !principalPhotoUrl.includes("macbook")
+    principalPhotoUrl &&
+    !principalPhotoUrl.includes("svg") &&
+    !principalPhotoUrl.includes("macbook") &&
+    !principalPhotoUrl.includes("hero-madras-college")
       ? principalPhotoUrl
-      : "/hero-madras-college.jpg";
+      : "/seed/principal.svg";
 
   return (
     <SectionShell background="white">

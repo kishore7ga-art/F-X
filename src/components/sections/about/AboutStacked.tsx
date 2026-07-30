@@ -36,7 +36,7 @@ export function AboutStacked({ content }: { content: AboutContent }) {
             .map((card) => (
               <div
                 key={card.label}
-                className="rounded-xl border-t-4 bg-white p-6 shadow-sm"
+                className="rounded-xl border-t-4 bg-[var(--site-card-bg)] p-6 shadow-sm"
                 style={{ borderTopColor: "var(--site-accent)" }}
               >
                 <h3
@@ -52,7 +52,7 @@ export function AboutStacked({ content }: { content: AboutContent }) {
       ) : null}
 
       {principalMessage ? (
-        <div className="mt-10 flex flex-col items-center gap-5 rounded-xl bg-white p-8 text-center shadow-sm sm:flex-row sm:text-left">
+        <div className="mt-10 flex flex-col items-center gap-5 rounded-xl bg-[var(--site-card-bg)] p-8 text-center shadow-sm sm:flex-row sm:text-left">
           {principalPhotoUrl ? (
             <SiteImage
               src={principalPhotoUrl}

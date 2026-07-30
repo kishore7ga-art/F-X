@@ -9,7 +9,7 @@ export function HeroMinimalText({ content }: { content: HeroContent }) {
   const { collegeName, tagline, intro, ctaLabel, ctaHref } = content;
 
   return (
-    <section className="bg-white px-6 py-20 sm:py-28">
+    <section className="bg-[var(--site-bg)] px-6 py-20 sm:py-28">
       <div className="mx-auto max-w-3xl text-center">
         {tagline ? (
           <p

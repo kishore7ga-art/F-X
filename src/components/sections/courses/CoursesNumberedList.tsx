@@ -13,7 +13,7 @@ export function CoursesNumberedList({ content }: { content: CoursesContent }) {
         {courses.map((course, index) => (
           <li
             key={`${course.name}-${index}`}
-            className="flex gap-5 rounded-xl bg-white p-5 shadow-sm sm:p-6"
+            className="flex gap-5 rounded-xl bg-[var(--site-card-bg)] p-5 shadow-sm sm:p-6"
           >
             <span
               className="font-[family-name:var(--site-heading-font)] text-3xl font-bold leading-none opacity-25"

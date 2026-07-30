@@ -14,7 +14,7 @@ export function CoursesCompactTiles({ content }: { content: CoursesContent }) {
         {courses.map((course, index) => (
           <article
             key={`${course.name}-${index}`}
-            className="flex flex-col border-t-4 bg-white p-4 shadow-sm"
+            className="flex flex-col border-t-4 bg-[var(--site-card-bg)] p-4 shadow-sm"
             style={{ borderTopColor: "var(--site-secondary)" }}
           >
             <h3
