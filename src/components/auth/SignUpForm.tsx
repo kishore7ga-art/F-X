@@ -59,10 +59,51 @@ export function SignUpForm() {
 
   return (
     <main className="min-h-screen w-full flex overflow-hidden font-sans text-slate-900 bg-white">
-      {/* Full Screen 50% / 50% Split Layout */}
+      {/* Full Screen 50% / 50% Flipped Split Layout */}
       <div className="w-full min-h-screen flex flex-col lg:flex-row">
         
-        {/* ─── LEFT 50% PANEL: REQUEST ACCESS FORM (EDGE TO EDGE WHITE) ─── */}
+        {/* ─── LEFT 50% PANEL: MINIMAL FULL-HEIGHT SHOWCASE (LIGHT GREY CANVAS) ─── */}
+        <div className="hidden lg:flex lg:w-1/2 min-h-screen bg-[#F3F4F6] p-12 lg:p-20 flex-col justify-between relative overflow-hidden">
+          {/* Geometric Background Contour Lines */}
+          <div className="absolute inset-0 pointer-events-none opacity-40">
+            <svg className="w-full h-full" viewBox="0 0 600 600" fill="none">
+              <circle cx="100" cy="150" r="320" stroke="#CBD5E1" strokeWidth="1" />
+              <circle cx="100" cy="150" r="220" stroke="#CBD5E1" strokeWidth="1" />
+              <circle cx="500" cy="500" r="350" stroke="#CBD5E1" strokeWidth="1" />
+            </svg>
+          </div>
+
+          <div />
+
+          {/* Minimal Testimonial Quote Block */}
+          <div className="relative z-10 max-w-lg my-auto">
+            {/* Author Avatar Circle */}
+            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-white font-extrabold text-xl shadow-lg border-2 border-white">
+              HP
+            </div>
+
+            {/* Clean Typography Quote */}
+            <blockquote className="text-xl lg:text-2xl font-medium text-slate-800 leading-relaxed tracking-tight">
+              &ldquo;The XITE College Portal app makes it easy to manage contacts, deals, sections, and chats in one place. It keeps track of all activities, helping us stay organised and handle daily tasks more efficiently.&rdquo;
+            </blockquote>
+
+            {/* Author Name & Role */}
+            <div className="mt-8">
+              <p className="text-base font-extrabold text-slate-900">Harry Potter</p>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">CEO / Filllo Design Agency</p>
+            </div>
+
+            {/* Pagination Dash Dots Indicator */}
+            <div className="mt-10 flex items-center gap-2">
+              <span className="h-1 w-8 rounded-full bg-slate-900" />
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+            </div>
+          </div>
+
+          <div />
+        </div>
+
+        {/* ─── RIGHT 50% PANEL: REQUEST ACCESS FORM (EDGE TO EDGE WHITE) ─── */}
         <div className="w-full lg:w-1/2 min-h-screen bg-white p-8 sm:p-12 lg:p-14 flex flex-col justify-between z-10 overflow-y-auto">
           {/* Header Bar */}
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -274,47 +315,6 @@ export function SignUpForm() {
               <span>ENG &or;</span>
             </div>
           </div>
-        </div>
-
-        {/* ─── RIGHT 50% PANEL: MINIMAL FULL-HEIGHT SHOWCASE (LIGHT GREY CANVAS) ─── */}
-        <div className="hidden lg:flex lg:w-1/2 min-h-screen bg-[#F3F4F6] p-12 lg:p-20 flex-col justify-between relative overflow-hidden">
-          {/* Geometric Background Contour Lines */}
-          <div className="absolute inset-0 pointer-events-none opacity-40">
-            <svg className="w-full h-full" viewBox="0 0 600 600" fill="none">
-              <circle cx="550" cy="150" r="320" stroke="#CBD5E1" strokeWidth="1" />
-              <circle cx="550" cy="150" r="220" stroke="#CBD5E1" strokeWidth="1" />
-              <circle cx="80" cy="500" r="350" stroke="#CBD5E1" strokeWidth="1" />
-            </svg>
-          </div>
-
-          <div />
-
-          {/* Minimal Testimonial Quote Block */}
-          <div className="relative z-10 max-w-lg my-auto">
-            {/* Author Avatar Circle */}
-            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-white font-extrabold text-xl shadow-lg border-2 border-white">
-              HP
-            </div>
-
-            {/* Clean Typography Quote */}
-            <blockquote className="text-xl lg:text-2xl font-medium text-slate-800 leading-relaxed tracking-tight">
-              &ldquo;The XITE College Portal app makes it easy to manage contacts, deals, sections, and chats in one place. It keeps track of all activities, helping us stay organised and handle daily tasks more efficiently.&rdquo;
-            </blockquote>
-
-            {/* Author Name & Role */}
-            <div className="mt-8">
-              <p className="text-base font-extrabold text-slate-900">Harry Potter</p>
-              <p className="text-xs sm:text-sm font-medium text-slate-500">CEO / Filllo Design Agency</p>
-            </div>
-
-            {/* Pagination Dash Dots Indicator */}
-            <div className="mt-10 flex items-center gap-2">
-              <span className="h-1 w-8 rounded-full bg-slate-900" />
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-            </div>
-          </div>
-
-          <div />
         </div>
 
       </div>
