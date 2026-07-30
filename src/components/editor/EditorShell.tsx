@@ -92,7 +92,7 @@ export function EditorShell({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeContextMenuPageId, setActiveContextMenuPageId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [activePanel, setActivePanel] = useState<"pages" | "design" | "assets" | null>("pages");
+  const [activePanel, setActivePanel] = useState<"pages" | "design" | "assets" | null>(null);
   
   // Live Palette and Fonts for instant real-time canvas updates
   const [livePalette, setLivePalette] = useState<PaletteColors>(data.theme.colors);
