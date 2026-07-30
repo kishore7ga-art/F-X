@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowRight, Sparkles, TrendingUp, Users, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Sparkles, TrendingUp, Users, ShieldCheck, CheckCircle2, Award, Layout, BarChart2 } from "lucide-react";
 
 import { loginAction } from "@/app/actions/auth";
 import { requestAccessRequest } from "@/lib/api-client";
@@ -87,11 +87,11 @@ export function SignUpForm() {
 
   return (
     <main className="min-h-screen w-full bg-[#F4F5F7] flex items-center justify-center p-4 sm:p-6 lg:p-10 font-sans text-slate-900">
-      {/* Main Split Card Container */}
-      <div className="w-full max-w-5xl overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_25px_70px_-15px_rgba(0,0,0,0.08)] grid grid-cols-1 lg:grid-cols-12 min-h-[640px]">
+      {/* Main 50% / 50% Split Card Container */}
+      <div className="w-full max-w-5xl overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_25px_70px_-15px_rgba(0,0,0,0.08)] grid grid-cols-1 lg:grid-cols-2 max-h-[660px]">
         
-        {/* ─── LEFT COLUMN: SIGN UP FORM ─── */}
-        <div className="lg:col-span-6 p-7 sm:p-10 lg:p-12 flex flex-col justify-between">
+        {/* ─── LEFT COLUMN: SIGN UP FORM (50% WIDTH) ─── */}
+        <div className="p-7 sm:p-10 lg:p-12 flex flex-col justify-between overflow-y-auto">
           <div>
             {/* Top Brand Logo */}
             <div className="flex items-center gap-2.5 mb-8">
@@ -204,12 +204,19 @@ export function SignUpForm() {
           </div>
         </div>
 
-        {/* ─── RIGHT COLUMN: IRIDESCENT VISUAL SHOWCASE BANNER ─── */}
-        <div className="lg:col-span-6 relative bg-gradient-to-tr from-purple-400 via-indigo-300 to-pink-300 p-6 sm:p-8 flex flex-col justify-center gap-4 overflow-hidden min-h-[480px]">
+        {/* ─── RIGHT COLUMN: IRIDESCENT VISUAL SHOWCASE BANNER (50% WIDTH WITH SCROLL) ─── */}
+        <div className="relative bg-gradient-to-tr from-purple-400 via-indigo-300 to-pink-300 p-6 sm:p-8 overflow-y-auto max-h-[660px] flex flex-col gap-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/40 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/60">
           
           {/* Ambient Glow Effects */}
           <div className="absolute -top-24 -right-24 h-80 w-80 rounded-full bg-white/30 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-purple-500/20 blur-3xl pointer-events-none" />
+
+          {/* Scroll Indicator Badge */}
+          <div className="sticky top-0 z-20 flex justify-end">
+            <span className="rounded-full bg-slate-900/40 backdrop-blur-md px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-xs border border-white/20">
+              Scroll for more ↓
+            </span>
+          </div>
 
           {/* Floating Card 1: Testimonial Quote */}
           <div className="relative z-10 rounded-2xl bg-white/80 backdrop-blur-md p-5 shadow-xl border border-white/60 transition-transform duration-300 hover:translate-y-[-2px]">
@@ -291,6 +298,63 @@ export function SignUpForm() {
               </span>
               <span className="text-xs font-semibold text-slate-400">last month</span>
             </div>
+          </div>
+
+          {/* Floating Card 4: Institution Compliance Badge */}
+          <div className="relative z-10 rounded-2xl bg-white/90 backdrop-blur-md p-5 shadow-xl border border-white/60 transition-transform duration-300 hover:translate-y-[-2px]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                ACADEMIC ACCREDITATION
+              </span>
+              <span className="flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                <Award className="h-3.5 w-3.5" />
+                NAAC A++
+              </span>
+            </div>
+            <p className="text-xs font-bold text-slate-900">
+              100% Compliant Academic Portal Structures
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-slate-500">
+              Pre-built mandatory disclosure, NIRF, IQAC, and departmental pages ready out of the box.
+            </p>
+          </div>
+
+          {/* Floating Card 5: Customizable Sections Card */}
+          <div className="relative z-10 rounded-2xl bg-white/90 backdrop-blur-md p-5 shadow-xl border border-white/60 transition-transform duration-300 hover:translate-y-[-2px]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                SECTION LIBRARY
+              </span>
+              <span className="flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                <Layout className="h-3.5 w-3.5" />
+                30+ Variants
+              </span>
+            </div>
+            <p className="text-xs font-bold text-slate-900">
+              Drag-and-Drop Live Section Editor
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-slate-500">
+              Hero headers, faculty grids, campus news, placement stats, and event calendars.
+            </p>
+          </div>
+
+          {/* Floating Card 6: Analytics & Visitors Card */}
+          <div className="relative z-10 rounded-2xl bg-white/90 backdrop-blur-md p-5 shadow-xl border border-white/60 transition-transform duration-300 hover:translate-y-[-2px]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+                TRAFFIC & ANALYTICS
+              </span>
+              <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                <BarChart2 className="h-3.5 w-3.5" />
+                +4,290 Daily
+              </span>
+            </div>
+            <p className="text-xs font-bold text-slate-900">
+              Real-time Campus Visitor Insights
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-slate-500">
+              Track student admissions, prospectus downloads, and portal engagement.
+            </p>
           </div>
 
         </div>
