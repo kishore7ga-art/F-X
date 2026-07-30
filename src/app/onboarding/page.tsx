@@ -83,7 +83,7 @@ export default async function OnboardingPage() {
             </h1>
 
             <p className="mt-2.5 text-xs sm:text-sm font-medium text-slate-500 leading-relaxed">
-              Let us know the type of your institution so we can pick the best starting design for you.
+              Let us know the type of your institution so we can pick the best starting design for you. Based on your selection, we&apos;ll set up a professionally designed website with pre-built pages, sections, and content tailored to your college — ready to customise and publish in minutes.
             </p>
 
             <div className="mt-8">
