@@ -98,6 +98,26 @@ export const loginRequest = (email: string, password: string) =>
     body: { email, password },
   });
 
+/**
+ * Asking for access — soon the only way in.
+ *
+ * Answers 202 with `{ received: true }` whether or not a row was written: a
+ * second request from an address that already has one pending is dropped, and
+ * the caller cannot tell. So there is nothing here worth branching on. The
+ * confirmation screen says what it says because the form was submitted, not
+ * because the backend reported anything about this address.
+ */
+export const requestAccessRequest = (input: {
+  name: string;
+  email: string;
+  organization?: string;
+  message?: string;
+}) =>
+  api<{ received: true }>("/api/v1/access-requests", {
+    method: "POST",
+    body: input,
+  });
+
 /*
  * No logoutRequest. Signing out clears the cookie through the server action in
  * app/actions/auth.ts, which needs no client JavaScript and cannot half-fail
