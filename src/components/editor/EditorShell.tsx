@@ -603,8 +603,8 @@ export function EditorShell({
             {selectedSection && (
               <>
                 <div className="flex items-center gap-2 pl-0.5 pr-1">
-                  <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-                  <span className="text-xs font-bold text-slate-900 tracking-tight whitespace-nowrap">
+                  <span className="flex h-2.5 w-2.5 rounded-full bg-blue-600 animate-pulse" />
+                  <span className="text-xs font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
                     {selectedSection.label}
                   </span>
                 </div>
@@ -618,11 +618,11 @@ export function EditorShell({
                       openSectionPopup(selectedSection.id, { x: e.clientX, y: e.clientY });
                     }}
                     aria-label="Edit Section"
-                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
                   >
-                    <Edit2 className="h-3.5 w-3.5" />
+                    <Edit2 className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Edit Content &amp; Style
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
@@ -638,11 +638,11 @@ export function EditorShell({
                       run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
                     }}
                     aria-label="Duplicate Section"
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
                   >
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Duplicate Section
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
@@ -659,11 +659,11 @@ export function EditorShell({
                         run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
                       }}
                       aria-label="Swap Design Variant"
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
                     >
-                      <RefreshCw className="h-3.5 w-3.5" />
+                      <RefreshCw className="h-4 w-4" strokeWidth={2.2} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Swap Design Layout
                       <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                     </div>
@@ -683,11 +683,11 @@ export function EditorShell({
                       }
                     }}
                     aria-label="Delete Section"
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-30 active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-30 active:scale-95 transition-all"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-red-950 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-red-950 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Delete Section
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-950" />
                   </div>
@@ -699,23 +699,23 @@ export function EditorShell({
                     type="button"
                     onClick={() => setSelectedSectionId(null)}
                     aria-label="Close Controls"
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Close Controls
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
                 </div>
 
                 {/* Pipe Separator 1 */}
-                <div className="h-4 w-px bg-slate-200/90" />
+                <div className="h-4 w-px bg-slate-300" />
               </>
             )}
 
             {/* 2. RESOLUTION ICONS WITH TOOLTIP AND RESOLUTION TEXT NEXT TO CLICKED ICON */}
-            <div className="flex items-center rounded-full bg-slate-100/90 p-0.5 border border-slate-200/80">
+            <div className="flex items-center rounded-full bg-slate-100 p-0.5 border border-slate-200/90">
               {/* Desktop Mode */}
               <div className="group relative flex items-center">
                 <button
@@ -723,16 +723,16 @@ export function EditorShell({
                   onClick={() => setDeviceMode("desktop")}
                   aria-label="Desktop View (1200px)"
                   className={cn(
-                    "flex h-7 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-semibold",
+                    "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "desktop"
-                      ? "bg-slate-900 text-white font-bold shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-700 hover:text-slate-950 hover:bg-slate-200/70"
                   )}
                 >
-                  <Monitor className="h-3.5 w-3.5" />
+                  <Monitor className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "desktop" && <span>1200px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Desktop View (1200px)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -745,16 +745,16 @@ export function EditorShell({
                   onClick={() => setDeviceMode("tablet")}
                   aria-label="Tablet View (768px)"
                   className={cn(
-                    "flex h-7 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-semibold",
+                    "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "tablet"
-                      ? "bg-slate-900 text-white font-bold shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-700 hover:text-slate-950 hover:bg-slate-200/70"
                   )}
                 >
-                  <Tablet className="h-3.5 w-3.5" />
+                  <Tablet className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "tablet" && <span>768px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Tablet View (768px)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -767,16 +767,16 @@ export function EditorShell({
                   onClick={() => setDeviceMode("mobile")}
                   aria-label="Mobile View (390px)"
                   className={cn(
-                    "flex h-7 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-semibold",
+                    "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "mobile"
-                      ? "bg-slate-900 text-white font-bold shadow-xs"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-700 hover:text-slate-950 hover:bg-slate-200/70"
                   )}
                 >
-                  <Smartphone className="h-3.5 w-3.5" />
+                  <Smartphone className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "mobile" && <span>390px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Mobile View (390px)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -784,10 +784,10 @@ export function EditorShell({
             </div>
 
             {/* Pipe Separator 2 */}
-            <div className="h-4 w-px bg-slate-200/90" />
+            <div className="h-4 w-px bg-slate-300" />
 
             {/* 3. UNDO / REDO ICONS WITH TOOLTIPS (POSITIONED LAST) */}
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1">
               {/* Undo */}
               <div className="group relative flex items-center">
                 <button
@@ -795,11 +795,11 @@ export function EditorShell({
                   onClick={undo}
                   disabled={!canUndo}
                   aria-label="Undo"
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
                 >
-                  <Undo2 className="h-3.5 w-3.5" />
+                  <Undo2 className="h-4 w-4" strokeWidth={2.2} />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Undo
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -812,11 +812,11 @@ export function EditorShell({
                   onClick={redo}
                   disabled={!canRedo}
                   aria-label="Redo"
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
                 >
-                  <Redo2 className="h-3.5 w-3.5" />
+                  <Redo2 className="h-4 w-4" strokeWidth={2.2} />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Redo
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
