@@ -64,7 +64,7 @@ export function SectionBlock({
     const wrapper = contentWrapperRef.current;
     if (!wrapper) return;
 
-    const textElements = wrapper.querySelectorAll<HTMLElement>("h1, h2, h3, h4, p");
+    const textElements = wrapper.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6, p, span, a, li, blockquote");
     const cleanupFns: (() => void)[] = [];
 
     textElements.forEach((el) => {
@@ -72,7 +72,7 @@ export function SectionBlock({
       el.setAttribute("spellcheck", "false");
       el.style.outline = "none";
       el.style.position = "relative";
-      el.style.zIndex = "25"; // Higher than overlay (z-10) for direct text focus & typing
+      el.style.zIndex = "25"; // Higher than overlay for direct text focus & typing
       el.style.cursor = "text";
       el.classList.add(
         "transition-all",
@@ -96,7 +96,7 @@ export function SectionBlock({
         if (tag === "H1" || tag === "H2") {
           if ("collegeName" in updatedData) updatedData.collegeName = text;
           else if ("title" in updatedData) updatedData.title = text;
-        } else if (tag === "P" || tag === "H3") {
+        } else if (tag === "P" || tag === "H3" || tag === "H4" || tag === "SPAN" || tag === "BLOCKQUOTE") {
           if (el.classList.contains("italic") && "tagline" in updatedData) {
             updatedData.tagline = text;
           } else if ("intro" in updatedData) {
@@ -107,6 +107,8 @@ export function SectionBlock({
             updatedData.mission = text;
           } else if ("vision" in updatedData) {
             updatedData.vision = text;
+          } else if ("principalMessage" in updatedData) {
+            updatedData.principalMessage = text;
           } else {
             const strKeys = Object.keys(updatedData).filter((k) => typeof updatedData[k] === "string");
             if (strKeys.length > 0) {
@@ -119,8 +121,12 @@ export function SectionBlock({
         updateSectionContent(section.id, updatedData);
       };
 
+      el.addEventListener("input", handleBlurOrInput);
       el.addEventListener("blur", handleBlurOrInput);
-      cleanupFns.push(() => el.removeEventListener("blur", handleBlurOrInput));
+      cleanupFns.push(() => {
+        el.removeEventListener("input", handleBlurOrInput);
+        el.removeEventListener("blur", handleBlurOrInput);
+      });
     });
 
     return () => {
@@ -136,7 +142,7 @@ export function SectionBlock({
         borderRadius: liveStyle.borderRadius,
       }}
       className={cn(
-        "group relative transition-all duration-200 border-2 select-none",
+        "group relative transition-all duration-200 border-2 select-text",
         isSelected
           ? "border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.3)] z-30 ring-2 ring-blue-500/20"
           : "border-transparent hover:border-blue-400/60"
