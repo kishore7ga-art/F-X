@@ -225,11 +225,11 @@ export function CredentialsForm({
                 </div>
               )}
 
-              {/* Primary Dark Login Button */}
+              {/* Primary #4285F4 Blue Login Button */}
               <button
                 type="submit"
                 disabled={pending}
-                className="mt-3 w-full rounded-xl bg-slate-900 py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md transition hover:bg-black active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="mt-3 w-full rounded-xl bg-[#4285F4] py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#4285F4]/20 transition hover:bg-[#3367D6] hover:shadow-lg hover:shadow-[#4285F4]/30 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{pending ? "Logging in…" : "Login"}</span>
               </button>
