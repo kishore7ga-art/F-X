@@ -712,7 +712,7 @@ export function EditorShell({
             )}
 
             {/* 2. RESOLUTION ICONS WITH TOOLTIP AND RESOLUTION TEXT NEXT TO CLICKED ICON */}
-            <div className="flex items-center rounded-full bg-slate-100 p-0.5 border border-slate-200/90">
+            <div className="flex items-center gap-0.5">
               {/* Desktop Mode */}
               <div className="group relative flex items-center">
                 <button
@@ -726,10 +726,10 @@ export function EditorShell({
                   }}
                   aria-label={`Desktop View (${currentDesktopRes}px)`}
                   className={cn(
-                    "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-bold transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
                     deviceMode === "desktop"
-                      ? "bg-slate-200 text-slate-900 border border-slate-300/90 shadow-2xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                      ? "text-slate-900"
+                      : "text-slate-400 hover:text-slate-800"
                   )}
                 >
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
@@ -754,10 +754,10 @@ export function EditorShell({
                   }}
                   aria-label={`Tablet View (${currentTabletRes}px)`}
                   className={cn(
-                    "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-bold transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
                     deviceMode === "tablet"
-                      ? "bg-slate-200 text-slate-900 border border-slate-300/90 shadow-2xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                      ? "text-slate-900"
+                      : "text-slate-400 hover:text-slate-800"
                   )}
                 >
                   <Tablet className="h-4 w-4" strokeWidth={2.2} />
@@ -782,10 +782,10 @@ export function EditorShell({
                   }}
                   aria-label={`Mobile View (${currentMobileRes}px)`}
                   className={cn(
-                    "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-bold transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
                     deviceMode === "mobile"
-                      ? "bg-slate-200 text-slate-900 border border-slate-300/90 shadow-2xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                      ? "text-slate-900"
+                      : "text-slate-400 hover:text-slate-800"
                   )}
                 >
                   <Smartphone className="h-4 w-4" strokeWidth={2.2} />
@@ -806,7 +806,7 @@ export function EditorShell({
                   type="button"
                   onClick={undo}
                   aria-label="Undo"
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:scale-95 transition-all"
                 >
                   <Undo2 className="h-4 w-4" strokeWidth={2.2} />
                 </button>
@@ -822,7 +822,7 @@ export function EditorShell({
                   type="button"
                   onClick={redo}
                   aria-label="Redo"
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 active:scale-95 transition-all"
                 >
                   <Redo2 className="h-4 w-4" strokeWidth={2.2} />
                 </button>
