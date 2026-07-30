@@ -229,9 +229,10 @@ export function EditorShell({
         className="relative flex h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans select-none"
         onClick={() => setActiveContextMenuPageId(null)}
       >
-        {/* ─── 1. LEFT ICON RAIL WITH RIGHT-SIDE TOOLTIPS ─── */}
-        <aside className="z-50 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-4">
-          <div className="flex flex-col items-center gap-3">
+        {/* ─── 1. LEFT ICON RAIL WITH ALL EDITOR CONTROLS & RIGHT-SIDE TOOLTIPS ─── */}
+        <aside className="z-50 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-3.5 overflow-y-auto">
+          {/* Top Group: Brand & Primary Panels */}
+          <div className="flex flex-col items-center gap-2.5">
             {/* Logo / Brand Indicator */}
             <div className="group relative flex items-center">
               <Link
@@ -246,6 +247,8 @@ export function EditorShell({
               </div>
             </div>
 
+            <div className="h-px w-6 bg-slate-200" />
+
             {/* Icon 1: Pages */}
             <div className="group relative flex items-center">
               <button
@@ -256,7 +259,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   activePanel === "pages"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
                 <Layers className="h-4 w-4" />
@@ -277,7 +280,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   activePanel === "design"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
                 <Palette className="h-4 w-4" />
@@ -298,7 +301,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   activePanel === "assets"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
                 <FolderOpen className="h-4 w-4" />
@@ -308,17 +311,137 @@ export function EditorShell({
                 <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
               </div>
             </div>
+
+            <div className="h-px w-6 bg-slate-200" />
+
+            {/* Undo */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={undo}
+                disabled={!canUndo}
+                aria-label="Undo"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
+              >
+                <Undo2 className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Undo
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
+
+            {/* Redo */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={redo}
+                disabled={!canRedo}
+                aria-label="Redo"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
+              >
+                <Redo2 className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Redo
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
+
+            <div className="h-px w-6 bg-slate-200" />
+
+            {/* Viewports: Desktop */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setDeviceMode("desktop")}
+                aria-label="Desktop View"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                  deviceMode === "desktop"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                )}
+              >
+                <Monitor className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Desktop View
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
+
+            {/* Viewports: Tablet */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setDeviceMode("tablet")}
+                aria-label="Tablet View"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                  deviceMode === "tablet"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                )}
+              >
+                <Tablet className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Tablet View
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
+
+            {/* Viewports: Mobile */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setDeviceMode("mobile")}
+                aria-label="Mobile View"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                  deviceMode === "mobile"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                )}
+              >
+                <Smartphone className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Mobile View
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
           </div>
 
-          {/* User Avatar & Sign Out */}
-          <div className="flex flex-col items-center gap-3">
+          {/* Bottom Group: Preview, Publish, Sign Out, Avatar */}
+          <div className="flex flex-col items-center gap-2.5 pt-2">
+            {/* Preview */}
+            <div className="group relative flex items-center">
+              <Link
+                href={`/site/${college.subdomain}`}
+                target="_blank"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition"
+              >
+                <Eye className="h-4 w-4" />
+              </Link>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Preview Site
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
+
+            {/* Publish Toggle */}
+            <PublishToggle collegeId={college.id} status={college.status} compact={true} />
+
+            {/* Sign Out */}
             {canSignOut && (
               <div className="group relative flex items-center">
                 <form action={logout}>
                   <button
                     type="submit"
                     aria-label="Sign Out"
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-red-500/10 hover:text-red-500 transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
                   </button>
@@ -329,6 +452,8 @@ export function EditorShell({
                 </div>
               </div>
             )}
+
+            {/* Avatar */}
             <div className="group relative flex items-center">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 border border-slate-300 text-xs font-bold text-slate-900 shadow-inner">
                 {initialLetter}
@@ -535,115 +660,6 @@ export function EditorShell({
 
         {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
         <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-slate-50">
-          {/* Top Toolbar */}
-          <header className="z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-              <h1 className="text-xs font-semibold text-slate-900 capitalize tracking-wide">
-                {currentPage.title} Page
-              </h1>
-            </div>
-
-            {/* Undo/Redo & Viewports */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
-                <button
-                  type="button"
-                  onClick={undo}
-                  disabled={!canUndo}
-                  title="Undo"
-                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
-                >
-                  <Undo2 className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={redo}
-                  disabled={!canRedo}
-                  title="Redo"
-                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
-                >
-                  <Redo2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
-                <button
-                  type="button"
-                  onClick={() => setDeviceMode("desktop")}
-                  className={cn(
-                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
-                    deviceMode === "desktop"
-                      ? "bg-slate-900 text-white font-bold shadow-xs"
-                      : "text-slate-400 hover:text-slate-900"
-                  )}
-                >
-                  <Monitor className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Desktop</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeviceMode("tablet")}
-                  className={cn(
-                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
-                    deviceMode === "tablet"
-                      ? "bg-slate-900 text-white font-bold shadow-xs"
-                      : "text-slate-400 hover:text-slate-900"
-                  )}
-                >
-                  <Tablet className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Tablet</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDeviceMode("mobile")}
-                  className={cn(
-                    "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
-                    deviceMode === "mobile"
-                      ? "bg-slate-900 text-white font-bold shadow-xs"
-                      : "text-slate-400 hover:text-slate-900"
-                  )}
-                >
-                  <Smartphone className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Mobile</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Preview, Publish & Sign Out */}
-            <div className="flex items-center gap-3">
-              {isPending && (
-                <span className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                  <RefreshCw className="h-3 w-3 animate-spin text-slate-900" />
-                  Saving…
-                </span>
-              )}
-
-              <Link
-                href={`/site/${college.subdomain}`}
-                target="_blank"
-                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
-              >
-                <Eye className="h-3.5 w-3.5 text-slate-900" />
-                <span>Preview</span>
-              </Link>
-
-              <PublishToggle collegeId={college.id} status={college.status} />
-
-              {canSignOut && (
-                <form action={logout}>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 hover:text-red-300 cursor-pointer"
-                    title="Sign Out"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>Sign Out</span>
-                  </button>
-                </form>
-              )}
-            </div>
-          </header>
 
           {actionError && (
             <p className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-xs font-medium text-red-400">
