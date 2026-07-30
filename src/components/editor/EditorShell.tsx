@@ -622,7 +622,7 @@ export function EditorShell({
                   >
                     <Edit2 className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Edit Content &amp; Style
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
@@ -638,11 +638,11 @@ export function EditorShell({
                       run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
                     }}
                     aria-label="Duplicate Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
                   >
                     <Copy className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Duplicate Section
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
@@ -659,11 +659,11 @@ export function EditorShell({
                         run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
                       }}
                       aria-label="Swap Design Variant"
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
                     >
                       <RefreshCw className="h-4 w-4" strokeWidth={2.2} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Swap Design Layout
                       <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                     </div>
@@ -683,11 +683,11 @@ export function EditorShell({
                       }
                     }}
                     aria-label="Delete Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-red-50 hover:text-red-600 active:scale-95 transition-all"
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-red-950 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-red-950 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Delete Section
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-950" />
                   </div>
@@ -703,7 +703,7 @@ export function EditorShell({
                   >
                     <X className="h-4 w-4" strokeWidth={2.2} />
                   </button>
-                  <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                  <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                     Close Controls
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
@@ -729,7 +729,7 @@ export function EditorShell({
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "desktop" && <span>1200px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Desktop View (1200px)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -751,7 +751,7 @@ export function EditorShell({
                   <Tablet className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "tablet" && <span>768px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Tablet View (768px)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -773,7 +773,7 @@ export function EditorShell({
                   <Smartphone className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "mobile" && <span>390px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Mobile View (390px)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -787,13 +787,12 @@ export function EditorShell({
                 <button
                   type="button"
                   onClick={undo}
-                  disabled={!canUndo}
                   aria-label="Undo"
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
                 >
                   <Undo2 className="h-4 w-4" strokeWidth={2.2} />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Undo
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
@@ -804,13 +803,12 @@ export function EditorShell({
                 <button
                   type="button"
                   onClick={redo}
-                  disabled={!canRedo}
                   aria-label="Redo"
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black disabled:opacity-30 active:scale-95 transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
                 >
                   <Redo2 className="h-4 w-4" strokeWidth={2.2} />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Redo
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
