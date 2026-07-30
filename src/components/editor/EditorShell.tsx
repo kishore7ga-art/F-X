@@ -230,7 +230,7 @@ export function EditorShell({
         onClick={() => setActiveContextMenuPageId(null)}
       >
         {/* ─── 1. LEFT ICON RAIL (56px width, Monochrome Black & White) ─── */}
-        <aside className="z-40 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-4">
+        <aside className="z-50 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-4">
           <div className="flex flex-col items-center gap-4">
             {/* Logo / Brand Indicator */}
             <Link href="/" className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md hover:bg-slate-200 transition-colors" title="XITE Dashboard">
@@ -319,7 +319,7 @@ export function EditorShell({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="absolute left-[56px] top-0 bottom-0 z-30 flex w-[260px] flex-col justify-between border-r border-slate-200 bg-white p-3.5 shadow-2xl overflow-hidden"
+              className="absolute left-[56px] top-0 bottom-0 z-40 flex w-[260px] flex-col justify-between border-r border-slate-200 bg-white p-3.5 shadow-2xl overflow-hidden"
             >
               <div className="flex flex-col gap-3.5 overflow-hidden">
                 {/* Header: Website Name & Page Count Badge */}
@@ -501,7 +501,7 @@ export function EditorShell({
         </AnimatePresence>
 
         {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
-        <main className="flex flex-1 flex-col overflow-hidden bg-slate-50">
+        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-slate-50">
           {/* Top Toolbar */}
           <header className="z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5">
             <div className="flex items-center gap-2.5">
