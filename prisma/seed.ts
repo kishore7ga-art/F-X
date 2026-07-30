@@ -52,6 +52,36 @@ const PALETTES = [
       light: "#F0FDF4",
     },
   },
+  {
+    name: "Midnight Indigo",
+    colors: {
+      primary: "#312E81",
+      secondary: "#6366F1",
+      accent: "#10B981",
+      dark: "#09090B",
+      light: "#EEF2FF",
+    },
+  },
+  {
+    name: "Sunset Sapphire",
+    colors: {
+      primary: "#0369A1",
+      secondary: "#0284C7",
+      accent: "#F97316",
+      dark: "#0F172A",
+      light: "#F0F9FF",
+    },
+  },
+  {
+    name: "Editorial Plum",
+    colors: {
+      primary: "#581C87",
+      secondary: "#9333EA",
+      accent: "#EAB308",
+      dark: "#18181B",
+      light: "#FAF5FF",
+    },
+  },
 ];
 
 /** Demo login for the sample college. Shared with the sign-in page's autofill. */
@@ -64,6 +94,21 @@ const FONT_PACKS = [
     bodyFont: "Source Sans 3",
   },
   { name: "Modern Sans", headingFont: "Poppins", bodyFont: "Inter" },
+  {
+    name: "Editorial Elegance",
+    headingFont: "Cormorant Garamond",
+    bodyFont: "Plus Jakarta Sans",
+  },
+  {
+    name: "Tech Precision",
+    headingFont: "Outfit",
+    bodyFont: "Roboto",
+  },
+  {
+    name: "Academic Prestige",
+    headingFont: "Merriweather",
+    bodyFont: "Open Sans",
+  },
 ];
 
 /**
@@ -297,7 +342,7 @@ const contentFor = (
     tagline: d.tagline,
     intro:
       "A NAAC A+ accredited institute offering undergraduate and postgraduate programmes in engineering, management and applied sciences since 1998.",
-    bannerImageUrl: "/seed/campus.svg",
+    bannerImageUrl: "/template-brightwood.jpg",
     ctaLabel: "Apply for admission",
     ctaHref: "/admissions",
   },
@@ -311,7 +356,7 @@ const contentFor = (
       "To be recognised among the leading centres of applied research and engineering education in the region by 2030.",
     principalName: "Dr. Anita Raghavan",
     principalDesignation: "Principal",
-    principalPhotoUrl: "/seed/principal.svg",
+    principalPhotoUrl: "/hero-madras-college.jpg",
     principalMessage:
       `Our students leave ${d.collegeName} with more than a degree — they leave with the habit of solving real problems. That is the promise we renew with every incoming batch.`,
   },
@@ -364,25 +409,25 @@ const contentFor = (
         name: "Dr. Anita Raghavan",
         designation: "Principal & Professor",
         department: "Computer Science & Engineering",
-        photoUrl: "/seed/faculty-1.svg",
+        photoUrl: "/template-evergreen.jpg",
       },
       {
         name: "Dr. Suresh Menon",
         designation: "Head of Department",
         department: "Mechanical Engineering",
-        photoUrl: "/seed/faculty-2.svg",
+        photoUrl: "/template-calistoga.jpg",
       },
       {
         name: "Prof. Kavitha Nair",
         designation: "Associate Professor",
         department: "Electronics & Communication",
-        photoUrl: "/seed/faculty-3.svg",
+        photoUrl: "/template-oakwood.jpg",
       },
       {
         name: "Dr. Imran Qureshi",
         designation: "Assistant Professor",
         department: "Civil Engineering",
-        photoUrl: "/seed/faculty-4.svg",
+        photoUrl: "/macbook-madras-college.png",
       },
     ],
   },
@@ -417,15 +462,38 @@ const PAGE_LAYOUT: {
   },
   {
     slug: "about",
-    title: "About",
+    title: "About Us",
     navOrder: 1,
     sections: [SectionType.ABOUT, SectionType.FACULTY],
   },
-  { slug: "admissions", title: "Admissions", navOrder: 2, sections: [] },
+  {
+    slug: "academics",
+    title: "Academics",
+    navOrder: 2,
+    sections: [SectionType.COURSES],
+  },
+  {
+    slug: "events",
+    title: "Events & News",
+    navOrder: 3,
+    sections: [SectionType.ABOUT, SectionType.COURSES],
+  },
+  {
+    slug: "faculty",
+    title: "Faculty",
+    navOrder: 4,
+    sections: [SectionType.FACULTY],
+  },
+  {
+    slug: "admissions",
+    title: "Admissions",
+    navOrder: 5,
+    sections: [SectionType.COURSES, SectionType.CONTACT],
+  },
   {
     slug: "contact",
-    title: "Contact",
-    navOrder: 3,
+    title: "Contact Us",
+    navOrder: 6,
     sections: [SectionType.CONTACT],
   },
 ];
@@ -467,6 +535,32 @@ async function seedReferenceData() {
   );
 
   // --- Templates, each carrying the whole variant library -------------------
+  /**
+   * The shared design library, seeded once for every template at once.
+   *
+   * Keyed on `componentKey`, which is globally unique now, so re-running this is
+   * an update rather than a fourth copy. `sortOrder` is the library's own picker
+   * order and no longer carries "which one does this template lead with" — that
+   * moved to `sections.default_variant_id`, set per template below.
+   */
+  const libraryIds = new Map<string, string>();
+
+  for (const librarySpec of VARIANT_LIBRARY) {
+    const sectionType = librarySpec.sectionType as SupportedSectionType;
+    for (const [index, variant] of librarySpec.variants.entries()) {
+      const row = await prisma.sectionVariant.upsert({
+        where: { componentKey: variant.componentKey },
+        update: {
+          variantName: variant.variantName,
+          sectionType,
+          sortOrder: index,
+        },
+        create: { ...variant, sectionType, sortOrder: index },
+      });
+      libraryIds.set(variant.componentKey, row.id);
+    }
+  }
+
   const templates = [];
 
   for (const spec of TEMPLATES) {
@@ -500,7 +594,7 @@ async function seedReferenceData() {
 
     const sectionsByType = new Map<
       SupportedSectionType,
-      { id: string; variantIds: string[] }
+      { id: string; leadVariantId: string }
     >();
 
     for (const librarySpec of VARIANT_LIBRARY) {
@@ -524,35 +618,30 @@ async function seedReferenceData() {
         },
       });
 
-      // This template's lead variant first, the rest of the library behind it.
-      // Same components everywhere, different face on each template.
+      /**
+       * The lead is recorded on the slot; the designs themselves are seeded once,
+       * above, for every template at the same time.
+       *
+       * This loop used to insert the whole library per template — the same design
+       * five times over, ordered so that each template's lead came out first. That
+       * is what made 30 designs into 150 rows. The library is shared now, so the
+       * only per-template fact left is which of them this template opens with, and
+       * that is a column on the slot.
+       */
       const leadKey = spec.lead[sectionType];
-      const ordered = [
-        ...librarySpec.variants.filter((v) => v.componentKey === leadKey),
-        ...librarySpec.variants.filter((v) => v.componentKey !== leadKey),
-      ];
-      if (ordered[0]?.componentKey !== leadKey) {
+      const lead = libraryIds.get(leadKey);
+      if (!lead) {
         throw new Error(
           `${spec.name}: lead variant "${leadKey}" is not in the ${sectionType} library`,
         );
       }
 
-      const variantIds: string[] = [];
-      for (const [index, variant] of ordered.entries()) {
-        const row = await prisma.sectionVariant.upsert({
-          where: {
-            sectionId_componentKey: {
-              sectionId: section.id,
-              componentKey: variant.componentKey,
-            },
-          },
-          update: { variantName: variant.variantName, sortOrder: index },
-          create: { sectionId: section.id, ...variant, sortOrder: index },
-        });
-        variantIds.push(row.id);
-      }
+      await prisma.section.update({
+        where: { id: section.id },
+        data: { defaultVariantId: lead },
+      });
 
-      sectionsByType.set(sectionType, { id: section.id, variantIds });
+      sectionsByType.set(sectionType, { id: section.id, leadVariantId: lead });
     }
 
     templates.push({ spec, template, sectionsByType });
@@ -631,7 +720,7 @@ async function seedDemoSites({
             collegeId: college.id,
             sectionId: section.id,
             // Index 0 is the lead variant — the template's signature look.
-            variantId: section.variantIds[0],
+            variantId: section.leadVariantId,
             pageId: page.id,
             displayOrder: index + 1,
             isVisible: true,
@@ -703,7 +792,7 @@ async function seedDemoCollege({
         data: {
           collegeId: college.id,
           sectionId: section.id,
-          variantId: section.variantIds[0],
+          variantId: section.leadVariantId,
           pageId: page.id,
           displayOrder: index + 1,
           isVisible: true,

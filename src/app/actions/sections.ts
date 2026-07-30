@@ -30,7 +30,7 @@ async function loadOwnedSection(collegeSectionId: string, collegeId: string) {
   const row = await prisma.collegeSection.findFirst({
     where: { id: collegeSectionId, collegeId },
     include: {
-      section: { include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } } },
+      section: true,
       college: { select: { subdomain: true, name: true } },
     },
   });
@@ -102,7 +102,18 @@ export async function cycleSectionVariant(
   const { collegeSectionId } = sectionRefSchema.parse(input);
   const row = await loadOwnedSection(collegeSectionId, await currentCollegeId());
 
-  const variants = row.section.variants;
+  /**
+   * The designs for this section's *type*, from the shared library.
+   *
+   * Was `row.section.variants` — the designs attached to this one template slot.
+   * Now that the library is shared, the ↻ button reaches every active design of
+   * the type, which is what the schema always claimed it did.
+   */
+  const variants = await prisma.sectionVariant.findMany({
+    where: { sectionType: row.section.sectionType, isActive: true },
+    orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }],
+    select: { id: true },
+  });
   if (variants.length < 2) return;
 
   const currentIndex = variants.findIndex((v) => v.id === row.variantId);
@@ -166,10 +177,7 @@ export async function addSection(input: z.infer<typeof addSchema>) {
       select: { id: true, name: true, subdomain: true, templateId: true },
     }),
     prisma.page.findFirst({ where: { id: pageId, collegeId } }),
-    prisma.section.findUnique({
-      where: { id: sectionId },
-      include: { variants: { orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }] } },
-    }),
+    prisma.section.findUnique({ where: { id: sectionId } }),
   ]);
 
   if (!college) throw new Error("College not found");
@@ -182,7 +190,29 @@ export async function addSection(input: z.infer<typeof addSchema>) {
     throw new Error("Section type is not renderable yet");
   }
 
-  const variantId = section.variants[0]?.id;
+  /**
+   * The slot's own lead design, falling back to the library's first.
+   *
+   * `defaultVariantId` is what the migration preserved so that adding a section
+   * lands on this template's look rather than on whichever design the shared
+   * library happens to list first.
+   */
+  const variantId =
+    (section.defaultVariantId
+      ? (
+          await prisma.sectionVariant.findFirst({
+            where: { id: section.defaultVariantId, isActive: true },
+            select: { id: true },
+          })
+        )?.id
+      : null) ??
+    (
+      await prisma.sectionVariant.findFirst({
+        where: { sectionType: section.sectionType, isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { variantName: "asc" }],
+        select: { id: true },
+      })
+    )?.id;
   if (!variantId) throw new Error("Section has no design variants");
 
   // Make room, then insert.
