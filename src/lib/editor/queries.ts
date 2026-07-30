@@ -5,6 +5,7 @@ import {
   isSupportedSectionType,
   type SupportedSectionType,
 } from "@/lib/sections/schemas";
+import { DEFAULT_PAGES } from "@/lib/site/starter";
 import {
   DEFAULT_FONTS,
   parsePaletteColors,
@@ -123,6 +124,31 @@ export async function getEditorPage(
     });
   }
 
+  // Build complete page list combining default college pages with API payload pages
+  const pageMap = new Map<string, { id: string; slug: string; title: string }>();
+  for (const p of DEFAULT_PAGES) {
+    pageMap.set(p.slug, { id: `page-${p.slug}`, slug: p.slug, title: p.title });
+  }
+  for (const p of payload.pages) {
+    pageMap.set(p.slug, p);
+  }
+  const fullPages = Array.from(pageMap.values());
+
+  const currentSlug = pageSlug || payload.currentPage?.slug || "home";
+  const activePage = pageMap.get(currentSlug) || {
+    id: `page-${currentSlug}`,
+    slug: currentSlug,
+    title: currentSlug.charAt(0).toUpperCase() + currentSlug.slice(1),
+  };
+
+  const currentPage = {
+    ...activePage,
+    metaTitle: payload.currentPage?.metaTitle ?? null,
+    metaDescription: payload.currentPage?.metaDescription ?? null,
+    ogImage: payload.currentPage?.ogImage ?? null,
+    canonicalSlug: payload.currentPage?.canonicalSlug ?? null,
+  };
+
   return {
     college: payload.college,
     theme: {
@@ -135,8 +161,8 @@ export async function getEditorPage(
             }
           : DEFAULT_FONTS,
     },
-    pages: payload.pages,
-    currentPage: payload.currentPage,
+    pages: fullPages,
+    currentPage,
     sections,
     addableSections,
     templateCount: payload.templateCount,
