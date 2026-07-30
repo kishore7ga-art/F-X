@@ -203,43 +203,44 @@ export function SignUpForm() {
                 </div>
               </div>
 
-              {/* 4. Email */}
-              <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Email<span className="text-blue-600 ml-0.5">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
-                    <Mail className="h-4 w-4" />
+              {/* 4 & 5. Single Line Row: Email & Mobile Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                    Email<span className="text-blue-600 ml-0.5">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
+                      <Mail className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@greenfield.edu.in"
+                      className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                    />
                   </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@greenfield.edu.in"
-                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
-                  />
                 </div>
-              </div>
 
-              {/* 5. Mobile Number */}
-              <div>
-                <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Mobile Number<span className="text-blue-600 ml-0.5">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
-                    <Phone className="h-4 w-4" />
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 mb-1.5">
+                    Mobile Number<span className="text-blue-600 ml-0.5">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
+                      <Phone className="h-4 w-4" />
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
+                    />
                   </div>
-                  <input
-                    type="tel"
-                    required
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
-                  />
                 </div>
               </div>
 
