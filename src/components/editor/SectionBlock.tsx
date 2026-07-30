@@ -144,84 +144,12 @@ export function SectionBlock({
         borderRadius: liveStyle.borderRadius,
       }}
       className={cn(
-        "group relative transition-all duration-200 border-2 select-text",
+        "group relative transition-all duration-200 border-2 select-text rounded-xl",
         isSelected
-          ? "border-neutral-900 ring-2 ring-white/30 z-30"
-          : "border-transparent hover:border-neutral-400/50"
+          ? "border-slate-900 ring-4 ring-blue-500/20 z-30 shadow-lg"
+          : "border-transparent hover:border-slate-300/60"
       )}
     >
-      {/* SECTION HOVER OVERLAY BAR (ONLY ON HOVER / SELECTION) */}
-      <div
-        className={cn(
-          "absolute -top-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-xl bg-slate-100 border border-slate-200 px-3 py-1.5 shadow-xl text-xs font-semibold text-slate-900 transition-all duration-200 backdrop-blur-md",
-          isSelected
-            ? "opacity-100 scale-100"
-            : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
-        )}
-      >
-        <span className="text-slate-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
-        <span className="font-bold text-slate-900 tracking-wide flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-          {section.label}
-        </span>
-        <span className="text-slate-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            openSectionPopup(section.id, { x: e.clientX, y: e.clientY });
-          }}
-          className="flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-black hover:bg-neutral-200 transition shadow-sm"
-        >
-          <Edit3 className="h-3 w-3" />
-          <span>Edit</span>
-        </button>
-
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={(e) => {
-            e.stopPropagation();
-            run(() => duplicateSection(args));
-          }}
-          className="flex items-center gap-1 rounded-lg bg-slate-200 border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition disabled:opacity-50"
-        >
-          <Copy className="h-3 w-3 text-slate-400" />
-          <span>Duplicate</span>
-        </button>
-
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (confirm(`Delete ${section.label}?`)) {
-              run(() => deleteSection(args));
-            }
-          }}
-          title="Delete section"
-          className="flex items-center gap-1 rounded-lg bg-slate-200 border border-slate-200 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20 hover:text-red-300 transition disabled:opacity-30"
-        >
-          <Trash2 className="h-3 w-3" />
-          <span>Delete</span>
-        </button>
-
-        {canRefresh && (
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={(e) => {
-              e.stopPropagation();
-              run(() => cycleSectionVariant(args));
-            }}
-            title="Swap Variant Design"
-            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition"
-          >
-            <RefreshCw className="h-3 w-3" />
-          </button>
-        )}
-      </div>
 
       <div ref={contentWrapperRef} className={section.isVisible ? "" : "opacity-40 grayscale"}>
         {contentToRender}

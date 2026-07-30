@@ -74,6 +74,12 @@ const PAGE_ICONS: Record<string, ReactNode> = {
 
 const DEFAULT_PAGE_ICON = <Layers className="h-3.5 w-3.5" />;
 
+import {
+  cycleSectionVariant,
+  deleteSection,
+  duplicateSection,
+} from "@/app/actions/sections";
+
 export function EditorShell({
   data,
   children,
@@ -93,7 +99,7 @@ export function EditorShell({
   const [activeContextMenuPageId, setActiveContextMenuPageId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [activePanel, setActivePanel] = useState<"pages" | "design" | "assets" | null>(null);
-  
+
   // Live Palette and Fonts for instant real-time canvas updates
   const [livePalette, setLivePalette] = useState<PaletteColors>(data.theme.colors);
   const [liveFonts, setLiveFonts] = useState<FontPack>(data.theme.fonts);
@@ -626,69 +632,137 @@ export function EditorShell({
             </motion.div>
           </div>
 
-          {/* Floating Bottom-Center Viewport Toast Dock */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/90 backdrop-blur-md p-1.5 shadow-xl shadow-slate-900/10">
-            {/* Desktop View */}
-            <div className="group relative flex items-center">
+          {/* Floating Bottom-Center Viewport & Section Controls Toast Dock */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 backdrop-blur-md px-3 py-1.5 shadow-2xl shadow-slate-900/15 transition-all duration-300">
+            {selectedSection ? (
+              <>
+                {/* Active Section Info Badge */}
+                <div className="flex items-center gap-1.5 pr-1">
+                  <span className="flex h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+                  <span className="text-xs font-bold text-slate-900 tracking-wide">
+                    {selectedSection.label}
+                  </span>
+                </div>
+
+                <div className="h-4 w-px bg-slate-200" />
+
+                {/* Edit Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openSectionPopup(selectedSection.id, { x: e.clientX, y: e.clientY });
+                  }}
+                  className="flex items-center gap-1 rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-white hover:bg-slate-800 transition shadow-xs"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                  <span>Edit</span>
+                </button>
+
+                {/* Duplicate Button */}
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
+                  }}
+                  className="flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition disabled:opacity-40"
+                >
+                  <Copy className="h-3.5 w-3.5 text-slate-500" />
+                  <span>Duplicate</span>
+                </button>
+
+                {/* Delete Button */}
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete section "${selectedSection.label}"?`)) {
+                      run(() => deleteSection({ collegeSectionId: selectedSection.id }));
+                      setSelectedSectionId(null);
+                    }
+                  }}
+                  className="flex items-center gap-1 rounded-full bg-red-50 border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-100 transition disabled:opacity-40"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </button>
+
+                {/* Variant Refresh / Swap Button */}
+                {selectedSection.variants.length > 1 && (
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
+                    }}
+                    title="Swap Design Variant"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                <div className="h-4 w-px bg-slate-200 mx-0.5" />
+
+                {/* Deselect / Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedSectionId(null)}
+                  title="Close Section Controls"
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+
+                <div className="h-4 w-px bg-slate-200 mx-0.5" />
+              </>
+            ) : null}
+
+            {/* Viewport Mode Buttons (Desktop / Tablet / Mobile) */}
+            <div className="flex items-center gap-1 pl-0.5">
               <button
                 type="button"
                 onClick={() => setDeviceMode("desktop")}
                 aria-label="Desktop View"
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                  "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "desktop"
-                    ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-black"
+                    ? "bg-slate-900 text-white font-bold shadow-xs"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
-                <Monitor className="h-4 w-4" />
+                <Monitor className="h-3.5 w-3.5" />
               </button>
-              <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Desktop View
-                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-              </div>
-            </div>
-
-            {/* Tablet View */}
-            <div className="group relative flex items-center">
               <button
                 type="button"
                 onClick={() => setDeviceMode("tablet")}
                 aria-label="Tablet View"
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                  "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "tablet"
-                    ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-black"
+                    ? "bg-slate-900 text-white font-bold shadow-xs"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
-                <Tablet className="h-4 w-4" />
+                <Tablet className="h-3.5 w-3.5" />
               </button>
-              <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Tablet View
-                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-              </div>
-            </div>
-
-            {/* Mobile View */}
-            <div className="group relative flex items-center">
               <button
                 type="button"
                 onClick={() => setDeviceMode("mobile")}
                 aria-label="Mobile View"
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                  "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200",
                   deviceMode === "mobile"
-                    ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-black"
+                    ? "bg-slate-900 text-white font-bold shadow-xs"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 )}
               >
-                <Smartphone className="h-4 w-4" />
+                <Smartphone className="h-3.5 w-3.5" />
               </button>
-              <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Mobile View
-                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-              </div>
             </div>
           </div>
         </main>
