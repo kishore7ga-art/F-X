@@ -26,9 +26,9 @@ export function HeroAcademicMasthead({ content }: { content: HeroContent }) {
       {/* Thin banner rule standing in for AR's fixed academic navbar. */}
       <div className="h-1.5 w-full" style={{ backgroundColor: "var(--site-primary)" }} />
 
-      <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
-        <div className="grid gap-8 sm:grid-cols-[200px_1fr] sm:gap-10">
-          <div className="mx-auto w-full max-w-[200px] sm:mx-0">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-16">
+        <div className="flex flex-col md:grid md:grid-cols-[200px_1fr] gap-6 md:gap-10">
+          <div className="mx-auto w-full max-w-[180px] md:max-w-[200px] md:mx-0">
             {bannerImageUrl ? (
               <SiteImage
                 src={bannerImageUrl}
