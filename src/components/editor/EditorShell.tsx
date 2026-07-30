@@ -589,7 +589,7 @@ export function EditorShell({
           )}
 
           {/* Canvas Live Preview Container (Applies Live Theme Styles & Google Fonts) */}
-          <div className="relative flex-1 overflow-y-auto bg-white p-5 flex justify-center items-start">
+          <div className="relative flex-1 overflow-y-auto bg-slate-50 flex justify-center items-start">
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
@@ -603,10 +603,10 @@ export function EditorShell({
                     : `${currentMobileRes}px`,
               }}
               className={cn(
-                "w-full overflow-hidden border border-slate-200 bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
+                "w-full bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] transition-all duration-300 min-h-screen",
                 deviceMode === "mobile"
-                  ? "rounded-[36px] border-4 border-slate-300 shadow-2xl overflow-x-hidden"
-                  : "rounded-2xl"
+                  ? "my-6 rounded-[36px] border-4 border-slate-800 shadow-2xl overflow-x-hidden"
+                  : "rounded-none border-0 shadow-none"
               )}
             >
               {sections.length > 0 ? (
