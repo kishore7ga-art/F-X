@@ -44,7 +44,8 @@ export function SectionBlock({
     liveStylesMap,
   } = useEditor();
 
-  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const contentWrapperRef = useRef<HTMLDivElement>(null);
+  const { updateSectionContent } = useEditor();
 
   const isSelected = selectedSectionId === section.id;
   const canRefresh = section.variants.length > 1;
@@ -56,13 +57,76 @@ export function SectionBlock({
 
   const contentToRender = variant && liveContent ? variant.render(liveContent) : children;
 
+
+
+  // Direct Inline Text Editing for canvas h1, h2, h3, p tags
   useEffect(() => {
-    function closeContextMenu() {
-      setContextMenuPos(null);
-    }
-    window.addEventListener("click", closeContextMenu);
-    return () => window.removeEventListener("click", closeContextMenu);
-  }, []);
+    const wrapper = contentWrapperRef.current;
+    if (!wrapper) return;
+
+    const textElements = wrapper.querySelectorAll<HTMLElement>("h1, h2, h3, h4, p");
+    const cleanupFns: (() => void)[] = [];
+
+    textElements.forEach((el) => {
+      el.contentEditable = "true";
+      el.setAttribute("spellcheck", "false");
+      el.style.outline = "none";
+      el.style.position = "relative";
+      el.style.zIndex = "25"; // Higher than overlay (z-10) for direct text focus & typing
+      el.style.cursor = "text";
+      el.classList.add(
+        "transition-all",
+        "duration-150",
+        "hover:outline-dashed",
+        "hover:outline-1",
+        "hover:outline-blue-400/80",
+        "focus:outline-solid",
+        "focus:outline-2",
+        "focus:outline-blue-500",
+        "focus:bg-blue-500/10",
+        "rounded-sm"
+      );
+
+      const handleBlurOrInput = () => {
+        const text = el.innerText.trim();
+        const currentData = ((liveContentMap[section.id] ?? section.content ?? {}) as Record<string, unknown>);
+        const updatedData = { ...currentData };
+
+        const tag = el.tagName;
+        if (tag === "H1" || tag === "H2") {
+          if ("collegeName" in updatedData) updatedData.collegeName = text;
+          else if ("title" in updatedData) updatedData.title = text;
+        } else if (tag === "P" || tag === "H3") {
+          if (el.classList.contains("italic") && "tagline" in updatedData) {
+            updatedData.tagline = text;
+          } else if ("intro" in updatedData) {
+            updatedData.intro = text;
+          } else if ("history" in updatedData) {
+            updatedData.history = text;
+          } else if ("mission" in updatedData) {
+            updatedData.mission = text;
+          } else if ("vision" in updatedData) {
+            updatedData.vision = text;
+          } else {
+            const strKeys = Object.keys(updatedData).filter((k) => typeof updatedData[k] === "string");
+            if (strKeys.length > 0) {
+              const matchedKey = strKeys.find((k) => (updatedData[k] as string).length > 0);
+              if (matchedKey) updatedData[matchedKey] = text;
+            }
+          }
+        }
+
+        updateSectionContent(section.id, updatedData);
+      };
+
+      el.addEventListener("blur", handleBlurOrInput);
+      cleanupFns.push(() => el.removeEventListener("blur", handleBlurOrInput));
+    });
+
+    return () => {
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, [section.id, contentToRender, updateSectionContent, liveContentMap, section.content]);
 
   return (
     <div
@@ -90,7 +154,7 @@ export function SectionBlock({
         <span className="text-[10px] text-blue-200 font-mono">({section.variantName})</span>
       </div>
 
-      <div className={section.isVisible ? "" : "opacity-40 grayscale"}>
+      <div ref={contentWrapperRef} className={section.isVisible ? "" : "opacity-40 grayscale"}>
         {contentToRender}
       </div>
 
