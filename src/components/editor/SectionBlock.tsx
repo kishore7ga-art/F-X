@@ -97,8 +97,8 @@ export function SectionBlock({
       {/* OVERLAY INTERACTION TARGET */}
       <button
         type="button"
-        onClick={(event) => {
-          openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
+        onClick={() => {
+          selectSection(section.id);
         }}
         onDoubleClick={(event) => {
           openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
