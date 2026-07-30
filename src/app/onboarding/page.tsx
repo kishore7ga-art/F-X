@@ -72,6 +72,11 @@ export default async function OnboardingPage() {
               </span>
             </div>
 
+            <img
+              src="/user_avatar.jpg"
+              alt="Profile"
+              className="h-9 w-9 rounded-full object-cover border-2 border-white ring-2 ring-slate-200 shadow-xs"
+            />
           </div>
 
           {/* Form Content */}
