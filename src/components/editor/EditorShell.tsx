@@ -453,14 +453,17 @@ export function EditorShell({
               </div>
             )}
 
-            {/* Avatar */}
+            {/* Avatar -> Profile Page */}
             <div className="group relative flex items-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 border border-slate-300 text-xs font-bold text-slate-900 shadow-inner">
+              <Link
+                href="/profile"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 border border-slate-300 text-xs font-bold text-slate-900 shadow-inner hover:ring-2 hover:ring-slate-900 transition"
+              >
                 {initialLetter}
-              </div>
+              </Link>
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
               <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                {college.name || "Active Session"}
+                User Profile ({college.name || "Active Session"})
                 <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
               </div>
             </div>
