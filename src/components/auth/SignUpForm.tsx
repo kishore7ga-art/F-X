@@ -119,12 +119,11 @@ export function SignUpForm() {
               </span>
             </Link>
 
-            {/* Top-Right Prompt & Login Pill Button */}
-            <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-600">
-              <span className="hidden sm:inline">Already have an account?</span>
+            {/* Top-Right Login Pill Button */}
+            <div>
               <Link
                 href="/login"
-                className="rounded-full bg-blue-50 px-4 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100"
+                className="rounded-full bg-blue-50 px-4.5 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100 shadow-2xs"
               >
                 Login
               </Link>

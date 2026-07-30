@@ -108,12 +108,11 @@ export function CredentialsForm({
               </span>
             </Link>
 
-            {/* Top-Right Prompt & Request Access Pill Button */}
-            <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-600">
-              <span className="hidden sm:inline">Don&apos;t have an account?</span>
+            {/* Top-Right Request Access Pill Button */}
+            <div>
               <Link
                 href="/request-access"
-                className="rounded-full bg-blue-50 px-4 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100"
+                className="rounded-full bg-blue-50 px-4.5 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100 shadow-2xs"
               >
                 Request Access
               </Link>
