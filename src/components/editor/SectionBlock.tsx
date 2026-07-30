@@ -100,15 +100,15 @@ export function SectionBlock({
         onClick={() => {
           selectSection(section.id);
         }}
-        onDoubleClick={(event) => {
-          openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
+        onDoubleClick={() => {
+          selectSection(section.id);
         }}
         onContextMenu={(event) => {
           event.preventDefault();
           selectSection(section.id);
           setContextMenuPos({ x: event.clientX, y: event.clientY });
         }}
-        aria-label={`Edit ${section.label} content`}
+        aria-label={`Select ${section.label}`}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer"
       />
 
