@@ -197,7 +197,7 @@ export function EditorShell({
     >
       <div className="flex h-screen w-screen overflow-hidden bg-neutral-950 text-neutral-100 font-sans">
         {/* ─── 1. LEFT VERTICAL NAVIGATION RAIL (STACKED STYLED BUTTONS) ─── */}
-        <aside className="z-40 flex w-16 flex-col items-center justify-between border-r border-neutral-800 bg-black py-4">
+        <aside className="z-[105] flex w-16 flex-col items-center justify-between border-r border-neutral-800 bg-black py-4">
           <div className="flex flex-col items-center gap-3">
             {/* BUTTON 1: PAGES & NAVIGATION (LAYERS ICON) */}
             <button
@@ -213,7 +213,7 @@ export function EditorShell({
               )}
             >
               <Layers className="h-5 w-5" />
-              <span className="absolute left-16 z-50 whitespace-nowrap rounded-md bg-black px-2.5 py-1 text-xs font-semibold text-white shadow-xl opacity-0 transition-opacity pointer-events-none group-hover:opacity-100 border border-neutral-800">
+              <span className="absolute left-16 z-[115] whitespace-nowrap rounded-md bg-black px-2.5 py-1 text-xs font-semibold text-white shadow-xl opacity-0 transition-opacity pointer-events-none group-hover:opacity-100 border border-neutral-800">
                 Website Pages
               </span>
             </button>
@@ -232,7 +232,7 @@ export function EditorShell({
               )}
             >
               <Sliders className="h-5 w-5" />
-              <span className="absolute left-16 z-50 whitespace-nowrap rounded-md bg-black px-2.5 py-1 text-xs font-semibold text-white shadow-xl opacity-0 transition-opacity pointer-events-none group-hover:opacity-100 border border-neutral-800">
+              <span className="absolute left-16 z-[115] whitespace-nowrap rounded-md bg-black px-2.5 py-1 text-xs font-semibold text-white shadow-xl opacity-0 transition-opacity pointer-events-none group-hover:opacity-100 border border-neutral-800">
                 Publish & Settings
               </span>
             </button>
@@ -257,7 +257,7 @@ export function EditorShell({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="fixed left-16 top-0 bottom-0 z-40 w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
+              className="fixed left-16 top-0 bottom-0 z-[100] w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
             >
               <div className="space-y-5">
                 {/* Header */}
@@ -325,7 +325,7 @@ export function EditorShell({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="fixed left-16 top-0 bottom-0 z-40 w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
+              className="fixed left-16 top-0 bottom-0 z-[100] w-[calc(100vw-64px)] sm:w-80 overflow-y-auto border-r border-neutral-800 bg-neutral-950/98 p-5 text-neutral-100 shadow-[20px_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans flex flex-col justify-between"
             >
               <div className="space-y-6">
                 {/* Header */}
