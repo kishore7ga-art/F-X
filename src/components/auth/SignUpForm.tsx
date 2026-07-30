@@ -77,10 +77,12 @@ export function SignUpForm() {
 
           {/* Minimal Testimonial Quote Block */}
           <div className="relative z-10 max-w-lg my-auto">
-            {/* Author Avatar Circle */}
-            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-white font-extrabold text-xl shadow-lg border-2 border-white">
-              HP
-            </div>
+            {/* Colorful Human Avatar Photo */}
+            <img
+              src="/user_avatar.jpg"
+              alt="Harry Potter Profile Picture"
+              className="mb-8 h-16 w-16 rounded-full object-cover shadow-md border-2 border-white ring-4 ring-indigo-500/20"
+            />
 
             {/* Clean Typography Quote */}
             <blockquote className="text-xl lg:text-2xl font-medium text-slate-800 leading-relaxed tracking-tight">
