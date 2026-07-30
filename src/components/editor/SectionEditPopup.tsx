@@ -69,19 +69,19 @@ export function SectionEditPopup({
       exit={{ opacity: 0, scale: 0.96, y: -10 }}
       transition={{ duration: 0.2, ease: "easeInOut" }}
       style={{ left: position.x, top: position.y, width: popupWidth }}
-      className="fixed z-50 flex max-h-[calc(100vh-32px)] flex-col overflow-hidden rounded-3xl border border-[#26272B] bg-[#111113]/98 text-white shadow-[0_25px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans max-w-[calc(100vw-32px)]"
+      className="fixed z-50 flex max-h-[calc(100vh-32px)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-slate-100/98 text-slate-900 shadow-[0_25px_80px_rgba(0,0,0,0.8)] backdrop-blur-2xl font-sans max-w-[calc(100vw-32px)]"
     >
       {/* Dark Glass Header bar */}
-      <div className="flex items-center justify-between border-b border-[#26272B] bg-[#17171A] px-5 py-4">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-200 px-5 py-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-black shadow-md">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
             <Sparkles className="h-4 w-4 text-black" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-white tracking-tight truncate">
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight truncate">
               {section.label}
             </h3>
-            <p className="text-xs font-medium text-neutral-400 truncate">
+            <p className="text-xs font-medium text-slate-400 truncate">
               Section Editor &bull; {section.variantName}
             </p>
           </div>
@@ -89,7 +89,7 @@ export function SectionEditPopup({
 
         <button
           onClick={onClose}
-          className="shrink-0 rounded-xl p-2 text-neutral-400 hover:bg-neutral-800 hover:text-white transition"
+          className="shrink-0 rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition"
           title="Close editor popup (Esc)"
         >
           <X className="h-4 w-4" />

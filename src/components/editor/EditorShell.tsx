@@ -226,14 +226,14 @@ export function EditorShell({
       <link rel="stylesheet" href={googleFontsHref(liveFonts)} />
 
       <div
-        className="flex h-screen w-screen overflow-hidden bg-[#09090B] text-white font-sans select-none"
+        className="flex h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans select-none"
         onClick={() => setActiveContextMenuPageId(null)}
       >
         {/* ─── 1. LEFT ICON RAIL (56px width, Monochrome Black & White) ─── */}
-        <aside className="z-40 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-[#1F1F23] bg-[#09090B] py-4">
+        <aside className="z-40 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-4">
           <div className="flex flex-col items-center gap-4">
             {/* Logo / Brand Indicator */}
-            <Link href="/" className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-black shadow-md hover:bg-neutral-200 transition-colors" title="XITE Dashboard">
+            <Link href="/" className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md hover:bg-slate-200 transition-colors" title="XITE Dashboard">
               <span className="font-extrabold text-sm">X</span>
             </Link>
 
@@ -246,8 +246,8 @@ export function EditorShell({
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                 activePanel === "pages"
-                  ? "bg-white text-black shadow-md font-bold"
-                  : "text-neutral-400 hover:bg-[#17171A] hover:text-white"
+                  ? "bg-slate-900 text-white shadow-md font-bold"
+                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
               )}
             >
               <Layers className="h-4 w-4" />
@@ -262,8 +262,8 @@ export function EditorShell({
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                 activePanel === "design"
-                  ? "bg-white text-black shadow-md font-bold"
-                  : "text-neutral-400 hover:bg-[#17171A] hover:text-white"
+                  ? "bg-slate-900 text-white shadow-md font-bold"
+                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
               )}
             >
               <Palette className="h-4 w-4" />
@@ -278,8 +278,8 @@ export function EditorShell({
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                 activePanel === "assets"
-                  ? "bg-white text-black shadow-md font-bold"
-                  : "text-neutral-400 hover:bg-[#17171A] hover:text-white"
+                  ? "bg-slate-900 text-white shadow-md font-bold"
+                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
               )}
             >
               <FolderOpen className="h-4 w-4" />
@@ -294,17 +294,17 @@ export function EditorShell({
                   type="submit"
                   title="Sign Out"
                   aria-label="Sign Out"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-neutral-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
               </form>
             )}
             <div className="relative flex flex-col items-center">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-800 border border-neutral-700 text-xs font-bold text-white shadow-inner">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 border border-slate-300 text-xs font-bold text-slate-900 shadow-inner">
                 {initialLetter}
               </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#09090B]" title="Active Session" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Active Session" />
             </div>
           </div>
         </aside>
@@ -319,22 +319,22 @@ export function EditorShell({
               animate={{ opacity: 1, x: 0, width: 240 }}
               exit={{ opacity: 0, x: -10, width: 0 }}
               transition={{ duration: 0.18, ease: "easeInOut" }}
-              className="z-30 flex w-[240px] shrink-0 flex-col justify-between border-r border-[#1F1F23] bg-[#0B0B0C] p-3.5 overflow-hidden"
+              className="z-30 flex w-[240px] shrink-0 flex-col justify-between border-r border-slate-200 bg-slate-50 p-3.5 overflow-hidden"
             >
               <div className="flex flex-col gap-3.5 overflow-hidden">
                 {/* Header: Website Name & Page Count Badge */}
-                <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3">
-                  <h2 className="text-xs font-bold text-white tracking-tight truncate max-w-[130px]">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                  <h2 className="text-xs font-bold text-slate-900 tracking-tight truncate max-w-[130px]">
                     {college.name || "Kaveri Institute"}
                   </h2>
                   <div className="flex items-center gap-1.5">
-                    <span className="shrink-0 rounded-full bg-[#17171A] border border-[#26272B] px-2 py-0.5 text-[10px] font-mono text-neutral-300">
+                    <span className="shrink-0 rounded-full bg-slate-200 border border-slate-200 px-2 py-0.5 text-[10px] font-mono text-slate-500">
                       {pages.length} Pages
                     </span>
                     <button
                       type="button"
                       onClick={() => setActivePanel(null)}
-                      className="rounded-md p-1 text-neutral-500 hover:bg-[#17171A] hover:text-white transition"
+                      className="rounded-md p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-900 transition"
                       title="Close panel"
                     >
                       <X className="h-3 w-3" />
@@ -344,13 +344,13 @@ export function EditorShell({
 
                 {/* Compact Search Bar */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-500" />
+                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search pages..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-[40px] w-full rounded-[12px] border border-[#26272B] bg-[#111113] pl-8 pr-2 text-xs font-medium text-white placeholder-neutral-500 outline-none transition focus:border-white focus:ring-1 focus:ring-white"
+                    className="h-[40px] w-full rounded-[12px] border border-slate-200 bg-slate-100 pl-8 pr-2 text-xs font-medium text-slate-900 placeholder-neutral-500 outline-none transition focus:border-white focus:ring-1 focus:ring-white"
                   />
                 </div>
 
@@ -372,8 +372,8 @@ export function EditorShell({
                           className={cn(
                             "relative flex h-[48px] w-full items-center justify-between rounded-[12px] px-3 text-xs font-medium transition-colors duration-150",
                             isActive
-                              ? "bg-white text-black font-bold shadow-md shadow-white/5"
-                              : "bg-[#111113] text-neutral-300 hover:bg-[#17171A] hover:text-white border border-[#26272B]/60"
+                              ? "bg-slate-900 text-white font-bold shadow-md shadow-slate-200"
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60"
                           )}
                         >
                           {isActive && (
@@ -381,7 +381,7 @@ export function EditorShell({
                           )}
 
                           <div className="flex items-center gap-2.5 truncate">
-                            <span className={isActive ? "text-black" : "text-neutral-400"}>
+                            <span className={isActive ? "text-black" : "text-slate-400"}>
                               {icon}
                             </span>
                             <span className="truncate capitalize">{page.title}</span>
@@ -396,7 +396,7 @@ export function EditorShell({
                             }}
                             className={cn(
                               "rounded-md p-1 opacity-0 group-hover:opacity-100 transition",
-                              isActive ? "text-neutral-700 hover:bg-neutral-200" : "text-neutral-500 hover:bg-neutral-800 hover:text-white"
+                              isActive ? "text-slate-400 hover:bg-slate-200" : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
                             )}
                           >
                             <MoreVertical className="h-3 w-3" />
@@ -406,7 +406,7 @@ export function EditorShell({
                         {/* Context Menu */}
                         {activeContextMenuPageId === page.id && (
                           <div
-                            className="absolute right-1 top-10 z-50 w-40 rounded-xl border border-[#26272B] bg-[#111113] p-1 shadow-xl text-xs text-white"
+                            className="absolute right-1 top-10 z-50 w-40 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-xl text-xs text-slate-900"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <button
@@ -416,7 +416,7 @@ export function EditorShell({
                                 if (newTitle) alert(`Renamed page to ${newTitle}`);
                                 setActiveContextMenuPageId(null);
                               }}
-                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-[#17171A] hover:text-white transition"
+                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-200 hover:text-slate-900 transition"
                             >
                               <Edit2 className="h-3 w-3" />
                               <span>Rename</span>
@@ -427,7 +427,7 @@ export function EditorShell({
                                 alert(`Duplicated ${page.title}`);
                                 setActiveContextMenuPageId(null);
                               }}
-                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-[#17171A] hover:text-white transition"
+                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-200 hover:text-slate-900 transition"
                             >
                               <Copy className="h-3 w-3" />
                               <span>Duplicate</span>
@@ -438,7 +438,7 @@ export function EditorShell({
                                 alert(`Toggled visibility for ${page.title}`);
                                 setActiveContextMenuPageId(null);
                               }}
-                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-[#17171A] hover:text-amber-400 transition"
+                              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-200 hover:text-amber-400 transition"
                             >
                               <EyeOff className="h-3 w-3" />
                               <span>Hide</span>
@@ -463,16 +463,16 @@ export function EditorShell({
               </div>
 
               {/* Add Page Button */}
-              <div className="pt-3 border-t border-[#1F1F23]">
+              <div className="pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => {
                     const name = prompt("Enter new page title:");
                     if (name) alert(`Adding page "${name}"`);
                   }}
-                  className="flex h-[40px] w-full items-center justify-center gap-1.5 rounded-[10px] border border-[#26272B] bg-[#111113] text-xs font-semibold text-neutral-200 transition-colors hover:border-white hover:bg-white hover:text-black group"
+                  className="flex h-[40px] w-full items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-600 transition-colors hover:border-white hover:bg-white hover:text-black group"
                 >
-                  <Plus className="h-3.5 w-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+                  <Plus className="h-3.5 w-3.5 text-slate-400 group-hover:text-black transition-colors" />
                   <span>Add Page</span>
                 </button>
               </div>
@@ -501,25 +501,25 @@ export function EditorShell({
         </AnimatePresence>
 
         {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
-        <main className="flex flex-1 flex-col overflow-hidden bg-[#09090B]">
+        <main className="flex flex-1 flex-col overflow-hidden bg-slate-50">
           {/* Top Toolbar */}
-          <header className="z-20 flex h-14 items-center justify-between border-b border-[#26272B] bg-[#0B0B0C] px-5">
+          <header className="z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5">
             <div className="flex items-center gap-2.5">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
-              <h1 className="text-xs font-semibold text-white capitalize tracking-wide">
+              <h1 className="text-xs font-semibold text-slate-900 capitalize tracking-wide">
                 {currentPage.title} Page
               </h1>
             </div>
 
             {/* Undo/Redo & Viewports */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 rounded-lg border border-[#26272B] bg-[#111113] p-1">
+              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
                 <button
                   type="button"
                   onClick={undo}
                   disabled={!canUndo}
                   title="Undo"
-                  className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-white disabled:opacity-30 transition"
+                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
@@ -528,21 +528,21 @@ export function EditorShell({
                   onClick={redo}
                   disabled={!canRedo}
                   title="Redo"
-                  className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-800 hover:text-white disabled:opacity-30 transition"
+                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
                 >
                   <Redo2 className="h-3.5 w-3.5" />
                 </button>
               </div>
 
-              <div className="flex items-center gap-1 rounded-lg border border-[#26272B] bg-[#111113] p-1">
+              <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
                 <button
                   type="button"
                   onClick={() => setDeviceMode("desktop")}
                   className={cn(
                     "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                     deviceMode === "desktop"
-                      ? "bg-white text-black font-bold shadow-xs"
-                      : "text-neutral-400 hover:text-white"
+                      ? "bg-slate-900 text-white font-bold shadow-xs"
+                      : "text-slate-400 hover:text-slate-900"
                   )}
                 >
                   <Monitor className="h-3.5 w-3.5" />
@@ -554,8 +554,8 @@ export function EditorShell({
                   className={cn(
                     "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                     deviceMode === "tablet"
-                      ? "bg-white text-black font-bold shadow-xs"
-                      : "text-neutral-400 hover:text-white"
+                      ? "bg-slate-900 text-white font-bold shadow-xs"
+                      : "text-slate-400 hover:text-slate-900"
                   )}
                 >
                   <Tablet className="h-3.5 w-3.5" />
@@ -567,8 +567,8 @@ export function EditorShell({
                   className={cn(
                     "flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition",
                     deviceMode === "mobile"
-                      ? "bg-white text-black font-bold shadow-xs"
-                      : "text-neutral-400 hover:text-white"
+                      ? "bg-slate-900 text-white font-bold shadow-xs"
+                      : "text-slate-400 hover:text-slate-900"
                   )}
                 >
                   <Smartphone className="h-3.5 w-3.5" />
@@ -580,8 +580,8 @@ export function EditorShell({
             {/* Preview, Publish & Sign Out */}
             <div className="flex items-center gap-3">
               {isPending && (
-                <span className="flex items-center gap-1.5 text-xs text-neutral-400 font-medium">
-                  <RefreshCw className="h-3 w-3 animate-spin text-white" />
+                <span className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                  <RefreshCw className="h-3 w-3 animate-spin text-slate-900" />
                   Saving…
                 </span>
               )}
@@ -589,9 +589,9 @@ export function EditorShell({
               <Link
                 href={`/site/${college.subdomain}`}
                 target="_blank"
-                className="flex items-center gap-1.5 rounded-lg border border-[#26272B] bg-[#111113] px-3 py-1.5 text-xs font-medium text-neutral-200 transition hover:bg-neutral-800 hover:text-white"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
               >
-                <Eye className="h-3.5 w-3.5 text-white" />
+                <Eye className="h-3.5 w-3.5 text-slate-900" />
                 <span>Preview</span>
               </Link>
 
@@ -619,16 +619,16 @@ export function EditorShell({
           )}
 
           {/* Canvas Live Preview Container (Applies Live Theme Styles & Google Fonts) */}
-          <div className="relative flex-1 overflow-y-auto bg-[#09090B] p-5 flex justify-center items-start">
+          <div className="relative flex-1 overflow-y-auto bg-slate-50 p-5 flex justify-center items-start">
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               style={buildThemeStyle(livePalette, liveFonts)}
               className={cn(
-                "w-full overflow-hidden rounded-2xl border border-[#26272B] bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
+                "w-full overflow-hidden rounded-2xl border border-slate-200 bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
                 deviceMode === "desktop" && "max-w-6xl",
                 deviceMode === "tablet" && "max-w-[768px]",
-                deviceMode === "mobile" && "max-w-[390px] rounded-[36px] border-4 border-neutral-700 shadow-2xl overflow-x-hidden"
+                deviceMode === "mobile" && "max-w-[390px] rounded-[36px] border-4 border-slate-300 shadow-2xl overflow-x-hidden"
               )}
             >
               {sections.length > 0 ? (
@@ -665,7 +665,7 @@ function EmptyPage({ pageTitle }: { pageTitle: string }) {
       <p className="text-sm font-semibold">
         {pageTitle} has no sections yet
       </p>
-      <p className="mt-1 text-xs text-neutral-500">
+      <p className="mt-1 text-xs text-slate-400">
         Add a section below to build this page.
       </p>
       <div className="mt-6 flex justify-center">

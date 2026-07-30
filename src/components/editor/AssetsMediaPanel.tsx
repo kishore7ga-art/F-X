@@ -176,24 +176,24 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1, x: 0, width: 280 }}
       exit={{ opacity: 0, x: -10, width: 0 }}
       transition={{ duration: 0.18, ease: "easeInOut" }}
-      className="z-30 flex w-[280px] shrink-0 flex-col justify-between border-r border-[#1F1F23] bg-[#0B0B0C] p-4 overflow-hidden select-none"
+      className="z-30 flex w-[280px] shrink-0 flex-col justify-between border-r border-slate-200 bg-white p-4 overflow-hidden select-none"
     >
       <div className="flex flex-col gap-3.5 overflow-hidden h-full">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3 shrink-0">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white text-black font-bold">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 text-white font-bold">
               <FolderOpen className="h-3.5 w-3.5" />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-white tracking-tight">Assets & Media</h2>
-              <p className="text-[10px] text-neutral-400 font-mono">Store images, videos, logos & buttons</p>
+              <h2 className="text-xs font-bold text-slate-900 tracking-tight">Assets & Media</h2>
+              <p className="text-[10px] text-slate-400 font-mono">Store images, videos, logos & buttons</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-neutral-500 hover:bg-[#17171A] hover:text-white transition"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-900 transition"
             title="Close Panel"
           >
             <X className="h-3.5 w-3.5" />
@@ -201,7 +201,7 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Category Selector Tabs */}
-        <div className="grid grid-cols-5 gap-1 rounded-xl bg-[#111113] p-1 border border-[#26272B] shrink-0">
+        <div className="grid grid-cols-5 gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200 shrink-0">
           <button
             type="button"
             onClick={() => setActiveCategory("images")}
@@ -209,8 +209,8 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
             className={cn(
               "flex items-center justify-center rounded-lg py-1.5 transition text-xs font-bold",
               activeCategory === "images"
-                ? "bg-white text-black shadow-xs"
-                : "text-neutral-400 hover:text-white"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-400 hover:text-slate-900"
             )}
           >
             <ImageIcon className="h-3.5 w-3.5" />
@@ -223,8 +223,8 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
             className={cn(
               "flex items-center justify-center rounded-lg py-1.5 transition text-xs font-bold",
               activeCategory === "videos"
-                ? "bg-white text-black shadow-xs"
-                : "text-neutral-400 hover:text-white"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-400 hover:text-slate-900"
             )}
           >
             <Video className="h-3.5 w-3.5" />
@@ -237,8 +237,8 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
             className={cn(
               "flex items-center justify-center rounded-lg py-1.5 transition text-xs font-bold",
               activeCategory === "logos"
-                ? "bg-white text-black shadow-xs"
-                : "text-neutral-400 hover:text-white"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-400 hover:text-slate-900"
             )}
           >
             <Shield className="h-3.5 w-3.5" />
@@ -251,8 +251,8 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
             className={cn(
               "flex items-center justify-center rounded-lg py-1.5 transition text-xs font-bold",
               activeCategory === "buttons"
-                ? "bg-white text-black shadow-xs"
-                : "text-neutral-400 hover:text-white"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-400 hover:text-slate-900"
             )}
           >
             <MousePointer className="h-3.5 w-3.5" />
@@ -265,8 +265,8 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
             className={cn(
               "flex items-center justify-center rounded-lg py-1.5 transition text-xs font-bold",
               activeCategory === "documents"
-                ? "bg-white text-black shadow-xs"
-                : "text-neutral-400 hover:text-white"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-400 hover:text-slate-900"
             )}
           >
             <FileText className="h-3.5 w-3.5" />
@@ -275,20 +275,20 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
 
         {/* Search Input */}
         <div className="relative shrink-0">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-500" />
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder={`Search ${activeCategory}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-[38px] w-full rounded-[10px] border border-[#26272B] bg-[#111113] pl-8 pr-2 text-xs font-medium text-white placeholder-neutral-500 outline-none transition focus:border-white"
+            className="h-[38px] w-full rounded-[10px] border border-slate-200 bg-slate-100 pl-8 pr-2 text-xs font-medium text-slate-900 placeholder-neutral-500 outline-none transition focus:border-white"
           />
         </div>
 
         {/* Assets Grid */}
         <div className="flex-1 overflow-y-auto pr-0.5 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               {activeCategory.toUpperCase()} ({filteredAssets.length})
             </span>
           </div>
@@ -298,7 +298,7 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
               {filteredAssets.map((asset) => (
                 <div
                   key={asset.id}
-                  className="group rounded-2xl border border-[#26272B] bg-[#111113] p-2.5 transition hover:border-neutral-500 hover:bg-[#17171A]"
+                  className="group rounded-2xl border border-slate-200 bg-slate-100 p-2.5 transition hover:border-neutral-500 hover:bg-slate-200"
                 >
                   {/* Thumbnail / Visual for Images, Logos, Videos */}
                   {(asset.category === "images" || asset.category === "logos" || asset.category === "videos") && (
@@ -310,12 +310,12 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="flex flex-col items-center gap-1 text-neutral-500">
+                        <div className="flex flex-col items-center gap-1 text-slate-400">
                           {asset.category === "videos" ? <Video className="h-6 w-6" /> : <ImageIcon className="h-6 w-6" />}
                         </div>
                       )}
                       {asset.category === "videos" && (
-                        <span className="absolute rounded-full bg-black/80 p-2 text-white shadow-lg">
+                        <span className="absolute rounded-full bg-black/80 p-2 text-slate-900 shadow-lg">
                           <Video className="h-4 w-4" />
                         </span>
                       )}
@@ -324,7 +324,7 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
 
                   {/* Button Preview Component */}
                   {asset.category === "buttons" && (
-                    <div className="mb-2 flex items-center justify-center rounded-xl bg-[#09090B] p-3 border border-[#26272B]">
+                    <div className="mb-2 flex items-center justify-center rounded-xl bg-slate-50 p-3 border border-slate-200">
                       <span className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-black shadow-md hover:bg-neutral-200 transition">
                         {asset.name}
                       </span>
@@ -333,11 +333,11 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
 
                   {/* Document Preview Component */}
                   {asset.category === "documents" && (
-                    <div className="mb-2 flex items-center gap-3 rounded-xl bg-[#09090B] p-3 border border-[#26272B]">
-                      <FileText className="h-6 w-6 text-white shrink-0" />
+                    <div className="mb-2 flex items-center gap-3 rounded-xl bg-slate-50 p-3 border border-slate-200">
+                      <FileText className="h-6 w-6 text-slate-900 shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{asset.name}</p>
-                        <p className="text-[10px] text-neutral-400 font-mono">{asset.size}</p>
+                        <p className="text-xs font-bold text-slate-900 truncate">{asset.name}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">{asset.size}</p>
                       </div>
                     </div>
                   )}
@@ -345,15 +345,15 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
                   {/* Asset Details & Copy Actions */}
                   <div className="flex items-center justify-between">
                     <div className="min-w-0 pr-2">
-                      <p className="text-xs font-bold text-white truncate">{asset.name}</p>
-                      <p className="text-[10px] text-neutral-400 font-mono truncate">{asset.size}</p>
+                      <p className="text-xs font-bold text-slate-900 truncate">{asset.name}</p>
+                      <p className="text-[10px] text-slate-400 font-mono truncate">{asset.size}</p>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => handleCopyUrl(asset.id, asset.url)}
                       title="Copy URL"
-                      className="flex h-7 shrink-0 items-center gap-1 rounded-lg border border-[#26272B] bg-[#09090B] px-2 text-[10px] font-bold text-neutral-300 transition hover:bg-white hover:text-black"
+                      className="flex h-7 shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 text-[10px] font-bold text-slate-500 transition hover:bg-white hover:text-black"
                     >
                       {copiedId === asset.id ? (
                         <>
@@ -372,7 +372,7 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
               ))}
             </div>
           ) : (
-            <div className="px-4 py-12 text-center text-neutral-500">
+            <div className="px-4 py-12 text-center text-slate-400">
               <FolderOpen className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
               <p className="text-xs font-medium">No {activeCategory} found</p>
               <p className="text-[10px] text-neutral-600 mt-1">Click below to upload or store one.</p>
@@ -381,13 +381,13 @@ export function AssetsMediaPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Add / Upload Asset Button */}
-        <div className="pt-3 border-t border-[#1F1F23] shrink-0">
+        <div className="pt-3 border-t border-slate-200 shrink-0">
           <button
             type="button"
             onClick={handleAddAsset}
-            className="flex h-[40px] w-full items-center justify-center gap-1.5 rounded-[10px] border border-[#26272B] bg-[#111113] text-xs font-semibold text-neutral-200 transition-colors hover:border-white hover:bg-white hover:text-black group"
+            className="flex h-[40px] w-full items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-600 transition-colors hover:border-white hover:bg-white hover:text-black group"
           >
-            <Plus className="h-3.5 w-3.5 text-neutral-400 group-hover:text-black transition-colors" />
+            <Plus className="h-3.5 w-3.5 text-slate-400 group-hover:text-black transition-colors" />
             <span>+ Add {activeCategory.slice(0, -1).toUpperCase()}</span>
           </button>
         </div>

@@ -47,7 +47,7 @@ export function PublishToggle({
         className={`rounded-md px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
           isPublished
             ? "border hover:bg-black/5"
-            : "bg-green-700 text-white hover:opacity-90"
+            : "bg-green-700 text-slate-900 hover:opacity-90"
         }`}
       >
         {isPending

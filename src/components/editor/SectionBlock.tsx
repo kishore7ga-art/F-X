@@ -153,18 +153,18 @@ export function SectionBlock({
       {/* SECTION HOVER OVERLAY BAR (ONLY ON HOVER / SELECTION) */}
       <div
         className={cn(
-          "absolute -top-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-xl bg-[#111113] border border-[#26272B] px-3 py-1.5 shadow-xl text-xs font-semibold text-white transition-all duration-200 backdrop-blur-md",
+          "absolute -top-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-xl bg-slate-100 border border-slate-200 px-3 py-1.5 shadow-xl text-xs font-semibold text-slate-900 transition-all duration-200 backdrop-blur-md",
           isSelected
             ? "opacity-100 scale-100"
             : "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto"
         )}
       >
-        <span className="text-neutral-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
-        <span className="font-bold text-white tracking-wide flex items-center gap-1.5">
+        <span className="text-slate-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
+        <span className="font-bold text-slate-900 tracking-wide flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
           {section.label}
         </span>
-        <span className="text-neutral-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
+        <span className="text-slate-400 font-mono text-[10px] hidden sm:inline">───────────────</span>
 
         <button
           type="button"
@@ -185,9 +185,9 @@ export function SectionBlock({
             e.stopPropagation();
             run(() => duplicateSection(args));
           }}
-          className="flex items-center gap-1 rounded-lg bg-[#17171A] border border-[#26272B] px-2.5 py-1 text-xs font-medium text-neutral-200 hover:bg-neutral-800 hover:text-white transition disabled:opacity-50"
+          className="flex items-center gap-1 rounded-lg bg-slate-200 border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition disabled:opacity-50"
         >
-          <Copy className="h-3 w-3 text-neutral-400" />
+          <Copy className="h-3 w-3 text-slate-400" />
           <span>Duplicate</span>
         </button>
 
@@ -201,7 +201,7 @@ export function SectionBlock({
             }
           }}
           title="Delete section"
-          className="flex items-center gap-1 rounded-lg bg-[#17171A] border border-[#26272B] px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20 hover:text-red-300 transition disabled:opacity-30"
+          className="flex items-center gap-1 rounded-lg bg-slate-200 border border-slate-200 px-2.5 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20 hover:text-red-300 transition disabled:opacity-30"
         >
           <Trash2 className="h-3 w-3" />
           <span>Delete</span>
@@ -216,7 +216,7 @@ export function SectionBlock({
               run(() => cycleSectionVariant(args));
             }}
             title="Swap Variant Design"
-            className="p-1 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-white transition"
+            className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition"
           >
             <RefreshCw className="h-3 w-3" />
           </button>
@@ -273,7 +273,7 @@ function IconButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex h-7 w-7 items-center justify-center rounded-lg border border-neutral-700 bg-black/90 text-neutral-200 shadow-md transition hover:bg-neutral-800 hover:text-white disabled:opacity-30",
+        "flex h-7 w-7 items-center justify-center rounded-lg border border-slate-300 bg-black/90 text-slate-600 shadow-md transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30",
         className
       )}
     >

@@ -41,9 +41,9 @@ export function AddSectionMenu({ afterOrder }: { afterOrder: number }) {
         title="Add Section"
         aria-label="Add Section"
         aria-expanded={open}
-        className="group flex items-center gap-2 rounded-full border border-[#26272B] bg-[#111113] px-4 py-2 text-xs font-bold text-white shadow-lg transition-all duration-200 hover:border-white hover:bg-white hover:text-black active:scale-95"
+        className="group flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-bold text-slate-900 shadow-lg transition-all duration-200 hover:border-white hover:bg-white hover:text-black active:scale-95"
       >
-        <Plus className="h-4 w-4 text-neutral-400 group-hover:text-black transition-colors" />
+        <Plus className="h-4 w-4 text-slate-400 group-hover:text-black transition-colors" />
         <span>+ Add Section</span>
       </button>
 
@@ -54,11 +54,11 @@ export function AddSectionMenu({ afterOrder }: { afterOrder: number }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-12 z-50 w-72 overflow-hidden rounded-2xl border border-[#26272B] bg-[#111113]/98 p-3 text-white shadow-2xl backdrop-blur-2xl"
+            className="absolute top-12 z-50 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100/98 p-3 text-slate-900 shadow-2xl backdrop-blur-2xl"
           >
-            <div className="flex items-center gap-2 border-b border-[#26272B] pb-2.5 mb-2 px-1">
-              <LayoutGrid className="h-4 w-4 text-white" />
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-2.5 mb-2 px-1">
+              <LayoutGrid className="h-4 w-4 text-slate-900" />
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Select Section
               </p>
             </div>
@@ -78,10 +78,10 @@ export function AddSectionMenu({ afterOrder }: { afterOrder: number }) {
                       }),
                     );
                   }}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-neutral-200 transition hover:bg-[#17171A] hover:text-white hover:border hover:border-neutral-700 text-left"
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900 hover:border hover:border-slate-300 text-left"
                 >
                   <span>{section.label}</span>
-                  <span className="text-[10px] text-neutral-400 font-mono">+ Insert</span>
+                  <span className="text-[10px] text-slate-400 font-mono">+ Insert</span>
                 </button>
               ))}
             </div>

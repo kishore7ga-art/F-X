@@ -189,24 +189,24 @@ export function DesignThemePanel({
       animate={{ opacity: 1, x: 0, width: 280 }}
       exit={{ opacity: 0, x: -10, width: 0 }}
       transition={{ duration: 0.18, ease: "easeInOut" }}
-      className="z-30 flex w-[280px] shrink-0 flex-col justify-between border-r border-[#1F1F23] bg-[#0B0B0C] p-4 overflow-hidden select-none"
+      className="z-30 flex w-[280px] shrink-0 flex-col justify-between border-r border-slate-200 bg-white p-4 overflow-hidden select-none"
     >
       <div className="flex flex-col gap-4 overflow-hidden h-full">
         {/* Header bar */}
-        <div className="flex items-center justify-between border-b border-[#1F1F23] pb-3 shrink-0">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white text-black font-bold">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 text-white font-bold">
               <Sparkles className="h-3.5 w-3.5" />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-white tracking-tight">Theme & Styling</h2>
-              <p className="text-[10px] text-neutral-400 font-mono">Live appearance editor</p>
+              <h2 className="text-xs font-bold text-slate-900 tracking-tight">Theme & Styling</h2>
+              <p className="text-[10px] text-slate-400 font-mono">Live appearance editor</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-neutral-400 hover:bg-[#17171A] hover:text-white transition"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-900 transition"
             title="Close Panel"
           >
             <X className="h-3.5 w-3.5" />
@@ -214,15 +214,15 @@ export function DesignThemePanel({
         </div>
 
         {/* Segmented Control Tabs */}
-        <div className="flex items-center gap-1 rounded-xl bg-[#111113] p-1 border border-[#26272B] shrink-0">
+        <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200 shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab("colors")}
             className={cn(
               "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition",
               activeTab === "colors"
-                ? "bg-white text-black shadow-xs"
-                : "text-neutral-400 hover:text-white"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-400 hover:text-slate-900"
             )}
           >
             <Palette className="h-3.5 w-3.5" />
@@ -234,8 +234,8 @@ export function DesignThemePanel({
             className={cn(
               "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition",
               activeTab === "fonts"
-                ? "bg-white text-black shadow-xs"
-                : "text-neutral-400 hover:text-white"
+                ? "bg-slate-900 text-white shadow-xs"
+                : "text-slate-400 hover:text-slate-900"
             )}
           >
             <Type className="h-3.5 w-3.5" />
@@ -246,7 +246,7 @@ export function DesignThemePanel({
         {/* Tab 1: Color Palettes List */}
         {activeTab === "colors" && (
           <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 pt-1">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Curated Color Schemes ({PALETTE_PRESETS.length})
             </p>
             {PALETTE_PRESETS.map((preset) => {
@@ -262,25 +262,25 @@ export function DesignThemePanel({
                   className={cn(
                     "group w-full rounded-2xl border p-3 text-left transition-all duration-200 relative overflow-hidden",
                     isSelected
-                      ? "bg-[#17171A] border-white ring-1 ring-white/20 shadow-lg"
-                      : "bg-[#111113] border-[#26272B] hover:border-neutral-500 hover:bg-[#17171A]"
+                      ? "bg-slate-200 border-white ring-1 ring-white/20 shadow-lg"
+                      : "bg-slate-100 border-slate-200 hover:border-neutral-500 hover:bg-slate-200"
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-white group-hover:text-white transition-colors">
+                    <span className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors">
                       {preset.name}
                     </span>
                     {isSelected ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-black shadow-xs">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white shadow-xs">
                         <Check className="h-3 w-3 stroke-[3]" />
                       </span>
                     ) : (
-                      <span className="text-[10px] font-mono text-neutral-500">{preset.category}</span>
+                      <span className="text-[10px] font-mono text-slate-400">{preset.category}</span>
                     )}
                   </div>
 
                   {/* 5-Color Swatch Preview Bar */}
-                  <div className="flex h-6 w-full overflow-hidden rounded-lg border border-neutral-700/60 shadow-xs">
+                  <div className="flex h-6 w-full overflow-hidden rounded-lg border border-slate-300/60 shadow-xs">
                     <div
                       className="flex-1 transition-transform group-hover:scale-105"
                       style={{ backgroundColor: preset.colors.primary }}
@@ -316,7 +316,7 @@ export function DesignThemePanel({
         {/* Tab 2: Font Packs List */}
         {activeTab === "fonts" && (
           <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 pt-1">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Curated Font Pairings ({FONT_PRESETS.length})
             </p>
             {FONT_PRESETS.map((preset) => {
@@ -332,37 +332,37 @@ export function DesignThemePanel({
                   className={cn(
                     "group w-full rounded-2xl border p-3 text-left transition-all duration-200 relative overflow-hidden",
                     isSelected
-                      ? "bg-[#17171A] border-white ring-1 ring-white/20 shadow-lg"
-                      : "bg-[#111113] border-[#26272B] hover:border-neutral-500 hover:bg-[#17171A]"
+                      ? "bg-slate-200 border-white ring-1 ring-white/20 shadow-lg"
+                      : "bg-slate-100 border-slate-200 hover:border-neutral-500 hover:bg-slate-200"
                   )}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-white group-hover:text-white">
+                    <span className="text-xs font-bold text-slate-900 group-hover:text-slate-900">
                       {preset.name}
                     </span>
                     {isSelected ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-black shadow-xs">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white shadow-xs">
                         <Check className="h-3 w-3 stroke-[3]" />
                       </span>
                     ) : (
-                      <span className="text-[10px] font-mono text-neutral-500">{preset.category}</span>
+                      <span className="text-[10px] font-mono text-slate-400">{preset.category}</span>
                     )}
                   </div>
 
-                  <p className="text-[10px] text-neutral-400 font-mono mb-2">
+                  <p className="text-[10px] text-slate-400 font-mono mb-2">
                     {preset.fonts.headingFont} + {preset.fonts.bodyFont}
                   </p>
 
                   {/* Typography Live Preview Card */}
-                  <div className="rounded-xl bg-[#09090B] p-2.5 border border-[#26272B] space-y-1">
+                  <div className="rounded-xl bg-slate-50 p-2.5 border border-slate-200 space-y-1">
                     <p
-                      className="text-xs font-extrabold text-white leading-tight truncate"
+                      className="text-xs font-extrabold text-slate-900 leading-tight truncate"
                       style={{ fontFamily: `'${preset.fonts.headingFont}', Georgia, serif` }}
                     >
                       {preset.sampleHeading}
                     </p>
                     <p
-                      className="text-[10px] text-neutral-300 leading-snug line-clamp-2"
+                      className="text-[10px] text-slate-500 leading-snug line-clamp-2"
                       style={{ fontFamily: `'${preset.fonts.bodyFont}', sans-serif` }}
                     >
                       {preset.sampleBody}
