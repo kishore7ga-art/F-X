@@ -80,7 +80,7 @@ export function SignUpForm() {
             {/* Colorful Human Avatar Photo */}
             <img
               src="/user_avatar.jpg"
-              alt="Harry Potter Profile Picture"
+              alt="Rohan Sharma Profile Picture"
               className="mb-8 h-16 w-16 rounded-full object-cover shadow-md border-2 border-white ring-4 ring-indigo-500/20"
             />
 
@@ -91,8 +91,8 @@ export function SignUpForm() {
 
             {/* Author Name & Role */}
             <div className="mt-8">
-              <p className="text-base font-extrabold text-slate-900">Harry Potter</p>
-              <p className="text-xs sm:text-sm font-medium text-slate-500">CEO / Filllo Design Agency</p>
+              <p className="text-base font-extrabold text-slate-900">Rohan Sharma</p>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">Director & CEO / EduTech Solutions</p>
             </div>
 
             {/* Pagination Dash Dots Indicator */}
@@ -157,7 +157,7 @@ export function SignUpForm() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Harry Potter"
+                    placeholder="Rohan Sharma"
                     className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
