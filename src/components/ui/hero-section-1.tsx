@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { AnimatedGroup } from '@/components/ui/animated-group'
+import { HeroStage } from '@/components/three/HeroStage'
 import { cn } from '@/lib/utils'
 
 const transitionVariants = {
@@ -147,13 +148,13 @@ export function HeroSection() {
                                     className="bg-gradient-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
                                 />
                                 <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-2 shadow-2xl shadow-blue-900/20 ring-1 border-neutral-800">
-                                    <img
-                                        className="w-full relative rounded-xl shadow-2xl border border-neutral-800 object-cover"
-                                        src="/xite-editor-hero.jpg"
-                                        alt="XITE Visual Website Builder Dashboard"
-                                        width="2700"
-                                        height="1440"
-                                    />
+                                    {/*
+                                        Was an <img src="/xite-editor-hero.jpg">. The frame around it is
+                                        kept on purpose — it is what makes this read as a product mockup
+                                        rather than a floating object — and HeroStage holds the same
+                                        2700x1440 ratio so nothing below it moved.
+                                    */}
+                                    <HeroStage />
                                 </div>
                             </div>
                         </AnimatedGroup>
