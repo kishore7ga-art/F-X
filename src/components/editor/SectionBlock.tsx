@@ -97,18 +97,17 @@ export function SectionBlock({
       {/* OVERLAY INTERACTION TARGET */}
       <button
         type="button"
-        onClick={() => {
-          selectSection(section.id);
+        onClick={(event) => {
+          openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
         }}
-        onDoubleClick={() => {
-          selectSection(section.id);
+        onDoubleClick={(event) => {
+          openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
         }}
         onContextMenu={(event) => {
           event.preventDefault();
-          selectSection(section.id);
-          setContextMenuPos({ x: event.clientX, y: event.clientY });
+          openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
         }}
-        aria-label={`Select ${section.label}`}
+        aria-label={`Edit ${section.label} content`}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer"
       />
 
@@ -145,66 +144,6 @@ export function SectionBlock({
         </IconButton>
       </div>
 
-      {/* RIGHT CLICK CONTEXT MENU */}
-      {contextMenuPos && (
-        <div
-          style={{ left: contextMenuPos.x, top: contextMenuPos.y }}
-          className="fixed z-50 min-w-[160px] rounded-xl border border-neutral-800 bg-neutral-950 p-1.5 font-sans text-xs text-neutral-200 shadow-2xl backdrop-blur-xl"
-        >
-          <button
-            onClick={() => {
-              openSectionPopup(section.id, { x: contextMenuPos.x, y: contextMenuPos.y });
-              setContextMenuPos(null);
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white"
-          >
-            <Edit3 className="h-3.5 w-3.5 text-blue-400" />
-            Edit Section
-          </button>
-          <button
-            disabled={isFirst || isPending}
-            onClick={() => run(() => moveSection({ ...args, direction: "up" }))}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white disabled:opacity-30"
-          >
-            <ArrowUp className="h-3.5 w-3.5" />
-            Move Up
-          </button>
-          <button
-            disabled={isLast || isPending}
-            onClick={() => run(() => moveSection({ ...args, direction: "down" }))}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white disabled:opacity-30"
-          >
-            <ArrowDown className="h-3.5 w-3.5" />
-            Move Down
-          </button>
-          <button
-            disabled={!canRefresh || isPending}
-            onClick={() => run(() => cycleSectionVariant(args))}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white disabled:opacity-30"
-          >
-            <RefreshCw className="h-3.5 w-3.5 text-purple-400" />
-            Swap Design
-          </button>
-          <button
-            disabled={isPending}
-            onClick={() => run(() => toggleSectionVisibility(args))}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left hover:bg-neutral-800 hover:text-white"
-          >
-            {section.isVisible ? (
-              <>
-                <EyeOff className="h-3.5 w-3.5 text-amber-400" />
-                Hide Section
-              </>
-            ) : (
-              <>
-                <Eye className="h-3.5 w-3.5 text-emerald-400" />
-                Show Section
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
       {!section.isVisible && (
         <span className="absolute left-3 top-3 z-20 rounded-md bg-amber-500/90 px-2.5 py-1 text-[10px] font-bold text-black shadow-md uppercase tracking-wider">
           Hidden Section
@@ -216,29 +155,25 @@ export function SectionBlock({
 
 function IconButton({
   label,
-  disabled,
-  onClick,
-  className,
   children,
+  onClick,
+  disabled,
+  className,
 }: {
   label: string;
-  disabled?: boolean;
-  onClick: (e: React.MouseEvent) => void;
-  className?: string;
   children: ReactNode;
+  onClick?: (e: React.MouseEvent) => void;
+  disabled?: boolean;
+  className?: string;
 }) {
   return (
     <button
       type="button"
-      disabled={disabled}
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick(event);
-      }}
       title={label}
-      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
       className={cn(
-        "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg bg-black/90 text-neutral-300 shadow-lg border border-neutral-800 backdrop-blur-md transition hover:bg-neutral-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-30",
+        "flex h-7 w-7 items-center justify-center rounded-lg border border-neutral-700 bg-black/90 text-neutral-200 shadow-md transition hover:bg-neutral-800 hover:text-white disabled:opacity-30",
         className
       )}
     >
