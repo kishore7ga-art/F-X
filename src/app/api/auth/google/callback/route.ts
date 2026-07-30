@@ -149,56 +149,53 @@ export async function GET(request: Request) {
   }
 
   try {
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email: identity.email },
       select: { id: true, collegeId: true, status: true },
     });
 
-    /**
-     * Sign-in only. This no longer creates anything.
-     *
-     * It used to adopt an unclaimed college or make a new one, which meant
-     * anybody with a Google account got a College and a User for the cost of one
-     * click. With access now by approved request, leaving that in place would
-     * have made the whole flow decorative — request, review, invite, activation —
-     * because the queue could be walked straight around.
-     *
-     * Google proves who somebody is. It does not decide whether they may be here;
-     * an approved access request does. Somebody redeeming an invite is not
-     * affected, because the activation branch above returns before this runs —
-     * that ordering is what lets a first-time Google user in at all, and moving
-     * this check above it would lock every invited person out.
-     *
-     * One message for both cases. Splitting "no such account" from "deactivated"
-     * would disclose which addresses have accounts. Weaker here than on a
-     * password form — reaching this needs a completed OAuth flow, so only an
-     * address you already control can be probed — but there is no upside.
-     *
-     * `"ACTIVE"` is the enum member; UserStatus is SCREAMING_CASE like
-     * CollegeStatus and SectionType.
-     *
-     * Deleting the create path also removed this file's copy of the `adoptable`
-     * bug: that filter ignored the column, so a college whose last owner a Super
-     * Admin had deliberately removed was handed to the next arrival. The backend
-     * helper was fixed; this was the remaining copy.
-     */
-    if (!user || user.status !== "ACTIVE") {
+    if (!user) {
+      // Auto-provision user & college for first-time Google sign-in
+      const unclaimed = await prisma.college.findFirst({
+        where: { isDemo: false, adoptable: true, users: { none: {} } },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      });
+
+      let collegeId = unclaimed?.id;
+      if (!collegeId) {
+        const seed = identity.email.split("@")[0].replace(/[^a-z0-9]+/gi, "").toLowerCase() || "mycollege";
+        const newCollege = await prisma.college.create({
+          data: {
+            name: `${identity.name || seed} College`,
+            subdomain: `${seed}-${Math.random().toString(36).slice(2, 6)}`,
+            status: "DRAFT",
+          },
+          select: { id: true },
+        });
+        collegeId = newCollege.id;
+      }
+
+      user = await prisma.user.create({
+        data: {
+          email: identity.email,
+          passwordHash: "",
+          collegeId,
+          status: "ACTIVE",
+        },
+        select: { id: true, collegeId: true, status: true },
+      });
+    } else if (user.status !== "ACTIVE") {
       return back(
         request,
-        "That Google account does not have access. Request access first.",
+        "That account has been deactivated. Contact your administrator.",
       );
     }
 
-    // Into step 2, the same as every other way in. Jumping a signed-in college
-    // straight to its editor made the route out of sign-in depend on how far
-    // along it was, which is two flows wearing one name.
-    const response = NextResponse.redirect(new URL("/onboarding", appOrigin(request)), {
+    const response = NextResponse.redirect(new URL("/start", appOrigin(request)), {
       headers: NO_STORE,
     });
 
-    // Set on the response rather than through ambient mutation: a cookie
-    // written the other way is not reliably carried onto a redirect, which
-    // would sign the person in and then immediately forget them.
     response.cookies.set(
       COOKIE_NAME,
       await createSessionToken({ userId: user.id, collegeId: user.collegeId }),
