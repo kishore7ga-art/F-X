@@ -51,8 +51,8 @@ export function CredentialsForm({
       {/* Full Screen 50% / 50% Flipped Split Layout */}
       <div className="w-full min-h-screen flex flex-col lg:flex-row">
         
-        {/* ─── LEFT 50% PANEL: MINIMAL FULL-HEIGHT SHOWCASE (LIGHT GREY CANVAS) ─── */}
-        <div className="hidden lg:flex lg:w-1/2 min-h-screen bg-[#F3F4F6] p-12 lg:p-20 flex-col justify-between relative overflow-hidden">
+        {/* ─── LEFT 40% PANEL: MINIMAL FULL-HEIGHT SHOWCASE (LIGHT GREY CANVAS) ─── */}
+        <div className="hidden lg:flex lg:w-[40%] min-h-screen bg-[#F3F4F6] p-10 lg:p-14 flex-col justify-between relative overflow-hidden">
           {/* Geometric Background Contour Lines */}
           <div className="absolute inset-0 pointer-events-none opacity-40">
             <svg className="w-full h-full" viewBox="0 0 600 600" fill="none">
@@ -94,8 +94,8 @@ export function CredentialsForm({
           <div />
         </div>
 
-        {/* ─── RIGHT 50% PANEL: SIGN IN FORM (HIGH CONTRAST & PERFECT ALIGNMENT) ─── */}
-        <div className="w-full lg:w-1/2 min-h-screen bg-white p-8 sm:p-12 lg:p-16 flex flex-col justify-between z-10 overflow-y-auto">
+        {/* ─── RIGHT 60% PANEL: SIGN IN FORM (HIGH CONTRAST & PERFECT ALIGNMENT) ─── */}
+        <div className="w-full lg:w-[60%] min-h-screen bg-white p-8 sm:p-12 lg:p-16 flex flex-col justify-between z-10 overflow-y-auto">
           {/* Header Bar */}
           <div className="flex h-11 items-center justify-between gap-4">
             {/* Top-Left Brand Logo */}
