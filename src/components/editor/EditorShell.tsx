@@ -622,8 +622,7 @@ export function EditorShell({
             {/* 1. SECTION NAME & OPTIONS AS ICONS WITH TOOLTIPS (Only when section selected) */}
             {selectedSection && (
               <>
-                <div className="flex items-center gap-2 pl-0.5 pr-1">
-                  <span className="flex h-2.5 w-2.5 rounded-full bg-blue-600 animate-pulse" />
+                <div className="flex items-center pl-0.5 pr-1">
                   <span className="text-xs font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
                     {selectedSection.label}
                   </span>
