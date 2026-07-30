@@ -214,9 +214,9 @@ export function CredentialsForm({
                   />
                   <span>Keep me logged in</span>
                 </label>
-                <a href="#" className="font-semibold text-slate-700 hover:text-slate-900 underline">
+                <Link href="/forgot-password" className="font-semibold text-slate-700 hover:text-slate-900 underline">
                   Forgot password?
-                </a>
+                </Link>
               </div>
 
               {error && (
