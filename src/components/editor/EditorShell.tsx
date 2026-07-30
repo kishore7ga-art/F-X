@@ -33,6 +33,7 @@ import {
   EyeOff,
   Trash2,
   RefreshCw,
+  ArrowLeftRight,
   Palette,
   FolderOpen,
   Settings,
@@ -43,6 +44,10 @@ import {
 import { logout } from "@/app/actions/auth";
 
 import { AddSectionMenu } from "@/components/editor/AddSectionMenu";
+
+const DESKTOP_RESOLUTIONS = [1200, 1440, 1920] as const;
+const TABLET_RESOLUTIONS = [768, 834, 1024] as const;
+const MOBILE_RESOLUTIONS = [390, 414, 360] as const;
 import { AssetsMediaPanel } from "@/components/editor/AssetsMediaPanel";
 import { DesignThemePanel } from "@/components/editor/DesignThemePanel";
 import { EditorContextProvider, type SectionStyleOverride } from "@/components/editor/EditorContext";
@@ -98,6 +103,13 @@ export function EditorShell({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeContextMenuPageId, setActiveContextMenuPageId] = useState<string | null>(null);
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [desktopResIdx, setDesktopResIdx] = useState(0);
+  const [tabletResIdx, setTabletResIdx] = useState(0);
+  const [mobileResIdx, setMobileResIdx] = useState(0);
+
+  const currentDesktopRes = DESKTOP_RESOLUTIONS[desktopResIdx];
+  const currentTabletRes = TABLET_RESOLUTIONS[tabletResIdx];
+  const currentMobileRes = MOBILE_RESOLUTIONS[mobileResIdx];
   const [activePanel, setActivePanel] = useState<"pages" | "design" | "assets" | null>(null);
 
   // Live Palette and Fonts for instant real-time canvas updates
@@ -581,12 +593,20 @@ export function EditorShell({
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              style={buildThemeStyle(livePalette, liveFonts)}
+              style={{
+                ...buildThemeStyle(livePalette, liveFonts),
+                maxWidth:
+                  deviceMode === "desktop"
+                    ? `${currentDesktopRes}px`
+                    : deviceMode === "tablet"
+                    ? `${currentTabletRes}px`
+                    : `${currentMobileRes}px`,
+              }}
               className={cn(
-                "w-full overflow-hidden rounded-2xl border border-slate-200 bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
-                deviceMode === "desktop" && "max-w-6xl",
-                deviceMode === "tablet" && "max-w-[768px]",
-                deviceMode === "mobile" && "max-w-[390px] rounded-[36px] border-4 border-slate-300 shadow-2xl overflow-x-hidden"
+                "w-full overflow-hidden border border-slate-200 bg-[var(--site-bg)] text-[var(--site-dark)] font-[family-name:var(--site-body-font)] shadow-2xl transition-all duration-300 min-h-[calc(100vh-7rem)]",
+                deviceMode === "mobile"
+                  ? "rounded-[36px] border-4 border-slate-300 shadow-2xl overflow-x-hidden"
+                  : "rounded-2xl"
               )}
             >
               {sections.length > 0 ? (
@@ -607,25 +627,6 @@ export function EditorShell({
                   <span className="text-xs font-extrabold text-slate-900 tracking-tight whitespace-nowrap">
                     {selectedSection.label}
                   </span>
-                </div>
-
-                {/* Edit Icon Button */}
-                <div className="group relative flex items-center">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openSectionPopup(selectedSection.id, { x: e.clientX, y: e.clientY });
-                    }}
-                    aria-label="Edit Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
-                  >
-                    <Edit2 className="h-4 w-4" strokeWidth={2.2} />
-                  </button>
-                  <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
-                    Edit Content &amp; Style
-                    <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-                  </div>
                 </div>
 
                 {/* Duplicate Icon Button */}
@@ -661,7 +662,7 @@ export function EditorShell({
                       aria-label="Swap Design Variant"
                       className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
                     >
-                      <RefreshCw className="h-4 w-4" strokeWidth={2.2} />
+                      <ArrowLeftRight className="h-4 w-4" strokeWidth={2.2} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Swap Design Layout
@@ -717,8 +718,14 @@ export function EditorShell({
               <div className="group relative flex items-center">
                 <button
                   type="button"
-                  onClick={() => setDeviceMode("desktop")}
-                  aria-label="Desktop View (1200px)"
+                  onClick={() => {
+                    if (deviceMode !== "desktop") {
+                      setDeviceMode("desktop");
+                    } else {
+                      setDesktopResIdx((prev) => (prev + 1) % DESKTOP_RESOLUTIONS.length);
+                    }
+                  }}
+                  aria-label={`Desktop View (${currentDesktopRes}px)`}
                   className={cn(
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "desktop"
@@ -727,10 +734,10 @@ export function EditorShell({
                   )}
                 >
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
-                  {deviceMode === "desktop" && <span>1200px</span>}
+                  {deviceMode === "desktop" && <span>{currentDesktopRes}px</span>}
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
-                  Desktop View (1200px)
+                  Desktop View ({currentDesktopRes}px - click to change)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
               </div>
@@ -739,8 +746,14 @@ export function EditorShell({
               <div className="group relative flex items-center">
                 <button
                   type="button"
-                  onClick={() => setDeviceMode("tablet")}
-                  aria-label="Tablet View (768px)"
+                  onClick={() => {
+                    if (deviceMode !== "tablet") {
+                      setDeviceMode("tablet");
+                    } else {
+                      setTabletResIdx((prev) => (prev + 1) % TABLET_RESOLUTIONS.length);
+                    }
+                  }}
+                  aria-label={`Tablet View (${currentTabletRes}px)`}
                   className={cn(
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "tablet"
@@ -749,10 +762,10 @@ export function EditorShell({
                   )}
                 >
                   <Tablet className="h-4 w-4" strokeWidth={2.2} />
-                  {deviceMode === "tablet" && <span>768px</span>}
+                  {deviceMode === "tablet" && <span>{currentTabletRes}px</span>}
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
-                  Tablet View (768px)
+                  Tablet View ({currentTabletRes}px - click to change)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
               </div>
@@ -761,8 +774,14 @@ export function EditorShell({
               <div className="group relative flex items-center">
                 <button
                   type="button"
-                  onClick={() => setDeviceMode("mobile")}
-                  aria-label="Mobile View (390px)"
+                  onClick={() => {
+                    if (deviceMode !== "mobile") {
+                      setDeviceMode("mobile");
+                    } else {
+                      setMobileResIdx((prev) => (prev + 1) % MOBILE_RESOLUTIONS.length);
+                    }
+                  }}
+                  aria-label={`Mobile View (${currentMobileRes}px)`}
                   className={cn(
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "mobile"
@@ -771,10 +790,10 @@ export function EditorShell({
                   )}
                 >
                   <Smartphone className="h-4 w-4" strokeWidth={2.2} />
-                  {deviceMode === "mobile" && <span>390px</span>}
+                  {deviceMode === "mobile" && <span>{currentMobileRes}px</span>}
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
-                  Mobile View (390px)
+                  Mobile View ({currentMobileRes}px - click to change)
                   <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                 </div>
               </div>
