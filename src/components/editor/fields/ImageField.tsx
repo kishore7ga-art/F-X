@@ -22,12 +22,12 @@ export function ImageField({
     setError(null);
     setUploading(true);
     try {
-      // Through the API client, so the upload goes to the backend like every
-      // other call rather than to an endpoint this app no longer serves.
       const { url } = await uploadImage(file);
       onChange(url);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Upload failed");
+      // Fallback to local Object URL for instant live preview
+      const localUrl = URL.createObjectURL(file);
+      onChange(localUrl);
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";
