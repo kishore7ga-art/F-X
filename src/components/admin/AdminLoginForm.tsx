@@ -8,6 +8,16 @@ import { useState } from "react";
  * Posts straight to the backend from the browser, like college sign-in does, so
  * it is one inspectable request rather than an RSC payload.
  *
+ * Password only, no email. There is one Super Admin and no way to register, so
+ * the address was a second thing to remember that identified an account the
+ * panel already knows how to find from the password. It remains the account's
+ * identity in the database, the TOTP label and the audit log — it is simply not
+ * a field anybody types. `adminLogin` still accepts one from other callers.
+ *
+ * Worth being clear-eyed about: the password is now the entire credential, so
+ * it is the only thing between a guess and the platform. The endpoint is rate
+ * limited, and `admin.mjs enrol` adds a second factor.
+ *
  * The code field appears only once the backend says it is needed. An account
  * that has not enrolled a second factor should not be shown a box it cannot
  * fill, and one that has should not be told "wrong password" when the password
@@ -26,9 +36,8 @@ export function AdminLoginForm({
    */
   autofill,
 }: {
-  autofill?: { email: string; password: string } | null;
+  autofill?: { password: string } | null;
 }) {
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
   const [needsToken, setNeedsToken] = useState(false);
@@ -48,7 +57,6 @@ export function AdminLoginForm({
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          email,
           password,
           ...(token ? { token } : {}),
         }),
@@ -83,21 +91,6 @@ export function AdminLoginForm({
     <form onSubmit={submit} className="space-y-5">
       <label className="block">
         <span className="text-xs font-semibold uppercase tracking-[0.18em] text-chalk-dim/60">
-          Email
-        </span>
-        <input
-          name="email"
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          autoComplete="username"
-          required
-          className="mt-2 w-full rounded-lg border border-night-line bg-night-raised px-4 py-3 text-sm text-chalk outline-none transition focus:border-accent"
-        />
-      </label>
-
-      <label className="block">
-        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-chalk-dim/60">
           Password
         </span>
         <input
@@ -106,6 +99,7 @@ export function AdminLoginForm({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
+          autoFocus
           required
           className="mt-2 w-full rounded-lg border border-night-line bg-night-raised px-4 py-3 text-sm text-chalk outline-none transition focus:border-accent"
         />
@@ -153,13 +147,12 @@ export function AdminLoginForm({
           <button
             type="button"
             onClick={() => {
-              setEmail(autofill.email);
               setPassword(autofill.password);
               setError(null);
             }}
             className="w-full rounded-lg border border-night-line px-4 py-2.5 text-xs font-semibold text-chalk-dim transition-colors hover:border-chalk-dim/40 hover:text-chalk"
           >
-            Fill bootstrap credentials
+            Fill bootstrap password
           </button>
           <p className="mt-3 text-[11px] leading-relaxed text-chalk-dim/50">
             Development only — this button is not rendered in production,

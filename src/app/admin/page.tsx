@@ -82,12 +82,8 @@ export default async function AdminPage() {
             <AdminLoginForm
               autofill={
                 process.env.NODE_ENV !== "production" &&
-                process.env.ADMIN_BOOTSTRAP_EMAIL &&
                 process.env.ADMIN_BOOTSTRAP_PASSWORD
-                  ? {
-                      email: process.env.ADMIN_BOOTSTRAP_EMAIL,
-                      password: process.env.ADMIN_BOOTSTRAP_PASSWORD,
-                    }
+                  ? { password: process.env.ADMIN_BOOTSTRAP_PASSWORD }
                   : null
               }
             />
