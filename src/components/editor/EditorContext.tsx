@@ -24,8 +24,10 @@ export type EditorContextValue = {
   liveContentMap: Record<string, unknown>;
   /** Live instant style overrides per section */
   liveStylesMap: Record<string, SectionStyleOverride>;
-  /** Opens the edit panel for a section. */
-  selectSection: (id: string | null, at?: { x: number; y: number }) => void;
+  /** Selects a section without opening popup. */
+  selectSection: (id: string | null) => void;
+  /** Opens the floating edit popup for a section (triggered on double click). */
+  openSectionPopup: (id: string, at: { x: number; y: number }) => void;
   /** Instant real-time live page preview update callback */
   updateSectionContent: (id: string, content: Record<string, unknown>) => void;
   /** Instant style override callback */

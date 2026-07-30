@@ -80,20 +80,14 @@ export function EditorShell({
   const [selectedSectionAnchor, setSelectedSectionAnchor] = useState<{ x: number; y: number } | null>(null);
   const [activeDrawer, setActiveDrawer] = useState<"pages" | "settings" | null>(null);
 
-  const selectSection = (id: string | null, at?: { x: number; y: number }) => {
+  const selectSection = (id: string | null) => {
     setSelectedSectionId(id);
-    if (id === null) {
-      setSelectedSectionAnchor(null);
-      return;
-    }
-    if (at) {
-      setSelectedSectionAnchor(at);
-    } else if (typeof window !== "undefined") {
-      setSelectedSectionAnchor({
-        x: Math.max(20, window.innerWidth / 2 - 210),
-        y: 120,
-      });
-    }
+    setSelectedSectionAnchor(null);
+  };
+
+  const openSectionPopup = (id: string, at: { x: number; y: number }) => {
+    setSelectedSectionId(id);
+    setSelectedSectionAnchor(at);
   };
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [pageToolsOpen, setPageToolsOpen] = useState(false);
@@ -192,6 +186,7 @@ export function EditorShell({
         updateSectionContent,
         updateSectionStyle,
         selectSection,
+        openSectionPopup,
         canUndo,
         canRedo,
         undo,

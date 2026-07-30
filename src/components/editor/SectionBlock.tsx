@@ -37,6 +37,7 @@ export function SectionBlock({
   const {
     selectedSectionId,
     selectSection,
+    openSectionPopup,
     run,
     isPending,
     liveContentMap,
@@ -96,19 +97,19 @@ export function SectionBlock({
       {/* OVERLAY INTERACTION TARGET */}
       <button
         type="button"
-        onClick={(event) => {
-          selectSection(section.id, { x: event.clientX, y: event.clientY });
+        onClick={() => {
+          selectSection(section.id);
         }}
         onDoubleClick={(event) => {
-          selectSection(section.id, { x: event.clientX, y: event.clientY });
+          openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
         }}
         onContextMenu={(event) => {
           event.preventDefault();
-          selectSection(section.id, { x: event.clientX, y: event.clientY });
+          selectSection(section.id);
           setContextMenuPos({ x: event.clientX, y: event.clientY });
         }}
         aria-label={`Edit ${section.label} content`}
-        title="Click to edit section in Property Panel"
+        title="Double-click to open edit popup modal"
         className="absolute inset-0 z-10 h-full w-full cursor-pointer"
       />
 
@@ -117,7 +118,7 @@ export function SectionBlock({
         <IconButton
           label="Edit Properties"
           onClick={(e) => {
-            selectSection(section.id, { x: e.clientX, y: e.clientY });
+            openSectionPopup(section.id, { x: e.clientX, y: e.clientY });
           }}
           className="bg-blue-600 text-white hover:bg-blue-500 border-blue-500 shadow-lg"
         >
