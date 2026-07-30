@@ -613,7 +613,7 @@ export function EditorShell({
           </div>
 
           {/* Floating Bottom-Center Viewport, History & Section Controls Toast Dock */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-4 py-2 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24),0_12px_20px_-4px_rgba(0,0,0,0.12)]">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-4 py-2 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24),0_12px_20px_-4px_rgba(0,0,0,0.12)]">
             {/* 1. SECTION NAME & OPTIONS AS ICONS WITH TOOLTIPS (Only when section selected) */}
             {selectedSection && (
               <>
