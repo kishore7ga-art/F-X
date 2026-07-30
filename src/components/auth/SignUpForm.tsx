@@ -123,7 +123,7 @@ export function SignUpForm() {
             <div>
               <Link
                 href="/login"
-                className="rounded-full bg-blue-50 px-4.5 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100 shadow-2xs"
+                className="rounded-full bg-blue-50/90 px-6 py-2.5 text-sm font-extrabold text-blue-600 transition hover:bg-blue-100 hover:shadow-xs shadow-2xs active:scale-[0.98]"
               >
                 Login
               </Link>
