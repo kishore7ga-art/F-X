@@ -34,7 +34,7 @@ export function ProfileForm({ college }: { college: CurrentCollege }) {
       <div className="w-full min-h-screen flex flex-col lg:flex-row">
         
         {/* ─── LEFT 40% PANEL: PROFILE & INSTITUTION SHOWCASE ─── */}
-        <div className="hidden lg:flex lg:w-[40%] min-h-screen bg-[#F3F4F6] px-8 lg:px-12 py-8 flex-col justify-between relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-[40%] min-h-screen bg-white border-r border-slate-200 px-8 lg:px-12 py-8 flex-col justify-between relative overflow-hidden">
           {/* Subtle Contour Lines */}
           <div className="absolute inset-0 pointer-events-none opacity-40">
             <svg className="w-full h-full" viewBox="0 0 600 600" fill="none">

@@ -259,7 +259,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   activePanel === "pages"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
                 )}
               >
                 <Layers className="h-4 w-4" />
@@ -280,7 +280,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   activePanel === "design"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
                 )}
               >
                 <Palette className="h-4 w-4" />
@@ -301,7 +301,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   activePanel === "assets"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
                 )}
               >
                 <FolderOpen className="h-4 w-4" />
@@ -321,7 +321,7 @@ export function EditorShell({
                 onClick={undo}
                 disabled={!canUndo}
                 aria-label="Undo"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-800 hover:bg-slate-100 hover:text-black transition"
               >
                 <Undo2 className="h-4 w-4" />
               </button>
@@ -338,7 +338,7 @@ export function EditorShell({
                 onClick={redo}
                 disabled={!canRedo}
                 aria-label="Redo"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 transition"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-800 hover:bg-slate-100 hover:text-black transition"
               >
                 <Redo2 className="h-4 w-4" />
               </button>
@@ -360,7 +360,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   deviceMode === "desktop"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
                 )}
               >
                 <Monitor className="h-4 w-4" />
@@ -381,7 +381,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   deviceMode === "tablet"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
                 )}
               >
                 <Tablet className="h-4 w-4" />
@@ -402,7 +402,7 @@ export function EditorShell({
                   "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
                   deviceMode === "mobile"
                     ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
                 )}
               >
                 <Smartphone className="h-4 w-4" />
@@ -662,7 +662,7 @@ export function EditorShell({
         </AnimatePresence>
 
         {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
-        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-slate-50">
+        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-white">
 
           {actionError && (
             <p className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-xs font-medium text-red-400">
@@ -671,7 +671,7 @@ export function EditorShell({
           )}
 
           {/* Canvas Live Preview Container (Applies Live Theme Styles & Google Fonts) */}
-          <div className="relative flex-1 overflow-y-auto bg-slate-50 p-5 flex justify-center items-start">
+          <div className="relative flex-1 overflow-y-auto bg-white p-5 flex justify-center items-start">
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
