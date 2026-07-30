@@ -37,14 +37,7 @@ export function OnboardingForm({
 
       {/* Institution Type */}
       <fieldset>
-        <legend className="text-sm font-bold text-slate-900">
-          Select your institution type
-        </legend>
-        <p className="mt-1 text-xs font-medium text-slate-400">
-          We&apos;ll use this to pick the best starting template. You can always change it later.
-        </p>
-
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {COLLEGE_TYPES.map((type, index) => (
             <label
               key={type.value}
