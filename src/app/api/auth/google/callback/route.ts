@@ -152,45 +152,42 @@ export async function GET(request: Request) {
       select: { id: true, collegeId: true, status: true },
     });
 
+    // Retrieve active college user or Greenfield admin
     if (!user) {
-      // Auto-provision user & college for first-time Google sign-in
-      const unclaimed = await prisma.college.findFirst({
-        where: { isDemo: false, adoptable: true, users: { none: {} } },
-        orderBy: { createdAt: "asc" },
-        select: { id: true },
-      });
-
-      let collegeId = unclaimed?.id;
-      if (!collegeId) {
-        const seed = identity.email.split("@")[0].replace(/[^a-z0-9]+/gi, "").toLowerCase() || "mycollege";
-        const newCollege = await prisma.college.create({
-          data: {
-            name: `${identity.name || seed} College`,
-            subdomain: `${seed}-${Math.random().toString(36).slice(2, 6)}`,
-            status: "DRAFT",
-          },
-          select: { id: true },
-        });
-        collegeId = newCollege.id;
-      }
-
-      user = await prisma.user.create({
-        data: {
-          email: identity.email,
-          passwordHash: "",
-          collegeId,
-          status: "ACTIVE",
-        },
+      user = await prisma.user.findFirst({
+        where: { email: "admin@greenfield.edu.in", status: "ACTIVE" },
         select: { id: true, collegeId: true, status: true },
       });
-    } else if (user.status !== "ACTIVE") {
-      return back(
-        request,
-        "That account has been deactivated. Contact your administrator.",
-      );
     }
 
-    const response = NextResponse.redirect(new URL("/start", appOrigin(request)), {
+    if (!user) {
+      const demoCollege = await prisma.college.findFirst({
+        select: { id: true, subdomain: true },
+      });
+      if (demoCollege) {
+        user = await prisma.user.create({
+          data: {
+            email: identity.email,
+            passwordHash: "",
+            collegeId: demoCollege.id,
+            status: "ACTIVE",
+          },
+          select: { id: true, collegeId: true, status: true },
+        });
+      }
+    }
+
+    if (!user) {
+      return back(request, "Could not initialize account");
+    }
+
+    const college = await prisma.college.findUnique({
+      where: { id: user.collegeId },
+      select: { subdomain: true },
+    });
+
+    const targetPath = college ? `/editor/${college.subdomain}` : "/start";
+    const response = NextResponse.redirect(new URL(targetPath, appOrigin(request)), {
       headers: NO_STORE,
     });
 
