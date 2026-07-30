@@ -97,22 +97,22 @@ export function CredentialsForm({
         {/* ─── RIGHT 50% PANEL: SIGN IN FORM (HIGH CONTRAST & PERFECT ALIGNMENT) ─── */}
         <div className="w-full lg:w-1/2 min-h-screen bg-white p-8 sm:p-12 lg:p-16 flex flex-col justify-between z-10 overflow-y-auto">
           {/* Header Bar */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex h-11 items-center justify-between gap-4">
             {/* Top-Left Brand Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white font-extrabold text-xs shadow-xs">
-                <Sparkles className="h-4 w-4" />
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white font-extrabold text-xs shadow-xs shrink-0">
+                <Sparkles className="h-4.5 w-4.5" />
               </div>
-              <span className="font-black text-2xl tracking-tight text-slate-900">
+              <span className="font-black text-2xl tracking-tight text-slate-900 leading-none">
                 XITE
               </span>
             </Link>
 
             {/* Top-Right Request Access Pill Button (Light Green) */}
-            <div>
+            <div className="flex items-center">
               <Link
                 href="/request-access"
-                className="rounded-full bg-emerald-50 px-6 py-2.5 text-sm font-extrabold text-emerald-700 border border-emerald-200/60 transition hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-xs shadow-2xs active:scale-[0.98]"
+                className="inline-flex items-center justify-center rounded-full bg-emerald-50 px-6 py-2.5 text-sm font-extrabold text-emerald-700 border border-emerald-200/60 transition hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-xs shadow-2xs active:scale-[0.98] leading-none"
               >
                 Request Access
               </Link>
