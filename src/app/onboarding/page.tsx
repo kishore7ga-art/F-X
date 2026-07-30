@@ -72,15 +72,6 @@ export default async function OnboardingPage() {
               </span>
             </div>
 
-            {/* Step Indicator */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="h-1.5 w-6 rounded-full bg-[#4285F4]" />
-                <span className="h-1.5 w-6 rounded-full bg-[#4285F4]" />
-                <span className="h-1.5 w-6 rounded-full bg-slate-200" />
-              </div>
-              <span className="text-xs font-medium text-slate-400 ml-2">2 / 3</span>
-            </div>
           </div>
 
           {/* Form Content */}
@@ -108,7 +99,7 @@ export default async function OnboardingPage() {
           <div className="flex items-center justify-between text-xs font-medium text-slate-500 pt-4">
             <span>&copy; 2026 XITE</span>
             <div className="flex items-center gap-1 hover:text-slate-800">
-              <span>Step 2 of 3</span>
+              <span>ENG &or;</span>
             </div>
           </div>
         </div>
