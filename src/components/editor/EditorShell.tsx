@@ -347,71 +347,6 @@ export function EditorShell({
                 <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
               </div>
             </div>
-
-            <div className="h-px w-6 bg-slate-200" />
-
-            {/* Viewports: Desktop */}
-            <div className="group relative flex items-center">
-              <button
-                type="button"
-                onClick={() => setDeviceMode("desktop")}
-                aria-label="Desktop View"
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                  deviceMode === "desktop"
-                    ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
-                )}
-              >
-                <Monitor className="h-4 w-4" />
-              </button>
-              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Desktop View
-                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-              </div>
-            </div>
-
-            {/* Viewports: Tablet */}
-            <div className="group relative flex items-center">
-              <button
-                type="button"
-                onClick={() => setDeviceMode("tablet")}
-                aria-label="Tablet View"
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                  deviceMode === "tablet"
-                    ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
-                )}
-              >
-                <Tablet className="h-4 w-4" />
-              </button>
-              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Tablet View
-                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-              </div>
-            </div>
-
-            {/* Viewports: Mobile */}
-            <div className="group relative flex items-center">
-              <button
-                type="button"
-                onClick={() => setDeviceMode("mobile")}
-                aria-label="Mobile View"
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                  deviceMode === "mobile"
-                    ? "bg-slate-900 text-white shadow-md font-bold"
-                    : "text-slate-800 hover:bg-slate-100 hover:text-black"
-                )}
-              >
-                <Smartphone className="h-4 w-4" />
-              </button>
-              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Mobile View
-                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-              </div>
-            </div>
           </div>
 
           {/* Bottom Group: Preview, Publish, Sign Out, Avatar */}
@@ -689,6 +624,72 @@ export function EditorShell({
                 <EmptyPage pageTitle={currentPage.title} />
               )}
             </motion.div>
+          </div>
+
+          {/* Floating Bottom-Center Viewport Toast Dock */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/90 backdrop-blur-md p-1.5 shadow-xl shadow-slate-900/10">
+            {/* Desktop View */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setDeviceMode("desktop")}
+                aria-label="Desktop View"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                  deviceMode === "desktop"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-black"
+                )}
+              >
+                <Monitor className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Desktop View
+                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+              </div>
+            </div>
+
+            {/* Tablet View */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setDeviceMode("tablet")}
+                aria-label="Tablet View"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                  deviceMode === "tablet"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-black"
+                )}
+              >
+                <Tablet className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Tablet View
+                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+              </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setDeviceMode("mobile")}
+                aria-label="Mobile View"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                  deviceMode === "mobile"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-black"
+                )}
+              >
+                <Smartphone className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Mobile View
+                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+              </div>
+            </div>
           </div>
         </main>
 
