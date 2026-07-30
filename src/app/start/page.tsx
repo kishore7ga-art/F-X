@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { buildSiteForType } from "@/app/actions/onboarding";
-import { requireCurrentCollege } from "@/lib/auth/current";
+import { getCurrentCollegeOrNull } from "@/lib/auth/current";
 import { collegeType } from "@/lib/college-types";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +10,21 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Start building — XITE" };
 
 export default async function StartPage() {
-  const college = await requireCurrentCollege();
+  /**
+   * Every "Start building" button on the landing page points here, and this is
+   * where the signed-out half of them is answered.
+   *
+   * It used to be `requireCurrentCollege()`, which sends anyone without a session
+   * to /login — a form they cannot complete, because access is no longer
+   * self-service. A stranger clicking Start is asking to get in, and the page
+   * that does that is /request-access.
+   *
+   * Resolved here rather than at the four call sites: they are server-rendered
+   * `<Link href="/start">`s, so the decision cannot be made where they are
+   * written without turning each into a client component that reads the session.
+   */
+  const college = await getCurrentCollegeOrNull();
+  if (!college) redirect("/request-access");
 
   if (!college.collegeType) redirect("/onboarding");
 
