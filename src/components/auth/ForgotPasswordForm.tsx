@@ -27,13 +27,13 @@ export function ForgotPasswordForm() {
       <div className="w-full min-h-screen flex flex-col lg:flex-row">
 
         {/* ─── LEFT 40% PANEL: MINIMAL FULL-HEIGHT SHOWCASE ─── */}
-        <div className="hidden lg:flex lg:w-[40%] min-h-screen bg-[#F3F4F6] px-8 lg:px-12 py-5 flex-col justify-between relative overflow-hidden">
+        <div className="hidden lg:flex lg:w-[40%] min-h-screen bg-gradient-to-br from-[#4338CA] to-[#7C3AED] px-8 lg:px-12 py-5 flex-col justify-between relative overflow-hidden">
           {/* Geometric Background Contour Lines */}
           <div className="absolute inset-0 pointer-events-none opacity-40">
             <svg className="w-full h-full" viewBox="0 0 600 600" fill="none">
-              <circle cx="100" cy="150" r="320" stroke="#CBD5E1" strokeWidth="1" />
-              <circle cx="100" cy="150" r="220" stroke="#CBD5E1" strokeWidth="1" />
-              <circle cx="500" cy="500" r="350" stroke="#CBD5E1" strokeWidth="1" />
+              <circle cx="100" cy="150" r="320" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+              <circle cx="100" cy="150" r="220" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+              <circle cx="500" cy="500" r="350" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
             </svg>
           </div>
 
@@ -46,16 +46,16 @@ export function ForgotPasswordForm() {
               alt="Ilaya Bharathi Profile Picture"
               className="mb-8 h-16 w-16 rounded-full object-cover shadow-md border-2 border-white ring-4 ring-indigo-500/20"
             />
-            <blockquote className="text-xl lg:text-2xl font-medium text-slate-800 leading-relaxed tracking-tight">
+            <blockquote className="text-xl lg:text-2xl font-medium text-white/90 leading-relaxed tracking-tight">
               &ldquo;The XITE College Portal app makes it easy to manage contacts, deals, sections, and chats in one place. It keeps track of all activities, helping us stay organised and handle daily tasks more efficiently.&rdquo;
             </blockquote>
             <div className="mt-8">
-              <p className="text-base font-extrabold text-slate-900">Ilaya Bharathi</p>
-              <p className="text-xs sm:text-sm font-medium text-slate-500">Director &amp; Founder / Madras Engineering College</p>
+              <p className="text-base font-extrabold text-white">Ilaya Bharathi</p>
+              <p className="text-xs sm:text-sm font-medium text-indigo-200">Director &amp; Founder / Madras Engineering College</p>
             </div>
             <div className="mt-10 flex items-center gap-2">
-              <span className="h-1 w-8 rounded-full bg-slate-900" />
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+              <span className="h-1 w-8 rounded-full bg-white" />
+              <span className="h-1.5 w-1.5 rounded-full bg-white/40" />
             </div>
           </div>
 
