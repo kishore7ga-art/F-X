@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, Sparkles, Globe, User, Building2, Phone } from "lucide-react";
 
-import { requestAccessRequest } from "@/lib/api-client";
+import { ApiError, requestAccessRequest } from "@/lib/api-client";
 
 export function SignUpForm() {
   const [name, setName] = useState("");
@@ -27,13 +27,18 @@ export function SignUpForm() {
       await requestAccessRequest({
         name,
         email,
+        password,
         organization,
-        message: `Institution: ${organization} | Website: ${website} | Mobile: ${mobile}`,
+        message: `Website: ${website} | Mobile: ${mobile}`,
       });
-    } catch {
-      // continue to thank-you even if API call fails
-    } finally {
       window.location.assign("/thank-you");
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "Could not send your access request. Please try again.",
+      );
+      setPending(false);
     }
   }
 
