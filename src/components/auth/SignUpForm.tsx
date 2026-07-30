@@ -310,7 +310,7 @@ export function SignUpForm() {
           </div>
 
           {/* Footer Bar */}
-          <div className="flex items-center justify-between text-xs font-medium text-slate-500 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between text-xs font-medium text-slate-500 pt-4">
             <span>&copy; 2026 XITE</span>
             <div className="flex items-center gap-1 cursor-pointer hover:text-slate-800">
               <Globe className="h-3.5 w-3.5" />
