@@ -229,82 +229,115 @@ export function EditorShell({
         className="relative flex h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans select-none"
         onClick={() => setActiveContextMenuPageId(null)}
       >
-        {/* ─── 1. LEFT ICON RAIL (56px width, Monochrome Black & White) ─── */}
+        {/* ─── 1. LEFT ICON RAIL WITH RIGHT-SIDE TOOLTIPS ─── */}
         <aside className="z-50 flex w-[56px] shrink-0 flex-col items-center justify-between border-r border-slate-200 bg-white py-4">
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             {/* Logo / Brand Indicator */}
-            <Link href="/" className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md hover:bg-slate-200 transition-colors" title="XITE Dashboard">
-              <span className="font-extrabold text-sm">X</span>
-            </Link>
+            <div className="group relative flex items-center">
+              <Link
+                href="/"
+                className="mb-1 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md hover:bg-slate-800 transition-colors"
+              >
+                <span className="font-extrabold text-sm">X</span>
+              </Link>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Dashboard
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
 
             {/* Icon 1: Pages */}
-            <button
-              type="button"
-              onClick={() => setActivePanel((prev) => (prev === "pages" ? null : "pages"))}
-              title="Website Pages"
-              aria-label="Website Pages"
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                activePanel === "pages"
-                  ? "bg-slate-900 text-white shadow-md font-bold"
-                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
-              )}
-            >
-              <Layers className="h-4 w-4" />
-            </button>
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setActivePanel((prev) => (prev === "pages" ? null : "pages"))}
+                aria-label="Website Pages"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                  activePanel === "pages"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                )}
+              >
+                <Layers className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Website Pages
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
 
             {/* Icon 2: Design (Palette / Theme styling) */}
-            <button
-              type="button"
-              onClick={() => setActivePanel((prev) => (prev === "design" ? null : "design"))}
-              title="Color Palettes & Fonts"
-              aria-label="Color Palettes & Fonts"
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                activePanel === "design"
-                  ? "bg-slate-900 text-white shadow-md font-bold"
-                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
-              )}
-            >
-              <Palette className="h-4 w-4" />
-            </button>
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setActivePanel((prev) => (prev === "design" ? null : "design"))}
+                aria-label="Color Palettes & Fonts"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                  activePanel === "design"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                )}
+              >
+                <Palette className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Color Palettes &amp; Fonts
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
 
             {/* Icon 3: Assets */}
-            <button
-              type="button"
-              onClick={() => setActivePanel((prev) => (prev === "assets" ? null : "assets"))}
-              title="Assets & Media"
-              aria-label="Assets"
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
-                activePanel === "assets"
-                  ? "bg-slate-900 text-white shadow-md font-bold"
-                  : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
-              )}
-            >
-              <FolderOpen className="h-4 w-4" />
-            </button>
+            <div className="group relative flex items-center">
+              <button
+                type="button"
+                onClick={() => setActivePanel((prev) => (prev === "assets" ? null : "assets"))}
+                aria-label="Assets & Media"
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200",
+                  activePanel === "assets"
+                    ? "bg-slate-900 text-white shadow-md font-bold"
+                    : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                )}
+              >
+                <FolderOpen className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                Assets &amp; Media
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
+            </div>
           </div>
 
           {/* User Avatar & Sign Out */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-3">
             {canSignOut && (
-              <form action={logout}>
-                <button
-                  type="submit"
-                  title="Sign Out"
-                  aria-label="Sign Out"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </form>
+              <div className="group relative flex items-center">
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    aria-label="Sign Out"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </form>
+                <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                  Sign Out
+                  <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-red-600" />
+                </div>
+              </div>
             )}
-            <div className="relative flex flex-col items-center">
+            <div className="group relative flex items-center">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 border border-slate-300 text-xs font-bold text-slate-900 shadow-inner">
                 {initialLetter}
               </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Active Session" />
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                {college.name || "Active Session"}
+                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+              </div>
             </div>
           </div>
         </aside>
