@@ -598,7 +598,7 @@ export function EditorShell({
           </div>
 
           {/* Floating Bottom-Center Viewport, History & Section Controls Toast Dock */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-4 py-2 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24),0_12px_20px_-4px_rgba(0,0,0,0.12)]">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-4 py-2 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24),0_12px_20px_-4px_rgba(0,0,0,0.12)]">
             {/* 1. SECTION NAME & OPTIONS AS ICONS WITH TOOLTIPS (Only when section selected) */}
             {selectedSection && (
               <>
@@ -618,7 +618,7 @@ export function EditorShell({
                       openSectionPopup(selectedSection.id, { x: e.clientX, y: e.clientY });
                     }}
                     aria-label="Edit Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition-all shadow-xs"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black active:scale-95 transition-all"
                   >
                     <Edit2 className="h-4 w-4" strokeWidth={2.2} />
                   </button>
@@ -683,7 +683,7 @@ export function EditorShell({
                       }
                     }}
                     aria-label="Delete Section"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-30 active:scale-95 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 active:scale-95 transition-all"
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                   </button>
@@ -699,7 +699,7 @@ export function EditorShell({
                     type="button"
                     onClick={() => setSelectedSectionId(null)}
                     aria-label="Close Controls"
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-slate-800 hover:bg-slate-100 hover:text-black transition-all"
                   >
                     <X className="h-4 w-4" strokeWidth={2.2} />
                   </button>
@@ -708,9 +708,6 @@ export function EditorShell({
                     <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
                   </div>
                 </div>
-
-                {/* Pipe Separator 1 */}
-                <div className="h-5 w-0.5 bg-slate-400/80 rounded-full shrink-0 my-auto" />
               </>
             )}
 
@@ -726,7 +723,7 @@ export function EditorShell({
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "desktop"
                       ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-700 hover:text-slate-950 hover:bg-slate-200/70"
+                      : "text-slate-800 hover:text-black hover:bg-slate-200/70"
                   )}
                 >
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
@@ -748,7 +745,7 @@ export function EditorShell({
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "tablet"
                       ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-700 hover:text-slate-950 hover:bg-slate-200/70"
+                      : "text-slate-800 hover:text-black hover:bg-slate-200/70"
                   )}
                 >
                   <Tablet className="h-4 w-4" strokeWidth={2.2} />
@@ -770,7 +767,7 @@ export function EditorShell({
                     "flex h-7.5 items-center gap-1.5 rounded-full px-2.5 transition-all duration-200 text-xs font-bold",
                     deviceMode === "mobile"
                       ? "bg-slate-900 text-white shadow-xs"
-                      : "text-slate-700 hover:text-slate-950 hover:bg-slate-200/70"
+                      : "text-slate-800 hover:text-black hover:bg-slate-200/70"
                   )}
                 >
                   <Smartphone className="h-4 w-4" strokeWidth={2.2} />
@@ -782,9 +779,6 @@ export function EditorShell({
                 </div>
               </div>
             </div>
-
-            {/* Pipe Separator 2 */}
-            <div className="h-5 w-0.5 bg-slate-400/80 rounded-full shrink-0 my-auto" />
 
             {/* 3. UNDO / REDO ICONS WITH TOOLTIPS (POSITIONED LAST) */}
             <div className="flex items-center gap-1">
