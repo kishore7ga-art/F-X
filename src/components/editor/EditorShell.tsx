@@ -725,12 +725,7 @@ export function EditorShell({
                     }
                   }}
                   aria-label={`Desktop View (${currentDesktopRes}px)`}
-                  className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
-                    deviceMode === "desktop"
-                      ? "text-slate-800"
-                      : "text-slate-400 hover:text-slate-800"
-                  )}
+                  className="flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight text-slate-800 hover:text-black transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 >
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "desktop" && <span>{currentDesktopRes}px</span>}
@@ -753,14 +748,13 @@ export function EditorShell({
                     }
                   }}
                   aria-label={`Tablet View (${currentTabletRes}px)`}
-                  className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
-                    deviceMode === "tablet"
-                      ? "text-slate-800"
-                      : "text-slate-400 hover:text-slate-800"
-                  )}
+                  className="flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight text-slate-800 hover:text-black transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 >
-                  <Tablet className="h-4 w-4" strokeWidth={2.2} />
+                  {/* Distinct Landscape Tablet Icon */}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="M19 12h.01" strokeWidth="3" />
+                  </svg>
                   {deviceMode === "tablet" && <span>{currentTabletRes}px</span>}
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-4 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
@@ -781,12 +775,7 @@ export function EditorShell({
                     }
                   }}
                   aria-label={`Mobile View (${currentMobileRes}px)`}
-                  className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
-                    deviceMode === "mobile"
-                      ? "text-slate-800"
-                      : "text-slate-400 hover:text-slate-800"
-                  )}
+                  className="flex h-8 items-center gap-1.5 rounded-full px-2 text-xs font-medium tracking-tight text-slate-800 hover:text-black transition-all focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 >
                   <Smartphone className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "mobile" && <span>{currentMobileRes}px</span>}
