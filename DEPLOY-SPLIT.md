@@ -64,8 +64,13 @@ Dokploy → **Create → Compose**, pointed at this repo.
 ```
 SESSION_SECRET=<32+ random chars>
 POSTGRES_PASSWORD=<strong random>
-AUTH_DISABLED=true
 ```
+
+**Do not set `AUTH_DISABLED=true`.** It used to be listed here and it is not a
+deployment setting — it removes authentication entirely, on both services. Every
+visitor is treated as the owner of the oldest college, the session cookie is
+never read, and the access-request → approval → activation flow is bypassed
+completely.
 
 Do **not** set `DATABASE_URL`. Compose builds it from `POSTGRES_PASSWORD`.
 A `DATABASE_URL` pointing at `localhost` is the classic failure here — inside a

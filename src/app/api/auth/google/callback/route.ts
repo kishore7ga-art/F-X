@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { STATE_COOKIE } from "@/app/api/auth/google/start/route";
+import {
+  ACTIVATION_COOKIE,
+  STATE_COOKIE,
+} from "@/app/api/auth/google/start/route";
+import { serverApiPost, ServerApiError } from "@/lib/api/server";
 import { createSessionToken, COOKIE_NAME, sessionCookieOptions } from "@/lib/auth/session";
 import { appOrigin, exchangeCode, googleEnabled } from "@/lib/auth/google";
 import { prisma } from "@/lib/db";
@@ -17,6 +21,78 @@ function back(request: Request, reason: string) {
   const response = NextResponse.redirect(url, { headers: NO_STORE });
   // The attempt is over either way; a stale state would only fail the next one.
   response.cookies.delete(STATE_COOKIE);
+  response.cookies.delete(ACTIVATION_COOKIE);
+  return response;
+}
+
+/**
+ * Activation failures land back on /activate, still carrying the token.
+ *
+ * Not on /login: the person has an invite and has not got an account yet, so a
+ * login form is the one page that cannot help them. Keeping the token in the URL
+ * means the page can redraw with the password option still available, which is the
+ * actual way out of an address mismatch.
+ */
+function backToActivate(request: Request, token: string, reason: string) {
+  const url = new URL("/activate", appOrigin(request));
+  url.searchParams.set("token", token);
+  url.searchParams.set("error", reason);
+  const response = NextResponse.redirect(url, { headers: NO_STORE });
+  response.cookies.delete(STATE_COOKIE);
+  response.cookies.delete(ACTIVATION_COOKIE);
+  return response;
+}
+
+/**
+ * Redeems an invite through the backend and signs the person in.
+ *
+ * The session is minted from what the backend returns rather than forwarded as a
+ * Set-Cookie: this response is a redirect built here, and its cookie has to be
+ * written with this app's own scope helper — the same one the sign-in path below
+ * uses. Nothing about the session differs between the two ways in.
+ */
+async function activate(request: Request, token: string, idToken: string) {
+  let payload: { userId: string; collegeId: string; next: string };
+
+  try {
+    payload = await serverApiPost<{
+      userId: string;
+      collegeId: string;
+      next: string;
+    }>("/api/v1/activate/google", { token, idToken });
+  } catch (cause) {
+    /**
+     * The backend's message is shown as-is, deliberately.
+     *
+     * It is the one that says "this invite was issued to someone@example.com",
+     * which is the difference between a person understanding they used the wrong
+     * Google account and a person staring at "activation failed". It is written
+     * for this audience and names no address they do not already know.
+     */
+    const reason =
+      cause instanceof ServerApiError
+        ? cause.message
+        : "Could not complete activation";
+    console.error(`[google] activation failed: ${reason}`);
+    return backToActivate(request, token, reason);
+  }
+
+  const response = NextResponse.redirect(
+    new URL(payload.next, appOrigin(request)),
+    { headers: NO_STORE },
+  );
+
+  response.cookies.set(
+    COOKIE_NAME,
+    await createSessionToken({
+      userId: payload.userId,
+      collegeId: payload.collegeId,
+    }),
+    sessionCookieOptions(),
+  );
+  response.cookies.delete(STATE_COOKIE);
+  response.cookies.delete(ACTIVATION_COOKIE);
+
   return response;
 }
 
@@ -50,6 +126,24 @@ export async function GET(request: Request) {
 
   if (!identity.emailVerified) {
     return back(request, "That Google account has an unverified email address");
+  }
+
+  /**
+   * Activation, if this trip began on the activation page.
+   *
+   * Handled before the sign-in path below and not merged into it, because the two
+   * are opposites: sign-in creates an account for whoever turns up, activation
+   * redeems an invite issued to one specific address. Falling through to sign-in
+   * on a failed activation would hand somebody an account the invite was never
+   * for, which is the exact thing the address match exists to prevent.
+   *
+   * The backend does the redeeming. It verifies the id_token again against
+   * Google's keys rather than trusting the email this route already read out of
+   * it — see `xite-B/src/google-identity.ts`.
+   */
+  const activationToken = store.get(ACTIVATION_COOKIE)?.value;
+  if (activationToken) {
+    return activate(request, activationToken, identity.idToken);
   }
 
   try {

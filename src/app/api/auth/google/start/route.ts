@@ -9,6 +9,19 @@ export const dynamic = "force-dynamic";
 export const STATE_COOKIE = "google_oauth_state";
 
 /**
+ * Carries an activation token across the round trip to Google.
+ *
+ * A cookie rather than the `state` parameter, which is the obvious place and the
+ * wrong one. `state` travels to Google and comes back in a URL — it lands in
+ * server logs, in browser history and in the Referer of anything the callback
+ * page loads. An invite token is a credential that grants an account; it does not
+ * belong in any of those. httpOnly keeps it out of scripts too.
+ *
+ * Absent for ordinary sign-in, which is how the callback tells the two apart.
+ */
+export const ACTIVATION_COOKIE = "xite_activation_token";
+
+/**
  * Begins Google sign-in.
  *
  * The `state` value is minted here, kept in an httpOnly cookie, and compared on
@@ -40,14 +53,38 @@ export async function GET(request: Request) {
     headers: { "Cache-Control": "no-store, must-revalidate" },
   });
 
-  response.cookies.set(STATE_COOKIE, state, {
+  const cookieOptions = {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     // Long enough to pick an account, short enough not to linger.
     maxAge: 600,
-  });
+  };
+
+  response.cookies.set(STATE_COOKIE, state, cookieOptions);
+
+  /**
+   * Shape-checked before it is stored, not because a bad value is dangerous —
+   * the backend rejects anything that is not a live invite — but because a
+   * truncated paste should fail here, where the person is still looking at the
+   * activation page, rather than after a detour through Google.
+   */
+  const activationToken = new URL(request.url).searchParams.get(
+    "activation_token",
+  );
+  if (activationToken && /^[a-f0-9]{64}$/.test(activationToken)) {
+    response.cookies.set(ACTIVATION_COOKIE, activationToken, cookieOptions);
+  } else {
+    /**
+     * Cleared when absent, rather than left alone.
+     *
+     * Someone who abandons an activation and later signs in normally would
+     * otherwise still be carrying the cookie, and the callback would try to
+     * redeem an invite they did not ask to redeem on this trip.
+     */
+    response.cookies.delete(ACTIVATION_COOKIE);
+  }
 
   return response;
 }
