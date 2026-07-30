@@ -580,7 +580,7 @@ export function EditorShell({
         </AnimatePresence>
 
         {/* ─── 3. RIGHT WORKSPACE (WEBSITE CANVAS WITH REAL-TIME THEME) ─── */}
-        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-white">
+        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-slate-50">
 
           {actionError && (
             <p className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-xs font-medium text-red-400">
@@ -589,7 +589,7 @@ export function EditorShell({
           )}
 
           {/* Canvas Live Preview Container (Applies Live Theme Styles & Google Fonts) */}
-          <div className="relative flex-1 overflow-y-auto bg-slate-50 flex justify-center items-start">
+          <div className="relative flex-1 overflow-y-auto overscroll-contain bg-slate-50 flex justify-center items-start">
             <motion.div
               layout
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
