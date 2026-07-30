@@ -9,9 +9,6 @@ export const metadata = { title: "Set up your college — XITE" };
 
 export default async function OnboardingPage() {
   const college = await requireCurrentCollege();
-  const isEditing = Boolean(college.collegeType);
-
-  const defaultName = college.name === "My College" ? "" : college.name;
 
   return (
     <main className="min-h-screen w-full flex overflow-hidden font-sans text-slate-900 bg-white">
@@ -82,20 +79,18 @@ export default async function OnboardingPage() {
           {/* Form Content */}
           <div className="mx-auto w-full max-w-lg my-auto py-6 sm:py-8">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-              {isEditing ? "Change your details" : "Tell us about your college"}
+              Welcome, {college.name}! 👋
             </h1>
 
             <p className="mt-2.5 text-xs sm:text-sm font-medium text-slate-500 leading-relaxed">
-              {isEditing
-                ? "Your site keeps everything you have written — only the name and type change."
-                : "Two quick questions, then you can start building your site."}
+              Let us know the type of your institution so we can pick the best starting design for you.
             </p>
 
             <div className="mt-8">
               <OnboardingForm
-                defaultName={defaultName}
+                defaultName={college.name === "My College" ? "" : college.name}
                 defaultType={college.collegeType}
-                submitLabel={isEditing ? "Save changes" : "Continue"}
+                submitLabel="Continue"
               />
             </div>
           </div>
