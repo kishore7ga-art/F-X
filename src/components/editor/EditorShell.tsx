@@ -318,41 +318,6 @@ export function EditorShell({
               </div>
             </div>
 
-            <div className="h-px w-6 bg-slate-200" />
-
-            {/* Undo */}
-            <div className="group relative flex items-center">
-              <button
-                type="button"
-                onClick={undo}
-                disabled={!canUndo}
-                aria-label="Undo"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-800 hover:bg-slate-100 hover:text-black transition"
-              >
-                <Undo2 className="h-4 w-4" />
-              </button>
-              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Undo
-                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-              </div>
-            </div>
-
-            {/* Redo */}
-            <div className="group relative flex items-center">
-              <button
-                type="button"
-                onClick={redo}
-                disabled={!canRedo}
-                aria-label="Redo"
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-800 hover:bg-slate-100 hover:text-black transition"
-              >
-                <Redo2 className="h-4 w-4" />
-              </button>
-              <div className="pointer-events-none absolute left-full ml-3.5 hidden rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
-                Redo
-                <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-              </div>
-            </div>
           </div>
 
           {/* Bottom Group: Preview, Publish, Sign Out, Avatar */}
@@ -632,8 +597,46 @@ export function EditorShell({
             </motion.div>
           </div>
 
-          {/* Floating Bottom-Center Viewport & Section Controls Toast Dock (International Design Standard) */}
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-xl px-3.5 py-2 shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-all duration-300 ring-1 ring-black/5">
+          {/* Floating Bottom-Center Viewport, History & Section Controls Toast Dock */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-xl px-3 py-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-all duration-300 ring-1 ring-black/5">
+            {/* Undo & Redo History Controls */}
+            <div className="flex items-center gap-0.5 pr-0.5">
+              {/* Undo */}
+              <div className="group relative flex items-center">
+                <button
+                  type="button"
+                  onClick={undo}
+                  disabled={!canUndo}
+                  aria-label="Undo"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 transition-all"
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                </button>
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                  Undo
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                </div>
+              </div>
+
+              {/* Redo */}
+              <div className="group relative flex items-center">
+                <button
+                  type="button"
+                  onClick={redo}
+                  disabled={!canRedo}
+                  aria-label="Redo"
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100 hover:text-black disabled:opacity-30 transition-all"
+                >
+                  <Redo2 className="h-3.5 w-3.5" />
+                </button>
+                <div className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 hidden rounded-lg bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-lg group-hover:flex items-center whitespace-nowrap z-50">
+                  Redo
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                </div>
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
             {selectedSection ? (
               <>
                 {/* Active Section Info Badge */}
