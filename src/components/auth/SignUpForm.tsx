@@ -35,8 +35,8 @@ export function SignUpForm() {
       });
 
       const formData = new FormData();
-      formData.append("email", email || "admin@greenfield.edu.in");
-      formData.append("password", password || "greenfield123");
+      formData.append("email", email || "admin@madrascollege.ac.in");
+      formData.append("password", password || "madras123");
 
       const result = await loginAction(undefined, formData);
 
@@ -80,7 +80,7 @@ export function SignUpForm() {
             {/* Colorful Human Avatar Photo */}
             <img
               src="/user_avatar.jpg"
-              alt="Rohan Sharma Profile Picture"
+              alt="Ilaya Bharathi Profile Picture"
               className="mb-8 h-16 w-16 rounded-full object-cover shadow-md border-2 border-white ring-4 ring-indigo-500/20"
             />
 
@@ -91,8 +91,8 @@ export function SignUpForm() {
 
             {/* Author Name & Role */}
             <div className="mt-8">
-              <p className="text-base font-extrabold text-slate-900">Rohan Sharma</p>
-              <p className="text-xs sm:text-sm font-medium text-slate-500">Director & CEO / EduTech Solutions</p>
+              <p className="text-base font-extrabold text-slate-900">Ilaya Bharathi</p>
+              <p className="text-xs sm:text-sm font-medium text-slate-500">Director & Founder / Madras Engineering College</p>
             </div>
 
             {/* Pagination Dash Dots Indicator */}
@@ -157,7 +157,7 @@ export function SignUpForm() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Rohan Sharma"
+                    placeholder="Ilaya Bharathi"
                     className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
@@ -177,16 +177,16 @@ export function SignUpForm() {
                     required
                     value={organization}
                     onChange={(e) => setOrganization(e.target.value)}
-                    placeholder="Greenfield Institute of Technology"
+                    placeholder="Madras Engineering College"
                     className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
               </div>
 
-              {/* 3. Website Address */}
+              {/* 3. Website */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                  Website Address<span className="text-blue-600 ml-0.5">*</span>
+                  Website<span className="text-blue-600 ml-0.5">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
@@ -197,13 +197,13 @@ export function SignUpForm() {
                     required
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
-                    placeholder="https://greenfield.edu.in"
+                    placeholder="https://www.madrascollege.ac.in"
                     className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
               </div>
 
-              {/* 4 & 5. Single Line Row: Email & Mobile Number */}
+              {/* 4 & 5. Single Line Row: Email & Mobile */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 mb-1.5">
@@ -218,7 +218,7 @@ export function SignUpForm() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@greenfield.edu.in"
+                      placeholder="admin@madrascollege.ac.in"
                       className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                     />
                   </div>
@@ -226,7 +226,7 @@ export function SignUpForm() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-900 mb-1.5">
-                    Mobile Number<span className="text-blue-600 ml-0.5">*</span>
+                    Mobile<span className="text-blue-600 ml-0.5">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
@@ -237,7 +237,7 @@ export function SignUpForm() {
                       required
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
-                      placeholder="+91 98765 43210"
+                      placeholder="+91 98765 4321"
                       className="w-full rounded-xl border border-slate-300/90 bg-white pl-10 pr-3 py-3 text-xs font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                     />
                   </div>
