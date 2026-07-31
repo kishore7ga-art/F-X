@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, Lock, Eye, EyeOff, Sparkles, Globe, ShieldCheck } from "lucide-react";
 
 import { loginAction } from "@/app/actions/auth";
@@ -20,6 +20,21 @@ export function CredentialsForm({
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [retryCountdown, setRetryCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (retryCountdown === null || retryCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setRetryCountdown((prev) => (prev && prev > 1 ? prev - 1 : null));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [retryCountdown]);
+
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
 
   function handleDemoFill() {
     setEmail("admin@greenfield.edu.in");
@@ -35,7 +50,18 @@ export function CredentialsForm({
       const formData = new FormData(event.currentTarget);
       const result = await loginAction(undefined, formData);
       if (result?.error) {
-        setError(result.error);
+        const isRateLimit =
+          result.error.toLowerCase().includes("too many") ||
+          result.error.toLowerCase().includes("429");
+
+        if (isRateLimit) {
+          setRetryCountdown(300);
+          setError(
+            "Too many login attempts. Please try again in 5:00 minutes.",
+          );
+        } else {
+          setError(result.error);
+        }
         setPending(false);
       } else if (result?.next) {
         window.location.assign(result.next);
@@ -221,17 +247,25 @@ export function CredentialsForm({
 
               {error && (
                 <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
-                  {error}
+                  {retryCountdown
+                    ? `Too many login attempts. Please try again in ${formatCountdown(retryCountdown)} minutes.`
+                    : error}
                 </div>
               )}
 
               {/* Primary #4285F4 Blue Login Button */}
               <button
                 type="submit"
-                disabled={pending}
+                disabled={pending || retryCountdown !== null}
                 className="mt-3 w-full rounded-xl bg-[#4285F4] py-3.5 px-4 text-xs sm:text-sm font-bold text-white shadow-md shadow-[#4285F4]/20 transition hover:bg-[#3367D6] hover:shadow-lg hover:shadow-[#4285F4]/30 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                <span>{pending ? "Logging in…" : "Login"}</span>
+                <span>
+                  {pending
+                    ? "Logging in…"
+                    : retryCountdown
+                      ? `Try again in ${formatCountdown(retryCountdown)}`
+                      : "Login"}
+                </span>
               </button>
             </form>
           </div>
