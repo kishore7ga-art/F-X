@@ -28,8 +28,15 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
   const session = await getSession();
   if (!session) return null;
 
-  const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
-  return payload?.college ?? null;
+  try {
+    const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
+    return payload?.college ?? null;
+  } catch (error) {
+    if (error instanceof ServerApiError && error.status === 401) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /** Same, but sends signed-out visitors to the login screen. */
