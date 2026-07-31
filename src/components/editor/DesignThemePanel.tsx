@@ -271,57 +271,6 @@ export function DesignThemePanel({
               />
             </div>
 
-            {/* Custom Color Palette Tuner / Picker */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 mb-3 space-y-2.5 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1.5">
-                  <Sliders className="h-3.5 w-3.5 text-slate-700" />
-                  Custom Color Picker
-                </span>
-                <span className="text-[9px] font-mono font-semibold text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded">Live Tuner</span>
-              </div>
-
-              <div className="grid grid-cols-5 gap-1.5">
-                {[
-                  { label: "Primary", key: "primary" },
-                  { label: "Secondary", key: "secondary" },
-                  { label: "Accent", key: "accent" },
-                  { label: "Dark", key: "dark" },
-                  { label: "Light", key: "light" },
-                ].map((item) => {
-                  const colorVal = activePalette[item.key as keyof PaletteColors];
-                  return (
-                    <div key={item.key} className="flex flex-col items-center gap-1">
-                      <div className="relative flex h-8 w-full items-center justify-center rounded-lg border border-slate-300/80 shadow-2xs overflow-hidden cursor-pointer hover:scale-105 transition-transform">
-                        <input
-                          type="color"
-                          value={colorVal}
-                          onChange={(e) =>
-                            onSelectPalette({
-                              ...activePalette,
-                              [item.key]: e.target.value,
-                            })
-                          }
-                          className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
-                          title={`Pick ${item.label} Color (${colorVal})`}
-                        />
-                        <div
-                          className="h-full w-full"
-                          style={{ backgroundColor: colorVal }}
-                        />
-                      </div>
-                      <span className="text-[9px] font-bold text-slate-700 truncate max-w-full">
-                        {item.label}
-                      </span>
-                      <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter">
-                        {colorVal.slice(0, 7)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Curated Color Schemes ({filteredPalettes.length})
             </p>
@@ -392,6 +341,57 @@ export function DesignThemePanel({
                 No color schemes found for &quot;{colorSearchQuery}&quot;
               </div>
             )}
+
+            {/* Custom Color Palette Tuner / Picker (Moved to Bottom) */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 mt-4 space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-900 flex items-center gap-1.5">
+                  <Sliders className="h-3.5 w-3.5 text-slate-700" />
+                  Custom Color Picker
+                </span>
+                <span className="text-[9px] font-mono font-semibold text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded">Live Tuner</span>
+              </div>
+
+              <div className="grid grid-cols-5 gap-1.5">
+                {[
+                  { label: "Primary", key: "primary" },
+                  { label: "Secondary", key: "secondary" },
+                  { label: "Accent", key: "accent" },
+                  { label: "Dark", key: "dark" },
+                  { label: "Light", key: "light" },
+                ].map((item) => {
+                  const colorVal = activePalette[item.key as keyof PaletteColors];
+                  return (
+                    <div key={item.key} className="flex flex-col items-center gap-1">
+                      <div className="relative flex h-8 w-full items-center justify-center rounded-lg border border-slate-300/80 shadow-2xs overflow-hidden cursor-pointer hover:scale-105 transition-transform">
+                        <input
+                          type="color"
+                          value={colorVal}
+                          onChange={(e) =>
+                            onSelectPalette({
+                              ...activePalette,
+                              [item.key]: e.target.value,
+                            })
+                          }
+                          className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
+                          title={`Pick ${item.label} Color (${colorVal})`}
+                        />
+                        <div
+                          className="h-full w-full"
+                          style={{ backgroundColor: colorVal }}
+                        />
+                      </div>
+                      <span className="text-[9px] font-bold text-slate-700 truncate max-w-full">
+                        {item.label}
+                      </span>
+                      <span className="text-[8px] font-mono text-slate-400 uppercase tracking-tighter">
+                        {colorVal.slice(0, 7)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
