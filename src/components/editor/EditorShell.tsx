@@ -152,12 +152,12 @@ export function EditorShell({
 
   const dockPosClass =
     dockPosition === "top"
-      ? "fixed top-6 left-1/2 -translate-x-1/2 flex-row"
+      ? "fixed top-6 left-1/2 -translate-x-1/2 flex flex-row items-center w-max max-w-[95vw] whitespace-nowrap gap-2"
       : dockPosition === "left"
-      ? "fixed left-6 top-1/2 -translate-y-1/2 flex-col"
+      ? "fixed left-6 top-1/2 -translate-y-1/2 flex flex-col items-center h-max max-h-[90vh] gap-2"
       : dockPosition === "right"
-      ? "fixed right-6 top-1/2 -translate-y-1/2 flex-col"
-      : "fixed bottom-6 left-1/2 -translate-x-1/2 flex-row";
+      ? "fixed right-6 top-1/2 -translate-y-1/2 flex flex-col items-center h-max max-h-[90vh] gap-2"
+      : "fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-row items-center w-max max-w-[95vw] whitespace-nowrap gap-2";
 
   const tooltipPosClass =
     dockPosition === "top"
