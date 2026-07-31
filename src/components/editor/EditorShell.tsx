@@ -41,8 +41,6 @@ import {
   LogOut,
   ArrowUp,
   ArrowDown,
-  GripHorizontal,
-  GripVertical,
 } from "lucide-react";
 
 import { SaveStatusButton } from "@/components/editor/SaveStatusButton";
@@ -548,21 +546,11 @@ export function EditorShell({
             style={{ x: dragX, y: dragY }}
             onDragEnd={handleDockDragEnd}
             className={cn(
-              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] cursor-grab active:cursor-grabbing select-none transition-all duration-300",
+              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] cursor-grab active:cursor-grabbing select-none transition-all duration-100 ease-out",
               isVerticalDock ? "rounded-full px-2 py-3" : "rounded-full px-3 py-1.5",
               dockPosClass
             )}
           >
-            {/* DRAG HANDLE GRIP */}
-            <div className="flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-grab active:cursor-grabbing p-1 shrink-0">
-              {isVerticalDock ? (
-                <GripHorizontal className="h-4 w-4" />
-              ) : (
-                <GripVertical className="h-4 w-4" />
-              )}
-            </div>
-
-            <div className={pipeClass} />
 
             {/* SEGMENT 1: BRAND / SYSTEM MENU TRIGGER */}
             <div className="group relative flex items-center">
