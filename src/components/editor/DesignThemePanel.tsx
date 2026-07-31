@@ -174,25 +174,21 @@ export function DesignThemePanel({
   onSelectPalette,
   onSelectFonts,
   onClose,
+  embed = false,
 }: {
   activePalette: PaletteColors;
   activeFonts: FontPack;
   onSelectPalette: (palette: PaletteColors) => void;
   onSelectFonts: (fonts: FontPack) => void;
   onClose: () => void;
+  embed?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<"colors" | "fonts">("colors");
 
-  return (
-    <motion.aside
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.2, ease: "easeInOut" }}
-      className="absolute left-0 top-0 bottom-0 z-40 flex w-[280px] flex-col justify-between bg-white p-4 shadow-2xl border-r border-slate-200/90 overflow-hidden select-none"
-    >
-      <div className="flex flex-col gap-4 overflow-hidden h-full">
-        {/* Header bar */}
+  const content = (
+    <div className="flex flex-col gap-4 overflow-hidden h-full">
+      {/* Header bar */}
+      {!embed && (
         <div className="flex items-center justify-between border-b border-slate-200 pb-3 shrink-0">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-900 text-white font-bold">
@@ -212,6 +208,7 @@ export function DesignThemePanel({
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
+      )}
 
         {/* Segmented Control Tabs */}
         <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200 shrink-0">
@@ -374,6 +371,21 @@ export function DesignThemePanel({
           </div>
         )}
       </div>
+    );
+
+  if (embed) {
+    return content;
+  }
+
+  return (
+    <motion.aside
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.2, ease: "easeInOut" }}
+      className="absolute left-0 top-0 bottom-0 z-40 flex w-[280px] flex-col justify-between bg-white p-4 shadow-2xl border-r border-slate-200/90 overflow-hidden select-none"
+    >
+      {content}
     </motion.aside>
   );
 }

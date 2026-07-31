@@ -316,11 +316,12 @@ export function UnifiedSettingsPanel({
             activeFonts={currentFonts}
             onSelectFonts={onSelectFonts}
             onClose={() => {}}
+            embed={true}
           />
         )}
 
         {/* TAB 3: ASSETS & MEDIA */}
-        {activeTab === "assets" && <AssetsMediaPanel onClose={() => {}} />}
+        {activeTab === "assets" && <AssetsMediaPanel onClose={() => {}} embed={true} />}
       </div>
     </motion.aside>
   );
