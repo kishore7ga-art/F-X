@@ -158,11 +158,6 @@ export function UnifiedSettingsPanel({
                             : "bg-white text-slate-800 font-medium hover:bg-slate-50 hover:text-slate-900 border-transparent"
                         )}
                       >
-                        {/* ACTIVE SUBTLE ACCENT TICK */}
-                        {isActive && (
-                          <span className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-blue-600" />
-                        )}
-
                         <div className="flex items-center gap-3.5 truncate">
                           <span className={cn("shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
                             {icon}
