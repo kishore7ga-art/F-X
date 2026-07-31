@@ -22,6 +22,13 @@ import {
   ArrowLeft,
   Sparkles,
   Check,
+  Zap,
+  Trash2,
+  Edit3,
+  Building,
+  DollarSign,
+  Shield,
+  Calendar,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import Link from "next/link";
@@ -129,6 +136,57 @@ export function BrandSystemModal({
       },
     ]);
     setInvitedEmail("");
+  };
+
+  // --- SUBSCRIPTION & PAYMENT MANAGEMENT STATE ---
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+  const [currentPlan, setCurrentPlan] = useState<"starter" | "pro" | "enterprise">("enterprise");
+  const [autoRenew, setAutoRenew] = useState(true);
+  const [billingEmail, setBillingEmail] = useState(`billing@${college.subdomain}.edu.in`);
+  const [taxId, setTaxId] = useState("GSTIN33AAACG1234F1Z9");
+  const [selectedGateway, setSelectedGateway] = useState<"card" | "wire" | "upi">("card");
+  
+  const [paymentCards, setPaymentCards] = useState([
+    { id: "c1", brand: "Visa", last4: "4242", exp: "08/28", holder: college.name || "University Admin", isDefault: true },
+    { id: "c2", brand: "Mastercard", last4: "8899", exp: "11/27", holder: college.name || "University Admin", isDefault: false },
+  ]);
+
+  const [showAddCardModal, setShowAddCardModal] = useState(false);
+  const [newCardNumber, setNewCardNumber] = useState("");
+  const [newCardExp, setNewCardExp] = useState("");
+  const [newCardCvc, setNewCardCvc] = useState("");
+  const [newCardName, setNewCardName] = useState("");
+
+  const [checkoutTargetPlan, setCheckoutTargetPlan] = useState<"starter" | "pro" | "enterprise" | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [subSaveFeedback, setSubSaveFeedback] = useState<string | null>(null);
+
+  const handleAddCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCardNumber || !newCardExp || !newCardCvc || !newCardName) return;
+    const last4 = newCardNumber.slice(-4) || "9999";
+    const brand = newCardNumber.startsWith("5") ? "Mastercard" : "Visa";
+    setPaymentCards((prev) => [
+      ...prev.map((c) => ({ ...c, isDefault: false })),
+      { id: String(Date.now()), brand, last4, exp: newCardExp, holder: newCardName, isDefault: true },
+    ]);
+    setShowAddCardModal(false);
+    setNewCardNumber("");
+    setNewCardExp("");
+    setNewCardCvc("");
+    setNewCardName("");
+  };
+
+  const handleConfirmPlanChange = () => {
+    if (!checkoutTargetPlan) return;
+    setIsProcessingPayment(true);
+    setTimeout(() => {
+      setCurrentPlan(checkoutTargetPlan);
+      setIsProcessingPayment(false);
+      setCheckoutTargetPlan(null);
+      setSubSaveFeedback(`Successfully updated plan to ${checkoutTargetPlan.toUpperCase()}`);
+      setTimeout(() => setSubSaveFeedback(null), 4000);
+    }, 1000);
   };
 
   const fullPageNode = (
@@ -290,14 +348,14 @@ export function BrandSystemModal({
                 {activeTab === "domain" && "Publishing & Custom Domain Settings"}
                 {activeTab === "users" && "User Management & Permissions"}
                 {activeTab === "security" && "Password & Account Security"}
-                {activeTab === "subscription" && "Subscription & Institutional Plan"}
+                {activeTab === "subscription" && "Subscription Plan & Payment Options"}
                 {activeTab === "transactions" && "Transaction History & Invoices"}
               </h2>
               <p className="text-xs font-medium text-slate-500 mt-1">
                 {activeTab === "domain" && "Configure A Record, CNAME, and SSL hosting for your website"}
                 {activeTab === "users" && "Manage staff access, team roles, and pending invitations"}
                 {activeTab === "security" && "Update master account login password and security credentials"}
-                {activeTab === "subscription" && "View active tier, feature quotas, and billing details"}
+                {activeTab === "subscription" && "Manage institution plans, active tier upgrades, payment cards & automated billing"}
                 {activeTab === "transactions" && "Download past receipts and payment statements"}
               </p>
             </div>
@@ -654,35 +712,538 @@ export function BrandSystemModal({
               </div>
             )}
 
-            {/* TAB 4: SUBSCRIPTION MANAGEMENT */}
+            {/* TAB 4: FULL-FLEDGED SUBSCRIPTION PLAN & PAYMENT OPTIONS */}
             {activeTab === "subscription" && (
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-slate-900 bg-slate-900 text-white p-7 shadow-xl space-y-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/30 px-3 py-1 rounded-full">
-                        Active Plan
-                      </span>
-                      <h3 className="text-2xl font-extrabold mt-3">Enterprise University Tier</h3>
-                      <p className="text-xs text-slate-300 mt-1">Unlimited sections, custom domains, priority CDN &amp; 24/7 SLA</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-black">$149</p>
-                      <p className="text-xs text-slate-400">per month</p>
-                    </div>
+              <div className="space-y-8">
+                {subSaveFeedback && (
+                  <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-bold text-emerald-800 flex items-center gap-2.5 shadow-2xs">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span>{subSaveFeedback}</span>
                   </div>
+                )}
 
-                  <div className="border-t border-slate-800 pt-5 flex items-center justify-between text-xs">
-                    <span className="text-slate-400">Next billing date: <strong className="text-white">Aug 28, 2026</strong></span>
+                {/* Billing Cycle Switcher */}
+                <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-2xs">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Billing Cycle Frequency</h3>
+                    <p className="text-xs text-slate-500">Switch to annual billing to unlock 20% discount and 2 free months</p>
+                  </div>
+                  <div className="flex items-center rounded-xl bg-white p-1 border border-slate-200/90 shadow-2xs">
                     <button
                       type="button"
-                      onClick={() => alert("Subscription portal opened")}
-                      className="rounded-xl bg-white px-5 py-2.5 text-xs font-bold text-slate-900 shadow-md hover:bg-slate-100 transition cursor-pointer"
+                      onClick={() => setBillingCycle("monthly")}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-lg transition ${
+                        billingCycle === "monthly"
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
                     >
-                      Manage Plan &amp; Billing
+                      Monthly
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBillingCycle("annual")}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition ${
+                        billingCycle === "annual"
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      <span>Annual</span>
+                      <span className="text-[10px] bg-emerald-500 text-white font-black px-1.5 py-0.2 rounded-md uppercase">
+                        Save 20%
+                      </span>
                     </button>
                   </div>
                 </div>
+
+                {/* Plan Tier Selection Grid */}
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Select University Plan Tier
+                  </h3>
+
+                  <div className="grid grid-cols-3 gap-5">
+                    {/* Tier 1: Starter */}
+                    <div className={`rounded-2xl border p-6 space-y-5 transition flex flex-col justify-between ${
+                      currentPlan === "starter"
+                        ? "border-indigo-600 bg-indigo-50/20 ring-2 ring-indigo-600/20 shadow-md"
+                        : "border-slate-200 bg-white hover:border-slate-300 shadow-2xs"
+                    }`}>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-600 uppercase">Starter Campus</span>
+                          {currentPlan === "starter" && (
+                            <span className="text-[10px] font-bold bg-indigo-600 text-white px-2.5 py-0.5 rounded-full">
+                              ● Active
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-2xl font-black text-slate-900">
+                            ${billingCycle === "annual" ? "24" : "29"}
+                            <span className="text-xs text-slate-500 font-normal">/mo</span>
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">Billed {billingCycle}</p>
+                        </div>
+                        <ul className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> 1 Custom Domain</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> 5 Staff Members</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> Standard Edge CDN</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> Community Support</li>
+                        </ul>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => currentPlan !== "starter" && setCheckoutTargetPlan("starter")}
+                        disabled={currentPlan === "starter"}
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          currentPlan === "starter"
+                            ? "bg-slate-100 text-slate-400 cursor-default"
+                            : "bg-slate-900 text-white hover:bg-slate-800"
+                        }`}
+                      >
+                        {currentPlan === "starter" ? "Current Plan" : "Switch to Starter"}
+                      </button>
+                    </div>
+
+                    {/* Tier 2: Pro */}
+                    <div className={`rounded-2xl border p-6 space-y-5 transition flex flex-col justify-between ${
+                      currentPlan === "pro"
+                        ? "border-indigo-600 bg-indigo-50/20 ring-2 ring-indigo-600/20 shadow-md"
+                        : "border-slate-200 bg-white hover:border-slate-300 shadow-2xs"
+                    }`}>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-indigo-600 uppercase flex items-center gap-1">
+                            <Sparkles className="h-3.5 w-3.5" /> Pro University
+                          </span>
+                          {currentPlan === "pro" && (
+                            <span className="text-[10px] font-bold bg-indigo-600 text-white px-2.5 py-0.5 rounded-full">
+                              ● Active
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-2xl font-black text-slate-900">
+                            ${billingCycle === "annual" ? "64" : "79"}
+                            <span className="text-xs text-slate-500 font-normal">/mo</span>
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">Billed {billingCycle}</p>
+                        </div>
+                        <ul className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> 3 Custom Domains</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> 15 Staff Members</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> Priority Edge CDN</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-indigo-600" /> 99.9% Uptime SLA</li>
+                        </ul>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => currentPlan !== "pro" && setCheckoutTargetPlan("pro")}
+                        disabled={currentPlan === "pro"}
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          currentPlan === "pro"
+                            ? "bg-slate-100 text-slate-400 cursor-default"
+                            : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-md shadow-indigo-600/20"
+                        }`}
+                      >
+                        {currentPlan === "pro" ? "Current Plan" : "Switch to Pro"}
+                      </button>
+                    </div>
+
+                    {/* Tier 3: Enterprise */}
+                    <div className={`rounded-2xl border p-6 space-y-5 transition flex flex-col justify-between ${
+                      currentPlan === "enterprise"
+                        ? "border-slate-900 bg-slate-900 text-white shadow-xl ring-2 ring-slate-900/30"
+                        : "border-slate-200 bg-white hover:border-slate-300 shadow-2xs"
+                    }`}>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold uppercase text-amber-400">Enterprise</span>
+                          {currentPlan === "enterprise" && (
+                            <span className="text-[10px] font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full">
+                              ● Current Plan
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-2xl font-black">
+                            ${billingCycle === "annual" ? "119" : "149"}
+                            <span className={`text-xs font-normal ${currentPlan === "enterprise" ? "text-slate-400" : "text-slate-500"}`}>/mo</span>
+                          </p>
+                          <p className={`text-[11px] mt-0.5 ${currentPlan === "enterprise" ? "text-slate-400" : "text-slate-500"}`}>Billed {billingCycle}</p>
+                        </div>
+                        <ul className={`space-y-2 text-xs pt-2 border-t ${currentPlan === "enterprise" ? "border-slate-800 text-slate-300" : "border-slate-100 text-slate-600"}`}>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-400" /> Unlimited Domains</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-400" /> Unlimited Staff</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-400" /> Anycast Dedicated CDN</li>
+                          <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-400" /> 24/7 SLA &amp; SSO/SAML</li>
+                        </ul>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => currentPlan !== "enterprise" && setCheckoutTargetPlan("enterprise")}
+                        disabled={currentPlan === "enterprise"}
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          currentPlan === "enterprise"
+                            ? "bg-slate-800 text-slate-400 cursor-default"
+                            : "bg-slate-900 text-white hover:bg-slate-800"
+                        }`}
+                      >
+                        {currentPlan === "enterprise" ? "Active Plan" : "Switch to Enterprise"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Methods & Cards Section */}
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Saved Payment Cards &amp; Gateways
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">Primary credit cards and billing gateways used for institutional billing</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCardModal(true)}
+                      className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add New Payment Card</span>
+                    </button>
+                  </div>
+
+                  {/* Payment Gateway Options Switcher */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGateway("card")}
+                      className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition cursor-pointer ${
+                        selectedGateway === "card"
+                          ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="h-4 w-4 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold">Credit / Debit Card</p>
+                          <p className="text-[10px] opacity-75">Stripe Instant</p>
+                        </div>
+                      </div>
+                      {selectedGateway === "card" && <Check className="h-4 w-4" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGateway("wire")}
+                      className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition cursor-pointer ${
+                        selectedGateway === "wire"
+                          ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Building className="h-4 w-4 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold">Bank Wire / ACH</p>
+                          <p className="text-[10px] opacity-75">Net-30 Invoice</p>
+                        </div>
+                      </div>
+                      {selectedGateway === "wire" && <Check className="h-4 w-4" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGateway("upi")}
+                      className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition cursor-pointer ${
+                        selectedGateway === "upi"
+                          ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <DollarSign className="h-4 w-4 shrink-0" />
+                        <div>
+                          <p className="text-xs font-bold">NetBanking / UPI</p>
+                          <p className="text-[10px] opacity-75">Institutional Gateway</p>
+                        </div>
+                      </div>
+                      {selectedGateway === "upi" && <Check className="h-4 w-4" />}
+                    </button>
+                  </div>
+
+                  {/* Cards List */}
+                  <div className="space-y-2.5">
+                    {paymentCards.map((card) => (
+                      <div
+                        key={card.id}
+                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className="flex h-9 w-12 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-xs tracking-wider">
+                            {card.brand}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                              <span>•••• •••• •••• {card.last4}</span>
+                              {card.isDefault && (
+                                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.2 rounded-md">
+                                  Default Card
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-slate-500">Expires {card.exp} • {card.holder}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {!card.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => setPaymentCards((prev) => prev.map((c) => ({ ...c, isDefault: c.id === card.id })))}
+                              className="text-xs font-semibold text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
+                            >
+                              Make Default
+                            </button>
+                          )}
+                          {paymentCards.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setPaymentCards((prev) => prev.filter((c) => c.id !== card.id))}
+                              className="p-1.5 text-slate-400 hover:text-red-600 transition cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Billing Preferences & Invoicing Info */}
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4 shadow-2xs">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Automated Invoicing &amp; Renewal Settings
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-600">Finance Email (Invoice Recipient)</label>
+                      <input
+                        type="email"
+                        value={billingEmail}
+                        onChange={(e) => setBillingEmail(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-600">Institutional Tax / GST / VAT ID</label>
+                      <input
+                        type="text"
+                        value={taxId}
+                        onChange={(e) => setTaxId(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-xs font-mono font-medium text-slate-900 outline-none focus:bg-white focus:border-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="autoRenew"
+                        checked={autoRenew}
+                        onChange={(e) => setAutoRenew(e.target.checked)}
+                        className="h-4 w-4 rounded-md border-slate-300 text-slate-900 focus:ring-slate-900"
+                      />
+                      <label htmlFor="autoRenew" className="text-xs font-semibold text-slate-800 cursor-pointer">
+                        Enable automatic renewal on next billing date (Aug 28, 2026)
+                      </label>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => alert("Billing preferences saved!")}
+                      className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white shadow-2xs hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Save Preferences
+                    </button>
+                  </div>
+                </div>
+
+                {/* MODAL: ADD CARD OVERLAY */}
+                {showAddCardModal && (
+                  <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-sans select-none pointer-events-auto">
+                    <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-indigo-600" /> Add New Payment Card
+                        </h4>
+                        <button type="button" onClick={() => setShowAddCardModal(false)} className="text-slate-400 hover:text-slate-900">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleAddCard} className="space-y-3.5">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600">Cardholder Name</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Greenfield University Finance Dept"
+                            value={newCardName}
+                            onChange={(e) => setNewCardName(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-medium text-slate-900"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-600">Card Number</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="4242 •••• •••• 4242"
+                            value={newCardNumber}
+                            onChange={(e) => setNewCardNumber(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-mono font-medium text-slate-900"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600">Expiration Date</label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="MM/YY"
+                              value={newCardExp}
+                              onChange={(e) => setNewCardExp(e.target.value)}
+                              className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-mono font-medium text-slate-900"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600">CVC Code</label>
+                            <input
+                              type="password"
+                              required
+                              placeholder="123"
+                              maxLength={4}
+                              value={newCardCvc}
+                              onChange={(e) => setNewCardCvc(e.target.value)}
+                              className="w-full rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-mono font-medium text-slate-900"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-2 flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddCardModal(false)}
+                            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-5 py-2 rounded-xl bg-slate-900 text-xs font-bold text-white hover:bg-slate-800"
+                          >
+                            Save Card
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {/* MODAL: CHECKOUT CONFIRMATION OVERLAY */}
+                {checkoutTargetPlan && (
+                  <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 font-sans select-none pointer-events-auto">
+                    <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-200 space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-emerald-600" /> Plan Checkout Order Summary
+                        </h4>
+                        <button type="button" onClick={() => setCheckoutTargetPlan(null)} className="text-slate-400 hover:text-slate-900">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 text-xs">
+                        <div className="flex justify-between font-bold text-slate-900">
+                          <span>Target Plan:</span>
+                          <span className="uppercase text-indigo-600">{checkoutTargetPlan} TIER</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Billing Frequency:</span>
+                          <span className="capitalize">{billingCycle}</span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>Item Price:</span>
+                          <span>${checkoutTargetPlan === "starter" ? (billingCycle === "annual" ? 24 : 29) : checkoutTargetPlan === "pro" ? (billingCycle === "annual" ? 64 : 79) : (billingCycle === "annual" ? 119 : 149)}/mo</span>
+                        </div>
+                        {billingCycle === "annual" && (
+                          <div className="flex justify-between text-emerald-700 font-bold">
+                            <span>Annual Discount:</span>
+                            <span>-20% Applied</span>
+                          </div>
+                        )}
+                        <div className="border-t border-slate-200 pt-2 flex justify-between font-black text-slate-900 text-sm">
+                          <span>Total Due Today:</span>
+                          <span>${checkoutTargetPlan === "starter" ? (billingCycle === "annual" ? 288 : 29) : checkoutTargetPlan === "pro" ? (billingCycle === "annual" ? 768 : 79) : (billingCycle === "annual" ? 1428 : 149)}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-600">Pay With Card</label>
+                        <select className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-semibold text-slate-900">
+                          {paymentCards.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.brand} ending in {c.last4} (Exp {c.exp})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="pt-2 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCheckoutTargetPlan(null)}
+                          className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleConfirmPlanChange}
+                          disabled={isProcessingPayment}
+                          className="px-6 py-2.5 rounded-xl bg-emerald-600 text-xs font-extrabold text-white hover:bg-emerald-500 shadow-md shadow-emerald-600/20 active:scale-95 transition cursor-pointer flex items-center gap-2"
+                        >
+                          {isProcessingPayment ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin text-white" />
+                              <span>Processing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4" />
+                              <span>Confirm &amp; Subscribe</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
