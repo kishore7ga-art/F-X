@@ -229,84 +229,61 @@ export function UnifiedSettingsPanel({
                           </div>
                         </div>
 
-                        <div className="flex items-center shrink-0 ml-2">
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 ml-2">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
+                              const newTitle = prompt("Rename page:", page.title);
+                              if (newTitle) alert(`Renamed page to ${newTitle}`);
                             }}
-                            className={cn(
-                              "flex h-7 w-7 items-center justify-center rounded-lg transition-all",
-                              activeContextMenuPageId === page.id
-                                ? "opacity-100 bg-slate-200 text-slate-900"
-                                : "opacity-0 group-hover:opacity-100 text-slate-400 hover:bg-slate-200/70 hover:text-slate-900"
-                            )}
+                            title="Rename"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition"
                           >
-                            <MoreVertical className="h-4 w-4" />
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              alert(`Duplicated ${page.title}`);
+                            }}
+                            title="Duplicate"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              alert(`Toggled visibility for ${page.title}`);
+                            }}
+                            title="Hide"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition"
+                          >
+                            <EyeOff className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (confirm(`Delete page ${page.title}?`)) alert(`Deleted page ${page.title}`);
+                            }}
+                            title="Delete"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </Link>
-
-                      {/* CONTEXT MENU */}
-                      {activeContextMenuPageId === page.id && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ duration: 0.1 }}
-                          className="absolute right-2 top-12 z-50 w-44 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl text-xs text-slate-900"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newTitle = prompt("Rename page:", page.title);
-                              if (newTitle) alert(`Renamed page to ${newTitle}`);
-                              setActiveContextMenuPageId(null);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-slate-100 transition font-medium"
-                          >
-                            <Edit2 className="h-3.5 w-3.5 text-slate-500" />
-                            <span>Rename</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              alert(`Duplicated ${page.title}`);
-                              setActiveContextMenuPageId(null);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-slate-100 transition font-medium"
-                          >
-                            <Copy className="h-3.5 w-3.5 text-slate-500" />
-                            <span>Duplicate</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              alert(`Toggled visibility for ${page.title}`);
-                              setActiveContextMenuPageId(null);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-slate-100 transition font-medium"
-                          >
-                            <EyeOff className="h-3.5 w-3.5 text-slate-500" />
-                            <span>Hide</span>
-                          </button>
-                          <div className="my-1 border-t border-slate-100" />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm(`Delete page ${page.title}?`)) alert(`Deleted page ${page.title}`);
-                              setActiveContextMenuPageId(null);
-                            }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-red-600 hover:bg-red-50 transition font-medium"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            <span>Delete</span>
-                          </button>
-                        </motion.div>
-                      )}
                     </div>
                   );
                 })}
