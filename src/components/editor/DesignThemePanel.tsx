@@ -72,42 +72,6 @@ export const PALETTE_PRESETS: {
       light: "#FAF5FF",
     },
   },
-  {
-    id: "monochrome-mono",
-    name: "Monochrome Dark",
-    category: "Minimalist",
-    colors: {
-      primary: "#18181B",
-      secondary: "#52525B",
-      accent: "#71717A",
-      dark: "#09090B",
-      light: "#FFFFFF",
-    },
-  },
-  {
-    id: "sunset-gold",
-    name: "Sunset Slate",
-    category: "Warm",
-    colors: {
-      primary: "#7C2D12",
-      secondary: "#EA580C",
-      accent: "#EAB308",
-      dark: "#18181B",
-      light: "#FFFBEB",
-    },
-  },
-  {
-    id: "nordic-cyan",
-    name: "Nordic Cyan",
-    category: "Fresh",
-    colors: {
-      primary: "#164E63",
-      secondary: "#06B6D4",
-      accent: "#F43F5E",
-      dark: "#083344",
-      light: "#ECFEFF",
-    },
-  },
 ];
 
 export const FONT_PRESETS: {
