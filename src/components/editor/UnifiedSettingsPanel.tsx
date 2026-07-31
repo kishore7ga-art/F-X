@@ -92,11 +92,11 @@ export function UnifiedSettingsPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 30 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute right-0 top-0 bottom-0 z-40 flex w-[330px] sm:w-[370px] flex-col bg-[#0B0F17] text-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] border-l border-slate-800/80 overflow-hidden select-none"
+      className="absolute right-0 top-0 bottom-0 z-40 flex w-[330px] sm:w-[370px] flex-col bg-white text-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-l border-slate-200/90 overflow-hidden select-none"
     >
       {/* FLOATING SEGMENTED CONTROL HEADER */}
-      <div className="p-3.5 border-b border-slate-800/80 bg-[#0B0F17]">
-        <div className="relative flex items-center gap-1 rounded-2xl bg-[#161B26] p-1 border border-slate-800/90">
+      <div className="p-3.5 border-b border-slate-200/80 bg-white">
+        <div className="relative flex items-center gap-1 rounded-2xl bg-slate-100 p-1 border border-slate-200/80">
           {[
             { id: "pages", label: "Pages", icon: Layers, count: pages.length },
             { id: "colors", label: "Colors", icon: Palette, count: PALETTE_PRESETS.length },
@@ -112,22 +112,22 @@ export function UnifiedSettingsPanel({
                 onClick={() => setActiveTab(tab.id as "pages" | "colors" | "fonts")}
                 className={cn(
                   "relative flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-extrabold transition-colors z-10",
-                  isActive ? "text-white" : "text-slate-400 hover:text-slate-200"
+                  isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeTabSegment"
-                    className="absolute inset-0 rounded-xl bg-[#222938] shadow-xs border border-slate-700/60 z-[-1]"
+                    className="absolute inset-0 rounded-xl bg-white shadow-xs border border-slate-200/90 z-[-1]"
                     transition={{ type: "spring", stiffness: 500, damping: 35 }}
                   />
                 )}
-                <Icon className={cn("h-3.5 w-3.5", isActive ? "text-white" : "text-slate-400")} />
+                <Icon className={cn("h-3.5 w-3.5", isActive ? "text-slate-900" : "text-slate-400")} />
                 <span>{tab.label}</span>
                 <span
                   className={cn(
                     "text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full transition-colors",
-                    isActive ? "bg-white/10 text-slate-200" : "bg-slate-800 text-slate-400"
+                    isActive ? "bg-slate-100 text-slate-700" : "bg-slate-200/70 text-slate-500"
                   )}
                 >
                   {tab.count}
@@ -145,7 +145,7 @@ export function UnifiedSettingsPanel({
           <div className="flex flex-col gap-4 h-full justify-between">
             <div className="flex flex-col gap-1 overflow-hidden">
               {/* PAGES LIST ITEM ROWS */}
-              <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5 pt-1">
+              <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 pt-1">
                 {pages.map((page) => {
                   const isActive = page.slug === currentPage.slug;
                   const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
@@ -162,15 +162,15 @@ export function UnifiedSettingsPanel({
                         className={cn(
                           "relative flex h-[50px] w-full items-center justify-between rounded-xl px-4 text-[15px] font-semibold transition-all duration-150",
                           isActive
-                            ? "bg-white/10 text-white font-bold border border-white/10"
-                            : "text-slate-200 hover:bg-white/5 hover:text-white"
+                            ? "bg-slate-100 text-slate-900 font-bold border border-slate-200/80 shadow-2xs"
+                            : "text-slate-800 hover:bg-slate-50 hover:text-slate-900"
                         )}
                       >
                         <div className="flex items-center gap-4 truncate">
-                          <span className="shrink-0 transition-colors text-white">
+                          <span className={cn("shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
                             {icon}
                           </span>
-                          <span className="truncate capitalize text-[15px] font-semibold tracking-tight text-white">{page.title}</span>
+                          <span className="truncate capitalize text-[15px] font-semibold tracking-tight text-slate-900">{page.title}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -181,7 +181,7 @@ export function UnifiedSettingsPanel({
                               e.stopPropagation();
                               setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
                             }}
-                            className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition"
+                            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200/70 hover:text-slate-900 transition"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
@@ -195,7 +195,7 @@ export function UnifiedSettingsPanel({
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ duration: 0.1 }}
-                          className="absolute right-2 top-12 z-50 w-44 rounded-2xl border border-slate-800 bg-[#161B26] p-1.5 shadow-2xl text-xs text-white"
+                          className="absolute right-2 top-12 z-50 w-44 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl text-xs text-slate-900"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <button
@@ -205,9 +205,9 @@ export function UnifiedSettingsPanel({
                               if (newTitle) alert(`Renamed page to ${newTitle}`);
                               setActiveContextMenuPageId(null);
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-white/10 transition font-medium"
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-slate-100 transition font-medium"
                           >
-                            <Edit2 className="h-3.5 w-3.5 text-slate-400" />
+                            <Edit2 className="h-3.5 w-3.5 text-slate-500" />
                             <span>Rename</span>
                           </button>
                           <button
@@ -216,9 +216,9 @@ export function UnifiedSettingsPanel({
                               alert(`Duplicated ${page.title}`);
                               setActiveContextMenuPageId(null);
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-white/10 transition font-medium"
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-slate-100 transition font-medium"
                           >
-                            <Copy className="h-3.5 w-3.5 text-slate-400" />
+                            <Copy className="h-3.5 w-3.5 text-slate-500" />
                             <span>Duplicate</span>
                           </button>
                           <button
@@ -227,19 +227,19 @@ export function UnifiedSettingsPanel({
                               alert(`Toggled visibility for ${page.title}`);
                               setActiveContextMenuPageId(null);
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-white/10 transition font-medium"
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-slate-100 transition font-medium"
                           >
-                            <EyeOff className="h-3.5 w-3.5 text-slate-400" />
+                            <EyeOff className="h-3.5 w-3.5 text-slate-500" />
                             <span>Hide</span>
                           </button>
-                          <div className="my-1 border-t border-slate-800" />
+                          <div className="my-1 border-t border-slate-100" />
                           <button
                             type="button"
                             onClick={() => {
                               if (confirm(`Delete page ${page.title}?`)) alert(`Deleted page ${page.title}`);
                               setActiveContextMenuPageId(null);
                             }}
-                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-red-400 hover:bg-red-500/10 transition font-medium"
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-red-600 hover:bg-red-50 transition font-medium"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             <span>Delete</span>
@@ -253,14 +253,14 @@ export function UnifiedSettingsPanel({
             </div>
 
             {/* BOTTOM ADD NEW PAGE BUTTON */}
-            <div className="pt-3 border-t border-slate-800/80">
+            <div className="pt-3 border-t border-slate-200/80">
               <button
                 type="button"
                 onClick={() => {
                   const name = prompt("Enter new page title:");
                   if (name) alert(`Adding page "${name}"`);
                 }}
-                className="flex h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-blue-500/50 bg-blue-600 text-xs font-extrabold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 transition-all active:scale-[0.99] cursor-pointer"
+                className="flex h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 text-xs font-extrabold text-white shadow-md shadow-slate-900/15 hover:bg-slate-800 transition-all active:scale-[0.99] cursor-pointer"
               >
                 <Plus className="h-4 w-4 stroke-[2.5]" />
                 <span>Add New Page</span>
