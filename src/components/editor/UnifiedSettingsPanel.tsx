@@ -20,6 +20,20 @@ import {
   Building2,
   Briefcase,
   Users,
+  BookOpen,
+  Award,
+  GraduationCap,
+  Building,
+  Microscope,
+  Smile,
+  Trophy,
+  Rocket,
+  Bus,
+  Image as ImageIcon,
+  Globe,
+  Newspaper,
+  BookMarked,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
@@ -36,14 +50,56 @@ interface PageData {
 const PAGE_ICONS: Record<string, ReactNode> = {
   home: <Home className="h-5 w-5 stroke-[1.8]" />,
   about: <Info className="h-5 w-5 stroke-[1.8]" />,
-  academics: <Building2 className="h-5 w-5 stroke-[1.8]" />,
-  events: <Calendar className="h-5 w-5 stroke-[1.8]" />,
-  faculty: <Users className="h-5 w-5 stroke-[1.8]" />,
   admissions: <Briefcase className="h-5 w-5 stroke-[1.8]" />,
+  programs: <BookOpen className="h-5 w-5 stroke-[1.8]" />,
+  departments: <Building2 className="h-5 w-5 stroke-[1.8]" />,
+  placements: <Award className="h-5 w-5 stroke-[1.8]" />,
   contact: <Mail className="h-5 w-5 stroke-[1.8]" />,
+  faculty: <Users className="h-5 w-5 stroke-[1.8]" />,
+  scholarships: <GraduationCap className="h-5 w-5 stroke-[1.8]" />,
+  infrastructure: <Building className="h-5 w-5 stroke-[1.8]" />,
+  hostel: <Home className="h-5 w-5 stroke-[1.8]" />,
+  research: <Microscope className="h-5 w-5 stroke-[1.8]" />,
+  "student-life": <Smile className="h-5 w-5 stroke-[1.8]" />,
+  "centre-of-excellence": <Trophy className="h-5 w-5 stroke-[1.8]" />,
+  "incubation-cell": <Rocket className="h-5 w-5 stroke-[1.8]" />,
+  transport: <Bus className="h-5 w-5 stroke-[1.8]" />,
+  events: <Calendar className="h-5 w-5 stroke-[1.8]" />,
+  gallery: <ImageIcon className="h-5 w-5 stroke-[1.8]" />,
+  "international-relations": <Globe className="h-5 w-5 stroke-[1.8]" />,
+  news: <Newspaper className="h-5 w-5 stroke-[1.8]" />,
+  blog: <FileText className="h-5 w-5 stroke-[1.8]" />,
+  "blog-article": <BookMarked className="h-5 w-5 stroke-[1.8]" />,
+  careers: <UserCheck className="h-5 w-5 stroke-[1.8]" />,
 };
 
 const DEFAULT_PAGE_ICON = <FileText className="h-5 w-5 stroke-[1.8]" />;
+
+export const FULL_23_PAGES_LIST: PageData[] = [
+  { id: "p-home", slug: "home", title: "Home", isPublished: true },
+  { id: "p-about", slug: "about", title: "About", isPublished: true },
+  { id: "p-admissions", slug: "admissions", title: "Admissions", isPublished: true },
+  { id: "p-programs", slug: "programs", title: "Programs", isPublished: true },
+  { id: "p-departments", slug: "departments", title: "Schools/Department", isPublished: true },
+  { id: "p-placements", slug: "placements", title: "Placement & Career Services", isPublished: true },
+  { id: "p-contact", slug: "contact", title: "Contact Us", isPublished: true },
+  { id: "p-faculty", slug: "faculty", title: "Leadership & Faculty Team", isPublished: true },
+  { id: "p-scholarships", slug: "scholarships", title: "Scholarships", isPublished: true },
+  { id: "p-infrastructure", slug: "infrastructure", title: "Infrastructure", isPublished: true },
+  { id: "p-hostel", slug: "hostel", title: "Hostel", isPublished: true },
+  { id: "p-research", slug: "research", title: "Research & Innovation", isPublished: true },
+  { id: "p-student-life", slug: "student-life", title: "Student Life", isPublished: true },
+  { id: "p-coe", slug: "centre-of-excellence", title: "Centre for Excellence", isPublished: true },
+  { id: "p-incubation", slug: "incubation-cell", title: "Startup Cell / Incubation Centre", isPublished: true },
+  { id: "p-transport", slug: "transport", title: "Transport", isPublished: true },
+  { id: "p-events", slug: "events", title: "Events", isPublished: true },
+  { id: "p-gallery", slug: "gallery", title: "Gallery", isPublished: true },
+  { id: "p-ir", slug: "international-relations", title: "International Relations", isPublished: true },
+  { id: "p-news", slug: "news", title: "News", isPublished: true },
+  { id: "p-blog", slug: "blog", title: "Blog Home Page", isPublished: true },
+  { id: "p-blog-article", slug: "blog-article", title: "Blog Article Page", isPublished: true },
+  { id: "p-careers", slug: "careers", title: "Careers", isPublished: true },
+];
 
 interface UnifiedSettingsPanelProps {
   college: {
@@ -85,6 +141,11 @@ export function UnifiedSettingsPanel({
 }: UnifiedSettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts">(initialTab);
 
+  // Combine passed pages with full 23 pages list to ensure every requested page is available
+  const existingSlugs = new Set(pages.map((p) => p.slug.toLowerCase()));
+  const missingPages = FULL_23_PAGES_LIST.filter((p) => !existingSlugs.has(p.slug.toLowerCase()));
+  const displayPages = [...pages, ...missingPages];
+
   return (
     <motion.aside
       key="unified-settings-panel"
@@ -92,7 +153,7 @@ export function UnifiedSettingsPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 30 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute right-0 top-0 bottom-0 z-40 flex w-[330px] sm:w-[370px] flex-col bg-white text-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)] border-l border-slate-200/90 overflow-hidden select-none"
+      className="absolute right-0 top-0 bottom-0 z-40 flex w-[330px] sm:w-[370px] flex-col bg-white text-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-l border-slate-200/90 overflow-hidden select-none"
     >
       {/* FLOATING SEGMENTED CONTROL HEADER */}
       <div className="p-3.5 border-b border-slate-200/80 bg-white">
@@ -137,9 +198,9 @@ export function UnifiedSettingsPanel({
           <div className="flex flex-col gap-4 h-full justify-between">
             <div className="flex flex-col gap-1 overflow-hidden">
               {/* PAGES LIST ITEM ROWS */}
-              <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5 pt-0.5">
-                {pages.map((page) => {
-                  const isActive = page.slug === currentPage.slug;
+              <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 pt-0.5">
+                {displayPages.map((page) => {
+                  const isActive = page.slug.toLowerCase() === currentPage.slug.toLowerCase();
                   const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
 
                   return (
