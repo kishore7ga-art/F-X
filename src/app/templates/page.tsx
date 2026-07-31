@@ -46,7 +46,7 @@ export default async function TemplateGalleryPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200/80 pb-6 mb-8">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 border border-slate-200">
-              <span>5 Academic Designs</span>
+              <span>{templates.length} Academic Design{templates.length === 1 ? "" : "s"}</span>
             </div>
             <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
               Choose a template
@@ -64,63 +64,72 @@ export default async function TemplateGalleryPage() {
           </Link>
         </div>
 
-        {/* Real Templates Grid */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {templates.map((template) => {
-            const customPreview = TEMPLATE_PREVIEWS[template.name] || {
-              image: template.thumbnailUrl || "/template-brightwood.jpg",
-              tag: "Academic Template",
-            };
+        {/* Templates Grid or Empty State */}
+        {templates.length === 0 ? (
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-12 text-center shadow-md">
+            <h2 className="text-xl font-extrabold text-slate-900">No Templates Available</h2>
+            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
+              All templates have been deleted or archived. Log into the Admin Panel to create or publish a template.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {templates.map((template) => {
+              const customPreview = TEMPLATE_PREVIEWS[template.name] || {
+                image: template.thumbnailUrl || "/template-brightwood.jpg",
+                tag: "Academic Template",
+              };
 
-            return (
-              <Link
-                key={template.id}
-                href={`/templates/${template.id}`}
-                className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:border-slate-300"
-              >
-                {/* Real Preview Image Header */}
-                <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
-                  <SiteImage
-                    src={customPreview.image}
-                    alt={template.name}
-                    className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute top-3 left-3 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 text-xs font-bold text-white shadow-sm">
-                    {customPreview.tag}
+              return (
+                <Link
+                  key={template.id}
+                  href={`/templates/${template.id}`}
+                  className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:border-slate-300"
+                >
+                  {/* Real Preview Image Header */}
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
+                    <SiteImage
+                      src={customPreview.image}
+                      alt={template.name}
+                      className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute top-3 left-3 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 text-xs font-bold text-white shadow-sm">
+                      {customPreview.tag}
+                    </div>
                   </div>
-                </div>
 
-                {/* Card Content */}
-                <div className="flex flex-1 flex-col justify-between p-6">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors">
-                        {template.name}
-                      </h2>
-                      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                        {template.sectionCount} sections
-                      </span>
+                  {/* Card Content */}
+                  <div className="flex flex-1 flex-col justify-between p-6">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors">
+                          {template.name}
+                        </h2>
+                        <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                          {template.sectionCount} sections
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed font-medium line-clamp-2">
+                        {template.description ||
+                          "A fully customizable, NAAC-ready design built specifically for educational institutions."}
+                      </p>
                     </div>
 
-                    <p className="mt-2 text-xs sm:text-sm text-slate-500 leading-relaxed font-medium line-clamp-2">
-                      {template.description ||
-                        "A fully customizable, NAAC-ready design built specifically for educational institutions."}
-                    </p>
+                    <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Live Preview
+                      </span>
+                      <span className="flex items-center gap-1 text-sm font-extrabold text-slate-900 group-hover:translate-x-1 transition-transform">
+                        Select Template →
+                      </span>
+                    </div>
                   </div>
-
-                  <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      Live Preview
-                    </span>
-                    <span className="flex items-center gap-1 text-sm font-extrabold text-slate-900 group-hover:translate-x-1 transition-transform">
-                      Select Template →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </main>
   );
