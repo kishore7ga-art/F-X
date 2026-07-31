@@ -96,32 +96,10 @@ export function UnifiedSettingsPanel({
       transition={{ duration: 0.2, ease: "easeInOut" }}
       className="absolute right-0 top-0 bottom-0 z-40 flex w-[320px] sm:w-[360px] flex-col bg-white shadow-2xl border-l border-slate-200/90 overflow-hidden"
     >
-      {/* PANEL HEADER WITH TAB SWITCHER */}
-      <div className="flex flex-col gap-3 p-4 border-b border-slate-200/80 bg-slate-50/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white font-extrabold text-xs">
-              S
-            </div>
-            <div>
-              <h2 className="text-xs font-bold text-slate-900 tracking-tight truncate max-w-[170px]">
-                {college.name || "Kaveri Institute"}
-              </h2>
-              <p className="text-[10px] font-medium text-slate-400">Design &amp; Site Settings</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-900 transition"
-            title="Close panel"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
+      {/* PANEL HEADER TAB SWITCHER */}
+      <div className="flex items-center gap-2 p-3 border-b border-slate-200/80 bg-slate-50/50">
         {/* TOP TAB CONTROL SWITCHER */}
-        <div className="flex items-center gap-1 rounded-xl bg-slate-200/70 p-1">
+        <div className="flex flex-1 items-center gap-1 rounded-xl bg-slate-200/70 p-1">
           <button
             type="button"
             onClick={() => setActiveTab("pages")}
@@ -164,6 +142,15 @@ export function UnifiedSettingsPanel({
             <span>Fonts</span>
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-900 transition shrink-0"
+          title="Close panel"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
       {/* TAB CONTENT DISPLAY */}
