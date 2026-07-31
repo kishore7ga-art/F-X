@@ -62,7 +62,7 @@ import type { EditorPageData } from "@/lib/editor/queries";
 import type { PaletteColors, FontPack } from "@/lib/theme/theme";
 import { buildThemeStyle, googleFontsHref } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useMotionValue } from "motion/react";
 
 const PAGE_ICONS: Record<string, ReactNode> = {
   home: <Home className="h-3.5 w-3.5" />,
@@ -119,11 +119,16 @@ export function EditorShell({
   const currentTabletRes = TABLET_RESOLUTIONS[tabletResIdx];
   const currentMobileRes = MOBILE_RESOLUTIONS[mobileResIdx];
   const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
+  const dragX = useMotionValue(0);
+  const dragY = useMotionValue(0);
 
   const handleDockDragEnd = (
     _event: MouseEvent | TouchEvent | PointerEvent,
     info: { point: { x: number; y: number } }
   ) => {
+    dragX.set(0);
+    dragY.set(0);
+
     const { x, y } = info.point;
     const screenW = typeof window !== "undefined" ? window.innerWidth : 1200;
     const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
@@ -541,13 +546,13 @@ export function EditorShell({
           {/* Floating Edge-Snapping Draggable Viewport, History, Panels & Section Controls Toast Dock */}
           <motion.div
             drag
-            dragSnapToOrigin={true}
-            dragElastic={0.08}
             dragMomentum={false}
+            dragElastic={0}
+            style={{ x: dragX, y: dragY }}
             onDragEnd={handleDockDragEnd}
             className={cn(
-              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-3 py-1.5 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] cursor-grab active:cursor-grabbing select-none",
-              isVerticalDock ? "rounded-3xl" : "rounded-full",
+              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] cursor-grab active:cursor-grabbing select-none transition-all duration-300",
+              isVerticalDock ? "rounded-3xl px-2 py-3.5" : "rounded-full px-3 py-1.5",
               dockPosClass
             )}
           >
