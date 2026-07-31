@@ -399,21 +399,29 @@ export function EditorShell({
             style={{ x: dragX, y: dragY }}
             onDragEnd={handleDockDragEnd}
             className={cn(
-              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] select-none transition-all duration-100 ease-out",
-              isVerticalDock ? "rounded-full px-2 py-3" : "rounded-full px-3 py-1.5",
+              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.22)] ring-1 ring-black/5 hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.28)] select-none transition-all duration-100 ease-out",
+              isVerticalDock ? "rounded-2xl px-2 py-3" : "rounded-2xl px-3.5 py-2",
               dockPosClass
             )}
           >
 
             {/* SEGMENT 1: BRAND / SYSTEM MENU TRIGGER */}
-            <div className="group relative flex items-center">
+            <div className="group relative flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsBrandModalOpen(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white font-extrabold text-xs shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white font-extrabold text-xs shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <span>X</span>
               </button>
+
+              {!isVerticalDock && (
+                <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 border border-slate-200/80">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Live</span>
+                </div>
+              )}
+
               <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                 System &amp; Brand Settings (Domains, Team, Subscription)
                 <span className={cn("absolute", tooltipArrowClass)} />
@@ -661,10 +669,10 @@ export function EditorShell({
                   }}
                   aria-label={`Desktop View (${currentDesktopRes}px)`}
                   className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium tracking-tight transition-all cursor-pointer",
+                    "flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-xs font-extrabold tracking-tight transition-all cursor-pointer",
                     deviceMode === "desktop"
-                      ? "bg-white text-slate-900 shadow-2xs font-bold"
-                      : "text-slate-700 hover:bg-slate-200/80 hover:text-black"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-black"
                   )}
                 >
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
