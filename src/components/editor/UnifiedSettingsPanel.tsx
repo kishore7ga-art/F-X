@@ -90,11 +90,11 @@ export function UnifiedSettingsPanel({
   return (
     <motion.aside
       key="unified-settings-panel"
-      initial={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      exit={{ opacity: 0, x: 20 }}
       transition={{ duration: 0.2, ease: "easeInOut" }}
-      className="absolute left-0 top-0 bottom-0 z-40 flex w-[320px] sm:w-[360px] flex-col bg-white shadow-2xl border-r border-slate-200/90 overflow-hidden"
+      className="absolute right-0 top-0 bottom-0 z-40 flex w-[320px] sm:w-[360px] flex-col bg-white shadow-2xl border-l border-slate-200/90 overflow-hidden"
     >
       {/* PANEL HEADER WITH TAB SWITCHER */}
       <div className="flex flex-col gap-3 p-4 border-b border-slate-200/80 bg-slate-50/50">
