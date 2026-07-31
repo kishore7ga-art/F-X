@@ -222,17 +222,7 @@ export function UnifiedSettingsPanel({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "text-[9px] font-mono font-extrabold px-2.5 py-0.5 rounded-full transition-colors border",
-                              isActive
-                                ? "bg-blue-500/20 text-blue-300 border-blue-400/30"
-                                : "bg-slate-100 text-slate-500 border-slate-200/80"
-                            )}
-                          >
-                            {page.slug === "home" ? "Main" : "Page"}
-                          </span>
+                        <div className="flex items-center gap-1">
 
                           <button
                             type="button"
