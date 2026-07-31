@@ -20,7 +20,6 @@ import {
   Building2,
   Briefcase,
   Users,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
@@ -35,28 +34,16 @@ interface PageData {
 }
 
 const PAGE_ICONS: Record<string, ReactNode> = {
-  home: <Home className="h-4 w-4" />,
-  about: <Info className="h-4 w-4" />,
-  academics: <Building2 className="h-4 w-4" />,
-  events: <Calendar className="h-4 w-4" />,
-  faculty: <Users className="h-4 w-4" />,
-  admissions: <Briefcase className="h-4 w-4" />,
-  contact: <Mail className="h-4 w-4" />,
+  home: <Home className="h-5 w-5 stroke-[1.8]" />,
+  about: <Info className="h-5 w-5 stroke-[1.8]" />,
+  academics: <Building2 className="h-5 w-5 stroke-[1.8]" />,
+  events: <Calendar className="h-5 w-5 stroke-[1.8]" />,
+  faculty: <Users className="h-5 w-5 stroke-[1.8]" />,
+  admissions: <Briefcase className="h-5 w-5 stroke-[1.8]" />,
+  contact: <Mail className="h-5 w-5 stroke-[1.8]" />,
 };
 
-const DEFAULT_PAGE_ICON = <FileText className="h-4 w-4" />;
-
-const PAGE_ICON_STYLES: Record<string, { bg: string; text: string }> = {
-  home: { bg: "bg-blue-500/10", text: "text-blue-600" },
-  about: { bg: "bg-emerald-500/10", text: "text-emerald-600" },
-  academics: { bg: "bg-amber-500/10", text: "text-amber-600" },
-  events: { bg: "bg-purple-500/10", text: "text-purple-600" },
-  faculty: { bg: "bg-indigo-500/10", text: "text-indigo-600" },
-  admissions: { bg: "bg-cyan-500/10", text: "text-cyan-600" },
-  contact: { bg: "bg-rose-500/10", text: "text-rose-600" },
-};
-
-const DEFAULT_ICON_STYLE = { bg: "bg-slate-100", text: "text-slate-500" };
+const DEFAULT_PAGE_ICON = <FileText className="h-5 w-5 stroke-[1.8]" />;
 
 interface UnifiedSettingsPanelProps {
   college: {
@@ -101,18 +88,15 @@ export function UnifiedSettingsPanel({
   return (
     <motion.aside
       key="unified-settings-panel"
-      initial={{ opacity: 0, x: 40 }}
+      initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute right-0 top-0 bottom-0 z-40 flex w-[340px] sm:w-[380px] flex-col bg-white/95 backdrop-blur-3xl shadow-[0_30px_70px_rgba(0,0,0,0.22)] border-l border-slate-200/90 overflow-hidden select-none"
+      exit={{ opacity: 0, x: 30 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute right-0 top-0 bottom-0 z-40 flex w-[330px] sm:w-[370px] flex-col bg-white text-slate-900 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.2)] border-l border-slate-200/90 overflow-hidden select-none"
     >
-      {/* TOP ACCENT GRADIENT LINE */}
-      <div className="h-[2.5px] w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-
       {/* FLOATING SEGMENTED CONTROL HEADER */}
-      <div className="p-3.5 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
-        <div className="relative flex items-center gap-1.5 rounded-2xl bg-slate-100/90 p-1.5 border border-slate-200/80 shadow-2xs">
+      <div className="p-3.5 border-b border-slate-200/80 bg-white">
+        <div className="relative flex items-center gap-1 rounded-2xl bg-slate-100 p-1 border border-slate-200/80">
           {[
             { id: "pages", label: "Pages", icon: Layers },
             { id: "colors", label: "Colors", icon: Palette },
@@ -128,17 +112,17 @@ export function UnifiedSettingsPanel({
                 onClick={() => setActiveTab(tab.id as "pages" | "colors" | "fonts")}
                 className={cn(
                   "relative flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold transition-colors z-10",
-                  isActive ? "text-white" : "text-slate-500 hover:text-slate-900"
+                  isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeTabSegment"
-                    className="absolute inset-0 rounded-xl bg-slate-900 shadow-md z-[-1]"
+                    className="absolute inset-0 rounded-xl bg-white shadow-xs border border-slate-200/90 z-[-1]"
                     transition={{ type: "spring", stiffness: 500, damping: 35 }}
                   />
                 )}
-                <Icon className={cn("h-3.5 w-3.5", isActive ? "text-white" : "text-slate-400")} />
+                <Icon className={cn("h-3.5 w-3.5", isActive ? "text-slate-900" : "text-slate-400")} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -147,26 +131,16 @@ export function UnifiedSettingsPanel({
       </div>
 
       {/* TAB CONTENT DISPLAY */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-3.5">
         {/* TAB 1: PAGES & LAYERS */}
         {activeTab === "pages" && (
           <div className="flex flex-col gap-4 h-full justify-between">
-            <div className="flex flex-col gap-3 overflow-hidden">
-              {/* SECTION HEADER */}
-              <div className="flex items-center justify-between px-1 pt-0.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Sparkles className="h-3 w-3 text-blue-500" />
-                  Site Structure ({pages.length})
-                </span>
-                <span className="text-[10px] font-semibold text-slate-400">Reorderable</span>
-              </div>
-
-              {/* PAGES LIST ITEM CARDS */}
-              <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 pt-0.5">
+            <div className="flex flex-col gap-1 overflow-hidden">
+              {/* PAGES LIST ITEM ROWS */}
+              <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5 pt-0.5">
                 {pages.map((page) => {
                   const isActive = page.slug === currentPage.slug;
                   const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
-                  const iconStyle = PAGE_ICON_STYLES[page.slug.toLowerCase()] ?? DEFAULT_ICON_STYLE;
 
                   return (
                     <div key={page.id} className="relative group">
@@ -178,39 +152,22 @@ export function UnifiedSettingsPanel({
                           setActiveContextMenuPageId(page.id);
                         }}
                         className={cn(
-                          "relative flex h-[52px] w-full items-center justify-between rounded-2xl px-4 text-xs transition-all duration-200 border",
+                          "relative flex h-[48px] w-full items-center justify-between rounded-xl px-4 text-[14px] font-semibold transition-all duration-150 border",
                           isActive
-                            ? "bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white font-extrabold border-slate-900 shadow-xl shadow-slate-900/20"
-                            : "bg-white/90 text-slate-800 font-bold hover:bg-slate-50 hover:border-slate-300/80 border-slate-200/70 shadow-2xs hover:-translate-y-0.5"
+                            ? "bg-slate-100/90 text-slate-900 font-extrabold border-slate-200/90 shadow-2xs"
+                            : "bg-white text-slate-800 font-medium hover:bg-slate-50 hover:text-slate-900 border-transparent"
                         )}
                       >
-                        {/* ACTIVE GLOWING LEFT ACCENT */}
+                        {/* ACTIVE SUBTLE ACCENT TICK */}
                         {isActive && (
-                          <span className="absolute left-0 top-2.5 bottom-2.5 w-[3.5px] rounded-r-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)]" />
+                          <span className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-r-full bg-blue-600" />
                         )}
 
                         <div className="flex items-center gap-3.5 truncate">
-                          <div
-                            className={cn(
-                              "flex h-8.5 w-8.5 items-center justify-center rounded-xl transition-all duration-200 group-hover:scale-105 shrink-0",
-                              isActive
-                                ? "bg-blue-500/20 text-blue-400 border border-blue-400/30"
-                                : `${iconStyle.bg} ${iconStyle.text}`
-                            )}
-                          >
+                          <span className={cn("shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
                             {icon}
-                          </div>
-                          <div className="flex flex-col truncate">
-                            <span className="truncate capitalize text-xs tracking-tight">{page.title}</span>
-                            <span
-                              className={cn(
-                                "text-[9px] font-mono font-medium truncate",
-                                isActive ? "text-slate-300" : "text-slate-400"
-                              )}
-                            >
-                              /{page.slug}
-                            </span>
-                          </div>
+                          </span>
+                          <span className="truncate capitalize text-[14px] font-semibold tracking-tight text-slate-900">{page.title}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -221,12 +178,7 @@ export function UnifiedSettingsPanel({
                               e.stopPropagation();
                               setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
                             }}
-                            className={cn(
-                              "rounded-xl p-1 transition",
-                              isActive
-                                ? "text-slate-300 hover:bg-slate-800 hover:text-white"
-                                : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
-                            )}
+                            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200/70 hover:text-slate-900 transition"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
@@ -305,9 +257,9 @@ export function UnifiedSettingsPanel({
                   const name = prompt("Enter new page title:");
                   if (name) alert(`Adding page "${name}"`);
                 }}
-                className="flex h-[48px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-900 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-xs font-extrabold text-white shadow-xl shadow-slate-900/20 hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.99] cursor-pointer group"
+                className="flex h-[46px] w-full items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 text-xs font-extrabold text-white shadow-md shadow-slate-900/15 hover:bg-slate-800 transition-all active:scale-[0.99] cursor-pointer"
               >
-                <Plus className="h-4 w-4 stroke-[2.5] transition-transform group-hover:rotate-90 duration-300" />
+                <Plus className="h-4 w-4 stroke-[2.5]" />
                 <span>Add New Page</span>
               </button>
             </div>
