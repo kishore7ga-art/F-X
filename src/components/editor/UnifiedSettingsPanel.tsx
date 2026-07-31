@@ -140,38 +140,17 @@ export function UnifiedSettingsPanel({
         {activeTab === "pages" && (
           <div className="flex flex-col gap-4 h-full justify-between">
             <div className="flex flex-col gap-3 overflow-hidden">
-              {/* SEARCH INPUT BAR */}
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search pages..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-[42px] w-full rounded-2xl border border-slate-200/90 bg-slate-100/80 pl-9 pr-8 text-xs font-medium text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-900/5 shadow-2xs"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-
               {/* PAGES LIST HEADER */}
               <div className="flex items-center justify-between px-1 pt-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
-                  Site Pages ({filteredPages.length})
+                  Site Pages ({pages.length})
                 </span>
                 <span className="text-[10px] font-semibold text-slate-400">Drag to reorder</span>
               </div>
 
               {/* PAGES LIST ITEM CARDS */}
               <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
-                {filteredPages.map((page) => {
+                {pages.map((page) => {
                   const isActive = page.slug === currentPage.slug;
                   const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
 
