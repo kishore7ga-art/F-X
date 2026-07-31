@@ -25,7 +25,7 @@ export function SaveStatusButton() {
         onClick={handleManualSave}
         aria-label="Save status & manual save"
         className={cn(
-          "relative flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 cursor-pointer",
+          "relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer",
           saveState === "saved"
             ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
             : saveState === "saving"
@@ -34,11 +34,11 @@ export function SaveStatusButton() {
         )}
       >
         {saveState === "saving" ? (
-          <Loader2 className="h-4 w-4 animate-spin text-slate-600" />
+          <Loader2 className="h-4.5 w-4.5 animate-spin text-slate-600" />
         ) : saveState === "saved" ? (
-          <Check className="h-4 w-4 text-emerald-600" />
+          <Check className="h-4.5 w-4.5 text-emerald-600" />
         ) : (
-          <Save className="h-4 w-4" strokeWidth={2.2} />
+          <Save className="h-4.5 w-4.5" strokeWidth={2.2} />
         )}
 
         {/* Live Auto-Save Dot Indicator (Green when idle/saved) */}

@@ -176,13 +176,13 @@ export function PublishToggle({
           disabled={isPending}
           aria-label={isPublished ? "Site Published - Click to Share Link" : "Publish Site"}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all duration-200 cursor-pointer"
+            "flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all duration-200 cursor-pointer"
           )}
         >
           {isPending ? (
-            <RefreshCw className="h-4 w-4 animate-spin text-slate-600" />
+            <RefreshCw className="h-4.5 w-4.5 animate-spin text-slate-600" />
           ) : (
-            <Link2 className="h-4 w-4" strokeWidth={2.2} />
+            <Link2 className="h-4.5 w-4.5" strokeWidth={2.2} />
           )}
         </button>
 
