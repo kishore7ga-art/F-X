@@ -213,23 +213,23 @@ export function UnifiedSettingsPanel({
                           setActiveContextMenuPageId(page.id);
                         }}
                         className={cn(
-                          "relative flex h-[52px] w-full items-center justify-between rounded-xl px-3.5 text-[14px] font-semibold transition-all duration-150 border",
+                          "relative flex h-[52px] w-full items-center justify-between rounded-xl px-3.5 text-[14px] font-semibold transition-all duration-150 border overflow-hidden",
                           isActive
                             ? "bg-slate-100/90 text-slate-900 font-extrabold border-slate-200/90 shadow-2xs"
                             : "bg-white text-slate-800 font-medium hover:bg-slate-50 hover:text-slate-900 border-transparent"
                         )}
                       >
-                        <div className="flex items-center gap-3 min-w-0 flex-1 truncate">
-                          <span className={cn("shrink-0 transition-colors flex h-5 w-5 items-center justify-center", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
+                        <div className="flex items-center gap-3 min-w-0 flex-1 truncate pr-1">
+                          <span className={cn("shrink-0 transition-colors flex h-5 w-5 items-center justify-center text-slate-700 group-hover:text-slate-900")}>
                             {icon}
                           </span>
                           <div className="flex flex-col min-w-0 flex-1 justify-center leading-tight">
                             <span className="truncate capitalize text-[13.5px] font-semibold tracking-tight text-slate-900 leading-snug">{page.title}</span>
-                            <span className="text-[10px] font-mono font-medium text-slate-400 leading-none">/{page.slug}</span>
+                            <span className="text-[10px] font-mono font-medium text-slate-400 leading-none truncate">/{page.slug}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 ml-2">
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0 ml-1">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -239,7 +239,7 @@ export function UnifiedSettingsPanel({
                               if (newTitle) alert(`Renamed page to ${newTitle}`);
                             }}
                             title="Rename"
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition shrink-0"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
@@ -252,7 +252,7 @@ export function UnifiedSettingsPanel({
                               alert(`Duplicated ${page.title}`);
                             }}
                             title="Duplicate"
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition shrink-0"
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </button>
@@ -265,7 +265,7 @@ export function UnifiedSettingsPanel({
                               alert(`Toggled visibility for ${page.title}`);
                             }}
                             title="Hide"
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/80 hover:text-slate-900 transition shrink-0"
                           >
                             <EyeOff className="h-3.5 w-3.5" />
                           </button>
@@ -278,7 +278,7 @@ export function UnifiedSettingsPanel({
                               if (confirm(`Delete page ${page.title}?`)) alert(`Deleted page ${page.title}`);
                             }}
                             title="Delete"
-                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition shrink-0"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
