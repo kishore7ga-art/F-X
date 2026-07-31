@@ -322,7 +322,7 @@ export function EditorShell({
         className="relative flex h-screen w-screen overflow-hidden bg-white text-slate-900 font-sans select-none"
         onClick={() => setActiveContextMenuPageId(null)}
       >
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {activePanel && (
             <UnifiedSettingsPanel
               key="unified-settings-panel"
@@ -342,19 +342,21 @@ export function EditorShell({
               initialTab={activePanel === "design" ? "colors" : "pages"}
             />
           )}
+
+          {activePanel !== null && (
+            <motion.div
+              key="black-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setActivePanel(null)}
+              className="absolute inset-0 z-30 bg-black/50 backdrop-blur-[2px] cursor-pointer"
+            />
+          )}
         </AnimatePresence>
 
-        <main
-          className={cn(
-            "relative z-0 flex flex-1 flex-col overflow-hidden bg-white transition-all duration-300 ease-out origin-center",
-            activePanel !== null
-              ? "opacity-40 filter blur-[0.5px] scale-[0.995] cursor-pointer"
-              : "opacity-100 filter-none scale-100"
-          )}
-          onClick={() => {
-            if (activePanel !== null) setActivePanel(null);
-          }}
-        >
+        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-white">
 
           {actionError && (
             <p className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-xs font-medium text-red-400">
