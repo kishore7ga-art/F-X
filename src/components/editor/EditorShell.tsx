@@ -406,7 +406,7 @@ export function EditorShell({
           >
 
             {/* SEGMENT 1: BRAND / SYSTEM MENU TRIGGER */}
-            <div className="group relative flex items-center gap-2">
+            <div className="group relative flex items-center">
               <button
                 type="button"
                 onClick={() => setIsBrandModalOpen(true)}
@@ -414,13 +414,6 @@ export function EditorShell({
               >
                 <span>X</span>
               </button>
-
-              {!isVerticalDock && (
-                <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 border border-slate-200/80">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Live</span>
-                </div>
-              )}
 
               <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                 System &amp; Brand Settings (Domains, Team, Subscription)
