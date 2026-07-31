@@ -175,6 +175,7 @@ export function DesignThemePanel({
   onSelectFonts,
   onClose,
   embed = false,
+  initialTab = "colors",
 }: {
   activePalette: PaletteColors;
   activeFonts: FontPack;
@@ -182,8 +183,9 @@ export function DesignThemePanel({
   onSelectFonts: (fonts: FontPack) => void;
   onClose: () => void;
   embed?: boolean;
+  initialTab?: "colors" | "fonts";
 }) {
-  const [activeTab, setActiveTab] = useState<"colors" | "fonts">("colors");
+  const [activeTab, setActiveTab] = useState<"colors" | "fonts">(initialTab);
 
   const content = (
     <div className="flex flex-col gap-4 overflow-hidden h-full">
@@ -210,7 +212,8 @@ export function DesignThemePanel({
         </div>
       )}
 
-        {/* Segmented Control Tabs */}
+      {/* Segmented Control Tabs */}
+      {!embed && (
         <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200 shrink-0">
           <button
             type="button"
@@ -239,6 +242,7 @@ export function DesignThemePanel({
             <span>Typography</span>
           </button>
         </div>
+      )}
 
         {/* Tab 1: Color Palettes List */}
         {activeTab === "colors" && (

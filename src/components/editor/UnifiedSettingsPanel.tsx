@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Layers,
   Palette,
-  FolderOpen,
+  Type,
   Search,
   Plus,
   MoreVertical,
@@ -26,7 +26,6 @@ import {
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import { DesignThemePanel } from "@/components/editor/DesignThemePanel";
-import { AssetsMediaPanel } from "@/components/editor/AssetsMediaPanel";
 import type { PaletteColors, FontPack } from "@/lib/theme/theme";
 
 interface PageData {
@@ -67,7 +66,7 @@ interface UnifiedSettingsPanelProps {
   currentFonts: FontPack;
   onSelectFonts: (fonts: FontPack) => void;
   onClose: () => void;
-  initialTab?: "pages" | "theme" | "assets";
+  initialTab?: "pages" | "colors" | "fonts";
 }
 
 export function UnifiedSettingsPanel({
@@ -86,7 +85,7 @@ export function UnifiedSettingsPanel({
   onClose,
   initialTab = "pages",
 }: UnifiedSettingsPanelProps) {
-  const [activeTab, setActiveTab] = useState<"pages" | "theme" | "assets">(initialTab);
+  const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts">(initialTab);
 
   return (
     <motion.aside
@@ -127,7 +126,7 @@ export function UnifiedSettingsPanel({
             type="button"
             onClick={() => setActiveTab("pages")}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-bold transition-all",
+              "flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold transition-all",
               activeTab === "pages"
                 ? "bg-white text-slate-900 shadow-2xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50"
@@ -139,30 +138,30 @@ export function UnifiedSettingsPanel({
 
           <button
             type="button"
-            onClick={() => setActiveTab("theme")}
+            onClick={() => setActiveTab("colors")}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-bold transition-all",
-              activeTab === "theme"
+              "flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold transition-all",
+              activeTab === "colors"
                 ? "bg-white text-slate-900 shadow-2xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50"
             )}
           >
             <Palette className="h-3.5 w-3.5" />
-            <span>Theme</span>
+            <span>Colors</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab("assets")}
+            onClick={() => setActiveTab("fonts")}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-bold transition-all",
-              activeTab === "assets"
+              "flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-[11px] font-bold transition-all",
+              activeTab === "fonts"
                 ? "bg-white text-slate-900 shadow-2xs"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/50"
             )}
           >
-            <FolderOpen className="h-3.5 w-3.5" />
-            <span>Assets</span>
+            <Type className="h-3.5 w-3.5" />
+            <span>Fonts</span>
           </button>
         </div>
       </div>
@@ -308,8 +307,8 @@ export function UnifiedSettingsPanel({
           </div>
         )}
 
-        {/* TAB 2: COLOR & FONT THEME */}
-        {activeTab === "theme" && (
+        {/* TAB 2: COLOR PALETTES */}
+        {activeTab === "colors" && (
           <DesignThemePanel
             activePalette={currentPalette}
             onSelectPalette={onSelectPalette}
@@ -317,11 +316,22 @@ export function UnifiedSettingsPanel({
             onSelectFonts={onSelectFonts}
             onClose={() => {}}
             embed={true}
+            initialTab="colors"
           />
         )}
 
-        {/* TAB 3: ASSETS & MEDIA */}
-        {activeTab === "assets" && <AssetsMediaPanel onClose={() => {}} embed={true} />}
+        {/* TAB 3: TYPOGRAPHY FONTS */}
+        {activeTab === "fonts" && (
+          <DesignThemePanel
+            activePalette={currentPalette}
+            onSelectPalette={onSelectPalette}
+            activeFonts={currentFonts}
+            onSelectFonts={onSelectFonts}
+            onClose={() => {}}
+            embed={true}
+            initialTab="fonts"
+          />
+        )}
       </div>
     </motion.aside>
   );

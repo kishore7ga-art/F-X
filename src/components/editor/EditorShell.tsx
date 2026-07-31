@@ -339,7 +339,7 @@ export function EditorShell({
               currentFonts={liveFonts}
               onSelectFonts={setLiveFonts}
               onClose={() => setActivePanel(null)}
-              initialTab={activePanel === "design" ? "theme" : activePanel === "assets" ? "assets" : "pages"}
+              initialTab={activePanel === "design" ? "colors" : "pages"}
             />
           )}
         </AnimatePresence>
