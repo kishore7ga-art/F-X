@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Sparkles, Palette, Type, RefreshCw, X } from "lucide-react";
+import { Check, Sparkles, Palette, Type, RefreshCw, X, Search } from "lucide-react";
 import type { PaletteColors, FontPack } from "@/lib/theme/theme";
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
@@ -186,6 +186,18 @@ export function DesignThemePanel({
   initialTab?: "colors" | "fonts";
 }) {
   const [activeTab, setActiveTab] = useState<"colors" | "fonts">(initialTab);
+  const [colorSearchQuery, setColorSearchQuery] = useState("");
+
+  const filteredPalettes = PALETTE_PRESETS.filter((preset) => {
+    if (!colorSearchQuery.trim()) return true;
+    const query = colorSearchQuery.toLowerCase().trim();
+    const nameMatch = preset.name.toLowerCase().includes(query);
+    const categoryMatch = preset.category.toLowerCase().includes(query);
+    const colorHexMatch = Object.values(preset.colors).some((hex) =>
+      hex.toLowerCase().includes(query)
+    );
+    return nameMatch || categoryMatch || colorHexMatch;
+  });
 
   const content = (
     <div className="flex flex-col gap-4 overflow-hidden h-full">
@@ -247,70 +259,88 @@ export function DesignThemePanel({
         {/* Tab 1: Color Palettes List */}
         {activeTab === "colors" && (
           <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 pt-1">
+            {/* Color Search Input Bar */}
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search color name or hex (e.g., Emerald, #1E3A8A)..."
+                value={colorSearchQuery}
+                onChange={(e) => setColorSearchQuery(e.target.value)}
+                className="h-[38px] w-full rounded-xl border border-slate-200 bg-slate-100/80 pl-9 pr-3 text-xs font-medium text-slate-900 placeholder-slate-400 outline-none transition focus:border-slate-400 focus:bg-white"
+              />
+            </div>
+
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Curated Color Schemes ({PALETTE_PRESETS.length})
+              Curated Color Schemes ({filteredPalettes.length})
             </p>
-            {PALETTE_PRESETS.map((preset) => {
-              const isSelected =
-                activePalette.primary === preset.colors.primary &&
-                activePalette.secondary === preset.colors.secondary;
+            {filteredPalettes.length > 0 ? (
+              filteredPalettes.map((preset) => {
+                const isSelected =
+                  activePalette.primary === preset.colors.primary &&
+                  activePalette.secondary === preset.colors.secondary;
 
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  onClick={() => onSelectPalette(preset.colors)}
-                  className={cn(
-                    "group w-full rounded-2xl border p-3 text-left transition-all duration-200 relative overflow-hidden",
-                    isSelected
-                      ? "bg-slate-200 border-white ring-1 ring-white/20 shadow-lg"
-                      : "bg-slate-100 border-slate-200 hover:border-neutral-500 hover:bg-slate-200"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors">
-                      {preset.name}
-                    </span>
-                    {isSelected ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white shadow-xs">
-                        <Check className="h-3 w-3 stroke-[3]" />
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-mono text-slate-400">{preset.category}</span>
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => onSelectPalette(preset.colors)}
+                    className={cn(
+                      "group w-full rounded-2xl border p-3 text-left transition-all duration-200 relative overflow-hidden",
+                      isSelected
+                        ? "bg-slate-200 border-white ring-1 ring-white/20 shadow-lg"
+                        : "bg-slate-100 border-slate-200 hover:border-neutral-500 hover:bg-slate-200"
                     )}
-                  </div>
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-slate-900 group-hover:text-slate-900 transition-colors">
+                        {preset.name}
+                      </span>
+                      {isSelected ? (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white shadow-xs">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono text-slate-400">{preset.category}</span>
+                      )}
+                    </div>
 
-                  {/* 5-Color Swatch Preview Bar */}
-                  <div className="flex h-6 w-full overflow-hidden rounded-lg border border-slate-300/60 shadow-xs">
-                    <div
-                      className="flex-1 transition-transform group-hover:scale-105"
-                      style={{ backgroundColor: preset.colors.primary }}
-                      title={`Primary: ${preset.colors.primary}`}
-                    />
-                    <div
-                      className="flex-1 transition-transform group-hover:scale-105"
-                      style={{ backgroundColor: preset.colors.secondary }}
-                      title={`Secondary: ${preset.colors.secondary}`}
-                    />
-                    <div
-                      className="flex-1 transition-transform group-hover:scale-105"
-                      style={{ backgroundColor: preset.colors.accent }}
-                      title={`Accent: ${preset.colors.accent}`}
-                    />
-                    <div
-                      className="flex-1 transition-transform group-hover:scale-105"
-                      style={{ backgroundColor: preset.colors.dark }}
-                      title={`Dark: ${preset.colors.dark}`}
-                    />
-                    <div
-                      className="flex-1 transition-transform group-hover:scale-105"
-                      style={{ backgroundColor: preset.colors.light }}
-                      title={`Light: ${preset.colors.light}`}
-                    />
-                  </div>
-                </button>
-              );
-            })}
+                    {/* 5-Color Swatch Preview Bar */}
+                    <div className="flex h-6 w-full overflow-hidden rounded-lg border border-slate-300/60 shadow-xs">
+                      <div
+                        className="flex-1 transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: preset.colors.primary }}
+                        title={`Primary: ${preset.colors.primary}`}
+                      />
+                      <div
+                        className="flex-1 transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: preset.colors.secondary }}
+                        title={`Secondary: ${preset.colors.secondary}`}
+                      />
+                      <div
+                        className="flex-1 transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: preset.colors.accent }}
+                        title={`Accent: ${preset.colors.accent}`}
+                      />
+                      <div
+                        className="flex-1 transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: preset.colors.dark }}
+                        title={`Dark: ${preset.colors.dark}`}
+                      />
+                      <div
+                        className="flex-1 transition-transform group-hover:scale-105"
+                        style={{ backgroundColor: preset.colors.light }}
+                        title={`Light: ${preset.colors.light}`}
+                      />
+                    </div>
+                  </button>
+                );
+              })
+            ) : (
+              <div className="py-8 text-center text-xs font-medium text-slate-400">
+                No color schemes found for &quot;{colorSearchQuery}&quot;
+              </div>
+            )}
           </div>
         )}
 
