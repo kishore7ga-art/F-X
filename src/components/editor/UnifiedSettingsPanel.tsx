@@ -106,11 +106,11 @@ export function UnifiedSettingsPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 40 }}
       transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute right-0 top-0 bottom-0 z-40 flex w-[340px] sm:w-[380px] flex-col bg-white/95 backdrop-blur-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-l border-slate-200/90 overflow-hidden select-none"
+      className="absolute right-0 top-0 bottom-0 z-40 flex w-[340px] sm:w-[380px] flex-col bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-l border-slate-200/90 overflow-hidden select-none"
     >
       {/* FLOATING SEGMENTED CONTROL HEADER */}
-      <div className="p-3.5 border-b border-slate-200/80 bg-slate-50/80 backdrop-blur-xl">
-        <div className="relative flex items-center gap-1 rounded-2xl bg-slate-200/70 p-1 border border-slate-300/50 shadow-inner">
+      <div className="p-3.5 border-b border-slate-200/80 bg-white">
+        <div className="relative flex items-center gap-1 rounded-2xl bg-slate-100 p-1 border border-slate-200/80">
           {[
             { id: "pages", label: "Pages", icon: Layers, count: pages.length },
             { id: "colors", label: "Colors", icon: Palette, count: PALETTE_PRESETS.length },
