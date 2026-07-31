@@ -147,12 +147,8 @@ export function UnifiedSettingsPanel({
                       <Link
                         href={`/editor/${college.subdomain}?page=${page.slug}`}
                         prefetch={true}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          setActiveContextMenuPageId(page.id);
-                        }}
                         className={cn(
-                          "relative flex h-[48px] w-full items-center justify-between rounded-xl px-4 text-[14px] font-semibold transition-all duration-150 border",
+                          "relative flex h-[50px] w-full items-center justify-between rounded-xl px-4 text-[14px] font-semibold transition-all duration-150 border",
                           isActive
                             ? "bg-slate-100/90 text-slate-900 font-extrabold border-slate-200/90 shadow-2xs"
                             : "bg-white text-slate-800 font-medium hover:bg-slate-50 hover:text-slate-900 border-transparent"
@@ -162,7 +158,10 @@ export function UnifiedSettingsPanel({
                           <span className={cn("shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
                             {icon}
                           </span>
-                          <span className="truncate capitalize text-[14px] font-semibold tracking-tight text-slate-900">{page.title}</span>
+                          <div className="flex flex-col truncate">
+                            <span className="truncate capitalize text-[14px] font-semibold tracking-tight text-slate-900">{page.title}</span>
+                            <span className="text-[10px] font-mono font-medium text-slate-400">/{page.slug}</span>
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-1">
