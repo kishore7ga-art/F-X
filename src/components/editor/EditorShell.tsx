@@ -546,7 +546,7 @@ export function EditorShell({
             style={{ x: dragX, y: dragY }}
             onDragEnd={handleDockDragEnd}
             className={cn(
-              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] cursor-grab active:cursor-grabbing select-none transition-all duration-100 ease-out",
+              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] select-none transition-all duration-100 ease-out",
               isVerticalDock ? "rounded-full px-2 py-3" : "rounded-full px-3 py-1.5",
               dockPosClass
             )}
