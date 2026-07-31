@@ -472,15 +472,15 @@ export function EditorShell({
             </motion.div>
           </div>
 
-          {/* Floating Bottom-Center Viewport, History, Panels & Section Controls Toast Dock (Framer / Figma UI3 Standard) */}
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-2xl border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-4 py-2 shadow-[0_22px_50px_-8px_rgba(0,0,0,0.22),0_10px_20px_-4px_rgba(0,0,0,0.1)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-8px_rgba(0,0,0,0.26)]">
+          {/* Floating Bottom-Center Viewport, History, Panels & Section Controls Toast Dock (Framer / Figma UI3 Pill Standard) */}
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-3 py-1.5 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)]">
             
             {/* SEGMENT 1: BRAND / SYSTEM MENU TRIGGER */}
             <div className="group relative flex items-center">
               <button
                 type="button"
                 onClick={() => setIsBrandModalOpen(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white font-black text-sm shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white font-extrabold text-xs shadow-xs hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <span>X</span>
               </button>
@@ -490,10 +490,10 @@ export function EditorShell({
               </div>
             </div>
 
-            <div className="h-5 w-[1.5px] bg-slate-400 mx-1 shrink-0 rounded-full" />
+            <div className="h-5 w-[1.5px] bg-slate-400 mx-1.5 shrink-0 rounded-full" />
 
-            {/* SEGMENT 2: CORE ACTIONS (1. LAYERS, 2. THEME, 3. SAVE, 4. PUBLISH, 5. PREVIEW) */}
-            <div className="flex items-center gap-1 rounded-xl bg-slate-100/70 p-1">
+            {/* SEGMENT 2: CORE ACTIONS (1. LAYERS, 2. THEME, 3. PUBLISH, 4. PREVIEW) */}
+            <div className="flex items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5">
               {/* 1. LAYERS */}
               <div className="group relative flex items-center">
                 <button
@@ -501,13 +501,13 @@ export function EditorShell({
                   onClick={() => setActivePanel((prev) => (prev === "pages" ? null : "pages"))}
                   aria-label="Layers & Pages"
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer",
+                    "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 cursor-pointer",
                     activePanel === "pages"
                       ? "bg-slate-900 text-white shadow-xs font-bold"
                       : "text-slate-700 hover:bg-slate-200/80 hover:text-black"
                   )}
                 >
-                  <Layers className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                  <Layers className="h-4 w-4" strokeWidth={2.2} />
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Layers &amp; Pages
@@ -522,13 +522,13 @@ export function EditorShell({
                   onClick={() => setActivePanel((prev) => (prev === "design" ? null : "design"))}
                   aria-label="Color & Font Theme"
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 cursor-pointer",
+                    "flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 cursor-pointer",
                     activePanel === "design"
                       ? "bg-slate-900 text-white shadow-xs font-bold"
                       : "text-slate-700 hover:bg-slate-200/80 hover:text-black"
                   )}
                 >
-                  <Palette className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                  <Palette className="h-4 w-4" strokeWidth={2.2} />
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Color &amp; Font Theme
@@ -547,9 +547,9 @@ export function EditorShell({
                 <Link
                   href={`/site/${college.subdomain}`}
                   target="_blank"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
                 >
-                  <Eye className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                  <Eye className="h-4 w-4" strokeWidth={2.2} />
                 </Link>
                 <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                   Preview Site
@@ -559,14 +559,14 @@ export function EditorShell({
             </div>
 
             {/* PIPE SEPARATOR AFTER PREVIEW */}
-            <div className="h-5 w-[1.5px] bg-slate-400 mx-1 shrink-0 rounded-full" />
+            <div className="h-5 w-[1.5px] bg-slate-400 mx-1.5 shrink-0 rounded-full" />
 
             {/* SEGMENT 3: ACTIVE SECTION CONTROLS (Conditional) */}
             {selectedSection && (
               <>
-                <div className="flex items-center gap-1 rounded-xl bg-slate-100/70 p-1">
-                  <div className="flex items-center px-2.5">
-                    <span className="text-xs font-bold text-slate-800 tracking-tight whitespace-nowrap">
+                <div className="flex items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5">
+                  <div className="flex items-center px-2">
+                    <span className="text-xs font-semibold text-slate-800 tracking-tight whitespace-nowrap">
                       {selectedSection.label}
                     </span>
                   </div>
@@ -581,9 +581,9 @@ export function EditorShell({
                         run(() => duplicateSection({ collegeSectionId: selectedSection.id }));
                       }}
                       aria-label="Duplicate Section"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
                     >
-                      <Copy className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                      <Copy className="h-4 w-4" strokeWidth={2.2} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Duplicate Section
@@ -600,9 +600,9 @@ export function EditorShell({
                         undo();
                       }}
                       aria-label="Undo Section Change"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
                     >
-                      <Undo2 className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                      <Undo2 className="h-4 w-4" strokeWidth={2.2} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Undo Change
@@ -621,9 +621,9 @@ export function EditorShell({
                           run(() => cycleSectionVariant({ collegeSectionId: selectedSection.id }));
                         }}
                         aria-label="Swap Design Variant"
-                        className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
                       >
-                        <RefreshCw className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                        <RefreshCw className="h-4 w-4" strokeWidth={2.2} />
                       </button>
                       <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                         Swap Design Layout
@@ -641,9 +641,9 @@ export function EditorShell({
                         redo();
                       }}
                       aria-label="Redo Section Change"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
                     >
-                      <Redo2 className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                      <Redo2 className="h-4 w-4" strokeWidth={2.2} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Redo Change
@@ -661,9 +661,9 @@ export function EditorShell({
                         run(() => moveSection({ collegeSectionId: selectedSection.id, direction: "up" }));
                       }}
                       aria-label="Move Section Up"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer disabled:opacity-50"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer disabled:opacity-50"
                     >
-                      <ArrowUp className="h-[18px] w-[18px]" strokeWidth={2.4} />
+                      <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Move Up
@@ -681,9 +681,9 @@ export function EditorShell({
                         run(() => moveSection({ collegeSectionId: selectedSection.id, direction: "down" }));
                       }}
                       aria-label="Move Section Down"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer disabled:opacity-50"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer disabled:opacity-50"
                     >
-                      <ArrowDown className="h-[18px] w-[18px]" strokeWidth={2.4} />
+                      <ArrowDown className="h-4 w-4" strokeWidth={2.4} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Move Down
@@ -704,9 +704,9 @@ export function EditorShell({
                         }
                       }}
                       aria-label="Delete Section"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-red-600 transition-all cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-red-600 transition-all cursor-pointer"
                     >
-                      <Trash2 className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                      <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Delete Section
@@ -720,9 +720,9 @@ export function EditorShell({
                       type="button"
                       onClick={() => setSelectedSectionId(null)}
                       aria-label="Close Controls"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 hover:bg-slate-200/80 hover:text-black transition-all cursor-pointer"
                     >
-                      <X className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                      <X className="h-4 w-4" strokeWidth={2.2} />
                     </button>
                     <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
                       Close Controls
@@ -732,12 +732,12 @@ export function EditorShell({
                 </div>
 
                 {/* PIPE SEPARATOR AFTER CLOSE */}
-                <div className="h-5 w-[1.5px] bg-slate-400 mx-1 shrink-0 rounded-full" />
+                <div className="h-5 w-[1.5px] bg-slate-400 mx-1.5 shrink-0 rounded-full" />
               </>
             )}
 
             {/* SEGMENT 4: VIEWPORT RESOLUTIONS */}
-            <div className="flex items-center gap-1 rounded-xl bg-slate-100/70 p-1">
+            <div className="flex items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5">
               <div className="group relative flex items-center">
                 <button
                   type="button"
@@ -750,13 +750,13 @@ export function EditorShell({
                   }}
                   aria-label={`Desktop View (${currentDesktopRes}px)`}
                   className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold tracking-tight transition-all cursor-pointer",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium tracking-tight transition-all cursor-pointer",
                     deviceMode === "desktop"
                       ? "bg-white text-slate-900 shadow-2xs font-bold"
                       : "text-slate-700 hover:bg-slate-200/80 hover:text-black"
                   )}
                 >
-                  <Monitor className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                  <Monitor className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "desktop" && <span>{currentDesktopRes}px</span>}
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
@@ -777,13 +777,13 @@ export function EditorShell({
                   }}
                   aria-label={`Tablet View (${currentTabletRes}px)`}
                   className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold tracking-tight transition-all cursor-pointer",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium tracking-tight transition-all cursor-pointer",
                     deviceMode === "tablet"
                       ? "bg-white text-slate-900 shadow-2xs font-bold"
                       : "text-slate-700 hover:bg-slate-200/80 hover:text-black"
                   )}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                     <rect x="3" y="5" width="18" height="14" rx="2" />
                     <path d="M19 12h.01" strokeWidth="3" />
                   </svg>
@@ -807,13 +807,13 @@ export function EditorShell({
                   }}
                   aria-label={`Mobile View (${currentMobileRes}px)`}
                   className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold tracking-tight transition-all cursor-pointer",
+                    "flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium tracking-tight transition-all cursor-pointer",
                     deviceMode === "mobile"
                       ? "bg-white text-slate-900 shadow-2xs font-bold"
                       : "text-slate-700 hover:bg-slate-200/80 hover:text-black"
                   )}
                 >
-                  <Smartphone className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                  <Smartphone className="h-4 w-4" strokeWidth={2.2} />
                   {deviceMode === "mobile" && <span>{currentMobileRes}px</span>}
                 </button>
                 <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
