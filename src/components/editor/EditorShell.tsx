@@ -344,7 +344,17 @@ export function EditorShell({
           )}
         </AnimatePresence>
 
-        <main className="relative z-0 flex flex-1 flex-col overflow-hidden bg-white">
+        <main
+          className={cn(
+            "relative z-0 flex flex-1 flex-col overflow-hidden bg-white transition-all duration-300 ease-out origin-center",
+            activePanel !== null
+              ? "opacity-40 filter blur-[0.5px] scale-[0.995] cursor-pointer"
+              : "opacity-100 filter-none scale-100"
+          )}
+          onClick={() => {
+            if (activePanel !== null) setActivePanel(null);
+          }}
+        >
 
           {actionError && (
             <p className="bg-red-500/10 border-b border-red-500/20 px-5 py-2 text-xs font-medium text-red-400">
