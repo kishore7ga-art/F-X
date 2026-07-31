@@ -98,9 +98,9 @@ export function UnifiedSettingsPanel({
       <div className="p-3.5 border-b border-slate-200/80 bg-white">
         <div className="relative flex items-center gap-1 rounded-2xl bg-slate-100 p-1 border border-slate-200/80">
           {[
-            { id: "pages", label: "Pages", icon: Layers, count: pages.length },
-            { id: "colors", label: "Colors", icon: Palette, count: PALETTE_PRESETS.length },
-            { id: "fonts", label: "Fonts", icon: Type, count: FONT_PRESETS.length },
+            { id: "pages", label: "Pages", icon: Layers },
+            { id: "colors", label: "Colors", icon: Palette },
+            { id: "fonts", label: "Fonts", icon: Type },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -111,7 +111,7 @@ export function UnifiedSettingsPanel({
                 type="button"
                 onClick={() => setActiveTab(tab.id as "pages" | "colors" | "fonts")}
                 className={cn(
-                  "relative flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-extrabold transition-colors z-10",
+                  "relative flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-extrabold transition-colors z-10",
                   isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
                 )}
               >
@@ -124,14 +124,6 @@ export function UnifiedSettingsPanel({
                 )}
                 <Icon className={cn("h-3.5 w-3.5", isActive ? "text-slate-900" : "text-slate-400")} />
                 <span>{tab.label}</span>
-                <span
-                  className={cn(
-                    "text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full transition-colors",
-                    isActive ? "bg-slate-100 text-slate-700" : "bg-slate-200/70 text-slate-500"
-                  )}
-                >
-                  {tab.count}
-                </span>
               </button>
             );
           })}
@@ -139,13 +131,13 @@ export function UnifiedSettingsPanel({
       </div>
 
       {/* TAB CONTENT DISPLAY */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-3.5">
         {/* TAB 1: PAGES & LAYERS */}
         {activeTab === "pages" && (
           <div className="flex flex-col gap-4 h-full justify-between">
             <div className="flex flex-col gap-1 overflow-hidden">
               {/* PAGES LIST ITEM ROWS */}
-              <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 pt-1">
+              <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5 pt-0.5">
                 {pages.map((page) => {
                   const isActive = page.slug === currentPage.slug;
                   const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
@@ -160,17 +152,24 @@ export function UnifiedSettingsPanel({
                           setActiveContextMenuPageId(page.id);
                         }}
                         className={cn(
-                          "relative flex h-[50px] w-full items-center justify-between rounded-xl px-4 text-[15px] font-semibold transition-all duration-150",
+                          "relative flex h-[48px] w-full items-center justify-between rounded-xl px-4 text-[14px] font-semibold transition-all duration-150 border",
                           isActive
-                            ? "bg-slate-100 text-slate-900 font-bold border border-slate-200/80 shadow-2xs"
-                            : "text-slate-800 hover:bg-slate-50 hover:text-slate-900"
+                            ? "bg-slate-900 text-white font-extrabold border-slate-900 shadow-md shadow-slate-900/15"
+                            : "bg-white text-slate-800 font-medium hover:bg-slate-50 hover:text-slate-900 border-slate-100 shadow-2xs"
                         )}
                       >
-                        <div className="flex items-center gap-4 truncate">
-                          <span className={cn("shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
+                        {/* ACTIVE GLOWING ACCENT BAR */}
+                        {isActive && (
+                          <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.9)]" />
+                        )}
+
+                        <div className="flex items-center gap-3.5 truncate">
+                          <span className={cn("shrink-0 transition-colors", isActive ? "text-white" : "text-slate-600 group-hover:text-slate-900")}>
                             {icon}
                           </span>
-                          <span className="truncate capitalize text-[15px] font-semibold tracking-tight text-slate-900">{page.title}</span>
+                          <span className={cn("truncate capitalize text-[14px] font-semibold tracking-tight", isActive ? "text-white" : "text-slate-800")}>
+                            {page.title}
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -181,7 +180,12 @@ export function UnifiedSettingsPanel({
                               e.stopPropagation();
                               setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
                             }}
-                            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200/70 hover:text-slate-900 transition"
+                            className={cn(
+                              "rounded-lg p-1 transition",
+                              isActive
+                                ? "text-slate-300 hover:bg-slate-800 hover:text-white"
+                                : "text-slate-400 hover:bg-slate-200/70 hover:text-slate-900"
+                            )}
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
