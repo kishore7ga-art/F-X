@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 
 import { updateProfileAction, type ProfileState } from "@/app/actions/profile";
-import { logout } from "@/app/actions/auth";
 import type { CurrentCollege } from "@/lib/auth/current";
 
 export function ProfileForm({ college }: { college: CurrentCollege }) {
@@ -124,15 +123,16 @@ export function ProfileForm({ college }: { college: CurrentCollege }) {
             </Link>
 
             <div className="flex items-center gap-3">
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3.5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  <span>Sign Out</span>
-                </button>
-              </form>
+              <Link
+                href="/login"
+                onClick={() => {
+                  document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50/80 px-3.5 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Sign Out</span>
+              </Link>
             </div>
           </div>
 

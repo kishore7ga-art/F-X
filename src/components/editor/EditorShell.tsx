@@ -41,9 +41,10 @@ import {
   LogOut,
   ArrowUp,
   ArrowDown,
+  GripHorizontal,
+  GripVertical,
 } from "lucide-react";
 
-import { logout } from "@/app/actions/auth";
 import { SaveStatusButton } from "@/components/editor/SaveStatusButton";
 import { BrandSystemModal } from "@/components/editor/BrandSystemModal";
 
@@ -117,6 +118,71 @@ export function EditorShell({
   const currentDesktopRes = DESKTOP_RESOLUTIONS[desktopResIdx];
   const currentTabletRes = TABLET_RESOLUTIONS[tabletResIdx];
   const currentMobileRes = MOBILE_RESOLUTIONS[mobileResIdx];
+  const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
+
+  const handleDockDragEnd = (
+    _event: MouseEvent | TouchEvent | PointerEvent,
+    info: { point: { x: number; y: number } }
+  ) => {
+    const { x, y } = info.point;
+    const screenW = typeof window !== "undefined" ? window.innerWidth : 1200;
+    const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
+
+    const distLeft = x;
+    const distRight = screenW - x;
+    const distTop = y;
+    const distBottom = screenH - y;
+
+    const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+
+    if (minDist === distLeft) {
+      setDockPosition("left");
+    } else if (minDist === distRight) {
+      setDockPosition("right");
+    } else if (minDist === distTop) {
+      setDockPosition("top");
+    } else {
+      setDockPosition("bottom");
+    }
+  };
+
+  const isVerticalDock = dockPosition === "left" || dockPosition === "right";
+
+  const dockPosClass =
+    dockPosition === "top"
+      ? "fixed top-6 left-1/2 -translate-x-1/2 flex-row"
+      : dockPosition === "left"
+      ? "fixed left-6 top-1/2 -translate-y-1/2 flex-col"
+      : dockPosition === "right"
+      ? "fixed right-6 top-1/2 -translate-y-1/2 flex-col"
+      : "fixed bottom-6 left-1/2 -translate-x-1/2 flex-row";
+
+  const tooltipPosClass =
+    dockPosition === "top"
+      ? "top-full mt-3 left-1/2 -translate-x-1/2"
+      : dockPosition === "left"
+      ? "left-full ml-3 top-1/2 -translate-y-1/2"
+      : dockPosition === "right"
+      ? "right-full mr-3 top-1/2 -translate-y-1/2"
+      : "bottom-full mb-3 left-1/2 -translate-x-1/2";
+
+  const tooltipArrowClass =
+    dockPosition === "top"
+      ? "bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900"
+      : dockPosition === "left"
+      ? "right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900"
+      : dockPosition === "right"
+      ? "left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-slate-900"
+      : "top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900";
+
+  const pipeClass = isVerticalDock
+    ? "w-5 h-[1.5px] bg-slate-400 my-1.5 shrink-0 rounded-full"
+    : "h-5 w-[1.5px] bg-slate-400 mx-1.5 shrink-0 rounded-full";
+
+  const segmentClass = isVerticalDock
+    ? "flex flex-col items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5"
+    : "flex items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5";
+
   const [activePanel, setActivePanel] = useState<"pages" | "design" | "assets" | null>(null);
   const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
 
@@ -472,9 +538,30 @@ export function EditorShell({
             </motion.div>
           </div>
 
-          {/* Floating Bottom-Center Viewport, History, Panels & Section Controls Toast Dock (Framer / Figma UI3 Pill Standard) */}
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 rounded-full border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-3 py-1.5 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)]">
-            
+          {/* Floating Edge-Snapping Draggable Viewport, History, Panels & Section Controls Toast Dock */}
+          <motion.div
+            drag
+            dragSnapToOrigin={true}
+            dragElastic={0.08}
+            dragMomentum={false}
+            onDragEnd={handleDockDragEnd}
+            className={cn(
+              "z-40 border border-slate-200/90 bg-white/95 backdrop-blur-2xl px-3 py-1.5 shadow-[0_20px_45px_-8px_rgba(0,0,0,0.18),0_8px_16px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 ring-1 ring-black/5 hover:shadow-[0_25px_55px_-8px_rgba(0,0,0,0.24)] cursor-grab active:cursor-grabbing select-none",
+              isVerticalDock ? "rounded-3xl" : "rounded-full",
+              dockPosClass
+            )}
+          >
+            {/* DRAG HANDLE GRIP */}
+            <div className="flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-grab active:cursor-grabbing p-1 shrink-0">
+              {isVerticalDock ? (
+                <GripHorizontal className="h-4 w-4" />
+              ) : (
+                <GripVertical className="h-4 w-4" />
+              )}
+            </div>
+
+            <div className={pipeClass} />
+
             {/* SEGMENT 1: BRAND / SYSTEM MENU TRIGGER */}
             <div className="group relative flex items-center">
               <button
@@ -484,16 +571,16 @@ export function EditorShell({
               >
                 <span>X</span>
               </button>
-              <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+              <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                 System &amp; Brand Settings (Domains, Team, Subscription)
-                <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                <span className={cn("absolute", tooltipArrowClass)} />
               </div>
             </div>
 
-            <div className="h-5 w-[1.5px] bg-slate-400 mx-1.5 shrink-0 rounded-full" />
+            <div className={pipeClass} />
 
             {/* SEGMENT 2: CORE ACTIONS (1. LAYERS, 2. THEME, 3. PUBLISH, 4. PREVIEW) */}
-            <div className="flex items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5">
+            <div className={segmentClass}>
               {/* 1. LAYERS */}
               <div className="group relative flex items-center">
                 <button
@@ -509,9 +596,9 @@ export function EditorShell({
                 >
                   <Layers className="h-4 w-4" strokeWidth={2.2} />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                   Layers &amp; Pages
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className={cn("absolute", tooltipArrowClass)} />
                 </div>
               </div>
 
@@ -530,9 +617,9 @@ export function EditorShell({
                 >
                   <Palette className="h-4 w-4" strokeWidth={2.2} />
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                   Color &amp; Font Theme
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className={cn("absolute", tooltipArrowClass)} />
                 </div>
               </div>
 
@@ -551,25 +638,27 @@ export function EditorShell({
                 >
                   <Eye className="h-4 w-4" strokeWidth={2.2} />
                 </Link>
-                <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                   Preview Site
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className={cn("absolute", tooltipArrowClass)} />
                 </div>
               </div>
             </div>
 
             {/* PIPE SEPARATOR AFTER PREVIEW */}
-            <div className="h-5 w-[1.5px] bg-slate-400 mx-1.5 shrink-0 rounded-full" />
+            <div className={pipeClass} />
 
             {/* SEGMENT 3: ACTIVE SECTION CONTROLS (Conditional) */}
             {selectedSection && (
               <>
-                <div className="flex items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5">
-                  <div className="flex items-center px-2">
-                    <span className="text-xs font-semibold text-slate-800 tracking-tight whitespace-nowrap">
-                      {selectedSection.label}
-                    </span>
-                  </div>
+                <div className={segmentClass}>
+                  {!isVerticalDock && (
+                    <div className="flex items-center px-2">
+                      <span className="text-xs font-semibold text-slate-800 tracking-tight whitespace-nowrap">
+                        {selectedSection.label}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Duplicate Section */}
                   <div className="group relative flex items-center">
@@ -585,9 +674,9 @@ export function EditorShell({
                     >
                       <Copy className="h-4 w-4" strokeWidth={2.2} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                       Duplicate Section
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                      <span className={cn("absolute", tooltipArrowClass)} />
                     </div>
                   </div>
 
@@ -604,9 +693,9 @@ export function EditorShell({
                     >
                       <Undo2 className="h-4 w-4" strokeWidth={2.2} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                       Undo Change
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                      <span className={cn("absolute", tooltipArrowClass)} />
                     </div>
                   </div>
 
@@ -625,9 +714,9 @@ export function EditorShell({
                       >
                         <RefreshCw className="h-4 w-4" strokeWidth={2.2} />
                       </button>
-                      <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                      <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                         Swap Design Layout
-                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                        <span className={cn("absolute", tooltipArrowClass)} />
                       </div>
                     </div>
                   )}
@@ -645,9 +734,9 @@ export function EditorShell({
                     >
                       <Redo2 className="h-4 w-4" strokeWidth={2.2} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                       Redo Change
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                      <span className={cn("absolute", tooltipArrowClass)} />
                     </div>
                   </div>
 
@@ -665,9 +754,9 @@ export function EditorShell({
                     >
                       <ArrowUp className="h-4 w-4" strokeWidth={2.4} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                       Move Up
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                      <span className={cn("absolute", tooltipArrowClass)} />
                     </div>
                   </div>
 
@@ -685,9 +774,9 @@ export function EditorShell({
                     >
                       <ArrowDown className="h-4 w-4" strokeWidth={2.4} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                       Move Down
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                      <span className={cn("absolute", tooltipArrowClass)} />
                     </div>
                   </div>
 
@@ -708,9 +797,9 @@ export function EditorShell({
                     >
                       <Trash2 className="h-4 w-4" strokeWidth={2.2} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                       Delete Section
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                      <span className={cn("absolute", tooltipArrowClass)} />
                     </div>
                   </div>
 
@@ -724,20 +813,20 @@ export function EditorShell({
                     >
                       <X className="h-4 w-4" strokeWidth={2.2} />
                     </button>
-                    <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                    <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                       Close Controls
-                      <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                      <span className={cn("absolute", tooltipArrowClass)} />
                     </div>
                   </div>
                 </div>
 
                 {/* PIPE SEPARATOR AFTER CLOSE */}
-                <div className="h-5 w-[1.5px] bg-slate-400 mx-1.5 shrink-0 rounded-full" />
+                <div className={pipeClass} />
               </>
             )}
 
             {/* SEGMENT 4: VIEWPORT RESOLUTIONS */}
-            <div className="flex items-center gap-0.5 rounded-full bg-slate-100/70 p-0.5">
+            <div className={segmentClass}>
               <div className="group relative flex items-center">
                 <button
                   type="button"
@@ -757,11 +846,11 @@ export function EditorShell({
                   )}
                 >
                   <Monitor className="h-4 w-4" strokeWidth={2.2} />
-                  {deviceMode === "desktop" && <span>{currentDesktopRes}px</span>}
+                  {deviceMode === "desktop" && !isVerticalDock && <span>{currentDesktopRes}px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                   Desktop View ({currentDesktopRes}px)
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className={cn("absolute", tooltipArrowClass)} />
                 </div>
               </div>
 
@@ -787,11 +876,11 @@ export function EditorShell({
                     <rect x="3" y="5" width="18" height="14" rx="2" />
                     <path d="M19 12h.01" strokeWidth="3" />
                   </svg>
-                  {deviceMode === "tablet" && <span>{currentTabletRes}px</span>}
+                  {deviceMode === "tablet" && !isVerticalDock && <span>{currentTabletRes}px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                   Tablet View ({currentTabletRes}px)
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className={cn("absolute", tooltipArrowClass)} />
                 </div>
               </div>
 
@@ -814,16 +903,16 @@ export function EditorShell({
                   )}
                 >
                   <Smartphone className="h-4 w-4" strokeWidth={2.2} />
-                  {deviceMode === "mobile" && <span>{currentMobileRes}px</span>}
+                  {deviceMode === "mobile" && !isVerticalDock && <span>{currentMobileRes}px</span>}
                 </button>
-                <div className="pointer-events-none absolute bottom-full mb-3 left-1/2 -translate-x-1/2 hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50">
+                <div className={cn("pointer-events-none absolute hidden rounded-md bg-slate-900 px-2.5 py-1 text-[10px] font-semibold text-white shadow-md group-hover:flex items-center whitespace-nowrap z-50", tooltipPosClass)}>
                   Mobile View ({currentMobileRes}px)
-                  <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <span className={cn("absolute", tooltipArrowClass)} />
                 </div>
               </div>
             </div>
 
-          </div>
+          </motion.div>
         </main>
 
         <AnimatePresence>

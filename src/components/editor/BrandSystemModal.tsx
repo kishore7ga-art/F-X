@@ -30,7 +30,6 @@ import {
   Shield,
   Calendar,
 } from "lucide-react";
-import { logout } from "@/app/actions/auth";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -326,15 +325,16 @@ export function BrandSystemModal({
             </Link>
 
             {canSignOut && (
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2.5 rounded-xl border border-red-200/70 bg-red-50/50 px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition cursor-pointer"
-                >
-                  <LogOut className="h-4 w-4 text-red-500" />
-                  <span>Sign Out</span>
-                </button>
-              </form>
+              <Link
+                href="/login"
+                onClick={() => {
+                  document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+                }}
+                className="flex w-full items-center gap-2.5 rounded-xl border border-red-200/70 bg-red-50/50 px-3.5 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-100 transition cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 text-red-500" />
+                <span>Sign Out</span>
+              </Link>
             )}
           </div>
         </aside>
