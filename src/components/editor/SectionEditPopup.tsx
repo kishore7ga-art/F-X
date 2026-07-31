@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X } from "lucide-react";
 import { motion } from "motion/react";
 
 import { SectionContentForm } from "@/components/editor/SectionContentForm";
@@ -52,18 +52,13 @@ export function SectionEditPopup({
     >
       {/* Header bar */}
       <div className="flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4 shrink-0 shadow-2xs">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
-            <Sparkles className="h-4 w-4 text-amber-300 fill-amber-300" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight truncate">
-              {section.label}
-            </h3>
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider truncate">
-              {section.variantName}
-            </p>
-          </div>
+        <div className="min-w-0">
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight truncate">
+            {section.label}
+          </h3>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider truncate">
+            {section.variantName}
+          </p>
         </div>
 
         <button
