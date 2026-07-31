@@ -351,7 +351,7 @@ export function EditorShell({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setActivePanel(null)}
-              className="absolute inset-0 z-30 bg-black/85 cursor-pointer"
+              className="absolute inset-0 z-30 bg-black/45 cursor-pointer"
             />
           )}
         </AnimatePresence>
