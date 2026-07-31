@@ -21,10 +21,9 @@ import {
   Briefcase,
   Users,
   GripVertical,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { DesignThemePanel, PALETTE_PRESETS, FONT_PRESETS } from "@/components/editor/DesignThemePanel";
 import type { PaletteColors, FontPack } from "@/lib/theme/theme";
 
@@ -47,17 +46,17 @@ const PAGE_ICONS: Record<string, ReactNode> = {
 
 const DEFAULT_PAGE_ICON = <FileText className="h-4 w-4" />;
 
-const PAGE_ICON_STYLES: Record<string, { bg: string; text: string; ring: string }> = {
-  home: { bg: "bg-blue-500/10", text: "text-blue-600", ring: "group-hover:border-blue-300" },
-  about: { bg: "bg-emerald-500/10", text: "text-emerald-600", ring: "group-hover:border-emerald-300" },
-  academics: { bg: "bg-amber-500/10", text: "text-amber-600", ring: "group-hover:border-amber-300" },
-  events: { bg: "bg-purple-500/10", text: "text-purple-600", ring: "group-hover:border-purple-300" },
-  faculty: { bg: "bg-indigo-500/10", text: "text-indigo-600", ring: "group-hover:border-indigo-300" },
-  admissions: { bg: "bg-cyan-500/10", text: "text-cyan-600", ring: "group-hover:border-cyan-300" },
-  contact: { bg: "bg-rose-500/10", text: "text-rose-600", ring: "group-hover:border-rose-300" },
+const PAGE_ICON_STYLES: Record<string, { bg: string; text: string }> = {
+  home: { bg: "bg-blue-500/10", text: "text-blue-600" },
+  about: { bg: "bg-emerald-500/10", text: "text-emerald-600" },
+  academics: { bg: "bg-amber-500/10", text: "text-amber-600" },
+  events: { bg: "bg-purple-500/10", text: "text-purple-600" },
+  faculty: { bg: "bg-indigo-500/10", text: "text-indigo-600" },
+  admissions: { bg: "bg-cyan-500/10", text: "text-cyan-600" },
+  contact: { bg: "bg-rose-500/10", text: "text-rose-600" },
 };
 
-const DEFAULT_ICON_STYLE = { bg: "bg-slate-100", text: "text-slate-500", ring: "group-hover:border-slate-300" };
+const DEFAULT_ICON_STYLE = { bg: "bg-slate-100", text: "text-slate-500" };
 
 interface UnifiedSettingsPanelProps {
   college: {
@@ -102,11 +101,11 @@ export function UnifiedSettingsPanel({
   return (
     <motion.aside
       key="unified-settings-panel"
-      initial={{ opacity: 0, x: 40 }}
+      initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute right-0 top-0 bottom-0 z-40 flex w-[340px] sm:w-[380px] flex-col bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-l border-slate-200/90 overflow-hidden select-none"
+      exit={{ opacity: 0, x: 30 }}
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute right-0 top-0 bottom-0 z-40 flex w-[330px] sm:w-[370px] flex-col bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] border-l border-slate-200/90 overflow-hidden select-none"
     >
       {/* FLOATING SEGMENTED CONTROL HEADER */}
       <div className="p-3.5 border-b border-slate-200/80 bg-white">
@@ -132,7 +131,7 @@ export function UnifiedSettingsPanel({
                 {isActive && (
                   <motion.div
                     layoutId="activeTabSegment"
-                    className="absolute inset-0 rounded-xl bg-white shadow-sm border border-slate-200/90 z-[-1]"
+                    className="absolute inset-0 rounded-xl bg-white shadow-xs border border-slate-200/90 z-[-1]"
                     transition={{ type: "spring", stiffness: 500, damping: 35 }}
                   />
                 )}
@@ -157,12 +156,12 @@ export function UnifiedSettingsPanel({
         {/* TAB 1: PAGES & LAYERS */}
         {activeTab === "pages" && (
           <div className="flex flex-col gap-4 h-full justify-between">
-            <div className="flex flex-col gap-3 overflow-hidden">
+            <div className="flex flex-col gap-2.5 overflow-hidden">
               {/* SECTION HEADER */}
-              <div className="flex items-center justify-between px-1 pt-0.5">
+              <div className="flex items-center justify-between px-1 pb-1">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                  Navigation Structure
+                  Site Pages ({pages.length})
                 </span>
                 <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
                   <GripVertical className="h-3 w-3 text-slate-400" />
@@ -171,7 +170,7 @@ export function UnifiedSettingsPanel({
               </div>
 
               {/* PAGES LIST ITEM CARDS */}
-              <div className="flex-1 overflow-y-auto space-y-2.5 pr-0.5 pt-0.5">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-0.5 pt-0.5">
                 {pages.map((page) => {
                   const isActive = page.slug === currentPage.slug;
                   const icon = PAGE_ICONS[page.slug.toLowerCase()] ?? DEFAULT_PAGE_ICON;
@@ -187,43 +186,32 @@ export function UnifiedSettingsPanel({
                           setActiveContextMenuPageId(page.id);
                         }}
                         className={cn(
-                          "relative flex h-[52px] w-full items-center justify-between rounded-2xl px-3.5 text-xs transition-all duration-200 border",
+                          "relative flex h-[46px] w-full items-center justify-between rounded-xl px-3 text-xs transition-all duration-150 border",
                           isActive
-                            ? "bg-slate-900 text-white font-extrabold border-slate-900 shadow-xl shadow-slate-900/15"
-                            : "bg-white text-slate-800 font-bold hover:bg-white hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 border-slate-200/80 shadow-2xs"
+                            ? "bg-slate-900 text-white font-extrabold border-slate-900 shadow-md shadow-slate-900/15"
+                            : "bg-slate-50/80 text-slate-800 font-bold hover:bg-slate-100 hover:border-slate-300 border-slate-200/70 shadow-2xs"
                         )}
                       >
                         {/* ACTIVE GLOWING ACCENT BAR */}
                         {isActive && (
-                          <span className="absolute left-0 top-2.5 bottom-2.5 w-[3.5px] rounded-r-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.9)]" />
+                          <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.9)]" />
                         )}
 
-                        <div className="flex items-center gap-3 truncate">
+                        <div className="flex items-center gap-2.5 truncate">
                           <div
                             className={cn(
-                              "flex h-8.5 w-8.5 items-center justify-center rounded-xl transition-all duration-200 group-hover:scale-105",
+                              "flex h-7.5 w-7.5 items-center justify-center rounded-lg transition-transform group-hover:scale-105 shrink-0",
                               isActive
-                                ? "bg-blue-500/20 text-blue-400 border border-blue-400/30"
-                                : `${iconStyle.bg} ${iconStyle.text} border border-transparent ${iconStyle.ring}`
+                                ? "bg-blue-500/20 text-blue-400"
+                                : `${iconStyle.bg} ${iconStyle.text}`
                             )}
                           >
                             {icon}
                           </div>
-                          <div className="flex flex-col truncate">
-                            <span className="truncate capitalize text-xs tracking-tight">{page.title}</span>
-                            <span
-                              className={cn(
-                                "text-[9px] font-mono font-medium truncate",
-                                isActive ? "text-slate-400" : "text-slate-400"
-                              )}
-                            >
-                              /{page.slug}
-                            </span>
-                          </div>
+                          <span className="truncate capitalize text-xs tracking-tight font-extrabold">{page.title}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
-
                           <button
                             type="button"
                             onClick={(e) => {
@@ -232,10 +220,10 @@ export function UnifiedSettingsPanel({
                               setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
                             }}
                             className={cn(
-                              "rounded-xl p-1 transition",
+                              "rounded-lg p-1 transition",
                               isActive
                                 ? "text-slate-300 hover:bg-slate-800 hover:text-white"
-                                : "text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                                : "text-slate-400 hover:bg-slate-200 hover:text-slate-900"
                             )}
                           >
                             <MoreVertical className="h-4 w-4" />
@@ -315,9 +303,9 @@ export function UnifiedSettingsPanel({
                   const name = prompt("Enter new page title:");
                   if (name) alert(`Adding page "${name}"`);
                 }}
-                className="flex h-[48px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-900 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-xs font-extrabold text-white shadow-xl shadow-slate-900/25 hover:from-slate-800 hover:to-slate-700 transition-all active:scale-[0.99] cursor-pointer group"
+                className="flex h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 text-xs font-extrabold text-white shadow-md shadow-slate-900/15 hover:bg-slate-800 transition-all active:scale-[0.99] cursor-pointer"
               >
-                <Plus className="h-4 w-4 stroke-[2.5] transition-transform group-hover:rotate-90 duration-300" />
+                <Plus className="h-4 w-4 stroke-[2.5]" />
                 <span>Add New Page</span>
               </button>
             </div>
