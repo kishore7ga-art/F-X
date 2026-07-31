@@ -208,24 +208,28 @@ export function UnifiedSettingsPanel({
                       <Link
                         href={`/editor/${college.subdomain}?page=${page.slug}`}
                         prefetch={true}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setActiveContextMenuPageId(page.id);
+                        }}
                         className={cn(
-                          "relative flex h-[50px] w-full items-center justify-between rounded-xl px-4 text-[14px] font-semibold transition-all duration-150 border",
+                          "relative flex h-[52px] w-full items-center justify-between rounded-xl px-3.5 text-[14px] font-semibold transition-all duration-150 border",
                           isActive
                             ? "bg-slate-100/90 text-slate-900 font-extrabold border-slate-200/90 shadow-2xs"
                             : "bg-white text-slate-800 font-medium hover:bg-slate-50 hover:text-slate-900 border-transparent"
                         )}
                       >
-                        <div className="flex items-center gap-3.5 truncate">
-                          <span className={cn("shrink-0 transition-colors", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
+                        <div className="flex items-center gap-3 min-w-0 flex-1 truncate">
+                          <span className={cn("shrink-0 transition-colors flex h-5 w-5 items-center justify-center", isActive ? "text-slate-900" : "text-slate-700 group-hover:text-slate-900")}>
                             {icon}
                           </span>
-                          <div className="flex flex-col truncate">
-                            <span className="truncate capitalize text-[14px] font-semibold tracking-tight text-slate-900">{page.title}</span>
-                            <span className="text-[10px] font-mono font-medium text-slate-400">/{page.slug}</span>
+                          <div className="flex flex-col min-w-0 flex-1 justify-center leading-tight">
+                            <span className="truncate capitalize text-[13.5px] font-semibold tracking-tight text-slate-900 leading-snug">{page.title}</span>
+                            <span className="text-[10px] font-mono font-medium text-slate-400 leading-none">/{page.slug}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center shrink-0 ml-2">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -233,7 +237,7 @@ export function UnifiedSettingsPanel({
                               e.stopPropagation();
                               setActiveContextMenuPageId((prev) => (prev === page.id ? null : page.id));
                             }}
-                            className="rounded-lg p-1 text-slate-400 hover:bg-slate-200/70 hover:text-slate-900 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-200/70 hover:text-slate-900 transition"
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
