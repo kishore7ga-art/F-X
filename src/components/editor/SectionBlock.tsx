@@ -146,8 +146,8 @@ export function SectionBlock({
       className={cn(
         "group relative transition-all duration-200 select-text rounded-none",
         isSelected
-          ? "ring-2 ring-blue-600 ring-inset z-30"
-          : "hover:ring-1 hover:ring-blue-400/40 hover:ring-inset"
+          ? "ring-2 ring-blue-600 ring-inset z-30 cursor-pointer"
+          : "hover:ring-1 hover:ring-blue-400/40 hover:ring-inset cursor-default"
       )}
     >
 
@@ -169,7 +169,10 @@ export function SectionBlock({
           openSectionPopup(section.id, { x: event.clientX, y: event.clientY });
         }}
         aria-label={`Edit ${section.label} content`}
-        className="absolute inset-0 z-10 h-full w-full cursor-pointer"
+        className={cn(
+          "absolute inset-0 z-10 h-full w-full",
+          isSelected ? "cursor-pointer" : "cursor-default"
+        )}
       />
 
       {!section.isVisible && (
