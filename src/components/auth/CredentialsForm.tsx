@@ -36,9 +36,25 @@ export function CredentialsForm({
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  function handleDemoFill() {
+  async function handleDemoFill() {
     setEmail("admin@greenfield.edu.in");
     setPassword("greenfield123");
+    setError(null);
+    setPending(true);
+
+    try {
+      const formData = new FormData();
+      formData.set("email", "admin@greenfield.edu.in");
+      formData.set("password", "greenfield123");
+      const result = await loginAction(undefined, formData);
+      if (result?.next) {
+        window.location.assign(result.next);
+      } else {
+        window.location.assign("/editor/greenfield");
+      }
+    } catch {
+      window.location.assign("/editor/greenfield");
+    }
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
