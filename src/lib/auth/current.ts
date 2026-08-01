@@ -53,10 +53,14 @@ export async function requireCurrentCollege(): Promise<CurrentCollege> {
       id: openCollege.id,
       name: openCollege.name,
       subdomain: openCollege.subdomain,
-      collegeType: openCollege.collegeType,
+      customDomain: openCollege.customDomain,
       templateId: openCollege.templateId,
-      templateName: null,
+      themePaletteId: openCollege.themePaletteId,
+      themeFontId: openCollege.themeFontId,
+      collegeType: openCollege.collegeType,
       status: openCollege.status,
+      isDemo: openCollege.isDemo,
+      createdAt: openCollege.createdAt.toISOString(),
     };
   }
 
