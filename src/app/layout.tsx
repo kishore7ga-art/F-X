@@ -35,7 +35,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${jakarta.variable} h-full antialiased dark scroll-smooth bg-black text-white overflow-x-hidden w-full max-w-full font-sans`}
     >
-      <head>
+      <body className={`${inter.className} min-h-full flex flex-col overflow-x-hidden w-full max-w-full font-sans`}>
         <Script
           id="scroll-restoration"
           strategy="beforeInteractive"
@@ -48,8 +48,8 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className={`${inter.className} min-h-full flex flex-col overflow-x-hidden w-full max-w-full font-sans`}>{children}</body>
+        {children}
+      </body>
     </html>
   );
 }

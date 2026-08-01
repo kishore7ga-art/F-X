@@ -27,5 +27,9 @@ export default async function StartPage() {
   }
 
   // Auto-build the site and redirect to editor
-  await buildSiteForType();
+  try {
+    await buildSiteForType();
+  } catch {
+    redirect(`/editor/${college.subdomain}`);
+  }
 }

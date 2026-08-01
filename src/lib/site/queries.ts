@@ -115,10 +115,7 @@ export async function getSitePage(
   const activePage =
     fullPages.find((page) => page.slug === currentSlug) ?? payload.currentPage;
 
-  let sections = payload.sections;
-  if (sections.length === 0) {
-    sections = getFallbackSectionsForPage(currentSlug, payload.college.name);
-  }
+  const sections = payload.sections;
 
   return {
     college: payload.college,
