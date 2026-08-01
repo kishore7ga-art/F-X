@@ -95,9 +95,15 @@ export async function getEditorPage(
   pageSlug?: string,
 ): Promise<EditorPageData | null> {
   const query = pageSlug ? `?page=${encodeURIComponent(pageSlug)}` : "";
-  const payload = await serverApi<EditorPagePayload>(
-    `/api/v1/editor/${encodeURIComponent(subdomain)}${query}`,
-  );
+  let payload: EditorPagePayload | null = null;
+  try {
+    payload = await serverApi<EditorPagePayload>(
+      `/api/v1/editor/${encodeURIComponent(subdomain)}${query}`,
+    );
+  } catch (error) {
+    console.error("[editor] could not load editor page:", (error as Error).message);
+    return null;
+  }
   if (!payload) return null;
 
   // The backend filters to supported types already; this narrows the string it

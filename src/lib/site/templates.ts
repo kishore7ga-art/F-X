@@ -31,10 +31,15 @@ export type ThemeFontOption = {
 };
 
 export async function listTemplates(): Promise<TemplateSummary[]> {
-  const payload = await serverApi<{ templates: TemplateSummary[] }>(
-    "/api/v1/templates",
-  );
-  return payload?.templates ?? [];
+  try {
+    const payload = await serverApi<{ templates: TemplateSummary[] }>(
+      "/api/v1/templates",
+    );
+    return payload?.templates ?? [];
+  } catch (error) {
+    console.error("[templates] could not load templates:", (error as Error).message);
+    return [];
+  }
 }
 
 /**
@@ -46,15 +51,7 @@ export async function listTemplates(): Promise<TemplateSummary[]> {
  * page. This is the one caller that swallows the failure, and it says so.
  */
 export async function listTemplatesForLanding(): Promise<TemplateSummary[]> {
-  try {
-    return await listTemplates();
-  } catch (error) {
-    console.error(
-      "[landing] could not load templates:",
-      (error as Error).message,
-    );
-    return [];
-  }
+  return listTemplates();
 }
 
 export async function getTemplateDetail(templateId: string): Promise<{
@@ -62,5 +59,10 @@ export async function getTemplateDetail(templateId: string): Promise<{
   palettes: ThemePaletteOption[];
   fonts: ThemeFontOption[];
 } | null> {
-  return serverApi(`/api/v1/templates/${encodeURIComponent(templateId)}`);
+  try {
+    return await serverApi(`/api/v1/templates/${encodeURIComponent(templateId)}`);
+  } catch (error) {
+    console.error("[templates] could not load template detail:", (error as Error).message);
+    return null;
+  }
 }

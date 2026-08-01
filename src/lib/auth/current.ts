@@ -32,10 +32,11 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
     return payload?.college ?? null;
   } catch (error) {
-    if (error instanceof ServerApiError && error.status === 401) {
+    if (error instanceof ServerApiError) {
+      console.error(`[auth] could not resolve college: ${error.message}`);
       return null;
     }
-    throw error;
+    return null;
   }
 }
 

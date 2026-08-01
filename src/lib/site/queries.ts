@@ -93,9 +93,15 @@ export async function getSitePage(
   pageSlug?: string,
 ): Promise<SitePageData | SiteNotBuilt | null> {
   const query = pageSlug ? `?page=${encodeURIComponent(pageSlug)}` : "";
-  const payload = await serverApi<SitePayload>(
-    `/api/v1/sites/${encodeURIComponent(subdomain)}${query}`,
-  );
+  let payload: SitePayload | null = null;
+  try {
+    payload = await serverApi<SitePayload>(
+      `/api/v1/sites/${encodeURIComponent(subdomain)}${query}`,
+    );
+  } catch (error) {
+    console.error("[site] could not load site page:", (error as Error).message);
+    return null;
+  }
 
   if (!payload) return null;
   if (!payload.built) return payload;
