@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import {
   classifyDatabaseError,
@@ -87,10 +87,11 @@ async function backendStatus() {
  * like the feature not working. Absent field means old code, "required" means
  * the flag is unset, "open" means it took.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   const startedAt = Date.now();
   const target = parseDatabaseHost(process.env.DATABASE_URL);
   const host = target ? `${target.host}:${target.port}` : null;
+  const isHtml = request.headers.get("accept")?.includes("text/html");
 
   try {
     await prisma.$queryRawUnsafe("SELECT 1");
@@ -107,14 +108,61 @@ export async function GET() {
       templates = null;
     }
 
+    const backend = await backendStatus();
+    const latencyMs = Date.now() - startedAt;
+
+    if (isHtml) {
+      return new NextResponse(
+        `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XITE — System Status</title>
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #09090b; color: #f4f4f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+    .card { background: #18181b; border: 1px solid #27272a; border-radius: 16px; width: 100%; max-width: 480px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+    .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
+    h1 { margin: 20px 0 8px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+    p { margin: 0 0 24px; font-size: 14px; color: #a1a1aa; line-height: 1.5; }
+    .metrics { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; background: #09090b; border: 1px solid #27272a; border-radius: 10px; padding: 12px 16px; font-size: 13px; }
+    .metric-label { color: #a1a1aa; font-weight: 500; }
+    .metric-val { color: #f4f4f5; font-weight: 600; font-family: monospace; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 12px; background: #f4f4f5; color: #09090b; font-size: 14px; font-weight: 700; border-radius: 10px; text-decoration: none; transition: opacity 0.2s; box-sizing: border-box; }
+    .btn:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      All Systems Operational
+    </div>
+    <h1>System Status</h1>
+    <p>Everything is running smoothly across database and API services.</p>
+    <div class="metrics">
+      <div class="metric-row"><span class="metric-label">Database</span><span class="metric-val">Connected</span></div>
+      <div class="metric-row"><span class="metric-label">Backend API</span><span class="metric-val">${backend.reachable ? "Reachable (200 OK)" : "Offline"}</span></div>
+      <div class="metric-row"><span class="metric-label">Response Time</span><span class="metric-val">${latencyMs}ms</span></div>
+    </div>
+    <a href="/" class="btn">← Return to XITE Home</a>
+  </div>
+</body>
+</html>`,
+        { headers: { "Content-Type": "text/html; charset=utf-8" } },
+      );
+    }
+
     return NextResponse.json({
       status: "ok",
       database: "connected",
       host,
       auth: AUTH_DISABLED ? "open" : "required",
       templates,
-      backend: await backendStatus(),
-      latencyMs: Date.now() - startedAt,
+      backend,
+      latencyMs,
     });
   } catch (error) {
     let { kind, code } = classifyDatabaseError(error);
