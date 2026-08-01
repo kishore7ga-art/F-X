@@ -26,24 +26,32 @@ export const AUTH_DISABLED = process.env.AUTH_DISABLED !== "false";
  */
 // `||`, not `??`: a dashboard that saves an empty value would otherwise create
 // a college with an empty subdomain, whose editor URL is unreachable.
-const SUBDOMAIN = process.env.OPEN_ACCESS_SUBDOMAIN || "main";
-const NAME = process.env.OPEN_ACCESS_COLLEGE_NAME || "My College";
+const SUBDOMAIN = process.env.OPEN_ACCESS_SUBDOMAIN || "greenfield";
+const NAME = process.env.OPEN_ACCESS_COLLEGE_NAME || "Greenfield University";
 
-export async function openAccessCollege() {
-  // isDemo excluded deliberately: the seeded template showcases are older than
-  // any real college, so "oldest" alone would hand the first visitor a demo
-  // site to edit and quietly deface the gallery.
+export async function openAccessCollege(targetSubdomain?: string) {
+  const sub = targetSubdomain || SUBDOMAIN;
+
+  const exact = await prisma.college.findUnique({
+    where: { subdomain: sub },
+  });
+  if (exact) return exact;
+
   const existing = await prisma.college.findFirst({
-    where: { isDemo: false },
+    where: { isDemo: false, templateId: { not: null } },
     orderBy: { createdAt: "asc" },
   });
   if (existing) return existing;
 
-  // upsert, not create: two requests arriving together on a cold database would
-  // otherwise race and one would fail the unique constraint on subdomain.
+  const fallback = await prisma.college.findFirst({
+    where: { isDemo: false },
+    orderBy: { createdAt: "asc" },
+  });
+  if (fallback) return fallback;
+
   return prisma.college.upsert({
-    where: { subdomain: SUBDOMAIN },
+    where: { subdomain: sub },
     update: {},
-    create: { name: NAME, subdomain: SUBDOMAIN, status: "DRAFT" },
+    create: { name: NAME, subdomain: sub, status: "DRAFT" },
   });
 }

@@ -43,12 +43,12 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
 /** Same, but sends signed-out visitors to the login screen. */
 import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
 
-export async function requireCurrentCollege(): Promise<CurrentCollege> {
+export async function requireCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege> {
   const college = await getCurrentCollege();
   if (college) return college;
 
   if (AUTH_DISABLED) {
-    const openCollege = await openAccessCollege();
+    const openCollege = await openAccessCollege(targetSubdomain);
     return {
       id: openCollege.id,
       name: openCollege.name,
@@ -95,7 +95,9 @@ export async function getCurrentCollegeOrNull() {
  * in the URL, otherwise the resource is treated as non-existent.
  */
 export async function requireCollegeBySubdomain(subdomain: string) {
-  const college = await requireCurrentCollege();
-  if (college.subdomain !== subdomain) redirect(`/editor/${college.subdomain}`);
+  const college = await requireCurrentCollege(subdomain);
+  if (!AUTH_DISABLED && college.subdomain !== subdomain) {
+    redirect(`/editor/${college.subdomain}`);
+  }
   return college;
 }
