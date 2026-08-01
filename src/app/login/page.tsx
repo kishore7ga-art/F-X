@@ -12,13 +12,21 @@ export const metadata = { title: "Sign in — XITE" };
 export default async function LoginPage({
   searchParams,
 }: PageProps<"/login">) {
-  const { error, registered, email } = await searchParams;
+  const { error, registered, email, force } = await searchParams;
   const signInError = typeof error === "string" ? error : null;
   const justRegistered = registered === "1";
 
   const college = await getCurrentCollegeOrNull();
 
-  if (!AUTH_DISABLED && college) redirect("/onboarding");
+  if (!AUTH_DISABLED && college && force !== "1") {
+    if (college.templateId) {
+      redirect(`/editor/${college.subdomain}`);
+    } else if (college.collegeType) {
+      redirect("/start");
+    } else {
+      redirect("/onboarding");
+    }
+  }
 
   return (
     <CredentialsForm
