@@ -18,7 +18,11 @@ export default async function LoginPage({
 
   const college = await getCurrentCollegeOrNull();
 
-  if (!AUTH_DISABLED && college && force !== "1") {
+  if (AUTH_DISABLED) {
+    redirect("/editor/greenfield");
+  }
+
+  if (college && force !== "1") {
     if (college.templateId) {
       redirect(`/editor/${college.subdomain}`);
     } else if (college.collegeType) {

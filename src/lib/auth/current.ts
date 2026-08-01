@@ -41,10 +41,26 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
 }
 
 /** Same, but sends signed-out visitors to the login screen. */
-export async function requireCurrentCollege() {
+import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
+
+export async function requireCurrentCollege(): Promise<CurrentCollege> {
   const college = await getCurrentCollege();
-  if (!college) redirect("/login");
-  return college;
+  if (college) return college;
+
+  if (AUTH_DISABLED) {
+    const openCollege = await openAccessCollege();
+    return {
+      id: openCollege.id,
+      name: openCollege.name,
+      subdomain: openCollege.subdomain,
+      collegeType: openCollege.collegeType,
+      templateId: openCollege.templateId,
+      templateName: null,
+      status: openCollege.status,
+    };
+  }
+
+  redirect("/login");
 }
 
 /**
