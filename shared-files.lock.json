@@ -1,6 +1,6 @@
 {
   "prisma/schema.prisma": "d9648832e4eb7182",
-  "prisma/seed.ts": "06ab2e01330d2078",
+  "prisma/seed.ts": "27481ccc88972f9a",
   "src/lib/sections/schemas.ts": "fa7844e50bfdb14b",
   "src/lib/sections/defaults.ts": "9f6d66490373734a",
   "src/lib/sections/personalize.ts": "d1841d119215d7b0",
