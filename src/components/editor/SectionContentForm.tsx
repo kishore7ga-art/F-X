@@ -37,19 +37,28 @@ export function SectionContentForm({
   section: EditorSection;
   onClose: () => void;
 }) {
-  const { updateSectionContent } = useEditor();
+  const { updateSectionContent, liveContentMap } = useEditor();
   const fields = SECTION_FORM_FIELDS[section.sectionType];
 
-  const [values, setValues] = useState<Values>(
-    () => (section.content as Values) ?? {}
-  );
+  const activeContent = useMemo(() => {
+    const live = liveContentMap[section.id] as Values | undefined;
+    const base = (section.content as Values) ?? {};
+    return { ...base, ...(live ?? {}) };
+  }, [section.id, section.content, liveContentMap]);
+
+  const [values, setValues] = useState<Values>(activeContent);
+  const latest = useRef(values);
+
+  useEffect(() => {
+    setValues(activeContent);
+    latest.current = activeContent;
+  }, [activeContent]);
+
   const [save, setSave] = useState<SaveState>(() =>
     section.lastSavedAt
       ? { status: "saved", at: new Date(section.lastSavedAt).getTime(), fresh: false }
       : { status: "idle" }
   );
-
-  const latest = useRef(values);
 
   const queue = useMemo(
     () =>
