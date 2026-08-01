@@ -77,17 +77,18 @@ export function HeaderNavbar() {
         {/* Primary CTA Buttons */}
         <div className="hidden sm:flex items-center gap-3">
           <Link
-            href="/login"
+            href="/editor/greenfield"
             className="text-xs font-bold text-neutral-300 hover:text-white px-3 py-2 transition-colors"
           >
-            Sign In
+            Launch Editor
           </Link>
 
           {/* Lit up border button */}
-          <Link href="/start" className="p-[3px] relative inline-block group">
+          <Link href="/editor/greenfield" className="p-[3px] relative inline-block group">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
-            <div className="px-5 py-2 bg-black rounded-full relative group transition duration-200 text-white text-xs font-bold hover:bg-transparent flex items-center justify-center">
-              Start Building
+            <div className="px-5 py-2 bg-black rounded-full relative group transition duration-200 text-white text-xs font-bold hover:bg-transparent flex items-center justify-center gap-1.5">
+              <span>Start Editing Now</span>
+              <span className="text-blue-400">→</span>
             </div>
           </Link>
         </div>
@@ -128,13 +129,13 @@ export function HeaderNavbar() {
           </a>
           <hr className="border-white/10 my-1" />
           <Link
-            href="/start"
+            href="/editor/greenfield"
             onClick={() => setIsMobileMenuOpen(false)}
             className="p-[3px] relative block text-center"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
             <div className="py-2.5 bg-black rounded-[10px] relative group transition duration-200 text-white text-xs font-bold hover:bg-transparent flex items-center justify-center">
-              Start Building
+              Start Editing Now →
             </div>
           </Link>
         </div>
