@@ -7,10 +7,6 @@ export function HeroImageSplit({ content }: { content: HeroContent }) {
   const { collegeName, tagline, intro, bannerImageUrl, ctaLabel, ctaHref } =
     content;
 
-  if (!intro && !tagline && !bannerImageUrl && !ctaLabel) {
-    return null;
-  }
-
   return (
     <section className="relative overflow-hidden bg-[var(--site-bg)] text-[var(--site-dark)] px-4 sm:px-6 py-8 sm:py-24 transition-colors duration-300">
       <div className="mx-auto max-w-6xl">

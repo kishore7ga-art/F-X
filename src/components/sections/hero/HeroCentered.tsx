@@ -6,10 +6,6 @@ export function HeroCentered({ content }: { content: HeroContent }) {
   const { collegeName, tagline, intro, bannerImageUrl, ctaLabel, ctaHref } =
     content;
 
-  if (!intro && !tagline && !bannerImageUrl && !ctaLabel) {
-    return null;
-  }
-
   return (
     <section className="relative isolate overflow-hidden bg-[var(--site-dark)] px-6 py-24 text-center text-white sm:py-32">
       {bannerImageUrl ? (

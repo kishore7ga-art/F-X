@@ -16,10 +16,6 @@ export function AboutTwoColumn({ content }: { content: AboutContent }) {
     principalMessage,
   } = content;
 
-  if (!history && !mission && !vision && !principalName && !principalMessage) {
-    return null;
-  }
-
   return (
     <SectionShell background="white">
       {title ? <SectionHeading title={title} /> : null}
