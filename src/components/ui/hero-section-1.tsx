@@ -119,7 +119,7 @@ export function HeroSection() {
                                         </Link>
                                     </div>
                                     <div key={2}>
-                                        <Link href="/templates" className="p-[3px] relative inline-block group">
+                                        <Link href="/start" className="p-[3px] relative inline-block group">
                                             <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-800 rounded-xl" />
                                             <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-neutral-300 font-semibold text-base hover:bg-transparent flex items-center justify-center">
                                                 View Templates

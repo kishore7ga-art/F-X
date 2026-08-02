@@ -42,7 +42,7 @@ export function Footer({ templates }: { templates: TemplateSummary[] }) {
               {templates.slice(0, 5).map((template) => (
                 <li key={template.id}>
                   <Link
-                    href={template.demoUrl ?? "/templates"}
+                    href={template.demoUrl ?? "/start"}
                     className="text-sm text-chalk-dim/70 transition-colors hover:text-chalk"
                   >
                     {template.name}

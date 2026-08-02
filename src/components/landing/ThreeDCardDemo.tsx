@@ -83,7 +83,7 @@ export function ThreeDCardDemoSecond() {
           <CardItem
             translateZ={20}
             as={Link}
-            href="/templates"
+            href="/start"
             className="px-3 py-1.5 rounded-lg text-xs font-semibold dark:text-white hover:text-purple-400"
           >
             Explore →
@@ -91,7 +91,7 @@ export function ThreeDCardDemoSecond() {
           <CardItem
             translateZ={20}
             as={Link}
-            href="/templates"
+            href="/start"
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-bold shadow-md"
           >
             Get Started

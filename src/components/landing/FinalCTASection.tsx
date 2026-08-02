@@ -31,7 +31,7 @@ export default function FinalCTASection() {
             </div>
           </Link>
 
-          <Link href="/templates" className="p-[3px] relative inline-block group">
+          <Link href="/request-access" className="p-[3px] relative inline-block group">
             <div className="absolute inset-0 bg-gradient-to-r from-neutral-700 to-neutral-800 rounded-xl" />
             <div className="px-8 py-3.5 bg-black rounded-[10px] relative group transition duration-200 text-neutral-200 font-bold text-base hover:bg-transparent flex items-center justify-center">
               Book a Demo

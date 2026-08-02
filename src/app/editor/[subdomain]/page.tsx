@@ -25,8 +25,8 @@ export default async function EditorPage({
   const college = await requireCollegeBySubdomain(subdomain);
 
   // A freshly signed-up college has no template, pages or sections yet — send
-  // it to pick a design rather than showing an empty editor.
-  if (!college.templateId) redirect("/templates");
+  // it to auto-build with the Admin template rather than showing an empty editor.
+  if (!college.templateId) redirect("/start");
 
   const data = await getEditorPage(subdomain, pageSlug);
   if (!data) notFound();
