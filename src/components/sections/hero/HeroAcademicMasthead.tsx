@@ -8,6 +8,10 @@ export function HeroAcademicMasthead({ content }: { content: HeroContent }) {
   const { collegeName, tagline, intro, bannerImageUrl, ctaLabel, ctaHref } =
     content;
 
+  if (!intro && !tagline && !bannerImageUrl && !ctaLabel) {
+    return null;
+  }
+
   return (
     <section className="bg-[var(--site-light)]">
       {/* Thin banner rule */}

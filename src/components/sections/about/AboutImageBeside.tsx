@@ -15,6 +15,10 @@ export function AboutImageBeside({ content }: { content: AboutContent }) {
     principalMessage,
   } = content;
 
+  if (!history && !mission && !vision && !principalName && !principalMessage) {
+    return null;
+  }
+
   return (
     <SectionShell background="light">
       {title ? <SectionHeading title={title} /> : null}

@@ -6,6 +6,10 @@ import type { HeroContent } from "@/lib/sections/schemas";
 export function HeroMinimalText({ content }: { content: HeroContent }) {
   const { collegeName, tagline, intro, ctaLabel, ctaHref } = content;
 
+  if (!intro && !tagline && !ctaLabel) {
+    return null;
+  }
+
   return (
     <section className="bg-[var(--site-bg)] px-6 py-20 sm:py-28">
       <div className="mx-auto max-w-3xl text-center">
