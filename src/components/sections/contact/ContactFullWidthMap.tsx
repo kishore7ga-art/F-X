@@ -29,7 +29,7 @@ export function ContactFullWidthMap({ content }: { content: ContactContent }) {
           className="flex h-24 w-full items-center justify-center text-xs font-semibold uppercase tracking-widest text-white/70"
           style={{ backgroundColor: "var(--site-primary)" }}
         >
-          {address || "Campus location"}
+          {address}
         </div>
       )}
     </section>
