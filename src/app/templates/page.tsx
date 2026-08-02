@@ -7,32 +7,6 @@ import { listTemplates } from "@/lib/site/templates";
 
 export const dynamic = "force-dynamic";
 
-const TEMPLATE_PREVIEWS: Record<
-  string,
-  { image: string; tag: string }
-> = {
-  Radian: {
-    image: "/template-brightwood.jpg",
-    tag: "Engineering & Tech",
-  },
-  Meridian: {
-    image: "/template-evergreen.jpg",
-    tag: "Arts & Science",
-  },
-  Beacon: {
-    image: "/template-calistoga.jpg",
-    tag: "Medical & Nursing",
-  },
-  Harbour: {
-    image: "/template-oakwood.jpg",
-    tag: "Polytechnics & Management",
-  },
-  Almanac: {
-    image: "/macbook-madras-college.png",
-    tag: "Heritage & University",
-  },
-};
-
 export default async function TemplateGalleryPage() {
   const college = await requireCurrentCollege();
   if (!college.collegeType) redirect("/onboarding");
@@ -75,10 +49,8 @@ export default async function TemplateGalleryPage() {
         ) : (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {templates.map((template) => {
-              const customPreview = TEMPLATE_PREVIEWS[template.name] || {
-                image: template.thumbnailUrl || "/template-brightwood.jpg",
-                tag: "Academic Template",
-              };
+              const image = template.thumbnailUrl || "/template-brightwood.jpg";
+              const tag = "Academic Template";
 
               return (
                 <Link
@@ -89,12 +61,12 @@ export default async function TemplateGalleryPage() {
                   {/* Real Preview Image Header */}
                   <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
                     <SiteImage
-                      src={customPreview.image}
+                      src={image}
                       alt={template.name}
                       className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute top-3 left-3 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 text-xs font-bold text-white shadow-sm">
-                      {customPreview.tag}
+                      {tag}
                     </div>
                   </div>
 
