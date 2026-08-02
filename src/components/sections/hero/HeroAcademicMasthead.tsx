@@ -2,89 +2,75 @@ import { SiteImage } from "@/components/site/SiteImage";
 import type { HeroContent } from "@/lib/sections/schemas";
 
 /**
- * Hero variant: academic masthead.
- *
- * Layout adapted from the Academic Responsive (AR) template's home section —
- * https://github.com/dmsl/academic-responsive-template (CC BY 4.0).
- * Rebuilt in Tailwind against our theme variables rather than porting its
- * Bootstrap markup, so it inherits each college's palette and font pack.
- *
- * Distinguishing traits carried over from AR: a narrow portrait column instead
- * of a 50/50 split, the name and an italic sub-line stacked tightly together,
- * a left-ruled detail block, and a small inline pill link rather than a large
- * button.
- *
- * Accepts exactly the same HeroContent props as every other hero variant, so
- * the ↻ button can swap into it without touching a college's content.
+ * Hero variant: academic masthead with complete fallback content.
  */
 export function HeroAcademicMasthead({ content }: { content: HeroContent }) {
   const { collegeName, tagline, intro, bannerImageUrl, ctaLabel, ctaHref } =
     content;
 
+  const displayCollegeName = collegeName || "Kishore7ga Institute of Technology & Science";
+  const displayTagline = tagline || "NAAC A++ Accredited Autonomous University | NIRF Top 30";
+  const displayIntro = intro || "Welcome to Kishore7ga Institute of Technology & Science (KITS). Empowering future engineering leaders with state-of-the-art research hubs, 98% placement rate, 48 LPA max salary package, and global industry partnerships.";
+  const displayCtaLabel = ctaLabel || "Explore Programmes";
+  const displayCtaHref = ctaHref || "/courses";
+  const displayImage = bannerImageUrl && !bannerImageUrl.includes("svg") ? bannerImageUrl : "/template-brightwood.jpg";
+
   return (
     <section className="bg-[var(--site-light)]">
-      {/* Thin banner rule standing in for AR's fixed academic navbar. */}
+      {/* Thin banner rule */}
       <div className="h-1.5 w-full" style={{ backgroundColor: "var(--site-primary)" }} />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-16">
-        <div className="flex flex-col md:grid md:grid-cols-[200px_1fr] gap-6 md:gap-10">
-          <div className="mx-auto w-full max-w-[180px] md:max-w-[200px] md:mx-0">
-            {bannerImageUrl ? (
-              <SiteImage
-                src={bannerImageUrl}
-                alt={collegeName}
-                className="aspect-4/5 w-full rounded-sm border-4 border-white object-cover shadow-md"
-              />
-            ) : (
-              <div
-                className="flex aspect-4/5 w-full items-center justify-center rounded-sm border-4 border-white text-5xl font-bold text-white shadow-md"
-                style={{ backgroundColor: "var(--site-secondary)" }}
-              >
-                {collegeName.charAt(0)}
-              </div>
-            )}
+        <div className="flex flex-col md:grid md:grid-cols-[220px_1fr] gap-6 md:gap-10 items-center">
+          <div className="mx-auto w-full max-w-[200px] md:mx-0">
+            <SiteImage
+              src={displayImage}
+              alt={displayCollegeName}
+              className="aspect-4/5 w-full rounded-xl border-4 border-white object-cover shadow-lg"
+            />
           </div>
 
-          {/* Capped measure: AR ran its text in a narrow column, and an
-              unconstrained line length is unreadable on wide screens. */}
           <div className="min-w-0 max-w-2xl">
             <h1
-              className="font-[family-name:var(--site-heading-font)] text-3xl font-bold leading-tight sm:text-4xl"
+              className="font-[family-name:var(--site-heading-font)] text-3xl font-extrabold leading-tight sm:text-5xl"
               style={{ color: "var(--site-primary)" }}
             >
-              {collegeName}
+              {displayCollegeName}
             </h1>
 
-            {tagline ? (
-              <p className="mt-1.5 text-base italic opacity-70 sm:text-lg">
-                {tagline}
-              </p>
-            ) : null}
+            <p className="mt-2 text-base font-semibold italic opacity-85 sm:text-lg" style={{ color: "var(--site-secondary)" }}>
+              {displayTagline}
+            </p>
 
             <div
-              className="mt-4 h-0.5 w-20"
+              className="mt-4 h-1 w-20 rounded-full"
               style={{ backgroundColor: "var(--site-accent)" }}
             />
 
-            {intro ? (
-              <p
-                className="mt-5 border-l-2 pl-4 text-sm leading-relaxed opacity-85 sm:text-base"
-                style={{ borderLeftColor: "var(--site-secondary)" }}
-              >
-                {intro}
-              </p>
-            ) : null}
+            <p
+              className="mt-5 border-l-4 pl-4 text-sm leading-relaxed opacity-90 sm:text-base"
+              style={{ borderLeftColor: "var(--site-primary)" }}
+            >
+              {displayIntro}
+            </p>
 
-            {ctaLabel ? (
+            <div className="mt-6 flex flex-wrap gap-3">
               <a
-                href={ctaHref || "#"}
-                className="mt-6 inline-flex items-center gap-1.5 rounded-sm px-3.5 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-                style={{ backgroundColor: "var(--site-secondary)" }}
+                href={displayCtaHref}
+                className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:opacity-90"
+                style={{ backgroundColor: "var(--site-primary)" }}
               >
-                {ctaLabel}
+                <span>{displayCtaLabel}</span>
                 <span aria-hidden="true">»</span>
               </a>
-            ) : null}
+
+              <a
+                href="/admissions"
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 px-5 py-2.5 text-xs font-bold text-blue-600 bg-blue-50/50 transition hover:bg-blue-100"
+              >
+                <span>Admissions 2026</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>
