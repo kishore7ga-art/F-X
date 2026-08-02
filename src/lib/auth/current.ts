@@ -96,8 +96,12 @@ export async function getCurrentCollegeOrNull() {
  */
 export async function requireCollegeBySubdomain(subdomain: string) {
   const college = await requireCurrentCollege(subdomain);
-  if (!AUTH_DISABLED && college.subdomain !== subdomain) {
-    redirect(`/editor/${college.subdomain}`);
+  if (!AUTH_DISABLED) {
+    const cleanCurrent = (college.subdomain || "").trim().toLowerCase();
+    const cleanRequested = (subdomain || "").trim().toLowerCase();
+    if (cleanCurrent && cleanRequested && cleanCurrent !== cleanRequested) {
+      redirect(`/editor/${college.subdomain}`);
+    }
   }
   return college;
 }
