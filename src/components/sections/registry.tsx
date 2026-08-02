@@ -6,12 +6,6 @@ import { AboutSplitPanel } from "@/components/sections/about/AboutSplitPanel";
 import { AboutStacked } from "@/components/sections/about/AboutStacked";
 import { AboutTimeline } from "@/components/sections/about/AboutTimeline";
 import { AboutTwoColumn } from "@/components/sections/about/AboutTwoColumn";
-import { ContactCardsRow } from "@/components/sections/contact/ContactCardsRow";
-import { ContactCentered } from "@/components/sections/contact/ContactCentered";
-import { ContactDarkPanel } from "@/components/sections/contact/ContactDarkPanel";
-import { ContactFormOnly } from "@/components/sections/contact/ContactFormOnly";
-import { ContactFullWidthMap } from "@/components/sections/contact/ContactFullWidthMap";
-import { ContactSplit } from "@/components/sections/contact/ContactSplit";
 import { CoursesAccordion } from "@/components/sections/courses/CoursesAccordion";
 import { CoursesCompactTiles } from "@/components/sections/courses/CoursesCompactTiles";
 import { CoursesGrid } from "@/components/sections/courses/CoursesGrid";
@@ -63,14 +57,9 @@ function variant<T extends SupportedSectionType>(
 }
 
 /**
- * `section_variants.component_key` -> React component. The refresh (↻) button
- * in the editor swaps which key a college_section points at; content is
- * untouched because every variant of a section type reads the same fields.
+ * `section_variants.component_key` -> React component.
  */
 export const VARIANT_REGISTRY: Record<string, VariantEntry> = {
-  // Keys follow {section_type}_{layout_descriptor} — see
-  // adding-section-variants.md §4. Must stay in sync with
-  // section_variants.component_key in the database.
   hero_centered: variant(SectionType.HERO, HeroCentered),
   hero_split_image: variant(SectionType.HERO, HeroImageSplit),
   hero_academic_masthead: variant(SectionType.HERO, HeroAcademicMasthead),
@@ -101,13 +90,6 @@ export const VARIANT_REGISTRY: Record<string, VariantEntry> = {
   ),
   faculty_overlay_tiles: variant(SectionType.FACULTY, FacultyOverlayTiles),
   faculty_minimal_table: variant(SectionType.FACULTY, FacultyMinimalTable),
-
-  contact_map_split: variant(SectionType.CONTACT, ContactSplit),
-  contact_centered: variant(SectionType.CONTACT, ContactCentered),
-  contact_form_only: variant(SectionType.CONTACT, ContactFormOnly),
-  contact_full_width_map: variant(SectionType.CONTACT, ContactFullWidthMap),
-  contact_cards_row: variant(SectionType.CONTACT, ContactCardsRow),
-  contact_dark_panel: variant(SectionType.CONTACT, ContactDarkPanel),
 };
 
 export function getVariant(componentKey: string): VariantEntry | null {
@@ -120,5 +102,5 @@ export const SECTION_TYPE_LABELS: Record<SupportedSectionType, string> = {
   [SectionType.ABOUT]: "About Us",
   [SectionType.COURSES]: "Courses",
   [SectionType.FACULTY]: "Faculty",
-  [SectionType.CONTACT]: "Contact",
+  [SectionType.CONTACT]: "Contact Us",
 };
