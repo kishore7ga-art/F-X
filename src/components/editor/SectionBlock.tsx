@@ -61,12 +61,19 @@ export function SectionBlock({
 
 
 
+  const liveContentMapRef = useRef(liveContentMap);
+  useEffect(() => {
+    liveContentMapRef.current = liveContentMap;
+  }, [liveContentMap]);
+
   // Direct Inline Text Editing for canvas h1, h2, h3, p tags
   useEffect(() => {
     const wrapper = contentWrapperRef.current;
     if (!wrapper) return;
 
-    const textElements = wrapper.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6, p, span, a, li, blockquote");
+    const textElements = wrapper.querySelectorAll<HTMLElement>(
+      "h1, h2, h3, h4, h5, h6, p, span, a, li, blockquote"
+    );
     const cleanupFns: (() => void)[] = [];
 
     textElements.forEach((el) => {
@@ -89,16 +96,24 @@ export function SectionBlock({
         "rounded-sm"
       );
 
-      const handleBlurOrInput = () => {
+      const commitChanges = () => {
         const text = el.innerText.trim();
-        const currentData = ((liveContentMap[section.id] ?? section.content ?? {}) as Record<string, unknown>);
+        const currentData = ((liveContentMapRef.current[section.id] ??
+          section.content ??
+          {}) as Record<string, unknown>);
         const updatedData = { ...currentData };
 
         const tag = el.tagName;
         if (tag === "H1" || tag === "H2") {
           if ("collegeName" in updatedData) updatedData.collegeName = text;
           else if ("title" in updatedData) updatedData.title = text;
-        } else if (tag === "P" || tag === "H3" || tag === "H4" || tag === "SPAN" || tag === "BLOCKQUOTE") {
+        } else if (
+          tag === "P" ||
+          tag === "H3" ||
+          tag === "H4" ||
+          tag === "SPAN" ||
+          tag === "BLOCKQUOTE"
+        ) {
           if (el.classList.contains("italic") && "tagline" in updatedData) {
             updatedData.tagline = text;
           } else if ("intro" in updatedData) {
@@ -112,9 +127,13 @@ export function SectionBlock({
           } else if ("principalMessage" in updatedData) {
             updatedData.principalMessage = text;
           } else {
-            const strKeys = Object.keys(updatedData).filter((k) => typeof updatedData[k] === "string");
+            const strKeys = Object.keys(updatedData).filter(
+              (k) => typeof updatedData[k] === "string"
+            );
             if (strKeys.length > 0) {
-              const matchedKey = strKeys.find((k) => (updatedData[k] as string).length > 0);
+              const matchedKey = strKeys.find(
+                (k) => (updatedData[k] as string).length > 0
+              );
               if (matchedKey) updatedData[matchedKey] = text;
             }
           }
@@ -123,18 +142,34 @@ export function SectionBlock({
         updateSectionContent(section.id, updatedData);
       };
 
-      el.addEventListener("input", handleBlurOrInput);
-      el.addEventListener("blur", handleBlurOrInput);
+      const handleBlur = () => {
+        commitChanges();
+      };
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (
+          e.key === "Enter" &&
+          !e.shiftKey &&
+          el.tagName !== "P" &&
+          el.tagName !== "BLOCKQUOTE"
+        ) {
+          e.preventDefault();
+          el.blur();
+        }
+      };
+
+      el.addEventListener("blur", handleBlur);
+      el.addEventListener("keydown", handleKeyDown);
       cleanupFns.push(() => {
-        el.removeEventListener("input", handleBlurOrInput);
-        el.removeEventListener("blur", handleBlurOrInput);
+        el.removeEventListener("blur", handleBlur);
+        el.removeEventListener("keydown", handleKeyDown);
       });
     });
 
     return () => {
       cleanupFns.forEach((fn) => fn());
     };
-  }, [section.id, contentToRender, updateSectionContent, liveContentMap, section.content]);
+  }, [section.id, section.content, updateSectionContent]);
 
   return (
     <div
