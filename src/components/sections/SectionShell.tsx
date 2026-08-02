@@ -31,13 +31,15 @@ export function SectionHeading({
   align = "left",
   tone = "default",
 }: {
-  title: string;
+  title?: string;
   subtitle?: string;
   align?: "left" | "center";
   /** `onDark` for sections rendered on a dark background, where the palette's
    * primary colour would not have enough contrast. */
   tone?: "default" | "onDark";
 }) {
+  if (!title) return null;
+
   return (
     <header className={align === "center" ? "text-center" : ""}>
       <h2
