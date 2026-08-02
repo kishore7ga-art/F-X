@@ -23,7 +23,7 @@ export function ThreeDCardDemo() {
         </CardItem>
         <CardItem translateZ="100" className="w-full mt-3">
           <img
-            src="/madras-graduation.png"
+            src="/template-brightwood.jpg"
             height="1000"
             width="1000"
             className="h-44 w-full object-cover rounded-xl group-hover/card:shadow-2xl border border-white/10"

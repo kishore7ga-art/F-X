@@ -13,7 +13,7 @@ export default function MacbookScrollDemo() {
         badge={
           <Badge className="h-10 w-10 -rotate-12 transform" />
         }
-        src="/macbook-madras-college.png"
+        src="/template-brightwood.jpg"
         showGradient={false}
       />
     </div>

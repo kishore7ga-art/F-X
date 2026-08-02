@@ -8,9 +8,12 @@ export function HeroImageSplit({ content }: { content: HeroContent }) {
     content;
 
   const imageSrc =
-    bannerImageUrl && !bannerImageUrl.includes("macbook") && !bannerImageUrl.includes("svg")
+    bannerImageUrl &&
+    !bannerImageUrl.includes("macbook") &&
+    !bannerImageUrl.includes("madras") &&
+    !bannerImageUrl.includes("svg")
       ? bannerImageUrl
-      : "/madras-graduation.png";
+      : "/template-brightwood.jpg";
 
   return (
     <section className="relative overflow-hidden bg-[var(--site-bg)] text-[var(--site-dark)] px-4 sm:px-6 py-8 sm:py-24 transition-colors duration-300">

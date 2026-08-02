@@ -162,7 +162,7 @@ function getFallbackSectionsForPage(slug: string, collegeName: string): Renderab
         collegeName: collegeName,
         tagline: `${formattedTitle} — Academic Portal`,
         intro: `Welcome to the official ${formattedTitle} portal of ${collegeName}. Empowering students with world-class education, NAAC accreditation, and state-of-the-art facilities.`,
-        bannerImageUrl: "/madras-graduation.png",
+        bannerImageUrl: "/template-brightwood.jpg",
         ctaLabel: "Apply for Admission »",
         ctaHref: "/admissions",
       },

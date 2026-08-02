@@ -31,7 +31,7 @@ export default function WobbleCardDemo() {
           </div>
           <div className="space-y-2">
             <div className="h-24 rounded-lg bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-white/10 p-3 flex flex-col justify-end">
-              <span className="text-xs font-bold text-white">Madras Engineering College</span>
+              <span className="text-xs font-bold text-white">Official College Portal</span>
               <span className="text-[10px] text-neutral-300">NAAC A++ Accredited Autonomous Portal</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
