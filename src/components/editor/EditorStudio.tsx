@@ -120,13 +120,15 @@ export function EditorStudio({
         const data = await res.json();
         if (data.templates && data.templates.length > 0) {
           setAdminDbTemplates(data.templates);
-          const dbSections: SectionItem[] = data.templates.map((tpl: any, idx: number) => ({
-            id: tpl.id || `db-${idx}`,
-            title: tpl.name || `Admin Section #${idx + 1}`,
-            code: tpl.code || (PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"]),
-            variantIndex: 0,
-          }));
-          setSections(dbSections);
+          const firstTpl = data.templates[0];
+          setSections([
+            {
+              id: firstTpl.id || `db-0`,
+              title: firstTpl.name || "Hero Section",
+              code: firstTpl.code || (PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"]),
+              variantIndex: 0,
+            },
+          ]);
           setActiveSectionIndex(0);
           return;
         }
@@ -204,14 +206,38 @@ export function EditorStudio({
     }
   };
 
+  // Swap / Cycle between admin-added section variants (e.g. Hero 1 -> Hero 2 -> Hero 1)
   const handleSwapVariant = () => {
-    if (sections.length === 0) return;
+    if (sections.length === 0 || adminDbTemplates.length === 0) {
+      showToast("No additional section variants found in Admin DB.");
+      return;
+    }
+
+    const activeSec = sections[activeSectionIndex];
+    if (!activeSec) return;
+
+    if (adminDbTemplates.length <= 1) {
+      showToast("Only 1 template variant available in Admin DB.");
+      return;
+    }
+
+    const currentIdx = activeSec.variantIndex !== undefined ? activeSec.variantIndex : 0;
+    const nextIdx = (currentIdx + 1) % adminDbTemplates.length;
+    const nextTpl = adminDbTemplates[nextIdx]!;
+
     setSections((prev) =>
       prev.map((sec, idx) => {
         if (idx !== activeSectionIndex) return sec;
-        return { ...sec };
+        return {
+          ...sec,
+          title: nextTpl.name,
+          code: nextTpl.code || sec.code,
+          variantIndex: nextIdx,
+        };
       })
     );
+
+    showToast(`Swapped section to: "${nextTpl.name}"`);
   };
 
   const handleDuplicateSection = () => {
