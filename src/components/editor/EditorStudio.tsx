@@ -319,10 +319,10 @@ export function EditorStudio({
       </header>
 
       {/* Main White Canvas Workspace */}
-      <main className="flex-1 w-full bg-white p-4 sm:p-8 flex flex-col items-center justify-start pb-32 overflow-x-auto">
+      <main className="flex-1 w-full bg-slate-100 p-4 sm:p-8 flex flex-col items-center justify-start pb-32 overflow-x-auto">
         <div
-          className="transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start mx-auto bg-white"
-          style={{ width: viewportWidth, maxWidth: "100%" }}
+          className="transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start mx-auto bg-white shadow-xl rounded-none border-x border-slate-200"
+          style={{ width: viewportWidth }}
         >
           {sections.length === 0 ? (
             /* Empty Canvas State */
