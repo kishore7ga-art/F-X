@@ -357,6 +357,17 @@ export function EditorStudio({
                   />
                 </div>
               ))}
+
+              {/* Empty Space + Add Section Button */}
+              <div className="w-full py-12 flex flex-col items-center justify-center bg-slate-50/70 border-t border-b border-dashed border-slate-300 my-6 rounded-2xl">
+                <button
+                  onClick={handleAddSection}
+                  className="group flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white font-black text-xs px-6 py-3 rounded-full shadow-lg transition-all border border-slate-700 hover:scale-105 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-blue-400 group-hover:rotate-90 transition-transform duration-300" />
+                  <span>Add Section</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
