@@ -18,20 +18,20 @@ interface SectionItem {
 }
 
 const DEFAULT_STARTER_CODE = `<!-- Default Hero Section -->
-<section style="background: #0f172a; color: #fff; padding: 80px 24px; text-align: center; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
-  <div style="max-width: 900px; margin: 0 auto;">
-    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; color: #60a5fa; letter-spacing: 0.08em; text-transform: uppercase;">
+<section style="background: #000000; color: #ffffff; padding: 100px 24px; text-align: center; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
+  <div style="max-width: 1000px; margin: 0 auto;">
+    <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); padding: 6px 20px; border-radius: 9999px; font-size: 12px; font-weight: 800; color: #ffffff; letter-spacing: 0.1em; text-transform: uppercase;">
       Official Campus Portal
     </span>
-    <h1 style="font-size: 48px; font-weight: 900; margin-top: 24px; line-height: 1.15; color: #ffffff; letter-spacing: -0.02em;">
-      Excellence in Higher Education & Global Research
+    <h1 style="font-size: 54px; font-weight: 900; margin-top: 24px; line-height: 1.1; color: #ffffff; letter-spacing: -0.03em;">
+      Excellence in Higher Education & Innovation
     </h1>
-    <p style="font-size: 16px; color: #94a3b8; margin-top: 16px; line-height: 1.6; max-width: 700px; margin-left: auto; margin-right: auto;">
-      Empowering future leaders with world-class faculty, modern laboratories, and vibrant campus life.
+    <p style="font-size: 17px; color: #a1a1aa; margin-top: 18px; line-height: 1.6; max-width: 720px; margin-left: auto; margin-right: auto;">
+      Empowering minds, advancing research, and building leaders for tomorrow's challenges.
     </p>
-    <div style="margin-top: 32px; display: flex; justify-content: center; gap: 16px;">
-      <a href="#explore" style="background: #2563eb; color: #ffffff; padding: 14px 30px; border-radius: 12px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block;">Explore Programs</a>
-      <a href="#contact" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #ffffff; padding: 14px 30px; border-radius: 12px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block;">Contact Admissions</a>
+    <div style="margin-top: 36px; display: flex; justify-content: center; gap: 16px;">
+      <a href="#explore" style="background: #ffffff; color: #000000; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none; display: inline-block;">Explore Programs</a>
+      <a href="#contact" style="background: transparent; border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none; display: inline-block;">Contact Us</a>
     </div>
   </div>
 </section>`;
@@ -151,23 +151,23 @@ export function EditorStudio({
 
   const viewportWidthClass =
     viewport === "desktop"
-      ? "max-w-7xl"
+      ? "w-full"
       : viewport === "tablet"
-      ? "max-w-2xl"
+      ? "max-w-3xl"
       : "max-w-sm";
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans relative overflow-hidden select-none">
+    <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans relative overflow-x-hidden select-none">
       
       {/* Top Navbar Header */}
-      <header className="h-16 border-b border-slate-200 bg-white/90 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+      <header className="h-16 border-b border-neutral-800 bg-black/90 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
             <img src="/xite-logo.png" alt="XITE Logo" className="h-7 w-7 object-contain rounded-md" />
-            <span className="text-base font-black tracking-tight text-slate-900">XITE</span>
+            <span className="text-base font-black tracking-tight text-white">XITE</span>
           </Link>
-          <div className="h-4 w-px bg-slate-200" />
-          <div className="flex items-center gap-1.5 text-xs text-blue-700 font-extrabold bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+          <div className="h-4 w-px bg-neutral-800" />
+          <div className="flex items-center gap-1.5 text-xs text-white font-extrabold bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Visual Live Editor Studio</span>
           </div>
@@ -177,14 +177,14 @@ export function EditorStudio({
         <div className="flex items-center gap-3">
           <button
             onClick={fetchDbSections}
-            className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
+            className="p-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white transition-all cursor-pointer border border-neutral-800"
             title="Sync with Admin DB"
           >
             <RefreshCw className={`w-4 h-4 ${loadingDb ? "animate-spin" : ""}`} />
           </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold transition-all shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-black transition-all cursor-pointer"
           >
             <Eye className="w-3.5 h-3.5" />
             <span>Visit Live Site ↗</span>
@@ -193,50 +193,44 @@ export function EditorStudio({
         </div>
       </header>
 
-      {/* Main Canvas Workspace */}
-      <main className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start pb-32">
+      {/* Main Canvas Workspace — Completely Full Width & Edge-to-Edge with 0 Curved Corners */}
+      <main className="flex-1 w-full flex flex-col items-center justify-start pb-32">
         <div
-          className={`w-full ${viewportWidthClass} transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-center relative`}
+          className={`w-full ${viewportWidthClass} transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start`}
         >
           {sections.length === 0 ? (
             /* Empty Canvas State */
-            <div className="text-center space-y-4 max-w-md p-8 bg-white border border-slate-200 rounded-3xl shadow-xl">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto text-slate-700">
+            <div className="my-16 text-center space-y-4 max-w-md p-8 bg-neutral-950 border border-neutral-800 rounded-2xl">
+              <div className="w-16 h-16 rounded-2xl bg-black border border-neutral-800 flex items-center justify-center mx-auto text-white">
                 <Layout className="w-8 h-8" />
               </div>
-              <h2 className="text-xl font-extrabold text-slate-900">Empty Canvas Workspace</h2>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              <h2 className="text-xl font-extrabold text-white">Empty Canvas Workspace</h2>
+              <p className="text-xs text-neutral-400 font-medium leading-relaxed">
                 No sections have been added by admin yet. Add sections in the Admin Control Room or click below to build your canvas.
               </p>
               <button
                 onClick={handleAddSection}
-                className="inline-flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-black px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 bg-white text-black hover:bg-neutral-200 text-xs font-black px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add First Section</span>
               </button>
             </div>
           ) : (
-            /* Pure Seamless Section Rendering — No Inner Lines, Headers, or Scrollbars */
-            <div className="w-full space-y-0 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-black">
-              {sections.map((sec, idx) => {
-                const isActive = idx === activeSectionIndex;
-                return (
+            /* Pure Edge-to-Edge Full Width Rendered Sections (0 Rounded Corners) */
+            <div className="w-full">
+              {sections.map((sec, idx) => (
+                <div
+                  key={sec.id}
+                  onClick={() => setActiveSectionIndex(idx)}
+                  className="w-full cursor-pointer relative"
+                >
                   <div
-                    key={sec.id}
-                    onClick={() => setActiveSectionIndex(idx)}
-                    className={`w-full transition-all cursor-pointer relative ${
-                      isActive ? "ring-2 ring-blue-500 z-10" : ""
-                    }`}
-                  >
-                    {/* Rendered HTML Section directly with zero iframe scrollbars */}
-                    <div
-                      dangerouslySetInnerHTML={{ __html: sec.code }}
-                      className="w-full overflow-hidden"
-                    />
-                  </div>
-                );
-              })}
+                    dangerouslySetInnerHTML={{ __html: sec.code }}
+                    className="w-full"
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
