@@ -100,6 +100,17 @@ export function EditorStudio({
 
   // Section Selector Modal
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+
+  // Right-Click Link / Button Navigation Popup State
+  const [linkPopup, setLinkPopup] = useState<{
+    x: number;
+    y: number;
+    sectionIndex: number;
+    targetElement: HTMLElement;
+    currentUrl: string;
+    isNewTab: boolean;
+  } | null>(null);
+
   const toastMessage = null;
 
   const showToast = (_msg?: string) => {
@@ -372,6 +383,100 @@ export function EditorStudio({
     };
   };
 
+  // Right-click handler for buttons/links to edit target URL
+  const handleSectionContextMenu = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
+    const target = e.target as HTMLElement;
+    if (!target) return;
+
+    // Find nearest clickable link or button
+    let linkElem: HTMLElement | null = target;
+    while (
+      linkElem &&
+      linkElem !== e.currentTarget &&
+      linkElem.tagName !== "A" &&
+      linkElem.tagName !== "BUTTON" &&
+      !linkElem.getAttribute("href") &&
+      !linkElem.getAttribute("data-href")
+    ) {
+      linkElem = linkElem.parentElement;
+    }
+
+    if (!linkElem || linkElem === e.currentTarget) {
+      if (target.tagName === "A" || target.tagName === "BUTTON" || target.getAttribute("href")) {
+        linkElem = target;
+      } else {
+        return; // Standard element, don't hijack context menu
+      }
+    }
+
+    // Intercept right-click context menu on buttons/links
+    e.preventDefault();
+    e.stopPropagation();
+
+    const currentHref = linkElem.getAttribute("href") || linkElem.getAttribute("data-href") || "#";
+    const targetAttr = linkElem.getAttribute("target");
+    const isNewTab = targetAttr === "_blank";
+
+    const mouseX = Math.min(e.clientX, window.innerWidth - 340);
+    const mouseY = Math.min(e.clientY, window.innerHeight - 300);
+
+    setLinkPopup({
+      x: Math.max(10, mouseX),
+      y: Math.max(10, mouseY),
+      sectionIndex,
+      targetElement: linkElem,
+      currentUrl: currentHref,
+      isNewTab: isNewTab,
+    });
+  };
+
+  // Save updated URL & target attributes on button element
+  const handleSaveButtonUrl = (newUrl: string, openNewTab: boolean) => {
+    if (!linkPopup) return;
+
+    const { sectionIndex, targetElement } = linkPopup;
+
+    if (targetElement.tagName === "A" || targetElement.getAttribute("href") !== null) {
+      targetElement.setAttribute("href", newUrl);
+    } else {
+      targetElement.setAttribute("data-href", newUrl);
+      targetElement.setAttribute("onclick", `window.location.href='${newUrl}'`);
+    }
+
+    if (openNewTab) {
+      targetElement.setAttribute("target", "_blank");
+      targetElement.setAttribute("rel", "noopener noreferrer");
+    } else {
+      targetElement.removeAttribute("target");
+      targetElement.removeAttribute("rel");
+    }
+
+    // Extract section wrapper element to save updated HTML
+    const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
+    if (container) {
+      const clone = container.cloneNode(true) as HTMLElement;
+      const badges = clone.querySelectorAll('.pointer-events-none');
+      badges.forEach((b) => b.remove());
+
+      const editables = clone.querySelectorAll('[contenteditable]');
+      editables.forEach((el) => {
+        el.removeAttribute('contenteditable');
+        (el as HTMLElement).style.outline = '';
+        (el as HTMLElement).style.outlineOffset = '';
+        (el as HTMLElement).style.borderRadius = '';
+      });
+
+      const newCode = clone.innerHTML;
+      if (newCode) {
+        setSections((prev) =>
+          prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
+        );
+      }
+    }
+
+    setLinkPopup(null);
+  };
+
   // Select section category in modal: Fetch latest Admin DB templates and insert exact Admin code!
   const handleSelectSectionCategory = async (cat: typeof SECTION_CATEGORIES[0]) => {
     setShowAddSectionModal(false);
@@ -597,13 +702,14 @@ export function EditorStudio({
                     setActiveSectionIndex(idx);
                   }}
                   onDoubleClick={(e) => handleSectionDoubleClick(e, idx)}
-                  className={`w-full cursor-pointer relative transition-all group ${
+                  onContextMenu={(e) => handleSectionContextMenu(e, idx)}
+                  className={`w-full cursor-pointer relative transition-all group section-wrapper-container ${
                     activeSectionIndex === idx ? "ring-2 ring-blue-600 ring-offset-2 z-10" : ""
                   }`}
                 >
                   {activeSectionIndex === idx && (
                     <div className="absolute top-3 right-4 z-30 bg-blue-600/90 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity">
-                      ✏️ Double-click text to edit inline
+                      ✏️ Double-click text to edit | 🖱️ Right-click button for URL
                     </div>
                   )}
                   <div
@@ -723,6 +829,93 @@ export function EditorStudio({
           onMoveDown={handleMoveDown}
           onDeleteSection={handleDeleteSection}
         />
+      )}
+
+      {/* Floating Right-Click Button URL Navigation Popup */}
+      {linkPopup && (
+        <div
+          onClick={() => setLinkPopup(null)}
+          className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] animate-in fade-in duration-100 cursor-default"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ top: `${linkPopup.y}px`, left: `${linkPopup.x}px` }}
+            className="fixed z-50 w-80 bg-[#0d1117] border border-blue-500/50 rounded-2xl p-4 shadow-2xl space-y-4 text-white text-xs animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />
+                <span className="font-extrabold text-white">Button Navigation URL</span>
+              </div>
+              <button
+                onClick={() => setLinkPopup(null)}
+                className="text-neutral-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded hover:bg-neutral-800 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-mono text-neutral-400 font-bold mb-1">
+                  Target URL / Link Path
+                </label>
+                <input
+                  type="text"
+                  value={linkPopup.currentUrl}
+                  onChange={(e) => setLinkPopup({ ...linkPopup, currentUrl: e.target.value })}
+                  placeholder="e.g. https://greenfield.edu.in/apply or #contact"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Quick Page Preset Links */}
+              <div>
+                <label className="block text-[10px] font-mono text-neutral-500 font-bold mb-1 uppercase">
+                  Quick Page Presets
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {["/home", "/about", "/academics", "/contact", "/placements"].map((slug) => (
+                    <button
+                      key={slug}
+                      onClick={() => setLinkPopup({ ...linkPopup, currentUrl: slug })}
+                      className="text-[10px] font-mono px-2 py-1 rounded-lg bg-neutral-800 hover:bg-blue-600 hover:text-white text-neutral-300 transition-colors cursor-pointer"
+                    >
+                      {slug}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Open in New Tab Toggle */}
+              <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={linkPopup.isNewTab}
+                  onChange={(e) => setLinkPopup({ ...linkPopup, isNewTab: e.target.checked })}
+                  className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
+                />
+                <span className="text-xs font-bold text-neutral-300">Open in New Tab (`target="_blank"`)</span>
+              </label>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setLinkPopup(null)}
+                  className="px-3.5 py-1.5 rounded-xl text-neutral-400 hover:text-white font-bold hover:bg-neutral-800 cursor-pointer text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSaveButtonUrl(linkPopup.currentUrl, linkPopup.isNewTab)}
+                  className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold shadow-md cursor-pointer text-xs"
+                >
+                  🔗 Save Button URL
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
