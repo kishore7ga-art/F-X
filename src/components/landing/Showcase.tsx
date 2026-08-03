@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 
 import { GradientButton } from "@/components/ui/GradientButton";
 import { RulerCarousel, type RulerItem } from "@/components/ui/RulerCarousel";
+import { SECTION } from "@/constants/tokens";
 import { useReveal } from "@/hooks/useReveal";
 import { cn } from "@/lib/cn";
 
