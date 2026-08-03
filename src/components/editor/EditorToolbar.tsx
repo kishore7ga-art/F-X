@@ -20,10 +20,6 @@ import {
   Check,
 } from "lucide-react";
 
-export const DESKTOP_RESOLUTIONS = ["1200px"];
-export const TABLET_RESOLUTIONS = ["768px", "820px", "834px", "1024px"];
-export const MOBILE_RESOLUTIONS = ["320px", "360px", "375px", "390px"];
-
 interface EditorToolbarProps {
   onOpenSettings: () => void;
   onToggleDrawer: () => void;
@@ -92,28 +88,9 @@ export function EditorToolbar({
     }
   };
 
-  const handleSetDesktop = () => {
-    setViewportWidth("100%");
-    showToast("Desktop Viewport (100% Full Width)");
-  };
-
-  const handleCycleTablet = () => {
-    const idx = TABLET_RESOLUTIONS.indexOf(viewportWidth);
-    const nextWidth = idx >= 0 ? TABLET_RESOLUTIONS[(idx + 1) % TABLET_RESOLUTIONS.length] : TABLET_RESOLUTIONS[0]!;
-    setViewportWidth(nextWidth!);
-    showToast(`Tablet Viewport: ${nextWidth}`);
-  };
-
-  const handleCycleMobile = () => {
-    const idx = MOBILE_RESOLUTIONS.indexOf(viewportWidth);
-    const nextWidth = idx >= 0 ? MOBILE_RESOLUTIONS[(idx + 1) % MOBILE_RESOLUTIONS.length] : MOBILE_RESOLUTIONS[2]!;
-    setViewportWidth(nextWidth!);
-    showToast(`Mobile Viewport: ${nextWidth}`);
-  };
-
   const isDesktopActive = viewportWidth === "100%" || viewportWidth === "1200px";
-  const isTabletActive = TABLET_RESOLUTIONS.includes(viewportWidth);
-  const isMobileActive = MOBILE_RESOLUTIONS.includes(viewportWidth);
+  const isTabletActive = viewportWidth === "768px";
+  const isMobileActive = viewportWidth === "375px";
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
@@ -253,47 +230,54 @@ export function EditorToolbar({
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
-        {/* 4. Viewport Switcher Pill */}
+        {/* 4. Single-Resolution Device Switcher Pill */}
         <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-1 flex items-center gap-1">
           {/* Desktop Viewport Button */}
           <button
-            onClick={handleSetDesktop}
+            onClick={() => {
+              setViewportWidth("100%");
+              showToast("Desktop Viewport");
+            }}
             className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               isDesktopActive
-                ? "bg-slate-900 text-white shadow-sm"
+                ? "bg-slate-900 text-white shadow-sm font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Desktop Viewport (Full Width)"
+            title="Desktop Viewport"
           >
             <Monitor className="w-4 h-4" />
           </button>
 
-          {/* Tablet Viewports: 768px, 820px, 834px, 1024px */}
+          {/* Tablet Viewport Button */}
           <button
-            onClick={handleCycleTablet}
-            className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+            onClick={() => {
+              setViewportWidth("768px");
+              showToast("Tablet Viewport (768px)");
+            }}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               isTabletActive
-                ? "bg-slate-900 text-white shadow-sm"
+                ? "bg-slate-900 text-white shadow-sm font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Tablet Viewports (768px · 820px · 834px · 1024px) — Click to cycle"
+            title="Tablet Viewport (768px)"
           >
             <Tablet className="w-4 h-4" />
-            {isTabletActive && <span>{viewportWidth}</span>}
           </button>
 
-          {/* Mobile Viewports: 320px, 360px, 375px, 390px */}
+          {/* Mobile Viewport Button */}
           <button
-            onClick={handleCycleMobile}
-            className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+            onClick={() => {
+              setViewportWidth("375px");
+              showToast("Mobile Viewport (375px)");
+            }}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               isMobileActive
-                ? "bg-slate-900 text-white shadow-sm"
+                ? "bg-slate-900 text-white shadow-sm font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Mobile Viewports (320px · 360px · 375px · 390px) — Click to cycle"
+            title="Mobile Viewport (375px)"
           >
             <Smartphone className="w-4 h-4" />
-            {isMobileActive && <span>{viewportWidth}</span>}
           </button>
         </div>
 
