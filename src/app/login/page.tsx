@@ -23,13 +23,7 @@ export default async function LoginPage({
   }
 
   if (college && force !== "1") {
-    if (college.templateId) {
-      redirect(`/editor/${college.subdomain}`);
-    } else if (college.collegeType) {
-      redirect("/start");
-    } else {
-      redirect("/onboarding");
-    }
+    redirect(`/editor/${college.subdomain || "greenfield"}`);
   }
 
   return (
