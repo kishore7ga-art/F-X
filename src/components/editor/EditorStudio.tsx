@@ -2,13 +2,26 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Eye, Sparkles, Layout, RefreshCw, Layers } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  Sparkles,
+  Layout,
+  RefreshCw,
+  X,
+  Info,
+  GraduationCap,
+  Users,
+  Calendar,
+  Mail,
+  Briefcase,
+  Award,
+  AlertCircle,
+} from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
-
-type ViewportMode = "desktop" | "tablet" | "mobile";
 
 interface SectionItem {
   id: string;
@@ -16,6 +29,17 @@ interface SectionItem {
   code: string;
   variantIndex: number;
 }
+
+const SECTION_CATEGORIES = [
+  { id: "hero", name: "Hero Banner", description: "Lead banner, masthead & title headline", icon: Layout },
+  { id: "about", name: "About Us", description: "College history, mission statement & quote", icon: Info },
+  { id: "courses", name: "Academics & Courses", description: "Degree programs & department grid", icon: GraduationCap },
+  { id: "faculty", name: "Faculty Roster", description: "Professors & department heads", icon: Users },
+  { id: "events", name: "Events & News", description: "Upcoming campus events & news highlights", icon: Calendar },
+  { id: "contact", name: "Contact & Map", description: "Campus address, helpline & interactive map", icon: Mail },
+  { id: "placements", name: "Placements & Careers", description: "Placement stats & top recruiters", icon: Briefcase },
+  { id: "scholarships", name: "Scholarships & Grants", description: "Merit scholarships & financial aid", icon: Award },
+];
 
 const DEFAULT_STARTER_CODE = `<!-- Default Hero Section -->
 <section style="background: #000000; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
@@ -52,85 +76,6 @@ const PAGE_SECTION_TEMPLATES: Record<string, string> = {
     <p style="font-size: 16px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">
       Founded with a commitment to academic rigor and societal advancement, our university nurtures critical thinkers, groundbreaking researchers, and compassionate leaders.
     </p>
-    <div style="margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-      <div style="background: #1e293b; padding: 24px; border-radius: 16px; text-align: center;">
-        <h3 style="font-size: 32px; font-weight: 900; color: #38bdf8;">100+</h3>
-        <p style="font-size: 13px; color: #cbd5e1; margin-top: 8px;">Years of Academic Excellence</p>
-      </div>
-      <div style="background: #1e293b; padding: 24px; border-radius: 16px; text-align: center;">
-        <h3 style="font-size: 32px; font-weight: 900; color: #38bdf8;">25,000+</h3>
-        <p style="font-size: 13px; color: #cbd5e1; margin-top: 8px;">Active Campus Students</p>
-      </div>
-      <div style="background: #1e293b; padding: 24px; border-radius: 16px; text-align: center;">
-        <h3 style="font-size: 32px; font-weight: 900; color: #38bdf8;">98%</h3>
-        <p style="font-size: 13px; color: #cbd5e1; margin-top: 8px;">Graduate Career Placement</p>
-      </div>
-    </div>
-  </div>
-</section>`,
-
-  "/academics": `<!-- Academics Page Section -->
-<section style="background: #020617; color: #ffffff; padding: 80px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
-  <div style="max-width: 950px; margin: 0 auto;">
-    <div style="text-align: center;">
-      <span style="color: #a855f7; font-size: 12px; font-weight: 800; text-transform: uppercase;">ACADEMIC DEPARTMENTS</span>
-      <h2 style="font-size: 40px; font-weight: 900; margin-top: 12px; color: #ffffff;">Programs & Curriculum</h2>
-      <p style="font-size: 15px; color: #94a3b8; margin-top: 12px;">Discover world-class undergraduate, postgraduate, and doctoral degrees.</p>
-    </div>
-    <div style="margin-top: 40px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
-      <div style="border: 1px solid #1e293b; background: #0f172a; padding: 28px; border-radius: 16px;">
-        <h3 style="font-size: 20px; font-weight: 800; color: #ffffff;">School of Engineering & Tech</h3>
-        <p style="font-size: 13px; color: #94a3b8; margin-top: 10px; line-height: 1.6;">Computer Science, Artificial Intelligence, Robotics, and Civil Engineering.</p>
-      </div>
-      <div style="border: 1px solid #1e293b; background: #0f172a; padding: 28px; border-radius: 16px;">
-        <h3 style="font-size: 20px; font-weight: 800; color: #ffffff;">School of Medical Sciences</h3>
-        <p style="font-size: 13px; color: #94a3b8; margin-top: 10px; line-height: 1.6;">Clinical Medicine, Nursing, Pharmacy, and Biomedical Research.</p>
-      </div>
-    </div>
-  </div>
-</section>`,
-
-  "/admissions": `<!-- Admissions Page Section -->
-<section style="background: #09090b; color: #ffffff; padding: 80px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
-  <div style="max-width: 850px; margin: 0 auto; text-align: center;">
-    <span style="background: #27272a; color: #a1a1aa; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">
-      ADMISSIONS 2026-2027 NOW OPEN
-    </span>
-    <h2 style="font-size: 42px; font-weight: 900; margin-top: 20px; color: #ffffff;">Join Our Next Academic Cohort</h2>
-    <p style="font-size: 15px; color: #71717a; margin-top: 14px; line-height: 1.6;">
-      Begin your application process today. Explore entrance requirements, financial aid, and campus visits.
-    </p>
-    <div style="margin-top: 32px; background: #18181b; padding: 32px; border-radius: 20px; border: 1px solid #27272a; text-align: left;">
-      <h3 style="font-size: 18px; font-weight: 800; color: #ffffff; margin-bottom: 16px;">Application Deadlines</h3>
-      <ul style="color: #a1a1aa; font-size: 14px; line-height: 2;">
-        <li>✔ Early Action Deadline: <strong>November 15</strong></li>
-        <li>✔ Regular Decision Deadline: <strong>January 31</strong></li>
-        <li>✔ International Student Applications: <strong>February 28</strong></li>
-      </ul>
-    </div>
-  </div>
-</section>`,
-
-  "/contact": `<!-- Contact Us Page Section -->
-<section style="background: #000000; color: #ffffff; padding: 80px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
-  <div style="max-width: 900px; margin: 0 auto; text-align: center;">
-    <span style="color: #22c55e; font-size: 12px; font-weight: 800; text-transform: uppercase;">GET IN TOUCH</span>
-    <h2 style="font-size: 40px; font-weight: 900; margin-top: 12px; color: #ffffff;">Contact Campus Administration</h2>
-    <p style="font-size: 15px; color: #a1a1aa; margin-top: 12px;">We are here to answer your queries regarding admissions, visits, and campus info.</p>
-    <div style="margin-top: 36px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-      <div style="background: #18181b; padding: 24px; border-radius: 16px; border: 1px solid #27272a;">
-        <h4 style="font-size: 14px; font-weight: 800; color: #ffffff;">Campus Address</h4>
-        <p style="font-size: 12px; color: #a1a1aa; margin-top: 8px;">100 University Boulevard, Education District</p>
-      </div>
-      <div style="background: #18181b; padding: 24px; border-radius: 16px; border: 1px solid #27272a;">
-        <h4 style="font-size: 14px; font-weight: 800; color: #ffffff;">Helpline Phone</h4>
-        <p style="font-size: 12px; color: #a1a1aa; margin-top: 8px;">+1 (800) 555-COLLEGE</p>
-      </div>
-      <div style="background: #18181b; padding: 24px; border-radius: 16px; border: 1px solid #27272a;">
-        <h4 style="font-size: 14px; font-weight: 800; color: #ffffff;">Email Inquiry</h4>
-        <p style="font-size: 12px; color: #a1a1aa; margin-top: 8px;">admissions@university.edu</p>
-      </div>
-    </div>
   </div>
 </section>`,
 };
@@ -148,8 +93,18 @@ export function EditorStudio({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [sections, setSections] = useState<SectionItem[]>([]);
+  const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
   const [activeSectionIndex, setActiveSectionIndex] = useState(0);
   const [loadingDb, setLoadingDb] = useState(true);
+
+  // Section Selector Modal & Notification Toast
+  const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Active Page State
   const [currentPage, setCurrentPage] = useState({ name: "Home", slug: "/home" });
@@ -164,6 +119,7 @@ export function EditorStudio({
       if (res.ok) {
         const data = await res.json();
         if (data.templates && data.templates.length > 0) {
+          setAdminDbTemplates(data.templates);
           const dbSections: SectionItem[] = data.templates.map((tpl: any, idx: number) => ({
             id: tpl.id || `db-${idx}`,
             title: tpl.name || `Admin Section #${idx + 1}`,
@@ -176,13 +132,14 @@ export function EditorStudio({
         }
       }
 
-      // Fallback page-specific template code
+      setAdminDbTemplates([]);
       const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
       setSections([
         { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
       ]);
       setActiveSectionIndex(0);
     } catch {
+      setAdminDbTemplates([]);
       const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
       setSections([
         { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
@@ -215,13 +172,43 @@ export function EditorStudio({
     setActiveSectionIndex(0);
   };
 
-  const handleAddSection = () => {
-    const newId = `sec-${sections.length + 1}`;
-    setSections([
-      ...sections,
-      { id: newId, title: `${currentPage.name} Section #${sections.length + 1}`, code: DEFAULT_STARTER_CODE, variantIndex: 0 },
-    ]);
-    setActiveSectionIndex(sections.length);
+  // Select section category in modal: ONLY add if admin added it in DB!
+  const handleSelectSectionCategory = (cat: typeof SECTION_CATEGORIES[0]) => {
+    setShowAddSectionModal(false);
+
+    // Check if matching template/section exists in adminDbTemplates
+    const matchingAdminTemplate = adminDbTemplates.find(
+      (tpl) =>
+        tpl.name.toLowerCase().includes(cat.id) ||
+        tpl.name.toLowerCase().includes(cat.name.toLowerCase())
+    );
+
+    if (matchingAdminTemplate && matchingAdminTemplate.code) {
+      const newSection: SectionItem = {
+        id: `sec-${Date.now()}`,
+        title: matchingAdminTemplate.name,
+        code: matchingAdminTemplate.code,
+        variantIndex: 0,
+      };
+      setSections((prev) => [...prev, newSection]);
+      setActiveSectionIndex(sections.length);
+      showToast(`Added Admin Section: "${matchingAdminTemplate.name}"`);
+    } else if (adminDbTemplates.length > 0) {
+      // Use the first available admin section as fallback
+      const adminSection = adminDbTemplates[0];
+      const newSection: SectionItem = {
+        id: `sec-${Date.now()}`,
+        title: `${cat.name} (${adminSection.name})`,
+        code: adminSection.code || DEFAULT_STARTER_CODE,
+        variantIndex: 0,
+      };
+      setSections((prev) => [...prev, newSection]);
+      setActiveSectionIndex(sections.length);
+      showToast(`Added Admin Section: "${adminSection.name}"`);
+    } else {
+      // NO section added in Admin Panel yet -> DO NOT ADD ANYTHING!
+      showToast(`No section for "${cat.name}" added in Admin Panel yet. Please add it in Admin Control Room first!`);
+    }
   };
 
   const handleSwapVariant = () => {
@@ -284,6 +271,14 @@ export function EditorStudio({
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans relative overflow-x-hidden select-none">
       
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a] text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 animate-in fade-in duration-200">
+          <AlertCircle className="w-4 h-4 text-amber-400" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Top Navbar Header */}
       <header className="h-16 border-b border-slate-200 bg-white/90 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-3">
@@ -335,11 +330,11 @@ export function EditorStudio({
                 No sections have been added for page {currentPage.name}. Click below to add sections to this page.
               </p>
               <button
-                onClick={handleAddSection}
+                onClick={() => setShowAddSectionModal(true)}
                 className="inline-flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-black px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>Add First Section</span>
+                <span>Add Section</span>
               </button>
             </div>
           ) : (
@@ -361,7 +356,7 @@ export function EditorStudio({
               {/* Empty Space + Add Section Button */}
               <div className="w-full py-12 flex flex-col items-center justify-center bg-slate-50/70 border-t border-b border-dashed border-slate-300 my-6 rounded-2xl">
                 <button
-                  onClick={handleAddSection}
+                  onClick={() => setShowAddSectionModal(true)}
                   className="group flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white font-black text-xs px-6 py-3 rounded-full shadow-lg transition-all border border-slate-700 hover:scale-105 cursor-pointer"
                 >
                   <Plus className="w-4 h-4 text-blue-400 group-hover:rotate-90 transition-transform duration-300" />
@@ -372,6 +367,67 @@ export function EditorStudio({
           )}
         </div>
       </main>
+
+      {/* Select Section Category Modal */}
+      {showAddSectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-xl bg-white rounded-3xl p-6 shadow-2xl space-y-6 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">What section do you want to add?</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Select a category. Only sections added in the Admin Control Room will be added.</p>
+              </div>
+              <button
+                onClick={() => setShowAddSectionModal(false)}
+                className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Category Grid */}
+            <div className="grid gap-3 sm:grid-cols-2 max-h-[50vh] overflow-y-auto pr-1">
+              {SECTION_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const hasAdminSection = adminDbTemplates.some(
+                  (tpl) =>
+                    tpl.name.toLowerCase().includes(cat.id) ||
+                    tpl.name.toLowerCase().includes(cat.name.toLowerCase())
+                ) || adminDbTemplates.length > 0;
+
+                return (
+                  <div
+                    key={cat.id}
+                    onClick={() => handleSelectSectionCategory(cat)}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer select-none ${
+                      hasAdminSection
+                        ? "bg-slate-50 border-slate-200 hover:border-slate-900 hover:bg-slate-100 shadow-sm"
+                        : "bg-slate-50/50 border-slate-200/60 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-slate-900 text-white">
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-xs font-black text-slate-900">{cat.name}</h4>
+                          {!hasAdminSection && (
+                            <span className="text-[9px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              Requires Admin DB
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{cat.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Side Drawer Panel */}
       <DrawerPanel
@@ -396,7 +452,7 @@ export function EditorStudio({
         setViewportWidth={setViewportWidth}
         activeSectionTitle={sections.length > 0 ? sections[activeSectionIndex]?.title : "Hero"}
         hasSections={sections.length > 0}
-        onAddSection={handleAddSection}
+        onAddSection={() => setShowAddSectionModal(true)}
         onDuplicateSection={handleDuplicateSection}
         onSwapVariant={handleSwapVariant}
         onMoveUp={handleMoveUp}
