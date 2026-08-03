@@ -30,7 +30,7 @@ export async function loginAction(
       store.set(COOKIE_NAME, response.token, sessionCookieOptions());
     }
 
-    const next = response.next || `/editor/${response.subdomain}`;
+    const next = "/";
     return { success: true, next };
   } catch (cause) {
     if (cause instanceof ServerApiError) {

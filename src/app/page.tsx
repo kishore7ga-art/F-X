@@ -18,13 +18,7 @@ import { SectionWrapper } from "@/components/landing/SectionWrapper";
 import { SmoothScrollProvider } from "@/components/landing/SmoothScrollProvider";
 import { HeroScrollDemo } from "@/components/landing/HeroScrollDemo";
 
-export const dynamic = "force-dynamic";
-
 export default function HomePage() {
-  if (AUTH_DISABLED) {
-    redirect("/editor/greenfield");
-  }
-
   return (
     <SmoothScrollProvider>
       <main className="bg-black text-white selection:bg-blue-600 selection:text-white overflow-x-hidden w-full max-w-full relative">
