@@ -497,11 +497,11 @@ export function EditorStudio({
       } catch {}
     }
 
-    // Strictly find admin-added template matching the selected category
-    const matchingAdminTemplate = templatesList.find((tpl) => {
+    // Filter admin-added templates matching selected category tag (e.g. [hero])
+    const catIdLower = cat.id.toLowerCase();
+    const catNameLower = cat.name.toLowerCase();
+    const matchingTemplates = templatesList.filter((tpl) => {
       const nameLower = (tpl.name || "").toLowerCase();
-      const catIdLower = cat.id.toLowerCase();
-      const catNameLower = cat.name.toLowerCase();
       return (
         nameLower.includes(`[${catIdLower}]`) ||
         nameLower.includes(catIdLower) ||
@@ -509,11 +509,13 @@ export function EditorStudio({
       );
     });
 
-    if (matchingAdminTemplate && matchingAdminTemplate.code) {
+    const targetTemplate = matchingTemplates.length > 0 ? matchingTemplates[0]! : templatesList[0];
+
+    if (targetTemplate && targetTemplate.code) {
       const newSection: SectionItem = {
         id: `sec-${Date.now()}`,
-        title: matchingAdminTemplate.name,
-        code: matchingAdminTemplate.code,
+        title: targetTemplate.name,
+        code: targetTemplate.code,
         variantIndex: 0,
       };
       setSections((prev) => [...prev, newSection]);
@@ -521,18 +523,51 @@ export function EditorStudio({
     }
   };
 
-  // Swap / Cycle between admin-added section variants or layout variations
-  const handleSwapVariant = () => {
+  // Swap / Cycle between admin-added section variants (e.g. hero 1 <-> hero 2) or layout variations
+  const handleSwapVariant = async () => {
     if (activeSectionIndex === null || sections.length === 0) return;
 
     const activeSec = sections[activeSectionIndex];
     if (!activeSec) return;
 
-    // If Admin DB has multiple templates, cycle through DB templates
-    if (adminDbTemplates.length > 1) {
-      const currentIdx = activeSec.variantIndex !== undefined ? activeSec.variantIndex : 0;
-      const nextIdx = (currentIdx + 1) % adminDbTemplates.length;
-      const nextTpl = adminDbTemplates[nextIdx]!;
+    let templatesList = adminDbTemplates;
+
+    // Fetch latest templates from API if empty
+    if (templatesList.length === 0) {
+      try {
+        const res = await fetch("/api/v1/admin/templates", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.templates && data.templates.length > 0) {
+            templatesList = data.templates;
+            setAdminDbTemplates(data.templates);
+          }
+        }
+      } catch {}
+    }
+
+    // Determine category ID of active section (e.g. hero, courses, about, faculty, contact, footer)
+    const titleLower = activeSec.title.toLowerCase();
+    let catId = "hero";
+    if (titleLower.includes("about")) catId = "about";
+    if (titleLower.includes("course") || titleLower.includes("academic")) catId = "courses";
+    if (titleLower.includes("faculty") || titleLower.includes("staff")) catId = "faculty";
+    if (titleLower.includes("contact")) catId = "contact";
+    if (titleLower.includes("footer")) catId = "footer";
+
+    // Filter DB templates matching active category
+    const catTemplates = templatesList.filter((tpl) => {
+      const nameLower = (tpl.name || "").toLowerCase();
+      return nameLower.includes(`[${catId}]`) || nameLower.includes(catId);
+    });
+
+    const availableTemplates = catTemplates.length > 0 ? catTemplates : templatesList;
+
+    if (availableTemplates.length > 0) {
+      // Find current template index in available category templates
+      const currentTplIdx = availableTemplates.findIndex((tpl) => tpl.name === activeSec.title);
+      const nextIdx = currentTplIdx >= 0 ? (currentTplIdx + 1) % availableTemplates.length : (activeSec.variantIndex !== undefined ? (activeSec.variantIndex + 1) % availableTemplates.length : 0);
+      const nextTpl = availableTemplates[nextIdx]!;
 
       setSections((prev) =>
         prev.map((sec, idx) => {
@@ -545,7 +580,7 @@ export function EditorStudio({
           };
         })
       );
-      showToast(`Swapped section to: "${nextTpl.name}"`);
+      showToast(`Swapped to Admin Variant: "${nextTpl.name}"`);
       return;
     }
 
@@ -747,10 +782,54 @@ export function EditorStudio({
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-xl bg-white rounded-3xl p-6 shadow-2xl space-y-6 border border-slate-200 cursor-default"
           >
-            <div className="border-b border-slate-100 pb-4">
-              <h3 className="text-lg font-black text-slate-900">What section do you want to add?</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Select a category. Only sections added in the Admin Control Room will be added.</p>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">What section do you want to add?</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Select a category or specific Admin section variant.</p>
+              </div>
+              <button
+                onClick={() => setShowAddSectionModal(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+              >
+                ✕
+              </button>
             </div>
+
+            {/* Admin DB Section Variants List */}
+            {adminDbTemplates.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-black text-slate-400 tracking-wider uppercase">
+                  Admin DB Section Variants ({adminDbTemplates.length})
+                </h4>
+                <div className="grid gap-2 sm:grid-cols-2 max-h-[25vh] overflow-y-auto pr-1">
+                  {adminDbTemplates.map((tpl) => (
+                    <div
+                      key={tpl.id || tpl.name}
+                      onClick={() => {
+                        const newSection: SectionItem = {
+                          id: `sec-${Date.now()}`,
+                          title: tpl.name,
+                          code: tpl.code,
+                          variantIndex: 0,
+                        };
+                        setSections((prev) => [...prev, newSection]);
+                        setActiveSectionIndex(sections.length);
+                        setShowAddSectionModal(false);
+                      }}
+                      className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-100 transition-all cursor-pointer flex items-center justify-between shadow-sm select-none"
+                    >
+                      <div className="truncate pr-2">
+                        <h5 className="text-xs font-black text-slate-900 truncate">{tpl.name}</h5>
+                        <p className="text-[10px] text-emerald-700 font-mono">Live DB Template</p>
+                      </div>
+                      <span className="text-[10px] font-extrabold bg-emerald-600 text-white px-2.5 py-1 rounded-full shrink-0 shadow-sm">
+                        + Add
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Category Grid */}
             <div className="grid gap-3 sm:grid-cols-2 max-h-[50vh] overflow-y-auto pr-1">
