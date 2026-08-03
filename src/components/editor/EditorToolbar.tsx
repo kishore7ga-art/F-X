@@ -89,9 +89,60 @@ export function EditorToolbar({
     }
   };
 
-  const isDesktopActive = viewportWidth === "100%" || viewportWidth === "1200px";
-  const isTabletActive = viewportWidth === "768px";
-  const isMobileActive = viewportWidth === "375px";
+  // Device Resolution Specs
+  const MOBILE_SIZES = [
+    { label: "Mobile S", width: "320px" },
+    { label: "Mobile M", width: "375px" },
+    { label: "Mobile L", width: "425px" },
+  ];
+
+  const TABLET_SIZES = [
+    { label: "Tablet", width: "768px" },
+    { label: "Tablet Large", width: "1024px" },
+  ];
+
+  const DESKTOP_SIZES = [
+    { label: "Desktop", width: "1440px" },
+    { label: "Laptop", width: "1280px" },
+  ];
+
+  const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
+  const activeTablet = TABLET_SIZES.find((s) => s.width === viewportWidth);
+  const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth) || (viewportWidth === "100%" ? DESKTOP_SIZES[0] : null);
+
+  const handleMobileClick = () => {
+    let nextIdx = 0;
+    if (viewportWidth === "320px") nextIdx = 1; // Mobile M (375px)
+    else if (viewportWidth === "375px") nextIdx = 2; // Mobile L (425px)
+    else if (viewportWidth === "425px") nextIdx = 0; // Mobile S (320px)
+    else nextIdx = 1; // Default Mobile M
+
+    const target = MOBILE_SIZES[nextIdx];
+    setViewportWidth(target.width);
+    showToast(`${target.label} (${target.width})`);
+  };
+
+  const handleTabletClick = () => {
+    let nextIdx = 0;
+    if (viewportWidth === "768px") nextIdx = 1; // Tablet Large (1024px)
+    else if (viewportWidth === "1024px") nextIdx = 0; // Tablet (768px)
+    else nextIdx = 0; // Default Tablet
+
+    const target = TABLET_SIZES[nextIdx];
+    setViewportWidth(target.width);
+    showToast(`${target.label} (${target.width})`);
+  };
+
+  const handleDesktopClick = () => {
+    let nextIdx = 0;
+    if (viewportWidth === "1440px" || viewportWidth === "100%") nextIdx = 1; // Laptop (1280px)
+    else if (viewportWidth === "1280px") nextIdx = 0; // Desktop (1440px)
+    else nextIdx = 0; // Default Desktop
+
+    const target = DESKTOP_SIZES[nextIdx];
+    setViewportWidth(target.width);
+    showToast(`${target.label} (${target.width})`);
+  };
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
@@ -220,54 +271,60 @@ export function EditorToolbar({
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
-        {/* 4. Single-Resolution Device Switcher Pill */}
+        {/* 4. Multi-Resolution Device Switcher Pill */}
         <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-1 flex items-center gap-1">
-          {/* Desktop Viewport Button */}
+          {/* Desktop / Laptop Viewport Button */}
           <button
-            onClick={() => {
-              setViewportWidth("100%");
-              showToast("Desktop Viewport");
-            }}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              isDesktopActive
+            onClick={handleDesktopClick}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+              activeDesktop
                 ? "bg-slate-900 text-white shadow-sm font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Desktop Viewport"
+            title={`Desktop / Laptop (Click to cycle Desktop 1440px / Laptop 1280px)`}
           >
             <Monitor className="w-4 h-4" />
+            {activeDesktop && (
+              <span className="text-[10px] font-mono font-bold px-1 rounded bg-slate-800 text-blue-300">
+                {activeDesktop.width}
+              </span>
+            )}
           </button>
 
-          {/* Tablet Viewport Button */}
+          {/* Tablet / Tablet Large Viewport Button */}
           <button
-            onClick={() => {
-              setViewportWidth("768px");
-              showToast("Tablet Viewport (768px)");
-            }}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              isTabletActive
+            onClick={handleTabletClick}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+              activeTablet
                 ? "bg-slate-900 text-white shadow-sm font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Tablet Viewport (768px)"
+            title={`Tablet (Click to cycle Tablet 768px / Tablet Large 1024px)`}
           >
             <Tablet className="w-4 h-4" />
+            {activeTablet && (
+              <span className="text-[10px] font-mono font-bold px-1 rounded bg-slate-800 text-amber-300">
+                {activeTablet.width}
+              </span>
+            )}
           </button>
 
-          {/* Mobile Viewport Button */}
+          {/* Mobile S / M / L Viewport Button */}
           <button
-            onClick={() => {
-              setViewportWidth("375px");
-              showToast("Mobile Viewport (375px)");
-            }}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              isMobileActive
+            onClick={handleMobileClick}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+              activeMobile
                 ? "bg-slate-900 text-white shadow-sm font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Mobile Viewport (375px)"
+            title={`Mobile (Click to cycle Mobile S 320px / Mobile M 375px / Mobile L 425px)`}
           >
             <Smartphone className="w-4 h-4" />
+            {activeMobile && (
+              <span className="text-[10px] font-mono font-bold px-1 rounded bg-slate-800 text-emerald-300">
+                {activeMobile.width}
+              </span>
+            )}
           </button>
         </div>
 
