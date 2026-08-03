@@ -21,9 +21,7 @@ export function ChooseTypeForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      router.push("/editor");
-    }, 600);
+    window.location.assign("/editor/greenfield");
   }
 
   return (
