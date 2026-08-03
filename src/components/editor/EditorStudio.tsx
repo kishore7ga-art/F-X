@@ -340,9 +340,9 @@ export function EditorStudio({
             <span className="text-base font-black tracking-tight text-slate-900">XITE</span>
           </Link>
           <div className="h-4 w-px bg-slate-200" />
-          <div className="flex items-center gap-1.5 text-xs text-blue-700 font-extrabold bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Editing Page: <strong>{currentPage.name}</strong> <code className="text-[10px] text-blue-600">({currentPage.slug})</code></span>
+          <div className="flex items-center gap-1.5 text-xs text-blue-700 font-black bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span>{currentPage.name}</span>
           </div>
         </div>
 
