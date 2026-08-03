@@ -64,11 +64,37 @@ export function EditorToolbar({
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    showToast("Share link copied to clipboard!");
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+    if (!currentUrl) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "XITE Website Preview",
+          text: "Check out this live college website created on XITE!",
+          url: currentUrl,
+        });
+        showToast("Website link shared successfully! 🚀");
+        return;
+      } catch {}
+    }
+
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      setCopied(true);
+      showToast("Live Website Link Copied! Ready to share anywhere 🚀");
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      showToast("Failed to copy link.");
+    }
+  };
+
+  const handleOpenPreview = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (typeof window !== "undefined") {
+      window.open(window.location.href, "_blank");
+    }
   };
 
   const handleManualSave = () => {
@@ -191,20 +217,18 @@ export function EditorToolbar({
           <button
             onClick={handleCopyLink}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-            title="Copy Tenant Link"
+            title="Instant Share / Copy Live Website Link"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <LinkIcon className="w-4 h-4" />}
           </button>
 
-          <a
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
-            title="Visit Live Site"
+          <button
+            onClick={handleOpenPreview}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer transition-colors"
+            title="Open Live Website Preview in New Tab"
           >
             <ExternalLink className="w-4 h-4" />
-          </a>
+          </button>
         </div>
 
         {/* 3. Section Controls Pill - ONLY rendered when a section on the canvas is selected */}
@@ -333,6 +357,14 @@ export function EditorToolbar({
         </div>
 
       </div>
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a] text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2.5 animate-in fade-in duration-150 pointer-events-none">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }
