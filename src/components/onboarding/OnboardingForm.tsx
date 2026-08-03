@@ -95,7 +95,7 @@ export function OnboardingForm({
                   {type.label}
                 </p>
                 <p className="text-[11px] font-medium text-slate-500 truncate">
-                  {type.description}
+                  {type.hint}
                 </p>
               </div>
             </label>
