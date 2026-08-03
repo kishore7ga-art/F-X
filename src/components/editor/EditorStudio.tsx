@@ -106,6 +106,30 @@ export function EditorStudio({
     // Toast popups completely removed
   };
 
+  // Auto-correct mobile responsive section code for phone viewports (375px / 768px)
+  const autoCorrectMobileCode = (code: string, width: string) => {
+    if (!code) return "";
+    const isMobile = width === "375px";
+    const isTablet = width === "768px";
+
+    if (!isMobile && !isTablet) return code;
+
+    let corrected = code;
+    if (isMobile) {
+      // Auto-correct multi-column flex/grid containers for mobile phone screens
+      corrected = corrected
+        .replace(/grid-template-columns:\s*repeat\(\s*[3-9]\s*,\s*1fr\s*\)/gi, "grid-template-columns: repeat(1, 1fr)")
+        .replace(/grid-template-columns:\s*1fr\s+1fr\s+1fr/gi, "grid-template-columns: 1fr")
+        .replace(/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\([^)]+\)\)/gi, "grid-template-columns: 1fr")
+        .replace(/flex-direction:\s*row/gi, "flex-direction: column")
+        .replace(/border-r\b/g, "border-b border-r-0")
+        .replace(/border-right:[^;]+;/gi, "border-bottom: 1px solid rgba(255,255,255,0.1); border-right: none;")
+        .replace(/font-size:\s*([3-9][0-9])px/gi, (_match, p1) => `font-size: ${Math.min(parseInt(p1, 10), 22)}px`);
+    }
+
+    return corrected;
+  };
+
   // Active Page State
   const [currentPage, setCurrentPage] = useState({ name: "Home", slug: "/home" });
 
@@ -391,7 +415,7 @@ export function EditorStudio({
                   }`}
                 >
                   <div
-                    dangerouslySetInnerHTML={{ __html: sec.code }}
+                    dangerouslySetInnerHTML={{ __html: autoCorrectMobileCode(sec.code, viewportWidth) }}
                     className="w-full overflow-hidden"
                   />
                 </div>
