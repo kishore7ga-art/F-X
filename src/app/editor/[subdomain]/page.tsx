@@ -1,3 +1,4 @@
+import { requireCurrentCollege } from "@/lib/auth/current";
 import { EditorStudio } from "@/components/editor/EditorStudio";
 
 export const dynamic = "force-dynamic";
@@ -12,5 +13,6 @@ export default async function TenantEditorPage({
   params: Promise<{ subdomain: string }>;
 }) {
   const { subdomain } = await params;
-  return <EditorStudio subdomain={subdomain} collegeName={`${subdomain.toUpperCase()} College`} />;
+  const college = await requireCurrentCollege(subdomain);
+  return <EditorStudio subdomain={college.subdomain} collegeName={college.name} />;
 }
