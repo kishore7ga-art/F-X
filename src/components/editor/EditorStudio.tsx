@@ -94,7 +94,7 @@ export function EditorStudio({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [sections, setSections] = useState<SectionItem[]>([]);
   const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
-  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
+  const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
   const [loadingDb, setLoadingDb] = useState(true);
 
   // Section Selector Modal & Notification Toast
@@ -208,7 +208,7 @@ export function EditorStudio({
 
   // Swap / Cycle between admin-added section variants or layout variations
   const handleSwapVariant = () => {
-    if (sections.length === 0) return;
+    if (activeSectionIndex === null || sections.length === 0) return;
 
     const activeSec = sections[activeSectionIndex];
     if (!activeSec) return;
@@ -273,8 +273,9 @@ export function EditorStudio({
   };
 
   const handleDuplicateSection = () => {
-    if (sections.length === 0) return;
+    if (activeSectionIndex === null || sections.length === 0) return;
     const current = sections[activeSectionIndex];
+    if (!current) return;
     const duplicated: SectionItem = {
       id: `sec-${Date.now()}`,
       title: `${current.title} (Copy)`,
@@ -290,13 +291,13 @@ export function EditorStudio({
   };
 
   const handleDeleteSection = () => {
-    if (sections.length === 0) return;
+    if (activeSectionIndex === null || sections.length === 0) return;
     setSections((prev) => prev.filter((_, idx) => idx !== activeSectionIndex));
-    setActiveSectionIndex((prev) => Math.max(0, prev - 1));
+    setActiveSectionIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
   };
 
   const handleMoveUp = () => {
-    if (activeSectionIndex <= 0) return;
+    if (activeSectionIndex === null || activeSectionIndex <= 0) return;
     setSections((prev) => {
       const copy = [...prev];
       const temp = copy[activeSectionIndex];
@@ -304,11 +305,11 @@ export function EditorStudio({
       copy[activeSectionIndex - 1] = temp;
       return copy;
     });
-    setActiveSectionIndex((prev) => prev - 1);
+    setActiveSectionIndex((prev) => (prev !== null ? prev - 1 : null));
   };
 
   const handleMoveDown = () => {
-    if (activeSectionIndex >= sections.length - 1) return;
+    if (activeSectionIndex === null || activeSectionIndex >= sections.length - 1) return;
     setSections((prev) => {
       const copy = [...prev];
       const temp = copy[activeSectionIndex];
@@ -316,7 +317,7 @@ export function EditorStudio({
       copy[activeSectionIndex + 1] = temp;
       return copy;
     });
-    setActiveSectionIndex((prev) => prev + 1);
+    setActiveSectionIndex((prev) => (prev !== null ? prev + 1 : null));
   };
 
   return (
@@ -365,7 +366,10 @@ export function EditorStudio({
       </header>
 
       {/* Main White Canvas Workspace */}
-      <main className="flex-1 w-full bg-slate-100 p-4 sm:p-8 flex flex-col items-center justify-start pb-32">
+      <main
+        onClick={() => setActiveSectionIndex(null)}
+        className="flex-1 w-full bg-slate-100 p-4 sm:p-8 flex flex-col items-center justify-start pb-32 cursor-pointer"
+      >
         <div
           className="transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start mx-auto bg-white shadow-xl rounded-none border-x border-slate-200"
           style={{ width: viewportWidth, maxWidth: "100%" }}
@@ -381,7 +385,10 @@ export function EditorStudio({
                 No sections have been added for page {currentPage.name}. Click below to add sections to this page.
               </p>
               <button
-                onClick={() => setShowAddSectionModal(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAddSectionModal(true);
+                }}
                 className="inline-flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-black px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -394,8 +401,13 @@ export function EditorStudio({
               {sections.map((sec, idx) => (
                 <div
                   key={sec.id}
-                  onClick={() => setActiveSectionIndex(idx)}
-                  className="w-full cursor-pointer relative"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveSectionIndex(idx);
+                  }}
+                  className={`w-full cursor-pointer relative transition-all ${
+                    activeSectionIndex === idx ? "ring-2 ring-blue-600 ring-offset-2 z-10" : ""
+                  }`}
                 >
                   <div
                     dangerouslySetInnerHTML={{ __html: sec.code }}
@@ -407,7 +419,10 @@ export function EditorStudio({
               {/* Empty Space + Add Section Button */}
               <div className="w-full py-12 flex flex-col items-center justify-center bg-slate-50/70 border-t border-b border-dashed border-slate-300 my-6 rounded-2xl">
                 <button
-                  onClick={() => setShowAddSectionModal(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAddSectionModal(true);
+                  }}
                   className="group flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white font-black text-xs px-6 py-3 rounded-full shadow-lg transition-all border border-slate-700 hover:scale-105 cursor-pointer"
                 >
                   <Plus className="w-4 h-4 text-blue-400 group-hover:rotate-90 transition-transform duration-300" />
@@ -501,8 +516,9 @@ export function EditorStudio({
         onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
         viewportWidth={viewportWidth}
         setViewportWidth={setViewportWidth}
-        activeSectionTitle={sections.length > 0 ? sections[activeSectionIndex]?.title : "Hero"}
+        activeSectionTitle={activeSectionIndex !== null && sections[activeSectionIndex] ? sections[activeSectionIndex]?.title : "Hero"}
         hasSections={sections.length > 0}
+        isSectionSelected={activeSectionIndex !== null}
         onAddSection={() => setShowAddSectionModal(true)}
         onDuplicateSection={handleDuplicateSection}
         onSwapVariant={handleSwapVariant}

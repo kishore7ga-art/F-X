@@ -28,6 +28,7 @@ interface EditorToolbarProps {
   setViewportWidth: (width: string) => void;
   activeSectionTitle?: string;
   hasSections: boolean;
+  isSectionSelected?: boolean;
   onAddSection: () => void;
   onDuplicateSection?: () => void;
   onSwapVariant?: () => void;
@@ -45,6 +46,7 @@ export function EditorToolbar({
   setViewportWidth,
   activeSectionTitle = "Hero",
   hasSections,
+  isSectionSelected = false,
   onAddSection,
   onDuplicateSection,
   onSwapVariant,
@@ -84,7 +86,6 @@ export function EditorToolbar({
     }
     if (onSwapVariant) {
       onSwapVariant();
-      showToast("Swapping section variant...");
     }
   };
 
@@ -158,75 +159,71 @@ export function EditorToolbar({
           </a>
         </div>
 
-        <div className="h-5 w-px bg-slate-300 mx-0.5" />
+        {/* 3. Section Controls Pill - ONLY rendered when a section on the canvas is selected */}
+        {isSectionSelected && hasSections && (
+          <>
+            <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
-        {/* 3. Section Controls Pill */}
-        <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl px-3 py-1 flex items-center gap-2">
-          <span className="font-extrabold text-slate-900 text-xs px-2.5 py-0.5 rounded-lg bg-slate-100">
-            {hasSections ? activeSectionTitle : "Hero"}
-          </span>
+            <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl px-3 py-1 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
+              <span className="font-extrabold text-slate-900 text-xs px-2.5 py-0.5 rounded-lg bg-slate-100">
+                {activeSectionTitle}
+              </span>
 
-          <button
-            onClick={onDuplicateSection}
-            disabled={!hasSections}
-            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
-            title="Duplicate Section"
-          >
-            <Copy className="w-3.5 h-3.5" />
-          </button>
-          <button
-            disabled={!hasSections}
-            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
-            title="Undo"
-          >
-            <Undo2 className="w-3.5 h-3.5" />
-          </button>
-          
-          <button
-            onClick={handleRefreshSwap}
-            className={`p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer ${
-              hasSections ? "text-blue-600 font-bold" : "text-slate-400"
-            }`}
-            title={hasSections ? "Swap Variant" : "Refresh (Requires Admin Sections)"}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${hasSections ? "hover:rotate-180 transition-transform duration-300" : ""}`} />
-          </button>
+              <button
+                onClick={onDuplicateSection}
+                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                title="Duplicate Section"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+              <button
+                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                title="Undo"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+              </button>
+              
+              <button
+                onClick={handleRefreshSwap}
+                className="p-1 rounded hover:bg-slate-100 text-blue-600 font-bold transition-colors cursor-pointer"
+                title="Swap Variant"
+              >
+                <RefreshCw className="w-3.5 h-3.5 hover:rotate-180 transition-transform duration-300" />
+              </button>
 
-          <button
-            disabled={!hasSections}
-            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
-            title="Redo"
-          >
-            <Redo2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={onMoveUp}
-            disabled={!hasSections}
-            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
-            title="Move Up"
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={onMoveDown}
-            disabled={!hasSections}
-            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
-            title="Move Down"
-          >
-            <ArrowDown className="w-3.5 h-3.5" />
-          </button>
+              <button
+                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                title="Redo"
+              >
+                <Redo2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={onMoveUp}
+                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                title="Move Up"
+              >
+                <ArrowUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={onMoveDown}
+                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                title="Move Down"
+              >
+                <ArrowDown className="w-3.5 h-3.5" />
+              </button>
 
-          <div className="h-4 w-px bg-slate-200 mx-0.5" />
+              <div className="h-4 w-px bg-slate-200 mx-0.5" />
 
-          <button
-            onClick={onDeleteSection}
-            disabled={!hasSections}
-            className="p-1 rounded hover:bg-red-50 text-red-600 disabled:opacity-40 cursor-pointer"
-            title="Delete Section"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+              <button
+                onClick={onDeleteSection}
+                className="p-1 rounded hover:bg-red-50 text-red-600 cursor-pointer"
+                title="Delete Section"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </>
+        )}
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
