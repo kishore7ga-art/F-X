@@ -681,7 +681,7 @@ export function DomainSettingsModal({
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
                 <span className="font-extrabold text-slate-500">Email Address</span>
-                <span className="font-black text-slate-900 font-mono">kishore@xite.co.in</span>
+                <span className="font-black text-slate-900 font-mono">kishore7ga@gmail.com</span>
               </div>
               <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
                 <span className="font-extrabold text-slate-500">Account Role</span>
