@@ -137,28 +137,29 @@ export function DrawerPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-slate-200 shadow-2xl flex flex-col text-slate-800 font-sans">
-      
-      {/* Notification Toast */}
-      {toastMessage && (
-        <div className="absolute top-2 left-3 right-3 z-50 p-2.5 bg-slate-900 text-white text-[11px] font-extrabold rounded-xl shadow-xl flex items-center justify-between animate-fade-in border border-slate-700">
-          <span>{toastMessage}</span>
-        </div>
-      )}
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-150 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="h-full w-80 bg-white border-r border-slate-200 shadow-2xl flex flex-col text-slate-800 font-sans cursor-default"
+      >
+        
+        {/* Notification Toast */}
+        {toastMessage && (
+          <div className="absolute top-2 left-3 right-3 z-50 p-2.5 bg-slate-900 text-white text-[11px] font-extrabold rounded-xl shadow-xl flex items-center justify-between animate-fade-in border border-slate-700">
+            <span>{toastMessage}</span>
+          </div>
+        )}
 
-      {/* Header & Segmented Control Switcher */}
-      <div className="p-3 border-b border-slate-200 bg-slate-50/90 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-slate-900 tracking-wide uppercase">
-            Pages, Colors & Fonts
-          </span>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-slate-200/80 text-slate-500 transition-all cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Header & Segmented Control Switcher */}
+        <div className="p-3 border-b border-slate-200 bg-slate-50/90 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-900 tracking-wide uppercase">
+              Pages, Colors & Fonts
+            </span>
+          </div>
 
         {/* Segmented Switcher Control */}
         <div className="bg-slate-200/70 p-1 rounded-xl flex items-center gap-1 border border-slate-200">
@@ -337,6 +338,7 @@ export function DrawerPanel({
         </div>
       )}
 
+      </div>
     </div>
   );
 }
