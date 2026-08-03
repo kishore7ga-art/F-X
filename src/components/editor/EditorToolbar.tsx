@@ -13,11 +13,11 @@ import {
   ArrowUp,
   ArrowDown,
   Trash2,
+  X,
   Monitor,
   Tablet,
   Smartphone,
   Check,
-  Repeat,
 } from "lucide-react";
 
 type ViewportMode = "desktop" | "tablet" | "mobile";
@@ -77,15 +77,14 @@ export function EditorToolbar({
     }, 600);
   };
 
-  // Replace / Swap Section Feature
-  const handleReplaceSection = () => {
+  const handleRefreshSwap = () => {
     if (!hasSections) {
-      showToast("Replace Section works when sections are added in Admin Panel!");
+      showToast("Refresh / Swap works when sections are added in Admin Panel!");
       return;
     }
     if (onSwapVariant) {
       onSwapVariant();
-      showToast("Replacing section variant with next template...");
+      showToast("Swapping section variant...");
     }
   };
 
@@ -102,13 +101,13 @@ export function EditorToolbar({
       {/* Outer Dock Container */}
       <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-2 flex items-center gap-2 text-slate-700 text-xs font-sans">
         
-        {/* 1. Dark Navy Square Button: REPLACEMENT FEATURE */}
+        {/* 1. Dark Navy Square Button: Opens XITE Studio Settings Page */}
         <button
-          onClick={handleReplaceSection}
-          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-md group"
-          title={hasSections ? "Replace Section Variant" : "Replace Section (Requires Admin Sections)"}
+          onClick={onOpenSettings}
+          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-md"
+          title="Open XITE Studio Settings (Publishing, Custom Domain & SSL)"
         >
-          <Repeat className="w-4 h-4 text-white group-hover:rotate-180 transition-transform duration-300" />
+          <SlidersHorizontal className="w-4 h-4 text-white" />
         </button>
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
@@ -120,15 +119,7 @@ export function EditorToolbar({
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
             title="Pages, Colors & Fonts Drawer"
           >
-            <SlidersHorizontal className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={onOpenSettings}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-            title="Domain & Settings"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
+            <span className="text-xs font-black">☰</span>
           </button>
 
           <button
@@ -184,11 +175,11 @@ export function EditorToolbar({
           </button>
           
           <button
-            onClick={handleReplaceSection}
+            onClick={handleRefreshSwap}
             className={`p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer ${
               hasSections ? "text-blue-600 font-bold" : "text-slate-400"
             }`}
-            title={hasSections ? "Replace Variant" : "Replace Section (Requires Admin Sections)"}
+            title={hasSections ? "Swap Variant" : "Refresh (Requires Admin Sections)"}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${hasSections ? "hover:rotate-180 transition-transform duration-300" : ""}`} />
           </button>
