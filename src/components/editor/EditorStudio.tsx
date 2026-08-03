@@ -144,7 +144,7 @@ export function EditorStudio({
   subdomain = "greenfield",
   collegeName = "Greenfield University",
 }: EditorStudioProps) {
-  const [viewportWidth, setViewportWidth] = useState<string>("1920px");
+  const [viewportWidth, setViewportWidth] = useState<string>("100%");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [sections, setSections] = useState<SectionItem[]>([]);
@@ -319,10 +319,10 @@ export function EditorStudio({
       </header>
 
       {/* Main White Canvas Workspace */}
-      <main className="flex-1 w-full bg-slate-100 p-4 sm:p-8 flex flex-col items-center justify-start pb-32 overflow-x-auto">
+      <main className="flex-1 w-full bg-slate-100 p-4 sm:p-8 flex flex-col items-center justify-start pb-32">
         <div
           className="transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start mx-auto bg-white shadow-xl rounded-none border-x border-slate-200"
-          style={{ width: viewportWidth }}
+          style={{ width: viewportWidth, maxWidth: "100%" }}
         >
           {sections.length === 0 ? (
             /* Empty Canvas State */

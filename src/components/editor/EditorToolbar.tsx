@@ -20,8 +20,8 @@ import {
   Check,
 } from "lucide-react";
 
-export const DESKTOP_RESOLUTIONS = ["1200px", "1536px", "1920px", "2560px"];
-export const TABLET_RESOLUTIONS = ["768px", "820px", "834px", "1024px", "1280px", "1366px", "1440px"];
+export const DESKTOP_RESOLUTIONS = ["1200px"];
+export const TABLET_RESOLUTIONS = ["768px", "820px", "834px", "1024px"];
 export const MOBILE_RESOLUTIONS = ["320px", "360px", "375px", "390px"];
 
 interface EditorToolbarProps {
@@ -92,23 +92,18 @@ export function EditorToolbar({
     }
   };
 
-  // Cycle Desktop Resolutions: 1536px -> 1920px -> 2560px
-  const handleCycleDesktop = () => {
-    const idx = DESKTOP_RESOLUTIONS.indexOf(viewportWidth);
-    const nextWidth = idx >= 0 ? DESKTOP_RESOLUTIONS[(idx + 1) % DESKTOP_RESOLUTIONS.length] : DESKTOP_RESOLUTIONS[1]!;
-    setViewportWidth(nextWidth!);
-    showToast(`Desktop Viewport: ${nextWidth}`);
+  const handleSetDesktop = () => {
+    setViewportWidth("100%");
+    showToast("Desktop Viewport (100% Full Width)");
   };
 
-  // Cycle Tablet & Laptop Resolutions: 768px -> 820px -> 834px -> 1024px -> 1280px -> 1366px -> 1440px
   const handleCycleTablet = () => {
     const idx = TABLET_RESOLUTIONS.indexOf(viewportWidth);
     const nextWidth = idx >= 0 ? TABLET_RESOLUTIONS[(idx + 1) % TABLET_RESOLUTIONS.length] : TABLET_RESOLUTIONS[0]!;
     setViewportWidth(nextWidth!);
-    showToast(`Tablet/Laptop Viewport: ${nextWidth}`);
+    showToast(`Tablet Viewport: ${nextWidth}`);
   };
 
-  // Cycle Mobile Resolutions: 320px -> 360px -> 375px -> 390px
   const handleCycleMobile = () => {
     const idx = MOBILE_RESOLUTIONS.indexOf(viewportWidth);
     const nextWidth = idx >= 0 ? MOBILE_RESOLUTIONS[(idx + 1) % MOBILE_RESOLUTIONS.length] : MOBILE_RESOLUTIONS[2]!;
@@ -116,7 +111,7 @@ export function EditorToolbar({
     showToast(`Mobile Viewport: ${nextWidth}`);
   };
 
-  const isDesktopActive = DESKTOP_RESOLUTIONS.includes(viewportWidth);
+  const isDesktopActive = viewportWidth === "100%" || viewportWidth === "1200px";
   const isTabletActive = TABLET_RESOLUTIONS.includes(viewportWidth);
   const isMobileActive = MOBILE_RESOLUTIONS.includes(viewportWidth);
 
@@ -258,48 +253,47 @@ export function EditorToolbar({
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
-        {/* 4. Multi-Resolution Viewport Switcher Pill */}
+        {/* 4. Viewport Switcher Pill */}
         <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-1 flex items-center gap-1">
-          {/* Desktop Resolutions: 1536px, 1920px, 2560px */}
+          {/* Desktop Viewport Button */}
           <button
-            onClick={handleCycleDesktop}
-            className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+            onClick={handleSetDesktop}
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               isDesktopActive
                 ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Desktop Viewports (1536px · 1920px · 2560px) — Click to cycle"
+            title="Desktop Viewport (Full Width)"
           >
-            <Monitor className="w-3.5 h-3.5" />
-            <span>{isDesktopActive ? viewportWidth : "Desktop"}</span>
+            <Monitor className="w-4 h-4" />
           </button>
 
-          {/* Tablet & Laptop Resolutions: 768px, 820px, 834px, 1024px, 1280px, 1366px, 1440px */}
+          {/* Tablet Viewports: 768px, 820px, 834px, 1024px */}
           <button
             onClick={handleCycleTablet}
             className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
               isTabletActive
                 ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Tablet & Laptop Viewports (768px · 820px · 834px · 1024px · 1280px · 1366px · 1440px) — Click to cycle"
+            title="Tablet Viewports (768px · 820px · 834px · 1024px) — Click to cycle"
           >
-            <Tablet className="w-3.5 h-3.5" />
-            <span>{isTabletActive ? viewportWidth : "Tablet"}</span>
+            <Tablet className="w-4 h-4" />
+            {isTabletActive && <span>{viewportWidth}</span>}
           </button>
 
-          {/* Mobile Resolutions: 320px, 360px, 375px, 390px */}
+          {/* Mobile Viewports: 320px, 360px, 375px, 390px */}
           <button
             onClick={handleCycleMobile}
             className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
               isMobileActive
                 ? "bg-slate-900 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                : "text-slate-500 hover:text-slate-900"
             }`}
             title="Mobile Viewports (320px · 360px · 375px · 390px) — Click to cycle"
           >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>{isMobileActive ? viewportWidth : "Mobile"}</span>
+            <Smartphone className="w-4 h-4" />
+            {isMobileActive && <span>{viewportWidth}</span>}
           </button>
         </div>
 
