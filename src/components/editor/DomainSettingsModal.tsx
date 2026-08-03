@@ -20,6 +20,7 @@ import {
   Code,
   AlertTriangle,
   RefreshCw,
+  X,
 } from "lucide-react";
 
 interface DomainSettingsModalProps {
@@ -40,6 +41,7 @@ export function DomainSettingsModal({
   const [publishing, setPublishing] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showAccountModal, setShowAccountModal] = useState(false);
 
   // Team Access State
   const [teamMembers, setTeamMembers] = useState([
@@ -225,9 +227,9 @@ export function DomainSettingsModal({
 
           {/* Bottom User Pill */}
           <button
-            onClick={() => setActiveTab("security")}
+            onClick={() => setShowAccountModal(true)}
             className="w-full text-left p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center gap-3 transition-all cursor-pointer group"
-            title="View Owner Account Details & Security"
+            title="View Owner Account Details"
           >
             <div className="w-8 h-8 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-xs group-hover:scale-105 transition-transform">
               K
@@ -648,6 +650,70 @@ export function DomainSettingsModal({
 
         </main>
       </div>
+
+      {/* Account Profile & Owner Details Modal */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-6 border border-slate-200 text-slate-900">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-lg">
+                  K
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Kishore Profile</h3>
+                  <p className="text-xs text-slate-500 font-semibold">Platform Owner & Super Administrator</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAccountModal(false)}
+                className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Account Details List */}
+            <div className="space-y-2.5 text-xs font-sans">
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+                <span className="font-extrabold text-slate-500">Full Name</span>
+                <span className="font-black text-slate-900">Kishore</span>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+                <span className="font-extrabold text-slate-500">Email Address</span>
+                <span className="font-black text-slate-900 font-mono">kishore@xite.co.in</span>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+                <span className="font-extrabold text-slate-500">Account Role</span>
+                <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                  Owner Account
+                </span>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+                <span className="font-extrabold text-slate-500">Assigned Campus</span>
+                <span className="font-black text-slate-900">Greenfield University</span>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+                <span className="font-extrabold text-slate-500">Subscription Plan</span>
+                <span className="font-black text-blue-600">Enterprise Pro SaaS (Active)</span>
+              </div>
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
+                <span className="font-extrabold text-slate-500">Tenant Identifier</span>
+                <span className="font-mono text-slate-700 font-bold">tenant_greenfield_9921a</span>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setShowAccountModal(false)}
+                className="w-full py-3 bg-[#0f172a] hover:bg-[#1e293b] text-white font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer"
+              >
+                Close Account Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
