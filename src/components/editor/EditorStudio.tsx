@@ -170,37 +170,57 @@ export function EditorStudio({
 
   // Fetch sections/templates added by Admin in the Database
   const fetchDbSections = async (slug: string = "/home") => {
-    // If page is already saved in pageStore, load it directly
-    if (pageStore[slug] && pageStore[slug].length > 0) {
-      setSections(pageStore[slug]);
-      setActiveSectionIndex(0);
-      return;
-    }
-
     try {
       setLoadingDb(true);
       const res = await fetch("/api/v1/admin/templates", {
         credentials: "include",
       });
+
+      let fetchedTemplates: any[] = [];
       if (res.ok) {
         const data = await res.json();
         if (data.templates && data.templates.length > 0) {
+          fetchedTemplates = data.templates;
           setAdminDbTemplates(data.templates);
-          const firstTpl = data.templates[0];
-          setSections([
-            {
-              id: firstTpl.id || `db-0`,
-              title: firstTpl.name || "Hero Section",
-              code: firstTpl.code || (PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"]),
-              variantIndex: 0,
-            },
-          ]);
-          setActiveSectionIndex(0);
-          return;
         }
       }
 
-      setAdminDbTemplates([]);
+      // If page is already saved in pageStore, load saved sections
+      if (pageStore[slug] && pageStore[slug].length > 0) {
+        setSections(pageStore[slug]);
+        setActiveSectionIndex(0);
+        return;
+      }
+
+      // Extract target category ID from page slug (e.g. /home -> hero, /about -> about, /academics -> courses)
+      const cleanSlug = slug.replace(/^\//, "").toLowerCase();
+      let targetCatId = cleanSlug;
+      if (cleanSlug === "home") targetCatId = "hero";
+      if (cleanSlug === "academics") targetCatId = "courses";
+
+      // Find template matching category in fetched Admin templates
+      const matchingAdminTpl = fetchedTemplates.find((tpl) => {
+        const nameLower = (tpl.name || "").toLowerCase();
+        return (
+          nameLower.includes(`[${targetCatId}]`) ||
+          nameLower.includes(targetCatId)
+        );
+      });
+
+      if (matchingAdminTpl && matchingAdminTpl.code) {
+        setSections([
+          {
+            id: matchingAdminTpl.id || `db-0`,
+            title: matchingAdminTpl.name,
+            code: matchingAdminTpl.code,
+            variantIndex: 0,
+          },
+        ]);
+        setActiveSectionIndex(0);
+        return;
+      }
+
+      // Fallback if no matching section added in Admin yet
       const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
       setSections([
         { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
@@ -243,7 +263,28 @@ export function EditorStudio({
       return;
     }
 
-    // Otherwise load default template for target page
+    // Otherwise load matching section added by Admin for target page
+    const cleanSlug = pageSlug.replace(/^\//, "").toLowerCase();
+    let targetCatId = cleanSlug;
+    if (cleanSlug === "home") targetCatId = "hero";
+    if (cleanSlug === "academics") targetCatId = "courses";
+
+    const matchingAdminTpl = adminDbTemplates.find((tpl) => {
+      const nameLower = (tpl.name || "").toLowerCase();
+      return (
+        nameLower.includes(`[${targetCatId}]`) ||
+        nameLower.includes(targetCatId)
+      );
+    });
+
+    if (matchingAdminTpl && matchingAdminTpl.code) {
+      setSections([
+        { id: `page-${pageSlug}`, title: matchingAdminTpl.name, code: matchingAdminTpl.code, variantIndex: 0 },
+      ]);
+      setActiveSectionIndex(0);
+      return;
+    }
+
     const pageCode = PAGE_SECTION_TEMPLATES[pageSlug] || `<!-- ${pageName} Section -->
 <section style="background: #09090b; color: #ffffff; padding: 90px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
   <div style="max-width: 850px; margin: 0 auto;">
@@ -262,12 +303,28 @@ export function EditorStudio({
     setActiveSectionIndex(0);
   };
 
-  // Select section category in modal: STRICTLY only add if admin added a section for THAT category!
-  const handleSelectSectionCategory = (cat: typeof SECTION_CATEGORIES[0]) => {
+  // Select section category in modal: Fetch latest Admin DB templates and insert exact Admin code!
+  const handleSelectSectionCategory = async (cat: typeof SECTION_CATEGORIES[0]) => {
     setShowAddSectionModal(false);
 
+    let templatesList = adminDbTemplates;
+
+    // Fetch latest templates if empty
+    if (templatesList.length === 0) {
+      try {
+        const res = await fetch("/api/v1/admin/templates", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.templates) {
+            templatesList = data.templates;
+            setAdminDbTemplates(data.templates);
+          }
+        }
+      } catch {}
+    }
+
     // Strictly find admin-added template matching the selected category
-    const matchingAdminTemplate = adminDbTemplates.find((tpl) => {
+    const matchingAdminTemplate = templatesList.find((tpl) => {
       const nameLower = (tpl.name || "").toLowerCase();
       const catIdLower = cat.id.toLowerCase();
       const catNameLower = cat.name.toLowerCase();
@@ -287,10 +344,6 @@ export function EditorStudio({
       };
       setSections((prev) => [...prev, newSection]);
       setActiveSectionIndex(sections.length);
-      showToast(`Added Admin Section: "${matchingAdminTemplate.name}"`);
-    } else {
-      // STRICT: NO MATCHING SECTION ADDED BY ADMIN -> DO NOT ADD ANYTHING!
-      showToast(`No "${cat.name}" section has been added in Admin Panel yet. Please upload code for "${cat.name}" in Admin Control Room first!`);
     }
   };
 
