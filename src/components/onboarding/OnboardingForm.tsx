@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Sparkles, ArrowRight } from "lucide-react";
 
 import {
   completeOnboarding,
@@ -32,16 +33,45 @@ export function OnboardingForm({
 
   return (
     <form action={action} className="space-y-7">
-      {/* College name passed as hidden field — already shown in heading */}
-      <input type="hidden" name="collegeName" value={defaultName} />
+      {state?.error && (
+        <div className="rounded-2xl bg-red-50 p-4 text-xs font-semibold text-red-600 border border-red-200 shadow-xs">
+          {state.error}
+        </div>
+      )}
 
-      {/* Institution Type */}
-      <fieldset>
+      {/* College Name Input (Visible if empty/unconfigured, Hidden if already provided) */}
+      {!defaultName ? (
+        <div className="space-y-1.5">
+          <label
+            htmlFor="collegeName"
+            className="block text-xs font-extrabold uppercase tracking-wider text-slate-700"
+          >
+            College / Institution Name
+          </label>
+          <input
+            type="text"
+            id="collegeName"
+            name="collegeName"
+            required
+            defaultValue=""
+            placeholder="e.g. Kishore7ga Institute of Technology & Science"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all focus:border-[#4285F4] focus:ring-4 focus:ring-[#4285F4]/10 shadow-xs"
+          />
+        </div>
+      ) : (
+        <input type="hidden" name="collegeName" value={defaultName} />
+      )}
+
+      {/* Institution Type Selection */}
+      <fieldset className="space-y-2">
+        <legend className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-3">
+          Select Institution Category
+        </legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {COLLEGE_TYPES.map((type, index) => (
             <label
               key={type.value}
-              className="group relative flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all hover:border-slate-300 hover:shadow-sm has-[:checked]:border-[#4285F4] has-[:checked]:bg-[#4285F4]/[0.04] has-[:checked]:shadow-sm has-[:checked]:shadow-[#4285F4]/10"
+              className="group relative flex items-center gap-3.5 rounded-2xl border border-slate-200 bg-white px-4 py-4 transition-all hover:border-slate-300 hover:shadow-sm has-[:checked]:border-[#4285F4] has-[:checked]:bg-[#4285F4]/[0.04] has-[:checked]:shadow-sm has-[:checked]:shadow-[#4285F4]/10 cursor-pointer"
             >
               <input
                 type="radio"
@@ -60,40 +90,33 @@ export function OnboardingForm({
               </span>
 
               {/* Text */}
-              <span>
-                <span className="block text-sm font-semibold text-slate-900">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-extrabold text-slate-900 group-has-[:checked]:text-[#4285F4] transition-colors">
                   {type.label}
-                </span>
-                <span className="mt-0.5 block text-[11px] text-slate-400 leading-snug">
-                  {type.hint}
-                </span>
-              </span>
-
-              {/* Check indicator */}
-              <span className="absolute top-3 right-3 hidden h-5 w-5 items-center justify-center rounded-full bg-[#4285F4] text-white group-has-[:checked]:flex">
-                <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-                  <path d="M2.5 6.5L5 9L9.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
+                </p>
+                <p className="text-[11px] font-medium text-slate-500 truncate">
+                  {type.description}
+                </p>
+              </div>
             </label>
           ))}
         </div>
       </fieldset>
 
-      {/* Error */}
-      {state.error ? (
-        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
-          {state.error}
-        </div>
-      ) : null}
-
       {/* Submit Button */}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-xl bg-[#4285F4] py-3.5 px-4 text-sm font-semibold text-white shadow-md shadow-[#4285F4]/20 transition hover:bg-[#3367D6] hover:shadow-lg hover:shadow-[#4285F4]/30 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-900 py-3.5 text-sm font-extrabold text-white transition-all hover:bg-slate-800 hover:shadow-lg disabled:opacity-50 cursor-pointer"
       >
-        {pending ? "Saving…" : submitLabel}
+        {pending ? (
+          <span>Setting up portal...</span>
+        ) : (
+          <>
+            <span>{submitLabel}</span>
+            <ArrowRight className="h-4 w-4" />
+          </>
+        )}
       </button>
     </form>
   );
