@@ -144,7 +144,7 @@ export function EditorStudio({
   subdomain = "greenfield",
   collegeName = "Greenfield University",
 }: EditorStudioProps) {
-  const [viewport, setViewport] = useState<ViewportMode>("desktop");
+  const [viewportWidth, setViewportWidth] = useState<string>("1920px");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [sections, setSections] = useState<SectionItem[]>([]);
@@ -281,13 +281,6 @@ export function EditorStudio({
     setActiveSectionIndex((prev) => prev + 1);
   };
 
-  const viewportWidthClass =
-    viewport === "desktop"
-      ? "max-w-6xl"
-      : viewport === "tablet"
-      ? "max-w-2xl"
-      : "max-w-sm";
-
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans relative overflow-x-hidden select-none">
       
@@ -328,7 +321,8 @@ export function EditorStudio({
       {/* Main White Canvas Workspace */}
       <main className="flex-1 w-full bg-white p-4 sm:p-8 flex flex-col items-center justify-start pb-32">
         <div
-          className={`w-full ${viewportWidthClass} transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start`}
+          className="w-full transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start mx-auto bg-white"
+          style={{ maxWidth: viewportWidth, width: "100%" }}
         >
           {sections.length === 0 ? (
             /* Empty Canvas State */
@@ -387,8 +381,8 @@ export function EditorStudio({
         onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
         isSettingsOpen={isSettingsOpen}
         onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
-        viewport={viewport}
-        setViewport={setViewport}
+        viewportWidth={viewportWidth}
+        setViewportWidth={setViewportWidth}
         activeSectionTitle={sections.length > 0 ? sections[activeSectionIndex]?.title : "Hero"}
         hasSections={sections.length > 0}
         onAddSection={handleAddSection}

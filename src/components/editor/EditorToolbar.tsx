@@ -20,14 +20,16 @@ import {
   Check,
 } from "lucide-react";
 
-type ViewportMode = "desktop" | "tablet" | "mobile";
+export const DESKTOP_RESOLUTIONS = ["1536px", "1920px", "2560px"];
+export const TABLET_RESOLUTIONS = ["768px", "820px", "834px", "1024px", "1280px", "1366px", "1440px"];
+export const MOBILE_RESOLUTIONS = ["320px", "360px", "375px", "390px"];
 
 interface EditorToolbarProps {
   onOpenSettings: () => void;
   onToggleDrawer: () => void;
   isSettingsOpen?: boolean;
-  viewport: ViewportMode;
-  setViewport: (v: ViewportMode) => void;
+  viewportWidth: string;
+  setViewportWidth: (width: string) => void;
   activeSectionTitle?: string;
   hasSections: boolean;
   onAddSection: () => void;
@@ -43,8 +45,8 @@ export function EditorToolbar({
   onOpenSettings,
   onToggleDrawer,
   isSettingsOpen = false,
-  viewport,
-  setViewport,
+  viewportWidth,
+  setViewportWidth,
   activeSectionTitle = "Hero",
   hasSections,
   onAddSection,
@@ -89,6 +91,34 @@ export function EditorToolbar({
       showToast("Swapping section variant...");
     }
   };
+
+  // Cycle Desktop Resolutions: 1536px -> 1920px -> 2560px
+  const handleCycleDesktop = () => {
+    const idx = DESKTOP_RESOLUTIONS.indexOf(viewportWidth);
+    const nextWidth = idx >= 0 ? DESKTOP_RESOLUTIONS[(idx + 1) % DESKTOP_RESOLUTIONS.length] : DESKTOP_RESOLUTIONS[1]!;
+    setViewportWidth(nextWidth!);
+    showToast(`Desktop Viewport: ${nextWidth}`);
+  };
+
+  // Cycle Tablet & Laptop Resolutions: 768px -> 820px -> 834px -> 1024px -> 1280px -> 1366px -> 1440px
+  const handleCycleTablet = () => {
+    const idx = TABLET_RESOLUTIONS.indexOf(viewportWidth);
+    const nextWidth = idx >= 0 ? TABLET_RESOLUTIONS[(idx + 1) % TABLET_RESOLUTIONS.length] : TABLET_RESOLUTIONS[0]!;
+    setViewportWidth(nextWidth!);
+    showToast(`Tablet/Laptop Viewport: ${nextWidth}`);
+  };
+
+  // Cycle Mobile Resolutions: 320px -> 360px -> 375px -> 390px
+  const handleCycleMobile = () => {
+    const idx = MOBILE_RESOLUTIONS.indexOf(viewportWidth);
+    const nextWidth = idx >= 0 ? MOBILE_RESOLUTIONS[(idx + 1) % MOBILE_RESOLUTIONS.length] : MOBILE_RESOLUTIONS[2]!;
+    setViewportWidth(nextWidth!);
+    showToast(`Mobile Viewport: ${nextWidth}`);
+  };
+
+  const isDesktopActive = DESKTOP_RESOLUTIONS.includes(viewportWidth);
+  const isTabletActive = TABLET_RESOLUTIONS.includes(viewportWidth);
+  const isMobileActive = MOBILE_RESOLUTIONS.includes(viewportWidth);
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
@@ -228,40 +258,48 @@ export function EditorToolbar({
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
-        {/* 4. Viewport Switcher Pill */}
+        {/* 4. Multi-Resolution Viewport Switcher Pill */}
         <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-1 flex items-center gap-1">
+          {/* Desktop Resolutions: 1536px, 1920px, 2560px */}
           <button
-            onClick={() => setViewport("desktop")}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              viewport === "desktop"
-                ? "bg-slate-900 text-white font-extrabold shadow-sm"
-                : "text-slate-500 hover:text-slate-900"
+            onClick={handleCycleDesktop}
+            className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+              isDesktopActive
+                ? "bg-slate-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
-            title="Desktop Viewport (1200px)"
+            title="Desktop Viewports (1536px · 1920px · 2560px) — Click to cycle"
           >
-            <Monitor className="w-4 h-4" />
+            <Monitor className="w-3.5 h-3.5" />
+            <span>{isDesktopActive ? viewportWidth : "Desktop"}</span>
           </button>
+
+          {/* Tablet & Laptop Resolutions: 768px, 820px, 834px, 1024px, 1280px, 1366px, 1440px */}
           <button
-            onClick={() => setViewport("tablet")}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              viewport === "tablet"
-                ? "bg-slate-900 text-white font-extrabold shadow-sm"
-                : "text-slate-500 hover:text-slate-900"
+            onClick={handleCycleTablet}
+            className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+              isTabletActive
+                ? "bg-slate-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
-            title="Tablet Viewport (768px)"
+            title="Tablet & Laptop Viewports (768px · 820px · 834px · 1024px · 1280px · 1366px · 1440px) — Click to cycle"
           >
-            <Tablet className="w-4 h-4" />
+            <Tablet className="w-3.5 h-3.5" />
+            <span>{isTabletActive ? viewportWidth : "Tablet"}</span>
           </button>
+
+          {/* Mobile Resolutions: 320px, 360px, 375px, 390px */}
           <button
-            onClick={() => setViewport("mobile")}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-              viewport === "mobile"
-                ? "bg-slate-900 text-white font-extrabold shadow-sm"
-                : "text-slate-500 hover:text-slate-900"
+            onClick={handleCycleMobile}
+            className={`px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+              isMobileActive
+                ? "bg-slate-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
-            title="Mobile Viewport (375px)"
+            title="Mobile Viewports (320px · 360px · 375px · 390px) — Click to cycle"
           >
-            <Smartphone className="w-4 h-4" />
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>{isMobileActive ? viewportWidth : "Mobile"}</span>
           </button>
         </div>
 
