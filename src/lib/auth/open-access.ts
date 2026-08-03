@@ -13,7 +13,7 @@ import { prisma } from "@/lib/db";
  * owner's. Leave it off for anything reachable from the public internet that
  * you do not want strangers editing.
  */
-export const AUTH_DISABLED = process.env.AUTH_DISABLED !== "false";
+export const AUTH_DISABLED = process.env.AUTH_DISABLED === "true";
 
 /**
  * The college everyone edits in open-access mode.
