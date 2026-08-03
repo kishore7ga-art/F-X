@@ -1,11 +1,11 @@
-import { redirect } from "next/navigation";
+import { EditorStudio } from "@/components/editor/EditorStudio";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Top-level fallback for /editor.
- * Redirects directly to /choose-type.
- */
-export default function EditorTopLevelRedirect() {
-  redirect("/choose-type");
+export const metadata = {
+  title: "Visual Live Editor Studio — XITE",
+};
+
+export default function EditorPage() {
+  return <EditorStudio subdomain="greenfield" collegeName="Greenfield University" />;
 }

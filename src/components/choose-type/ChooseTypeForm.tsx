@@ -21,9 +21,8 @@ export function ChooseTypeForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // Simulate brief save transition then redirect to home dashboard
     setTimeout(() => {
-      router.push("/");
+      router.push("/editor");
     }, 600);
   }
 
