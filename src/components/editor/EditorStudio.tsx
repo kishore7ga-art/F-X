@@ -206,38 +206,70 @@ export function EditorStudio({
     }
   };
 
-  // Swap / Cycle between admin-added section variants (e.g. Hero 1 -> Hero 2 -> Hero 1)
+  // Swap / Cycle between admin-added section variants or layout variations
   const handleSwapVariant = () => {
-    if (sections.length === 0 || adminDbTemplates.length === 0) {
-      showToast("No additional section variants found in Admin DB.");
-      return;
-    }
+    if (sections.length === 0) return;
 
     const activeSec = sections[activeSectionIndex];
     if (!activeSec) return;
 
-    if (adminDbTemplates.length <= 1) {
-      showToast("Only 1 template variant available in Admin DB.");
+    // If Admin DB has multiple templates, cycle through DB templates
+    if (adminDbTemplates.length > 1) {
+      const currentIdx = activeSec.variantIndex !== undefined ? activeSec.variantIndex : 0;
+      const nextIdx = (currentIdx + 1) % adminDbTemplates.length;
+      const nextTpl = adminDbTemplates[nextIdx]!;
+
+      setSections((prev) =>
+        prev.map((sec, idx) => {
+          if (idx !== activeSectionIndex) return sec;
+          return {
+            ...sec,
+            title: nextTpl.name,
+            code: nextTpl.code || sec.code,
+            variantIndex: nextIdx,
+          };
+        })
+      );
+      showToast(`Swapped section to: "${nextTpl.name}"`);
       return;
     }
 
+    // Fallback: Cycle visual layout variations (Centered -> Left Aligned -> Slate Dark)
     const currentIdx = activeSec.variantIndex !== undefined ? activeSec.variantIndex : 0;
-    const nextIdx = (currentIdx + 1) % adminDbTemplates.length;
-    const nextTpl = adminDbTemplates[nextIdx]!;
+    const nextIdx = (currentIdx + 1) % 3;
+
+    let newCode = activeSec.code;
+    if (nextIdx === 1) {
+      newCode = activeSec.code
+        .replace(/text-align:\s*center/gi, "text-align: left")
+        .replace(/margin:\s*0\s+auto/gi, "margin: 0");
+    } else if (nextIdx === 2) {
+      newCode = activeSec.code
+        .replace(/background:\s*#000000/gi, "background: #0f172a")
+        .replace(/background:\s*#09090b/gi, "background: #1e1b4b");
+    } else {
+      newCode = activeSec.code
+        .replace(/text-align:\s*left/gi, "text-align: center")
+        .replace(/background:\s*#0f172a/gi, "background: #000000")
+        .replace(/background:\s*#1e1b4b/gi, "background: #000000");
+    }
+
+    const baseTitle = activeSec.title.split(" (Variant")[0];
+    const newTitle = `${baseTitle} (Variant ${nextIdx + 1})`;
 
     setSections((prev) =>
       prev.map((sec, idx) => {
         if (idx !== activeSectionIndex) return sec;
         return {
           ...sec,
-          title: nextTpl.name,
-          code: nextTpl.code || sec.code,
+          title: newTitle,
+          code: newCode,
           variantIndex: nextIdx,
         };
       })
     );
 
-    showToast(`Swapped section to: "${nextTpl.name}"`);
+    showToast(`Swapped layout to Variant ${nextIdx + 1}`);
   };
 
   const handleDuplicateSection = () => {
