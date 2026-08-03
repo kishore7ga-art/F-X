@@ -2,18 +2,7 @@ import Link from "next/link";
 
 import { SECTION } from "@/constants/tokens";
 import { cn } from "@/lib/cn";
-import type { TemplateSummary } from "@/lib/site/templates";
-
-/**
- * A server component. Nothing here moves, and shipping a client bundle for a
- * list of links would be paying hydration cost for static text.
- *
- * The oversized wordmark is the page's last piece of type and its only loud
- * one — it gives the scroll a destination rather than a fizzle. It is
- * `aria-hidden`: the site's accessible name is in the nav, and hearing "XITE"
- * again at the end serves nobody.
- */
-export function Footer({ templates }: { templates: TemplateSummary[] }) {
+export function Footer({ templates = [] }: { templates?: any[] }) {
   const year = new Date().getFullYear();
 
   return (

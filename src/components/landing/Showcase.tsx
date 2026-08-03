@@ -5,24 +5,10 @@ import { useCallback, useState } from "react";
 
 import { GradientButton } from "@/components/ui/GradientButton";
 import { RulerCarousel, type RulerItem } from "@/components/ui/RulerCarousel";
-import { SECTION } from "@/constants/tokens";
 import { useReveal } from "@/hooks/useReveal";
-import type { TemplateSummary } from "@/lib/site/templates";
 import { cn } from "@/lib/cn";
 
-/**
- * The templates, stepped through on a rule.
- *
- * Read live from the API, so these are the five real rows rather than a
- * mock-up of five. The marketing page and the product cannot drift apart
- * because there is nowhere for them to drift to.
- *
- * A ruler rather than dots because five is a countable set with an order: the
- * point of a rule is that it shows how far along you are and how much is left,
- * which identical dots cannot. Below it, the same five as plain links — the
- * scrubber is a way to look at them, not the only way to reach them.
- */
-export function Showcase({ templates }: { templates: TemplateSummary[] }) {
+export function Showcase({ templates = [] }: { templates?: any[] }) {
   const ref = useReveal<HTMLDivElement>({ children: "[data-reveal]", stagger: 0.09 });
   const [active, setActive] = useState(0);
 

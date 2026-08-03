@@ -4,14 +4,12 @@ import Link from "next/link";
 import { Nav } from "@/components/landing/Nav";
 import { LiquidCursor } from "@/components/ui/LiquidCursor";
 import { useLenis } from "@/hooks/useLenis";
-import type { TemplateSummary } from "@/lib/site/templates";
-
 export function LandingPage({
   templates,
   ctaHref,
   ctaLabel,
 }: {
-  templates: TemplateSummary[];
+  templates?: any[];
   ctaHref: string;
   ctaLabel: string;
 }) {
