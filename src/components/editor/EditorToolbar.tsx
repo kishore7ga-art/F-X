@@ -89,7 +89,7 @@ export function EditorToolbar({
     }
   };
 
-  // Device Resolution Specs
+  // Device Resolution Specs (3 sizes for all 3 categories)
   const MOBILE_SIZES = [
     { label: "Mobile S", width: "320px" },
     { label: "Mobile M", width: "375px" },
@@ -97,18 +97,20 @@ export function EditorToolbar({
   ];
 
   const TABLET_SIZES = [
+    { label: "Tablet Mini", width: "640px" },
     { label: "Tablet", width: "768px" },
     { label: "Tablet Large", width: "1024px" },
   ];
 
   const DESKTOP_SIZES = [
+    { label: "Desktop XL", width: "1600px" },
     { label: "Desktop", width: "1440px" },
     { label: "Laptop", width: "1280px" },
   ];
 
   const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
   const activeTablet = TABLET_SIZES.find((s) => s.width === viewportWidth);
-  const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth) || (viewportWidth === "100%" ? DESKTOP_SIZES[0] : null);
+  const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth) || (viewportWidth === "100%" ? DESKTOP_SIZES[1] : null);
 
   const handleMobileClick = () => {
     let nextIdx = 0;
@@ -124,9 +126,10 @@ export function EditorToolbar({
 
   const handleTabletClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "768px") nextIdx = 1; // Tablet Large (1024px)
-    else if (viewportWidth === "1024px") nextIdx = 0; // Tablet (768px)
-    else nextIdx = 0; // Default Tablet
+    if (viewportWidth === "640px") nextIdx = 1; // Tablet (768px)
+    else if (viewportWidth === "768px") nextIdx = 2; // Tablet Large (1024px)
+    else if (viewportWidth === "1024px") nextIdx = 0; // Tablet Mini (640px)
+    else nextIdx = 1; // Default Tablet 768px
 
     const target = TABLET_SIZES[nextIdx];
     setViewportWidth(target.width);
@@ -135,9 +138,10 @@ export function EditorToolbar({
 
   const handleDesktopClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "1440px" || viewportWidth === "100%") nextIdx = 1; // Laptop (1280px)
-    else if (viewportWidth === "1280px") nextIdx = 0; // Desktop (1440px)
-    else nextIdx = 0; // Default Desktop
+    if (viewportWidth === "1600px" || viewportWidth === "100%") nextIdx = 1; // Desktop (1440px)
+    else if (viewportWidth === "1440px") nextIdx = 2; // Laptop (1280px)
+    else if (viewportWidth === "1280px") nextIdx = 0; // Desktop XL (1600px)
+    else nextIdx = 1; // Default Desktop 1440px
 
     const target = DESKTOP_SIZES[nextIdx];
     setViewportWidth(target.width);

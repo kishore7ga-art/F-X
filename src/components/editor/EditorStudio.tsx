@@ -109,8 +109,8 @@ export function EditorStudio({
   // Auto-correct responsive section code for Tablet (768px) and Mobile (375px) viewports
   const autoCorrectMobileCode = (code: string, width: string) => {
     if (!code) return "";
-    const isMobile = width === "375px";
-    const isTablet = width === "768px";
+    const isMobile = width === "320px" || width === "375px" || width === "425px";
+    const isTablet = width === "640px" || width === "768px" || width === "1024px";
 
     if (!isMobile && !isTablet) return code;
 
