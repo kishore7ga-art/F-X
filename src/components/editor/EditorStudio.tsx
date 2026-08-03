@@ -742,11 +742,6 @@ export function EditorStudio({
                     activeSectionIndex === idx ? "ring-2 ring-blue-600 ring-offset-2 z-10" : ""
                   }`}
                 >
-                  {activeSectionIndex === idx && (
-                    <div className="absolute top-3 right-4 z-30 bg-blue-600/90 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity">
-                      ✏️ Double-click text to edit | 🖱️ Right-click button for URL
-                    </div>
-                  )}
                   <div
                     dangerouslySetInnerHTML={{ __html: autoCorrectMobileCode(sec.code, viewportWidth) }}
                     className="w-full overflow-hidden"
