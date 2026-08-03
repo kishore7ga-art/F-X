@@ -96,13 +96,6 @@ export function EditorToolbar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
       
-      {/* Toast Notification Banner */}
-      {toastMessage && (
-        <div className="bg-[#0f172a] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          {toastMessage}
-        </div>
-      )}
-
       {/* Outer Dock Container */}
       <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-2 flex items-center gap-2 text-slate-700 text-xs font-sans">
         
