@@ -106,7 +106,7 @@ export function EditorStudio({
     // Toast popups completely removed
   };
 
-  // Auto-correct mobile responsive section code for phone viewports (375px / 768px)
+  // Auto-correct responsive section code for Tablet (768px) and Mobile (375px) viewports
   const autoCorrectMobileCode = (code: string, width: string) => {
     if (!code) return "";
     const isMobile = width === "375px";
@@ -115,10 +115,19 @@ export function EditorStudio({
     if (!isMobile && !isTablet) return code;
 
     let corrected = code;
-    if (isMobile) {
-      // Auto-correct multi-column flex/grid containers for mobile phone screens
+
+    if (isTablet) {
+      // Auto-correct multi-column layouts for Tablet screens (max 2 columns, scaled text)
       corrected = corrected
-        .replace(/grid-template-columns:\s*repeat\(\s*[3-9]\s*,\s*1fr\s*\)/gi, "grid-template-columns: repeat(1, 1fr)")
+        .replace(/grid-template-columns:\s*repeat\(\s*[4-9]\s*,\s*1fr\s*\)/gi, "grid-template-columns: repeat(2, 1fr)")
+        .replace(/grid-template-columns:\s*1fr\s+1fr\s+1fr\s+1fr/gi, "grid-template-columns: 1fr 1fr")
+        .replace(/font-size:\s*([4-9][0-9])px/gi, (_match, p1) => `font-size: ${Math.min(parseInt(p1, 10), 32)}px`);
+    }
+
+    if (isMobile) {
+      // Auto-correct multi-column flex/grid containers for Mobile phone screens (1 column)
+      corrected = corrected
+        .replace(/grid-template-columns:\s*repeat\(\s*[2-9]\s*,\s*1fr\s*\)/gi, "grid-template-columns: repeat(1, 1fr)")
         .replace(/grid-template-columns:\s*1fr\s+1fr\s+1fr/gi, "grid-template-columns: 1fr")
         .replace(/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\([^)]+\)\)/gi, "grid-template-columns: 1fr")
         .replace(/flex-direction:\s*row/gi, "flex-direction: column")
