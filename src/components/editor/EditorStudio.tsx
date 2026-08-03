@@ -517,23 +517,25 @@ export function EditorStudio({
         initialTab={settingsTab}
       />
 
-      {/* Floating Bottom Toolbar Dock */}
-      <EditorToolbar
-        onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
-        isSettingsOpen={isSettingsOpen}
-        onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
-        viewportWidth={viewportWidth}
-        setViewportWidth={setViewportWidth}
-        activeSectionTitle={activeSectionIndex !== null && sections[activeSectionIndex] ? sections[activeSectionIndex]?.title : "Hero"}
-        hasSections={sections.length > 0}
-        isSectionSelected={activeSectionIndex !== null}
-        onAddSection={() => setShowAddSectionModal(true)}
-        onDuplicateSection={handleDuplicateSection}
-        onSwapVariant={handleSwapVariant}
-        onMoveUp={handleMoveUp}
-        onMoveDown={handleMoveDown}
-        onDeleteSection={handleDeleteSection}
-      />
+      {/* Floating Bottom Toolbar Dock - Hidden when Settings Studio is open */}
+      {!isSettingsOpen && (
+        <EditorToolbar
+          onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
+          isSettingsOpen={isSettingsOpen}
+          onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
+          viewportWidth={viewportWidth}
+          setViewportWidth={setViewportWidth}
+          activeSectionTitle={activeSectionIndex !== null && sections[activeSectionIndex] ? sections[activeSectionIndex]?.title : "Hero"}
+          hasSections={sections.length > 0}
+          isSectionSelected={activeSectionIndex !== null}
+          onAddSection={() => setShowAddSectionModal(true)}
+          onDuplicateSection={handleDuplicateSection}
+          onSwapVariant={handleSwapVariant}
+          onMoveUp={handleMoveUp}
+          onMoveDown={handleMoveDown}
+          onDeleteSection={handleDeleteSection}
+        />
+      )}
 
     </div>
   );
