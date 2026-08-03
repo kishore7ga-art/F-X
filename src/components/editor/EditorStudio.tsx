@@ -345,24 +345,6 @@ export function EditorStudio({
             <span>{currentPage.name}</span>
           </div>
         </div>
-
-        {/* User Profile & Actions */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => fetchDbSections(currentPage.slug)}
-            className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all cursor-pointer"
-            title="Sync with Admin DB"
-          >
-            <RefreshCw className={`w-4 h-4 ${loadingDb ? "animate-spin" : ""}`} />
-          </button>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold transition-all shadow-sm cursor-pointer"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Visit Live Site ↗</span>
-          </button>
-        </div>
       </header>
 
       {/* Main White Canvas Workspace */}
