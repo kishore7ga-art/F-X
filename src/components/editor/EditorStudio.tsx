@@ -17,6 +17,13 @@ interface SectionItem {
   variantIndex: number;
 }
 
+const DEFAULT_STARTER_CODE = `<!-- Default Hero Section -->
+<section style="background: #000000; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
+  <div style="max-width: 900px; margin: 0 auto;">
+    <h1 style="font-size: 48px; font-weight: 900;">Academic Campus Portal</h1>
+  </div>
+</section>`;
+
 const PAGE_SECTION_TEMPLATES: Record<string, string> = {
   "/home": `<!-- Home Page Section -->
 <section style="background: #000000; color: #ffffff; padding: 90px 24px; text-align: center; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
