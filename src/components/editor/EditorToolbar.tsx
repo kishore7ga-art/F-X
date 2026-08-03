@@ -115,7 +115,7 @@ export function EditorToolbar({
           {isSettingsOpen ? (
             <X className="w-4 h-4 text-white" />
           ) : (
-            <SlidersHorizontal className="w-4 h-4 text-white" />
+            <img src="/xite-logo.png" alt="XITE Logo" className="w-5 h-5 object-contain rounded-sm" />
           )}
         </button>
 
