@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Globe,
@@ -19,18 +19,27 @@ interface DomainSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   subdomain?: string;
+  initialTab?: string;
 }
 
 export function DomainSettingsModal({
   isOpen,
   onClose,
   subdomain = "mec",
+  initialTab = "domain",
 }: DomainSettingsModalProps) {
   const [customDomain, setCustomDomain] = useState(`${subdomain}.edu.in`);
   const [savedDomain, setSavedDomain] = useState(`${subdomain}.edu.in`);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(true);
-  const [activeTab, setActiveTab] = useState("domain");
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sync activeTab when initialTab changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
 
   if (!isOpen) return null;
 

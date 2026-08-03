@@ -7,11 +7,13 @@ import { logout } from "@/app/actions/auth";
 interface UserProfileMenuProps {
   userEmail?: string;
   collegeName?: string;
+  onOpenSettings?: (tab: string) => void;
 }
 
 export function UserProfileMenu({
   userEmail = "admin@greenfield.edu.in",
   collegeName = "Greenfield University",
+  onOpenSettings,
 }: UserProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -29,7 +31,7 @@ export function UserProfileMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl p-2 z-50 text-slate-200 text-xs">
+        <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl p-2 z-50 text-slate-200 text-xs animate-in fade-in zoom-in-95 duration-150">
           <div className="p-3 border-b border-slate-800">
             <div className="flex items-center gap-2 text-white font-extrabold">
               <Building2 className="w-4 h-4 text-blue-400" />
@@ -40,15 +42,21 @@ export function UserProfileMenu({
 
           <div className="py-1">
             <button
-              onClick={() => setIsOpen(false)}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2 text-slate-300 hover:text-white"
+              onClick={() => {
+                setIsOpen(false);
+                if (onOpenSettings) onOpenSettings("domain");
+              }}
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"
             >
               <User className="w-4 h-4 text-slate-400" />
               <span>Account Profile</span>
             </button>
             <button
-              onClick={() => setIsOpen(false)}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2 text-slate-300 hover:text-white"
+              onClick={() => {
+                setIsOpen(false);
+                if (onOpenSettings) onOpenSettings("security");
+              }}
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"
             >
               <Shield className="w-4 h-4 text-slate-400" />
               <span>Security & Roles</span>

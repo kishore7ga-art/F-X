@@ -92,6 +92,7 @@ export function EditorStudio({
   const [viewportWidth, setViewportWidth] = useState<string>("100%");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<string>("domain");
   const [sections, setSections] = useState<SectionItem[]>([]);
   const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
@@ -361,7 +362,13 @@ export function EditorStudio({
             <Eye className="w-3.5 h-3.5" />
             <span>Visit Live Site ↗</span>
           </button>
-          <UserProfileMenu collegeName={collegeName} />
+          <UserProfileMenu
+            collegeName={collegeName}
+            onOpenSettings={(tab) => {
+              setSettingsTab(tab);
+              setIsSettingsOpen(true);
+            }}
+          />
         </div>
       </header>
 
@@ -507,6 +514,7 @@ export function EditorStudio({
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         subdomain={subdomain}
+        initialTab={settingsTab}
       />
 
       {/* Floating Bottom Toolbar Dock */}
