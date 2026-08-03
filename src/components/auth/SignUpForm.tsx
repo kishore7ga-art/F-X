@@ -31,7 +31,7 @@ export function SignUpForm() {
         organization,
         message: `Website: ${website} | Mobile: ${mobile}`,
       });
-      window.location.assign("/thank-you");
+      window.location.assign("/login?requested=1");
     } catch (cause) {
       setError(
         cause instanceof ApiError

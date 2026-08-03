@@ -256,9 +256,6 @@ export function CredentialsForm({
                   />
                   <span>Keep me logged in</span>
                 </label>
-                <Link href="/forgot-password" className="font-semibold text-slate-700 hover:text-slate-900 underline">
-                  Forgot password?
-                </Link>
               </div>
 
               {error && (

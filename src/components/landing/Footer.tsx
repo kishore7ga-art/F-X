@@ -67,7 +67,7 @@ export function Footer({ templates }: { templates: TemplateSummary[] }) {
                 // the platform does not belong in the primary nav long-term —
                 // it is not a destination for visitors, and a link nobody but
                 // one person should follow is better off unadvertised.
-                { href: "/admin", label: "Admin" },
+                { href: "http://localhost:5174", label: "Admin Studio" },
               ].map((link) => (
                 <li key={link.href}>
                   <Link
