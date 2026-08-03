@@ -653,9 +653,15 @@ export function DomainSettingsModal({
 
       {/* Account Profile & Owner Details Modal */}
       {showAccountModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-6 border border-slate-200 text-slate-900">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div
+          onClick={() => setShowAccountModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl space-y-6 border border-slate-200 text-slate-900 cursor-default"
+          >
+            <div className="border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-lg">
                   K
@@ -665,12 +671,6 @@ export function DomainSettingsModal({
                   <p className="text-xs text-slate-500 font-semibold">Platform Owner & Super Administrator</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowAccountModal(false)}
-                className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
             {/* Account Details List */}
