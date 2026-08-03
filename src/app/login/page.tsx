@@ -19,7 +19,7 @@ export default async function LoginPage({
   const college = await getCurrentCollegeOrNull();
 
   if (AUTH_DISABLED) {
-    redirect("/editor/greenfield");
+    redirect("/editor/mec");
   }
 
   if (college && force !== "1") {
