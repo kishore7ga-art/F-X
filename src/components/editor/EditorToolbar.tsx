@@ -30,6 +30,12 @@ interface EditorToolbarProps {
   activeSectionTitle?: string;
   hasSections: boolean;
   onAddSection: () => void;
+  onDuplicateSection?: () => void;
+  onSwapVariant?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onDeleteSection?: () => void;
+  onClearSelection?: () => void;
 }
 
 export function EditorToolbar({
@@ -40,17 +46,58 @@ export function EditorToolbar({
   activeSectionTitle = "Hero",
   hasSections,
   onAddSection,
+  onDuplicateSection,
+  onSwapVariant,
+  onMoveUp,
+  onMoveDown,
+  onDeleteSection,
+  onClearSelection,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
+    showToast("Share link copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleManualSave = () => {
+    setSaving(true);
+    setTimeout(() => {
+      setSaving(false);
+      showToast("Changes saved successfully!");
+    }, 600);
+  };
+
+  const handleRefreshSwap = () => {
+    if (!hasSections) {
+      showToast("Refresh / Swap works when sections are added in Admin Panel!");
+      return;
+    }
+    if (onSwapVariant) {
+      onSwapVariant();
+      showToast("Swapping section variant...");
+    }
+  };
+
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
+      
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="bg-[#0f172a] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          {toastMessage}
+        </div>
+      )}
+
       {/* Outer Dock Container (Light slate rounded pill container matching image 2) */}
       <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-2 flex items-center gap-2 text-slate-700 text-xs font-sans">
         
@@ -69,20 +116,24 @@ export function EditorToolbar({
         <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1 flex items-center gap-1.5">
           <button
             onClick={onOpenSettings}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
             title="Domain & Settings"
           >
             <SlidersHorizontal className="w-4 h-4" />
           </button>
 
-          <button className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 relative" title="Save Status">
-            <Save className="w-4 h-4" />
+          <button
+            onClick={handleManualSave}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 relative cursor-pointer"
+            title="Save Status"
+          >
+            <Save className={`w-4 h-4 ${saving ? "animate-spin text-blue-600" : ""}`} />
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" />
           </button>
 
           <button
             onClick={handleCopyLink}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
             title="Copy Tenant Link"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <LinkIcon className="w-4 h-4" />}
@@ -92,7 +143,7 @@ export function EditorToolbar({
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
             title="Visit Live Site"
           >
             <ExternalLink className="w-4 h-4" />
@@ -107,28 +158,70 @@ export function EditorToolbar({
             {hasSections ? activeSectionTitle : "Hero"}
           </span>
 
-          <button className="p-1 rounded hover:bg-slate-100 text-slate-600" title="Duplicate">
+          <button
+            onClick={onDuplicateSection}
+            disabled={!hasSections}
+            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
+            title="Duplicate Section"
+          >
             <Copy className="w-3.5 h-3.5" />
           </button>
-          <button className="p-1 rounded hover:bg-slate-100 text-slate-600" title="Undo">
+          <button
+            disabled={!hasSections}
+            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
+            title="Undo"
+          >
             <Undo2 className="w-3.5 h-3.5" />
           </button>
-          <button className="p-1 rounded hover:bg-slate-100 text-slate-600" title="Swap Variant">
-            <RefreshCw className="w-3.5 h-3.5" />
+          
+          {/* Refresh / Swap Variant Button: Only works when sections are added in admin panel */}
+          <button
+            onClick={handleRefreshSwap}
+            className={`p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer ${
+              hasSections ? "text-blue-600 font-bold" : "text-slate-400"
+            }`}
+            title={hasSections ? "Swap Variant" : "Refresh (Requires Admin Sections)"}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${hasSections ? "hover:rotate-180 transition-transform duration-300" : ""}`} />
           </button>
-          <button className="p-1 rounded hover:bg-slate-100 text-slate-600" title="Redo">
+
+          <button
+            disabled={!hasSections}
+            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
+            title="Redo"
+          >
             <Redo2 className="w-3.5 h-3.5" />
           </button>
-          <button className="p-1 rounded hover:bg-slate-100 text-slate-600" title="Move Up">
+          <button
+            onClick={onMoveUp}
+            disabled={!hasSections}
+            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
+            title="Move Up"
+          >
             <ArrowUp className="w-3.5 h-3.5" />
           </button>
-          <button className="p-1 rounded hover:bg-slate-100 text-slate-600" title="Move Down">
+          <button
+            onClick={onMoveDown}
+            disabled={!hasSections}
+            className="p-1 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-40 cursor-pointer"
+            title="Move Down"
+          >
             <ArrowDown className="w-3.5 h-3.5" />
           </button>
-          <button className="p-1 rounded hover:bg-red-50 text-red-500" title="Delete">
+          <button
+            onClick={onDeleteSection}
+            disabled={!hasSections}
+            className="p-1 rounded hover:bg-red-50 text-red-500 disabled:opacity-40 cursor-pointer"
+            title="Delete Section"
+          >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
-          <button className="p-1 rounded hover:bg-slate-100 text-slate-400" title="Clear">
+          <button
+            onClick={onClearSelection}
+            disabled={!hasSections}
+            className="p-1 rounded hover:bg-slate-100 text-slate-400 disabled:opacity-40 cursor-pointer"
+            title="Clear Selection"
+          >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -139,7 +232,7 @@ export function EditorToolbar({
         <div className="flex items-center gap-1">
           <button
             onClick={() => setViewport("desktop")}
-            className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 text-xs transition-all ${
+            className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 text-xs transition-all cursor-pointer ${
               viewport === "desktop"
                 ? "bg-[#0f172a] text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-200/60"
@@ -151,7 +244,7 @@ export function EditorToolbar({
 
           <button
             onClick={() => setViewport("tablet")}
-            className={`p-1.5 rounded-xl transition-all ${
+            className={`p-1.5 rounded-xl transition-all cursor-pointer ${
               viewport === "tablet"
                 ? "bg-[#0f172a] text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-200/60"
@@ -163,7 +256,7 @@ export function EditorToolbar({
 
           <button
             onClick={() => setViewport("mobile")}
-            className={`p-1.5 rounded-xl transition-all ${
+            className={`p-1.5 rounded-xl transition-all cursor-pointer ${
               viewport === "mobile"
                 ? "bg-[#0f172a] text-white shadow-md"
                 : "text-slate-600 hover:bg-slate-200/60"

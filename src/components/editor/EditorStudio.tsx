@@ -2,13 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Eye, Sparkles, Layers, Layout, HelpCircle } from "lucide-react";
+import { Plus, Eye, Sparkles, Layers, Layout } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
 
 type ViewportMode = "desktop" | "tablet" | "mobile";
+
+interface SectionItem {
+  id: string;
+  title: string;
+  variantIndex: number;
+}
+
+const VARIANTS = [
+  "Hero Banner Variant #1 (Academic Layout)",
+  "Hero Banner Variant #2 (Modern Centered)",
+  "Hero Banner Variant #3 (Split Media & Text)",
+];
 
 interface EditorStudioProps {
   subdomain?: string;
@@ -22,11 +34,73 @@ export function EditorStudio({
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [sections, setSections] = useState<Array<{ id: string; title: string }>>([]);
+  const [sections, setSections] = useState<SectionItem[]>([]);
+  const [activeSectionIndex, setActiveSectionIndex] = useState(0);
 
   const handleAddSection = () => {
     const newId = `sec-${sections.length + 1}`;
-    setSections([...sections, { id: newId, title: `Hero Banner Variant #${sections.length + 1}` }]);
+    setSections([
+      ...sections,
+      { id: newId, title: VARIANTS[0], variantIndex: 0 },
+    ]);
+    setActiveSectionIndex(sections.length);
+  };
+
+  const handleSwapVariant = () => {
+    if (sections.length === 0) return;
+    setSections((prev) =>
+      prev.map((sec, idx) => {
+        if (idx !== activeSectionIndex) return sec;
+        const nextVariant = (sec.variantIndex + 1) % VARIANTS.length;
+        return { ...sec, title: VARIANTS[nextVariant], variantIndex: nextVariant };
+      })
+    );
+  };
+
+  const handleDuplicateSection = () => {
+    if (sections.length === 0) return;
+    const current = sections[activeSectionIndex];
+    const duplicated = {
+      id: `sec-${Date.now()}`,
+      title: `${current.title} (Copy)`,
+      variantIndex: current.variantIndex,
+    };
+    setSections((prev) => [
+      ...prev.slice(0, activeSectionIndex + 1),
+      duplicated,
+      ...prev.slice(activeSectionIndex + 1),
+    ]);
+    setActiveSectionIndex(activeSectionIndex + 1);
+  };
+
+  const handleDeleteSection = () => {
+    if (sections.length === 0) return;
+    setSections((prev) => prev.filter((_, idx) => idx !== activeSectionIndex));
+    setActiveSectionIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleMoveUp = () => {
+    if (activeSectionIndex <= 0) return;
+    setSections((prev) => {
+      const copy = [...prev];
+      const temp = copy[activeSectionIndex];
+      copy[activeSectionIndex] = copy[activeSectionIndex - 1];
+      copy[activeSectionIndex - 1] = temp;
+      return copy;
+    });
+    setActiveSectionIndex((prev) => prev - 1);
+  };
+
+  const handleMoveDown = () => {
+    if (activeSectionIndex >= sections.length - 1) return;
+    setSections((prev) => {
+      const copy = [...prev];
+      const temp = copy[activeSectionIndex];
+      copy[activeSectionIndex] = copy[activeSectionIndex + 1];
+      copy[activeSectionIndex + 1] = temp;
+      return copy;
+    });
+    setActiveSectionIndex((prev) => prev + 1);
   };
 
   const viewportWidthClass =
@@ -92,18 +166,31 @@ export function EditorStudio({
           ) : (
             /* Rendered Sections */
             <div className="w-full space-y-6">
-              {sections.map((sec, idx) => (
-                <div key={sec.id} className="p-6 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Layers className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900">{sec.title}</h3>
-                      <p className="text-xs text-slate-500">Section #{idx + 1} • Interactive Live Block</p>
+              {sections.map((sec, idx) => {
+                const isActive = idx === activeSectionIndex;
+                return (
+                  <div
+                    key={sec.id}
+                    onClick={() => setActiveSectionIndex(idx)}
+                    className={`p-6 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                      isActive
+                        ? "bg-blue-50/60 border-blue-500 ring-2 ring-blue-500/20 shadow-md"
+                        : "bg-slate-50 border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Layers className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-slate-500"}`} />
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900">{sec.title}</h3>
+                        <p className="text-xs text-slate-500">
+                          Section #{idx + 1} • Interactive Live Block {isActive ? "(Selected)" : ""}
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-xs text-emerald-600 font-mono font-bold">LIVE PREVIEW</span>
                   </div>
-                  <span className="text-xs text-emerald-600 font-mono font-bold">LIVE PREVIEW</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -119,15 +206,20 @@ export function EditorStudio({
         subdomain={subdomain}
       />
 
-      {/* Floating Bottom Toolbar Dock matching Image 2 */}
+      {/* Floating Bottom Toolbar Dock */}
       <EditorToolbar
         onOpenSettings={() => setIsSettingsOpen(true)}
         onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
         viewport={viewport}
         setViewport={setViewport}
-        activeSectionTitle={sections.length > 0 ? sections[0].title : "Hero"}
+        activeSectionTitle={sections.length > 0 ? sections[activeSectionIndex]?.title : "Hero"}
         hasSections={sections.length > 0}
         onAddSection={handleAddSection}
+        onDuplicateSection={handleDuplicateSection}
+        onSwapVariant={handleSwapVariant}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        onDeleteSection={handleDeleteSection}
       />
 
     </div>
