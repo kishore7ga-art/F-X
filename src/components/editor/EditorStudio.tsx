@@ -98,13 +98,12 @@ export function EditorStudio({
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
   const [loadingDb, setLoadingDb] = useState(true);
 
-  // Section Selector Modal & Notification Toast
+  // Section Selector Modal
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastMessage = null;
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+  const showToast = (_msg?: string) => {
+    // Toast popups completely removed
   };
 
   // Active Page State
