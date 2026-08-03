@@ -172,16 +172,21 @@ export function EditorStudio({
     setActiveSectionIndex(0);
   };
 
-  // Select section category in modal: ONLY add if admin added it in DB!
+  // Select section category in modal: STRICTLY only add if admin added a section for THAT category!
   const handleSelectSectionCategory = (cat: typeof SECTION_CATEGORIES[0]) => {
     setShowAddSectionModal(false);
 
-    // Check if matching template/section exists in adminDbTemplates
-    const matchingAdminTemplate = adminDbTemplates.find(
-      (tpl) =>
-        tpl.name.toLowerCase().includes(cat.id) ||
-        tpl.name.toLowerCase().includes(cat.name.toLowerCase())
-    );
+    // Strictly find admin-added template matching the selected category
+    const matchingAdminTemplate = adminDbTemplates.find((tpl) => {
+      const nameLower = (tpl.name || "").toLowerCase();
+      const catIdLower = cat.id.toLowerCase();
+      const catNameLower = cat.name.toLowerCase();
+      return (
+        nameLower.includes(`[${catIdLower}]`) ||
+        nameLower.includes(catIdLower) ||
+        nameLower.includes(catNameLower)
+      );
+    });
 
     if (matchingAdminTemplate && matchingAdminTemplate.code) {
       const newSection: SectionItem = {
@@ -193,21 +198,9 @@ export function EditorStudio({
       setSections((prev) => [...prev, newSection]);
       setActiveSectionIndex(sections.length);
       showToast(`Added Admin Section: "${matchingAdminTemplate.name}"`);
-    } else if (adminDbTemplates.length > 0) {
-      // Use the first available admin section as fallback
-      const adminSection = adminDbTemplates[0];
-      const newSection: SectionItem = {
-        id: `sec-${Date.now()}`,
-        title: `${cat.name} (${adminSection.name})`,
-        code: adminSection.code || DEFAULT_STARTER_CODE,
-        variantIndex: 0,
-      };
-      setSections((prev) => [...prev, newSection]);
-      setActiveSectionIndex(sections.length);
-      showToast(`Added Admin Section: "${adminSection.name}"`);
     } else {
-      // NO section added in Admin Panel yet -> DO NOT ADD ANYTHING!
-      showToast(`No section for "${cat.name}" added in Admin Panel yet. Please add it in Admin Control Room first!`);
+      // STRICT: NO MATCHING SECTION ADDED BY ADMIN -> DO NOT ADD ANYTHING!
+      showToast(`No "${cat.name}" section has been added in Admin Panel yet. Please upload code for "${cat.name}" in Admin Control Room first!`);
     }
   };
 
