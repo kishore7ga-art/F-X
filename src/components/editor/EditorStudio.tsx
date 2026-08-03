@@ -362,13 +362,6 @@ export function EditorStudio({
             <Eye className="w-3.5 h-3.5" />
             <span>Visit Live Site ↗</span>
           </button>
-          <UserProfileMenu
-            collegeName={collegeName}
-            onOpenSettings={(tab) => {
-              setSettingsTab(tab);
-              setIsSettingsOpen(true);
-            }}
-          />
         </div>
       </header>
 
