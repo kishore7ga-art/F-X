@@ -142,8 +142,41 @@ export function EditorStudio({
   // Active Page State
   const [currentPage, setCurrentPage] = useState({ name: "Home", slug: "/home" });
 
+  // Per-Page Persistent Auto-Save Store
+  const [pageStore, setPageStore] = useState<Record<string, SectionItem[]>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("xite_saved_pages");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {};
+  });
+
+  // Auto-save active sections to pageStore & localStorage whenever sections update
+  useEffect(() => {
+    if (sections.length > 0 && currentPage.slug) {
+      setPageStore((prev) => {
+        const updated = { ...prev, [currentPage.slug]: sections };
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("xite_saved_pages", JSON.stringify(updated));
+          } catch {}
+        }
+        return updated;
+      });
+    }
+  }, [sections, currentPage.slug]);
+
   // Fetch sections/templates added by Admin in the Database
   const fetchDbSections = async (slug: string = "/home") => {
+    // If page is already saved in pageStore, load it directly
+    if (pageStore[slug] && pageStore[slug].length > 0) {
+      setSections(pageStore[slug]);
+      setActiveSectionIndex(0);
+      return;
+    }
+
     try {
       setLoadingDb(true);
       const res = await fetch("/api/v1/admin/templates", {
@@ -186,10 +219,31 @@ export function EditorStudio({
 
   useEffect(() => {
     void fetchDbSections(currentPage.slug);
-  }, [currentPage.slug]);
+  }, []);
 
   const handlePageChange = (pageName: string, pageSlug: string) => {
+    // 1. Auto-save current page sections first
+    setPageStore((prev) => {
+      const updated = { ...prev, [currentPage.slug]: sections };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("xite_saved_pages", JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+
+    // 2. Set new active page
     setCurrentPage({ name: pageName, slug: pageSlug });
+
+    // 3. Load saved sections for target page if already in pageStore
+    if (pageStore[pageSlug] && pageStore[pageSlug].length > 0) {
+      setSections(pageStore[pageSlug]);
+      setActiveSectionIndex(0);
+      return;
+    }
+
+    // Otherwise load default template for target page
     const pageCode = PAGE_SECTION_TEMPLATES[pageSlug] || `<!-- ${pageName} Section -->
 <section style="background: #09090b; color: #ffffff; padding: 90px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
   <div style="max-width: 850px; margin: 0 auto;">
@@ -201,9 +255,10 @@ export function EditorStudio({
   </div>
 </section>`;
 
-    setSections([
-      { id: `sec-${pageSlug}-${Date.now()}`, title: `${pageName} Section`, code: pageCode, variantIndex: 0 }
-    ]);
+    const initialSections = [
+      { id: `page-${pageSlug}`, title: `${pageName} Banner`, code: pageCode, variantIndex: 0 },
+    ];
+    setSections(initialSections);
     setActiveSectionIndex(0);
   };
 
