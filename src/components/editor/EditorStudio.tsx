@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Eye, Sparkles, Layers, Layout, RefreshCw } from "lucide-react";
+import { Plus, Eye, Sparkles, Layout, RefreshCw } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
@@ -18,20 +18,20 @@ interface SectionItem {
 }
 
 const DEFAULT_STARTER_CODE = `<!-- Default Hero Section -->
-<section style="background: #0f172a; color: #fff; padding: 70px 24px; text-align: center; font-family: system-ui, sans-serif; border-radius: 16px;">
-  <div style="max-width: 800px; margin: 0 auto;">
-    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; color: #60a5fa; letter-spacing: 0.08em; text-transform: uppercase;">
+<section style="background: #0f172a; color: #fff; padding: 80px 24px; text-align: center; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
+  <div style="max-width: 900px; margin: 0 auto;">
+    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; color: #60a5fa; letter-spacing: 0.08em; text-transform: uppercase;">
       Official Campus Portal
     </span>
-    <h1 style="font-size: 42px; font-weight: 900; margin-top: 20px; line-height: 1.15; color: #fff;">
+    <h1 style="font-size: 48px; font-weight: 900; margin-top: 24px; line-height: 1.15; color: #ffffff; letter-spacing: -0.02em;">
       Excellence in Higher Education & Global Research
     </h1>
-    <p style="font-size: 15px; color: #94a3b8; margin-top: 14px; line-height: 1.6;">
+    <p style="font-size: 16px; color: #94a3b8; margin-top: 16px; line-height: 1.6; max-width: 700px; margin-left: auto; margin-right: auto;">
       Empowering future leaders with world-class faculty, modern laboratories, and vibrant campus life.
     </p>
-    <div style="margin-top: 28px; display: flex; justify-content: center; gap: 14px;">
-      <a href="#explore" style="background: #2563eb; color: #fff; padding: 12px 26px; border-radius: 12px; font-size: 13px; font-weight: 800; text-decoration: none;">Explore Programs</a>
-      <a href="#contact" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; padding: 12px 26px; border-radius: 12px; font-size: 13px; font-weight: 800; text-decoration: none;">Contact Admissions</a>
+    <div style="margin-top: 32px; display: flex; justify-content: center; gap: 16px;">
+      <a href="#explore" style="background: #2563eb; color: #ffffff; padding: 14px 30px; border-radius: 12px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block;">Explore Programs</a>
+      <a href="#contact" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #ffffff; padding: 14px 30px; border-radius: 12px; font-size: 14px; font-weight: 800; text-decoration: none; display: inline-block;">Contact Admissions</a>
     </div>
   </div>
 </section>`;
@@ -73,7 +73,7 @@ export function EditorStudio({
         }
       }
     } catch {
-      // Backend not reached or empty DB
+      // Fallback
     } finally {
       setLoadingDb(false);
     }
@@ -151,7 +151,7 @@ export function EditorStudio({
 
   const viewportWidthClass =
     viewport === "desktop"
-      ? "max-w-6xl"
+      ? "max-w-7xl"
       : viewport === "tablet"
       ? "max-w-2xl"
       : "max-w-sm";
@@ -194,13 +194,13 @@ export function EditorStudio({
       </header>
 
       {/* Main Canvas Workspace */}
-      <main className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-start pb-32">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8 flex flex-col items-center justify-start pb-32">
         <div
-          className={`w-full ${viewportWidthClass} transition-all duration-300 min-h-[70vh] bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center relative`}
+          className={`w-full ${viewportWidthClass} transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-center relative`}
         >
           {sections.length === 0 ? (
             /* Empty Canvas State */
-            <div className="text-center space-y-4 max-w-md p-8">
+            <div className="text-center space-y-4 max-w-md p-8 bg-white border border-slate-200 rounded-3xl shadow-xl">
               <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto text-slate-700">
                 <Layout className="w-8 h-8" />
               </div>
@@ -217,40 +217,23 @@ export function EditorStudio({
               </button>
             </div>
           ) : (
-            /* Live Rendered HTML Sections */
-            <div className="w-full space-y-8">
+            /* Pure Seamless Section Rendering — No Inner Lines, Headers, or Scrollbars */
+            <div className="w-full space-y-0 rounded-2xl overflow-hidden shadow-2xl border border-slate-200 bg-black">
               {sections.map((sec, idx) => {
                 const isActive = idx === activeSectionIndex;
                 return (
                   <div
                     key={sec.id}
                     onClick={() => setActiveSectionIndex(idx)}
-                    className={`rounded-2xl border transition-all cursor-pointer overflow-hidden relative ${
-                      isActive
-                        ? "border-blue-500 ring-4 ring-blue-500/20 shadow-xl"
-                        : "border-slate-200 hover:border-slate-300 shadow"
+                    className={`w-full transition-all cursor-pointer relative ${
+                      isActive ? "ring-2 ring-blue-500 z-10" : ""
                     }`}
                   >
-                    {/* Section Header Bar */}
-                    <div className="p-3 bg-slate-900 text-white flex items-center justify-between text-xs font-extrabold border-b border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-blue-400" />
-                        <span>{sec.title}</span>
-                      </div>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                        {isActive ? "ACTIVE EDITING" : "LIVE PREVIEW"}
-                      </span>
-                    </div>
-
-                    {/* Live HTML/CSS Section Render Frame */}
-                    <div className="w-full min-h-[250px] bg-slate-950 p-2 overflow-hidden">
-                      <iframe
-                        title={sec.title}
-                        srcDoc={sec.code}
-                        className="w-full min-h-[300px] border-0 rounded-xl bg-slate-950 pointer-events-none"
-                        sandbox="allow-scripts"
-                      />
-                    </div>
+                    {/* Rendered HTML Section directly with zero iframe scrollbars */}
+                    <div
+                      dangerouslySetInnerHTML={{ __html: sec.code }}
+                      className="w-full overflow-hidden"
+                    />
                   </div>
                 );
               })}
