@@ -25,6 +25,7 @@ type ViewportMode = "desktop" | "tablet" | "mobile";
 interface EditorToolbarProps {
   onOpenSettings: () => void;
   onToggleDrawer: () => void;
+  isSettingsOpen?: boolean;
   viewport: ViewportMode;
   setViewport: (v: ViewportMode) => void;
   activeSectionTitle?: string;
@@ -41,6 +42,7 @@ interface EditorToolbarProps {
 export function EditorToolbar({
   onOpenSettings,
   onToggleDrawer,
+  isSettingsOpen = false,
   viewport,
   setViewport,
   activeSectionTitle = "Hero",
@@ -101,13 +103,17 @@ export function EditorToolbar({
       {/* Outer Dock Container */}
       <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-2 flex items-center gap-2 text-slate-700 text-xs font-sans">
         
-        {/* 1. Dark Navy Square Button: Opens XITE Studio Settings Page */}
+        {/* 1. Dark Navy Square Button: Toggles XITE Studio Settings Page On/Off */}
         <button
           onClick={onOpenSettings}
           className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-md"
-          title="Open XITE Studio Settings (Publishing, Custom Domain & SSL)"
+          title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
         >
-          <SlidersHorizontal className="w-4 h-4 text-white" />
+          {isSettingsOpen ? (
+            <X className="w-4 h-4 text-white" />
+          ) : (
+            <SlidersHorizontal className="w-4 h-4 text-white" />
+          )}
         </button>
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />

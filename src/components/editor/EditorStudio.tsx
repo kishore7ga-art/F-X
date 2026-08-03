@@ -384,7 +384,8 @@ export function EditorStudio({
 
       {/* Floating Bottom Toolbar Dock */}
       <EditorToolbar
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
+        isSettingsOpen={isSettingsOpen}
         onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
         viewport={viewport}
         setViewport={setViewport}
