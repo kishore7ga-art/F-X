@@ -13,11 +13,11 @@ import {
   ArrowUp,
   ArrowDown,
   Trash2,
-  X,
   Monitor,
   Tablet,
   Smartphone,
   Check,
+  Repeat,
 } from "lucide-react";
 
 type ViewportMode = "desktop" | "tablet" | "mobile";
@@ -77,14 +77,15 @@ export function EditorToolbar({
     }, 600);
   };
 
-  const handleRefreshSwap = () => {
+  // Replace / Swap Section Feature
+  const handleReplaceSection = () => {
     if (!hasSections) {
-      showToast("Refresh / Swap works when sections are added in Admin Panel!");
+      showToast("Replace Section works when sections are added in Admin Panel!");
       return;
     }
     if (onSwapVariant) {
       onSwapVariant();
-      showToast("Swapping section variant...");
+      showToast("Replacing section variant with next template...");
     }
   };
 
@@ -98,22 +99,30 @@ export function EditorToolbar({
         </div>
       )}
 
-      {/* Outer Dock Container (Light slate rounded pill container matching image 2) */}
+      {/* Outer Dock Container */}
       <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-2 flex items-center gap-2 text-slate-700 text-xs font-sans">
         
-        {/* 1. Dark Navy Close/Menu Square Button */}
+        {/* 1. Dark Navy Square Button: REPLACEMENT FEATURE */}
         <button
-          onClick={onToggleDrawer}
-          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-md"
-          title="Toggle Drawer (Pages, Colors, Fonts)"
+          onClick={handleReplaceSection}
+          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-md group"
+          title={hasSections ? "Replace Section Variant" : "Replace Section (Requires Admin Sections)"}
         >
-          <span className="text-sm font-extrabold">✕</span>
+          <Repeat className="w-4 h-4 text-white group-hover:rotate-180 transition-transform duration-300" />
         </button>
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
-        {/* 2. System Tools Pill */}
+        {/* 2. System Tools & Drawer Pill */}
         <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1 flex items-center gap-1.5">
+          <button
+            onClick={onToggleDrawer}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+            title="Pages, Colors & Fonts Drawer"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
+
           <button
             onClick={onOpenSettings}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
@@ -174,13 +183,12 @@ export function EditorToolbar({
             <Undo2 className="w-3.5 h-3.5" />
           </button>
           
-          {/* Refresh / Swap Variant Button: Only works when sections are added in admin panel */}
           <button
-            onClick={handleRefreshSwap}
+            onClick={handleReplaceSection}
             className={`p-1 rounded hover:bg-slate-100 transition-colors cursor-pointer ${
               hasSections ? "text-blue-600 font-bold" : "text-slate-400"
             }`}
-            title={hasSections ? "Swap Variant" : "Refresh (Requires Admin Sections)"}
+            title={hasSections ? "Replace Variant" : "Replace Section (Requires Admin Sections)"}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${hasSections ? "hover:rotate-180 transition-transform duration-300" : ""}`} />
           </button>
@@ -208,60 +216,53 @@ export function EditorToolbar({
           >
             <ArrowDown className="w-3.5 h-3.5" />
           </button>
+
+          <div className="h-4 w-px bg-slate-200 mx-0.5" />
+
           <button
             onClick={onDeleteSection}
             disabled={!hasSections}
-            className="p-1 rounded hover:bg-red-50 text-red-500 disabled:opacity-40 cursor-pointer"
+            className="p-1 rounded hover:bg-red-50 text-red-600 disabled:opacity-40 cursor-pointer"
             title="Delete Section"
           >
             <Trash2 className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={onClearSelection}
-            disabled={!hasSections}
-            className="p-1 rounded hover:bg-slate-100 text-slate-400 disabled:opacity-40 cursor-pointer"
-            title="Clear Selection"
-          >
-            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="h-5 w-px bg-slate-300 mx-0.5" />
 
         {/* 4. Viewport Switcher Pill */}
-        <div className="flex items-center gap-1">
+        <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-1 flex items-center gap-1">
           <button
             onClick={() => setViewport("desktop")}
-            className={`px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 text-xs transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               viewport === "desktop"
-                ? "bg-[#0f172a] text-white shadow-md"
-                : "text-slate-600 hover:bg-slate-200/60"
+                ? "bg-slate-900 text-white font-extrabold shadow-sm"
+                : "text-slate-500 hover:text-slate-900"
             }`}
+            title="Desktop Viewport (1200px)"
           >
-            <Monitor className="w-3.5 h-3.5" />
-            <span>1200px</span>
+            <Monitor className="w-4 h-4" />
           </button>
-
           <button
             onClick={() => setViewport("tablet")}
-            className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               viewport === "tablet"
-                ? "bg-[#0f172a] text-white shadow-md"
-                : "text-slate-600 hover:bg-slate-200/60"
+                ? "bg-slate-900 text-white font-extrabold shadow-sm"
+                : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Tablet (768px)"
+            title="Tablet Viewport (768px)"
           >
             <Tablet className="w-4 h-4" />
           </button>
-
           <button
             onClick={() => setViewport("mobile")}
-            className={`p-1.5 rounded-xl transition-all cursor-pointer ${
+            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
               viewport === "mobile"
-                ? "bg-[#0f172a] text-white shadow-md"
-                : "text-slate-600 hover:bg-slate-200/60"
+                ? "bg-slate-900 text-white font-extrabold shadow-sm"
+                : "text-slate-500 hover:text-slate-900"
             }`}
-            title="Mobile (375px)"
+            title="Mobile Viewport (375px)"
           >
             <Smartphone className="w-4 h-4" />
           </button>
