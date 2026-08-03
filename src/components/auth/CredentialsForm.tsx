@@ -8,14 +8,14 @@ import { loginAction } from "@/app/actions/auth";
 
 export function CredentialsForm({
   notice,
-  initialEmail = "kishore7ga@gmail.com",
+  initialEmail = "",
 }: {
   notice?: string | null;
   initialEmail?: string;
   showGoogleButton?: boolean;
 }) {
   const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState("kishore@7");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,11 +36,7 @@ export function CredentialsForm({
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  function handleDemoFill() {
-    setEmail("kishore7ga@gmail.com");
-    setPassword("kishore@7");
-    setError(null);
-  }
+
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,22 +153,7 @@ export function CredentialsForm({
               </p>
             </div>
 
-            {/* Demo Autofill Quick Pill */}
-            <button
-              type="button"
-              onClick={handleDemoFill}
-              className="w-full mb-6 flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50/70 px-4 py-3 text-left transition hover:bg-blue-100/80 group"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <Sparkles className="h-4 w-4 text-blue-600 shrink-0" />
-                <span className="text-xs font-bold text-blue-900 truncate">
-                  Auto-fill Demo Admin Credentials
-                </span>
-              </div>
-              <span className="text-xs font-bold text-blue-600 group-hover:translate-x-0.5 transition-transform shrink-0">
-                Fill →
-              </span>
-            </button>
+
 
             {notice ? (
               <div className="mb-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
