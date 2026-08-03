@@ -77,14 +77,14 @@ export function HeaderNavbar() {
         {/* Primary CTA Buttons */}
         <div className="hidden sm:flex items-center gap-3">
           <Link
-            href="/editor/greenfield"
+            href="/login"
             className="text-xs font-bold text-neutral-300 hover:text-white px-3 py-2 transition-colors"
           >
             Launch Editor
           </Link>
 
           {/* Lit up border button */}
-          <Link href="/editor/greenfield" className="p-[3px] relative inline-block group">
+          <Link href="/login" className="p-[3px] relative inline-block group">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full" />
             <div className="px-5 py-2 bg-black rounded-full relative group transition duration-200 text-white text-xs font-bold hover:bg-transparent flex items-center justify-center gap-1.5">
               <span>Start Editing Now</span>

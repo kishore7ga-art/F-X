@@ -110,7 +110,7 @@ export function HeroSection() {
                                     }}
                                     className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
                                     <div key={1}>
-                                        <Link href="/editor/greenfield" className="p-[3px] relative inline-block group">
+                                        <Link href="/login" className="p-[3px] relative inline-block group">
                                             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl" />
                                             <div className="px-8 py-3 bg-black rounded-[10px] relative group transition duration-200 text-white font-bold text-base hover:bg-transparent flex items-center justify-center gap-2">
                                                 <span>Start Editing Now</span>
