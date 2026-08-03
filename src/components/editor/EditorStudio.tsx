@@ -303,6 +303,75 @@ export function EditorStudio({
     setActiveSectionIndex(0);
   };
 
+  // Handle double-click inline text editing directly on section canvas
+  const handleSectionDoubleClick = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
+    const target = e.target as HTMLElement;
+    if (!target) return;
+
+    // Tags that can be edited inline
+    const editableTags = ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "A", "BUTTON", "LI", "STRONG", "EM", "B", "I", "TD", "TH"];
+
+    let textElem: HTMLElement | null = target;
+    while (textElem && textElem !== e.currentTarget && !editableTags.includes(textElem.tagName)) {
+      textElem = textElem.parentElement;
+    }
+
+    if (!textElem || textElem === e.currentTarget) {
+      textElem = target;
+    }
+
+    // Enable inline content editing
+    textElem.contentEditable = "true";
+    textElem.focus();
+
+    // Visual editing indicator highlight
+    textElem.style.outline = "2px dashed #2563eb";
+    textElem.style.outlineOffset = "4px";
+    textElem.style.borderRadius = "4px";
+
+    e.stopPropagation();
+
+    const container = e.currentTarget;
+
+    const saveUpdatedContent = () => {
+      textElem!.contentEditable = "false";
+      textElem!.style.outline = "";
+      textElem!.style.outlineOffset = "";
+      textElem!.style.borderRadius = "";
+
+      // Clean up contentEditable attributes before saving HTML to user's local page state
+      const clone = container.cloneNode(true) as HTMLElement;
+      const badges = clone.querySelectorAll('.pointer-events-none');
+      badges.forEach((b) => b.remove());
+
+      const editables = clone.querySelectorAll('[contenteditable]');
+      editables.forEach((el) => {
+        el.removeAttribute('contenteditable');
+        (el as HTMLElement).style.outline = '';
+        (el as HTMLElement).style.outlineOffset = '';
+        (el as HTMLElement).style.borderRadius = '';
+      });
+
+      const newCode = clone.innerHTML;
+      if (newCode) {
+        setSections((prev) =>
+          prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
+        );
+      }
+    };
+
+    textElem.onblur = () => {
+      saveUpdatedContent();
+    };
+
+    textElem.onkeydown = (keyEvent) => {
+      if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
+        keyEvent.preventDefault();
+        textElem!.blur();
+      }
+    };
+  };
+
   // Select section category in modal: Fetch latest Admin DB templates and insert exact Admin code!
   const handleSelectSectionCategory = async (cat: typeof SECTION_CATEGORIES[0]) => {
     setShowAddSectionModal(false);
@@ -527,10 +596,16 @@ export function EditorStudio({
                     e.stopPropagation();
                     setActiveSectionIndex(idx);
                   }}
-                  className={`w-full cursor-pointer relative transition-all ${
+                  onDoubleClick={(e) => handleSectionDoubleClick(e, idx)}
+                  className={`w-full cursor-pointer relative transition-all group ${
                     activeSectionIndex === idx ? "ring-2 ring-blue-600 ring-offset-2 z-10" : ""
                   }`}
                 >
+                  {activeSectionIndex === idx && (
+                    <div className="absolute top-3 right-4 z-30 bg-blue-600/90 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-md pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity">
+                      ✏️ Double-click text to edit inline
+                    </div>
+                  )}
                   <div
                     dangerouslySetInnerHTML={{ __html: autoCorrectMobileCode(sec.code, viewportWidth) }}
                     className="w-full overflow-hidden"
