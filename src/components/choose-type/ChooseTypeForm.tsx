@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { COLLEGE_TYPES } from "@/lib/college-types";
 
 const TYPE_ICONS: Record<string, string> = {
@@ -22,13 +22,15 @@ export function ChooseTypeForm() {
     e.preventDefault();
     setLoading(true);
     setTimeout(() => {
-      router.push("/editor");
+      router.push("/editor/greenfield");
     }, 600);
   }
 
+  const selectedLabel = COLLEGE_TYPES.find((t) => t.value === selectedType)?.label || "Engineering";
+
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto space-y-8">
-      {/* Category Grid */}
+    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto space-y-8 text-left">
+      {/* Category Grid (Matches Screenshot 1 Card Layout Exactly) */}
       <div className="grid gap-4 sm:grid-cols-2">
         {COLLEGE_TYPES.map((type) => {
           const isSelected = selectedType === type.value;
@@ -38,30 +40,32 @@ export function ChooseTypeForm() {
               onClick={() => setSelectedType(type.value)}
               className={`group relative p-5 rounded-2xl border transition-all cursor-pointer select-none ${
                 isSelected
-                  ? "bg-blue-600/10 border-blue-500 shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/20"
-                  : "bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90"
+                  ? "bg-[#09142b]/90 border-blue-500 shadow-[0_0_25px_rgba(37,99,235,0.3)] ring-1 ring-blue-500/50"
+                  : "bg-[#090d16]/80 border-blue-900/30 hover:border-blue-700/60 hover:bg-[#0b1222]"
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3.5">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-2xl group-hover:scale-110 transition-transform">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#0e172a] border border-blue-900/40 text-xl group-hover:scale-105 transition-transform shadow-inner">
                     {TYPE_ICONS[type.value] ?? "🏫"}
-                  </span>
-                  <div>
-                    <h3 className={`text-base font-extrabold transition-colors ${isSelected ? "text-blue-400" : "text-white"}`}>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className={`text-sm font-black transition-colors ${isSelected ? "text-white" : "text-neutral-200"}`}>
                       {type.label}
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    <p className="text-[11px] text-neutral-400 mt-0.5 leading-relaxed truncate font-medium">
                       {type.hint}
                     </p>
                   </div>
                 </div>
 
-                <div className="shrink-0 mt-1">
+                <div className="shrink-0">
                   {isSelected ? (
-                    <CheckCircle2 className="h-5 w-5 text-blue-500" />
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_0_10px_#2563eb]">
+                      <CheckCircle2 className="h-4 w-4 text-white" />
+                    </div>
                   ) : (
-                    <div className="h-5 w-5 rounded-full border border-slate-700 group-hover:border-slate-600" />
+                    <Circle className="h-5 w-5 text-neutral-600 group-hover:text-neutral-400" />
                   )}
                 </div>
               </div>
@@ -70,17 +74,17 @@ export function ChooseTypeForm() {
         })}
       </div>
 
-      {/* Action Button */}
+      {/* Action Button (Matches Screenshot 1 Glowing Gradient CTA) */}
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 py-4 px-6 text-sm font-extrabold text-white shadow-xl shadow-blue-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+        className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm shadow-[0_0_35px_rgba(37,99,235,0.45)] transition-all flex items-center justify-center gap-2 cursor-pointer border border-blue-400/40 disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99]"
       >
         {loading ? (
           <span>Saving your selection...</span>
         ) : (
           <>
-            <span>Continue with {COLLEGE_TYPES.find((t) => t.value === selectedType)?.label}</span>
+            <span>Continue with {selectedLabel}</span>
             <ArrowRight className="h-4 w-4" />
           </>
         )}
