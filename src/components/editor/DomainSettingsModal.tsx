@@ -224,15 +224,19 @@ export function DomainSettingsModal({
           </div>
 
           {/* Bottom User Pill */}
-          <div className="p-3 bg-white border border-slate-200 rounded-2xl shadow-sm flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-xs">
+          <button
+            onClick={() => setActiveTab("security")}
+            className="w-full text-left p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center gap-3 transition-all cursor-pointer group"
+            title="View Owner Account Details & Security"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-xs group-hover:scale-105 transition-transform">
               K
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-extrabold text-slate-900">Kishore</span>
-              <span className="text-[10px] text-slate-500 font-semibold">Owner Account</span>
+              <span className="text-[10px] text-blue-600 font-bold group-hover:underline">Owner Account · Account Details ↗</span>
             </div>
-          </div>
+          </button>
         </aside>
 
         {/* Dynamic Content Area */}
