@@ -20,7 +20,7 @@ import {
   Check,
 } from "lucide-react";
 
-export const DESKTOP_RESOLUTIONS = ["1536px", "1920px", "2560px"];
+export const DESKTOP_RESOLUTIONS = ["1200px", "1536px", "1920px", "2560px"];
 export const TABLET_RESOLUTIONS = ["768px", "820px", "834px", "1024px", "1280px", "1366px", "1440px"];
 export const MOBILE_RESOLUTIONS = ["320px", "360px", "375px", "390px"];
 
