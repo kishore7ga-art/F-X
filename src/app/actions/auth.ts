@@ -30,7 +30,7 @@ export async function loginAction(
       store.set(COOKIE_NAME, response.token, sessionCookieOptions());
     }
 
-    const next = "/choose-type";
+    const next = `/editor/${response.subdomain || "greenfield"}`;
     return { success: true, next };
   } catch (cause) {
     if (cause instanceof ServerApiError) {
