@@ -21,22 +21,35 @@ export function SignUpForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    const cleanEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setError("Please enter a valid email address (e.g. mageshwari@gmail.com).");
+      return;
+    }
+
+    if (!password || password.length < 4) {
+      setError("Password must be at least 4 characters long.");
+      return;
+    }
+
     setPending(true);
 
     try {
       await requestAccessRequest({
-        name,
-        email,
+        name: name.trim(),
+        email: cleanEmail,
         password,
-        organization,
-        message: `Website: ${website} | Mobile: ${mobile}`,
+        organization: organization.trim(),
+        message: `Website: ${website.trim()} | Mobile: ${mobile.trim()}`,
       });
       window.location.assign("/login?requested=1");
     } catch (cause) {
       setError(
         cause instanceof ApiError
           ? cause.message
-          : "Could not send your access request. Please try again.",
+          : "Could not send your access request. Please check your details and try again.",
       );
       setPending(false);
     }
