@@ -18,6 +18,7 @@ import {
   Tablet,
   Smartphone,
   Check,
+  Layers,
 } from "lucide-react";
 
 interface EditorToolbarProps {
@@ -235,10 +236,10 @@ export function EditorToolbar({
           {onSyncAdminWebsite && (
             <button
               onClick={onSyncAdminWebsite}
-              className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors cursor-pointer"
-              title="Sync & Load All Admin Default Website Section Boxes"
+              className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors cursor-pointer"
+              title="Load / Re-sync Admin Default Website Layout"
             >
-              <RefreshCw className="w-4 h-4" />
+              <Layers className="w-4 h-4" />
             </button>
           )}
         </div>
