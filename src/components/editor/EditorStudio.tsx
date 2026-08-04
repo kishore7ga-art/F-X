@@ -586,28 +586,39 @@ export function EditorStudio({
       } catch {}
     }
 
-    // Determine category ID of active section (e.g. hero, courses, about, faculty, contact, footer)
+    // Determine category ID of active section (hero, stats, features, about, courses, placements, faculty, contact, footer)
     const titleLower = activeSec.title.toLowerCase();
     let catId = "hero";
-    if (titleLower.includes("about")) catId = "about";
-    if (titleLower.includes("course") || titleLower.includes("academic")) catId = "courses";
-    if (titleLower.includes("faculty") || titleLower.includes("staff")) catId = "faculty";
-    if (titleLower.includes("contact")) catId = "contact";
-    if (titleLower.includes("footer")) catId = "footer";
+    if (titleLower.includes("stat")) catId = "stats";
+    else if (titleLower.includes("feature") || titleLower.includes("highlight")) catId = "features";
+    else if (titleLower.includes("about")) catId = "about";
+    else if (titleLower.includes("course") || titleLower.includes("academic")) catId = "courses";
+    else if (titleLower.includes("placement") || titleLower.includes("career")) catId = "placements";
+    else if (titleLower.includes("faculty") || titleLower.includes("staff")) catId = "faculty";
+    else if (titleLower.includes("contact")) catId = "contact";
+    else if (titleLower.includes("footer")) catId = "footer";
+    else if (titleLower.includes("hero") || titleLower.includes("banner")) catId = "hero";
 
-    // Filter DB templates matching active category
+    // Filter DB templates matching active category ONLY
     const catTemplates = templatesList.filter((tpl) => {
       const nameLower = (tpl.name || "").toLowerCase();
-      return nameLower.includes(`[${catId}]`) || nameLower.includes(catId);
+      return (
+        nameLower.includes(`[${catId}]`) ||
+        nameLower.includes(catId) ||
+        (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight"))) ||
+        (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric"))) ||
+        (catId === "hero" && (nameLower.includes("hero") || nameLower.includes("banner"))) ||
+        (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic"))) ||
+        (catId === "about" && nameLower.includes("about")) ||
+        (catId === "contact" && nameLower.includes("contact"))
+      );
     });
 
-    const availableTemplates = catTemplates.length > 0 ? catTemplates : templatesList;
-
-    if (availableTemplates.length > 0) {
+    if (catTemplates.length > 0) {
       // Find current template index in available category templates
-      const currentTplIdx = availableTemplates.findIndex((tpl) => tpl.name === activeSec.title);
-      const nextIdx = currentTplIdx >= 0 ? (currentTplIdx + 1) % availableTemplates.length : (activeSec.variantIndex !== undefined ? (activeSec.variantIndex + 1) % availableTemplates.length : 0);
-      const nextTpl = availableTemplates[nextIdx]!;
+      const currentTplIdx = catTemplates.findIndex((tpl) => tpl.name === activeSec.title);
+      const nextIdx = currentTplIdx >= 0 ? (currentTplIdx + 1) % catTemplates.length : (activeSec.variantIndex !== undefined ? (activeSec.variantIndex + 1) % catTemplates.length : 0);
+      const nextTpl = catTemplates[nextIdx]!;
 
       setSections((prev) =>
         prev.map((sec, idx) => {
@@ -620,11 +631,11 @@ export function EditorStudio({
           };
         })
       );
-      showToast(`Swapped to Admin Variant: "${nextTpl.name}"`);
+      showToast(`Swapped to ${catId.toUpperCase()} Admin Variant: "${nextTpl.name}"`);
       return;
     }
 
-    // Fallback: Cycle visual layout variations (Centered -> Left Aligned -> Slate Dark)
+    // Fallback if no specific category DB template exists: Cycle visual layout variations of THIS SAME section without changing category/title
     const currentIdx = activeSec.variantIndex !== undefined ? activeSec.variantIndex : 0;
     const nextIdx = (currentIdx + 1) % 3;
 
@@ -658,8 +669,7 @@ export function EditorStudio({
         };
       })
     );
-
-    showToast(`Swapped layout to Variant ${nextIdx + 1}`);
+    showToast(`Swapped ${baseTitle} to Layout Variant ${nextIdx + 1}`);
   };
 
   const handleDuplicateSection = () => {
