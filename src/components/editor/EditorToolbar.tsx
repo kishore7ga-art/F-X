@@ -55,6 +55,7 @@ export function EditorToolbar({
   onMoveDown,
   onDeleteSection,
   onClearSelection,
+  onSyncAdminWebsite,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
