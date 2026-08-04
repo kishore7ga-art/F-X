@@ -1,5 +1,5 @@
 {
-  "prisma/schema.prisma": "121b26cde1f02703",
+  "prisma/schema.prisma": "d7af38a046589bd2",
   "prisma/seed.ts": "c2e7507546ebc884",
   "src/lib/college-types.ts": "5ce8b64726f06c15",
   "src/lib/json-stable.ts": "6141a2d81b86d2fc",
