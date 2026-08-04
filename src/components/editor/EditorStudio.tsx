@@ -184,6 +184,15 @@ export function EditorStudio({
     try {
       setLoadingDb(true);
 
+      // 1. If page is already saved by user in pageStore and forceSync is false, load user's saved sections!
+      const currentSaved = pageStore[slug];
+      if (!forceSync && currentSaved !== undefined && Array.isArray(currentSaved)) {
+        setSections(currentSaved);
+        setActiveSectionIndex(currentSaved.length > 0 ? 0 : null);
+        setLoadingDb(false);
+        return;
+      }
+
       let fetchedTemplates: any[] = [];
       try {
         const res = await fetch("/api/v1/admin/templates", {
@@ -198,7 +207,7 @@ export function EditorStudio({
         }
       } catch {}
 
-      // 1. Fetch Admin-configured Default Website Structure for all pages first
+      // 2. Fetch Admin-configured Default Website Structure for new pages
       try {
         const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
         const defRes = await fetch(`${apiBase}/api/v1/default-website`);
@@ -217,18 +226,15 @@ export function EditorStudio({
                 variantIndex: 0,
               }));
 
-              const currentSaved = pageStore[slug];
-              if (forceSync || !currentSaved || currentSaved.length < loadedSections.length) {
-                setSections(loadedSections);
-                setActiveSectionIndex(0);
-                setPageStore((prev) => ({ ...prev, [slug]: loadedSections }));
-                if (typeof window !== "undefined") {
-                  try {
-                    localStorage.setItem("xite_saved_pages", JSON.stringify({ ...pageStore, [slug]: loadedSections }));
-                  } catch {}
-                }
-                return;
+              setSections(loadedSections);
+              setActiveSectionIndex(0);
+              setPageStore((prev) => ({ ...prev, [slug]: loadedSections }));
+              if (typeof window !== "undefined") {
+                try {
+                  localStorage.setItem("xite_saved_pages", JSON.stringify({ ...pageStore, [slug]: loadedSections }));
+                } catch {}
               }
+              return;
             }
           }
         }
