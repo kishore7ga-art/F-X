@@ -19,6 +19,8 @@ export async function loginAction(
     return { error: "Enter your email and password" };
   }
 
+  let nextUrl = "";
+
   try {
     const response = await serverApiPost<{ token?: string; subdomain: string; next: string }>(
       "/api/v1/auth/login",
@@ -30,14 +32,19 @@ export async function loginAction(
       store.set(COOKIE_NAME, response.token, sessionCookieOptions());
     }
 
-    const next = `/editor/${response.subdomain || "greenfield"}`;
-    return { success: true, next };
+    nextUrl = `/editor/${response.subdomain || "greenfield"}`;
   } catch (cause) {
     if (cause instanceof ServerApiError) {
       return { error: cause.message };
     }
     return { error: "Could not reach the server. Check your connection and try again." };
   }
+
+  if (nextUrl) {
+    redirect(nextUrl);
+  }
+
+  return { success: true };
 }
 
 export async function logout() {

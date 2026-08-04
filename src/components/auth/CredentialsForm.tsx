@@ -44,7 +44,10 @@ export function CredentialsForm({
     setPending(true);
 
     try {
-      const formData = new FormData(event.currentTarget);
+      const formData = new FormData();
+      formData.append("email", email.trim());
+      formData.append("password", password);
+
       const result = await loginAction(undefined, formData);
       if (result?.error) {
         const isRateLimit =
