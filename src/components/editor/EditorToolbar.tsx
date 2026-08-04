@@ -180,13 +180,13 @@ export function EditorToolbar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
       
-      {/* Outer Dock Container */}
-      <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-2xl p-2 flex items-center gap-2 text-slate-700 text-xs font-sans">
+      {/* Outer Dock Container - Flat Design */}
+      <div className="bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-none p-1.5 flex items-center gap-1.5 text-slate-700 text-xs font-sans">
         
         {/* 1. Dark Navy Square Button: Toggles XITE Studio Settings Page On/Off */}
         <button
           onClick={onOpenSettings}
-          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-md"
+          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-none"
           title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
         >
           {isSettingsOpen ? (
@@ -196,10 +196,10 @@ export function EditorToolbar({
           )}
         </button>
 
-        <div className="h-5 w-px bg-slate-300 mx-0.5" />
+        <div className="h-5 w-px bg-slate-200 mx-0.5" />
 
-        {/* 2. System Tools & Drawer Pill */}
-        <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl px-2 py-1 flex items-center gap-1.5">
+        {/* 2. System Tools & Drawer Pill - Flat */}
+        <div className="bg-white border border-slate-200/80 shadow-none rounded-xl px-2 py-1 flex items-center gap-1.5">
           <button
             onClick={onToggleDrawer}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
@@ -244,12 +244,12 @@ export function EditorToolbar({
           )}
         </div>
 
-        {/* 3. Section Controls Pill - ONLY rendered when a section on the canvas is selected */}
+        {/* 3. Section Controls Pill - Flat - ONLY rendered when a section on the canvas is selected */}
         {isSectionSelected && hasSections && (
           <>
-            <div className="h-5 w-px bg-slate-300 mx-0.5" />
+            <div className="h-5 w-px bg-slate-200 mx-0.5" />
 
-            <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl px-3 py-1 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
+            <div className="bg-white border border-slate-200/80 shadow-none rounded-xl px-3 py-1 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
               <span className="font-extrabold text-slate-900 text-xs px-2.5 py-0.5 rounded-lg bg-slate-100">
                 {activeSectionTitle}
               </span>
@@ -310,16 +310,16 @@ export function EditorToolbar({
           </>
         )}
 
-        <div className="h-5 w-px bg-slate-300 mx-0.5" />
+        <div className="h-5 w-px bg-slate-200 mx-0.5" />
 
-        {/* 4. Multi-Resolution Device Switcher Pill */}
-        <div className="bg-white border border-slate-200/80 shadow-sm rounded-xl p-1 flex items-center gap-1">
+        {/* 4. Multi-Resolution Device Switcher Pill - Flat */}
+        <div className="bg-white border border-slate-200/80 shadow-none rounded-xl p-1 flex items-center gap-1">
           {/* Desktop / Laptop Viewport Button */}
           <button
             onClick={handleDesktopClick}
             className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
               activeDesktop
-                ? "bg-slate-900 text-white shadow-sm font-extrabold"
+                ? "bg-slate-900 text-white shadow-none font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
             title={`Desktop / Laptop (Click to cycle Desktop 1440px / Laptop 1280px)`}
@@ -337,7 +337,7 @@ export function EditorToolbar({
             onClick={handleTabletClick}
             className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
               activeTablet
-                ? "bg-slate-900 text-white shadow-sm font-extrabold"
+                ? "bg-slate-900 text-white shadow-none font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
             title={`Tablet (Click to cycle Tablet 768px / Tablet Large 1024px)`}
@@ -355,7 +355,7 @@ export function EditorToolbar({
             onClick={handleMobileClick}
             className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
               activeMobile
-                ? "bg-slate-900 text-white shadow-sm font-extrabold"
+                ? "bg-slate-900 text-white shadow-none font-extrabold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
             title={`Mobile (Click to cycle Mobile S 320px / Mobile M 375px / Mobile L 425px)`}
