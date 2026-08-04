@@ -203,6 +203,34 @@ export function EditorStudio({
         return;
       }
 
+      // Fetch Admin-configured Default Website Structure for all pages
+      try {
+        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+        const defRes = await fetch(`${apiBase}/api/v1/default-website`);
+        if (defRes.ok) {
+          const defData = await defRes.json();
+          if (defData && Array.isArray(defData.pages)) {
+            const formattedSlug = slug.startsWith("/") ? slug : `/${slug}`;
+            const matchedPage = defData.pages.find(
+              (p: any) => p.slug.toLowerCase() === formattedSlug.toLowerCase()
+            );
+            if (matchedPage && matchedPage.sections && matchedPage.sections.length > 0) {
+              const loadedSections: SectionItem[] = matchedPage.sections.map((sec: any, idx: number) => ({
+                id: sec.id || `def-${idx}`,
+                title: sec.title || `Section #${idx + 1}`,
+                code: sec.code,
+                variantIndex: 0,
+              }));
+              setSections(loadedSections);
+              setActiveSectionIndex(0);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load default website config:", err);
+      }
+
       // Extract target category ID from page slug (e.g. /home -> hero, /about -> about, /academics -> courses)
       const cleanSlug = slug.replace(/^\//, "").toLowerCase();
       let targetCatId = cleanSlug;
