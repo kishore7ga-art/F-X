@@ -592,10 +592,11 @@ export function EditorStudio({
       } catch {}
     }
 
-    // Determine category ID of active section (hero, stats, features, about, courses, placements, faculty, contact, footer)
+    // Determine category ID of active section (header, hero, stats, features, about, courses, placements, faculty, contact, footer)
     const titleLower = activeSec.title.toLowerCase();
     let catId = "hero";
-    if (titleLower.includes("stat")) catId = "stats";
+    if (titleLower.includes("header") || titleLower.includes("nav")) catId = "header";
+    else if (titleLower.includes("stat")) catId = "stats";
     else if (titleLower.includes("feature") || titleLower.includes("highlight")) catId = "features";
     else if (titleLower.includes("about")) catId = "about";
     else if (titleLower.includes("course") || titleLower.includes("academic")) catId = "courses";
@@ -611,6 +612,7 @@ export function EditorStudio({
       return (
         nameLower.includes(`[${catId}]`) ||
         nameLower.includes(catId) ||
+        (catId === "header" && (nameLower.includes("header") || nameLower.includes("nav"))) ||
         (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight"))) ||
         (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric"))) ||
         (catId === "hero" && (nameLower.includes("hero") || nameLower.includes("banner"))) ||
