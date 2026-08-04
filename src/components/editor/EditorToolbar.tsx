@@ -36,6 +36,7 @@ interface EditorToolbarProps {
   onMoveDown?: () => void;
   onDeleteSection?: () => void;
   onClearSelection?: () => void;
+  onSyncAdminWebsite?: () => void;
 }
 
 export function EditorToolbar({
@@ -229,6 +230,16 @@ export function EditorToolbar({
           >
             <ExternalLink className="w-4 h-4" />
           </button>
+
+          {onSyncAdminWebsite && (
+            <button
+              onClick={onSyncAdminWebsite}
+              className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors cursor-pointer"
+              title="Sync & Load All Admin Default Website Section Boxes"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* 3. Section Controls Pill - ONLY rendered when a section on the canvas is selected */}

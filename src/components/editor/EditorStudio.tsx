@@ -180,30 +180,25 @@ export function EditorStudio({
   }, [sections, currentPage.slug]);
 
   // Fetch sections/templates added by Admin in the Database
-  const fetchDbSections = async (slug: string = "/home") => {
+  const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     try {
       setLoadingDb(true);
-      const res = await fetch("/api/v1/admin/templates", {
-        credentials: "include",
-      });
 
       let fetchedTemplates: any[] = [];
-      if (res.ok) {
-        const data = await res.json();
-        if (data.templates && data.templates.length > 0) {
-          fetchedTemplates = data.templates;
-          setAdminDbTemplates(data.templates);
+      try {
+        const res = await fetch("/api/v1/admin/templates", {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.templates && data.templates.length > 0) {
+            fetchedTemplates = data.templates;
+            setAdminDbTemplates(data.templates);
+          }
         }
-      }
+      } catch {}
 
-      // If page is already saved in pageStore, load saved sections
-      if (pageStore[slug] && pageStore[slug].length > 0) {
-        setSections(pageStore[slug]);
-        setActiveSectionIndex(0);
-        return;
-      }
-
-      // Fetch Admin-configured Default Website Structure for all pages
+      // 1. Fetch Admin-configured Default Website Structure for all pages first
       try {
         const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
         const defRes = await fetch(`${apiBase}/api/v1/default-website`);
@@ -221,14 +216,31 @@ export function EditorStudio({
                 code: sec.code,
                 variantIndex: 0,
               }));
-              setSections(loadedSections);
-              setActiveSectionIndex(0);
-              return;
+
+              const currentSaved = pageStore[slug];
+              if (forceSync || !currentSaved || currentSaved.length < loadedSections.length) {
+                setSections(loadedSections);
+                setActiveSectionIndex(0);
+                setPageStore((prev) => ({ ...prev, [slug]: loadedSections }));
+                if (typeof window !== "undefined") {
+                  try {
+                    localStorage.setItem("xite_saved_pages", JSON.stringify({ ...pageStore, [slug]: loadedSections }));
+                  } catch {}
+                }
+                return;
+              }
             }
           }
         }
       } catch (err) {
         console.warn("Could not load default website config:", err);
+      }
+
+      // 2. If page is already saved in pageStore, load saved sections
+      if (pageStore[slug] && pageStore[slug].length > 0) {
+        setSections(pageStore[slug]);
+        setActiveSectionIndex(0);
+        return;
       }
 
       // Extract target category ID from page slug (e.g. /home -> hero, /about -> about, /academics -> courses)
@@ -930,6 +942,7 @@ export function EditorStudio({
           onMoveUp={handleMoveUp}
           onMoveDown={handleMoveDown}
           onDeleteSection={handleDeleteSection}
+          onSyncAdminWebsite={() => fetchDbSections(currentPage.slug, true)}
         />
       )}
 
