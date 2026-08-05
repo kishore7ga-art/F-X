@@ -117,15 +117,21 @@ export function EditorStudio({
     // Toast popups completely removed
   };
 
-  // Auto-correct responsive section code for Tablet (768px) and Mobile (375px) viewports
+  // Auto-correct responsive section code and alignment across all viewports
   const autoCorrectMobileCode = (code: string, width: string) => {
     if (!code) return "";
     const isMobile = width === "320px" || width === "375px" || width === "425px";
     const isTablet = width === "640px" || width === "768px" || width === "1024px";
 
-    if (!isMobile && !isTablet) return code;
-
     let corrected = code;
+
+    // Ensure all max-width containers have mx-auto / margin: 0 auto centering
+    corrected = corrected.replace(/class="([^"]*max-w-[^"]*)"/gi, (_m, p1) => {
+      if (!p1.includes("mx-auto") && !p1.includes("ml-") && !p1.includes("mr-")) {
+        return `class="${p1} mx-auto"`;
+      }
+      return _m;
+    });
 
     if (isTablet) {
       // Auto-correct multi-column layouts for Tablet screens (max 2 columns, scaled text)
@@ -824,7 +830,7 @@ export function EditorStudio({
                 >
                   <div
                     dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
-                    className="w-full overflow-hidden"
+                    className="w-full overflow-hidden flex flex-col items-center justify-center text-center [&>*:first-child]:w-full [&>*:first-child]:mx-auto"
                   />
                 </div>
               ))}
