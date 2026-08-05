@@ -181,67 +181,82 @@ export function DomainSettingsModal({
       </header>
 
       {/* Main Settings Body */}
-      <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8 flex-1 min-h-0 box-border">
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "1400px",
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "row",
+          gap: "32px",
+          padding: "32px 24px",
+          boxSizing: "border-box",
+        }}
+        className="flex-1 min-h-0"
+      >
         {/* Left Sidebar Menu */}
-        <aside className="w-full lg:w-64 shrink-0 space-y-4 lg:space-y-6 flex flex-col justify-between">
-          <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-2 pb-2 lg:pb-0 scrollbar-none">
+        <aside
+          style={{ width: "240px", flexShrink: 0 }}
+          className="space-y-6 flex flex-col justify-between"
+        >
+          <div className="space-y-2 flex flex-col">
             <button
               onClick={() => setActiveTab("domain")}
-              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "domain"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Globe className="w-4 h-4 shrink-0" />
+              <Globe className="w-4.5 h-4.5 shrink-0" />
               <span>Custom Domain & SSL</span>
             </button>
 
             <button
               onClick={() => setActiveTab("team")}
-              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "team"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Users className="w-4 h-4 shrink-0" />
+              <Users className="w-4.5 h-4.5 shrink-0" />
               <span>Team Access & Roles</span>
             </button>
 
             <button
               onClick={() => setActiveTab("security")}
-              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "security"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Key className="w-4 h-4 shrink-0" />
+              <Key className="w-4.5 h-4.5 shrink-0" />
               <span>Password & Security</span>
             </button>
 
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "notifications"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Bell className="w-4 h-4 shrink-0" />
+              <Bell className="w-4.5 h-4.5 shrink-0" />
               <span>Notifications</span>
             </button>
 
             <button
               onClick={() => setActiveTab("advanced")}
-              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "advanced"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Sliders className="w-4 h-4 shrink-0" />
+              <Sliders className="w-4.5 h-4.5 shrink-0" />
               <span>Advanced Settings</span>
             </button>
           </div>
@@ -263,20 +278,33 @@ export function DomainSettingsModal({
         </aside>
 
         {/* Dynamic Content Area */}
-        <main className="flex-1 min-w-0 w-full space-y-6 sm:space-y-8 box-border">
+        <main
+          style={{
+            flex: "1 1 0%",
+            minWidth: 0,
+            width: "100%",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            gap: "32px",
+          }}
+        >
           
           {/* 1. TAB: CUSTOM DOMAIN & SSL */}
           {activeTab === "domain" && (
             <>
               <div className="space-y-1">
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Publishing & Custom Domain Settings</h1>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Publishing & Custom Domain Settings</h1>
+                <p className="text-sm text-slate-500 font-medium">
                   Configure A Record, CNAME, and SSL hosting for your website
                 </p>
               </div>
 
               {/* Card 1: Primary Custom Domain */}
-              <div className="w-full bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6 box-border">
+              <div
+                style={{ width: "100%", boxSizing: "border-box" }}
+                className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
                   <div>
                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
@@ -299,7 +327,7 @@ export function DomainSettingsModal({
                       type="text"
                       value={customDomain}
                       onChange={(e) => setCustomDomain(e.target.value)}
-                      className="flex-1 w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-sm sm:text-base font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
+                      className="flex-1 w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-base font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
                     />
                     <button
                       onClick={handleSaveDomain}
@@ -312,7 +340,10 @@ export function DomainSettingsModal({
               </div>
 
               {/* Card 2: Production Live Callout Banner */}
-              <div className="w-full bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 relative overflow-hidden box-border">
+              <div
+                style={{ width: "100%", boxSizing: "border-box" }}
+                className="bg-slate-900 text-white rounded-3xl p-8 shadow-xl space-y-6 relative overflow-hidden"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
                   <div className="inline-flex items-center gap-2 text-xs font-black text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-4 py-1.5 rounded-full uppercase tracking-wider">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
@@ -323,7 +354,7 @@ export function DomainSettingsModal({
 
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                   <div className="space-y-1.5">
-                    <h3 className="text-lg sm:text-xl font-black text-white">Publish Website to Production</h3>
+                    <h3 className="text-xl font-black text-white">Publish Website to Production</h3>
                     <p className="text-xs text-slate-400 font-medium">
                       Target URL: <a href={`https://${savedDomain}`} target="_blank" rel="noreferrer" className="font-mono text-blue-400 underline font-bold">{`https://${savedDomain}`}</a>
                     </p>
@@ -352,7 +383,10 @@ export function DomainSettingsModal({
               </div>
 
               {/* Card 3: DNS Configuration Instructions Table */}
-              <div className="w-full bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-7 shadow-sm space-y-6 box-border">
+              <div
+                style={{ width: "100%", boxSizing: "border-box" }}
+                className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6"
+              >
                 <div>
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
                     DNS CONFIGURATION INSTRUCTIONS
