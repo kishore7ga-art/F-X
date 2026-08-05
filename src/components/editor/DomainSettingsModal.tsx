@@ -381,30 +381,34 @@ export function DomainSettingsModal({
           {/* 2. TAB: TEAM ACCESS & ROLES */}
           {activeTab === "team" && (
             <>
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Team Access & Permissions</h1>
-                <p className="text-xs text-slate-500 font-medium mt-1">
+              <div className="space-y-1">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Team Access & Permissions</h1>
+                <p className="text-sm text-slate-500 font-medium">
                   Manage team members, editor permissions, and role access
                 </p>
               </div>
 
-              {/* Invite Form */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                  INVITE NEW TEAM MEMBER
-                </h3>
-                <form onSubmit={handleInviteMember} className="flex gap-3">
+              {/* Invite Form Card */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6">
+                <div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                    INVITE NEW TEAM MEMBER
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-1">Grant Access to Collaborators</h3>
+                </div>
+
+                <form onSubmit={handleInviteMember} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <input
                     type="email"
                     placeholder="colleague@institution.edu.in"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-slate-900"
+                    className="flex-1 w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-sm font-semibold text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
                   />
                   <select
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
-                    className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none"
+                    className="bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3.5 text-xs text-slate-900 font-extrabold focus:outline-none shrink-0"
                   >
                     <option value="Administrator">Administrator</option>
                     <option value="Content Editor">Content Editor</option>
@@ -413,7 +417,7 @@ export function DomainSettingsModal({
                   </select>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md flex items-center gap-2"
+                    className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 shrink-0 whitespace-nowrap"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>Send Invite</span>
@@ -421,42 +425,46 @@ export function DomainSettingsModal({
                 </form>
               </div>
 
-              {/* Team Table */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                  ACTIVE TEAM MEMBERS ({teamMembers.length})
-                </h3>
+              {/* Team Table Card */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6">
+                <div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                    ACTIVE TEAM MEMBERS ({teamMembers.length})
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-1">Roster of Authorized Users</h3>
+                </div>
 
-                <div className="overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
+                <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-sm">
+                  <table className="w-full text-left text-xs font-sans">
+                    <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-black tracking-wider uppercase">
                       <tr>
-                        <th className="p-3">MEMBER</th>
-                        <th className="p-3">ROLE</th>
-                        <th className="p-3">STATUS</th>
-                        <th className="p-3 text-right">ACTION</th>
+                        <th className="p-4">MEMBER</th>
+                        <th className="p-4">ROLE</th>
+                        <th className="p-4">STATUS</th>
+                        <th className="p-4 text-right">ACTION</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 text-slate-800 font-semibold">
+                    <tbody className="divide-y divide-slate-200 text-slate-800 font-bold">
                       {teamMembers.map((m) => (
-                        <tr key={m.id}>
-                          <td className="p-3">
-                            <div className="font-extrabold text-slate-900">{m.name}</div>
-                            <div className="text-[11px] text-slate-500 font-mono">{m.email}</div>
+                        <tr key={m.id} className="hover:bg-slate-50">
+                          <td className="p-4">
+                            <div className="font-extrabold text-slate-900 text-sm">{m.name}</div>
+                            <div className="text-xs text-slate-500 font-mono mt-0.5">{m.email}</div>
                           </td>
-                          <td className="p-3 font-bold text-slate-700">{m.role}</td>
-                          <td className="p-3">
-                            <span className="text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 text-[10px] font-extrabold">
-                              {m.status}
+                          <td className="p-4 font-bold text-slate-700">{m.role}</td>
+                          <td className="p-4">
+                            <span className="text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 text-xs font-extrabold inline-flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              <span>{m.status}</span>
                             </span>
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="p-4 text-right">
                             <button
                               onClick={() => {
                                 setTeamMembers((prev) => prev.filter((x) => x.id !== m.id));
                                 showToast(`Removed member ${m.name}`);
                               }}
-                              className="text-red-600 hover:text-red-800 font-bold cursor-pointer"
+                              className="text-rose-600 hover:text-rose-800 font-extrabold text-xs px-3 py-1.5 rounded-xl hover:bg-rose-50 cursor-pointer transition-all"
                             >
                               Remove
                             </button>
@@ -473,74 +481,80 @@ export function DomainSettingsModal({
           {/* 3. TAB: PASSWORD & SECURITY */}
           {activeTab === "security" && (
             <>
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Password & Account Security</h1>
-                <p className="text-xs text-slate-500 font-medium mt-1">
-                  Update authentication settings, passwords, and 2FA credentials
+              <div className="space-y-1">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Password & Account Security</h1>
+                <p className="text-sm text-slate-500 font-medium">
+                  Update authentication credentials, passwords, and two-factor authentication
                 </p>
               </div>
 
-              {/* Password Form */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4 max-w-xl">
-                <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                  UPDATE PASSWORD
-                </h3>
+              {/* Password Form Card */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6 max-w-xl">
+                <div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                    AUTHENTICATION CREDENTIALS
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-1">Change Account Password</h3>
+                </div>
+
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
                   <div>
-                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Current Password</label>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1.5">Current Password</label>
                     <input
                       type="password"
                       required
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-slate-900"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-sm text-slate-900 font-mono font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-extrabold text-slate-700 block mb-1">New Password</label>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1.5">New Password</label>
                     <input
                       type="password"
                       required
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-slate-900"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-sm text-slate-900 font-mono font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Confirm New Password</label>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1.5">Confirm New Password</label>
                     <input
                       type="password"
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none focus:border-slate-900"
+                      className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-sm text-slate-900 font-mono font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="px-6 py-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md"
-                  >
-                    Update Password
-                  </button>
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg"
+                    >
+                      Update Password
+                    </button>
+                  </div>
                 </form>
               </div>
 
-              {/* 2FA Toggle */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+              {/* 2FA Toggle Card */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Two-Factor Authentication (2FA)</h3>
-                  <p className="text-xs text-slate-500 mt-1">Protect your studio account with authenticator app verification</p>
+                  <h3 className="text-base font-black text-slate-900">Two-Factor Authentication (2FA)</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-1">Protect your studio account with authenticator app verification</p>
                 </div>
                 <button
                   onClick={() => {
                     setTwoFactorEnabled(!twoFactorEnabled);
                     showToast(twoFactorEnabled ? "2FA disabled" : "2FA enabled & configured");
                   }}
-                  className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                    twoFactorEnabled ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"
+                  className={`px-6 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-md shrink-0 ${
+                    twoFactorEnabled ? "bg-emerald-600 hover:bg-emerald-500 text-white" : "bg-slate-200 hover:bg-slate-300 text-slate-800"
                   }`}
                 >
-                  {twoFactorEnabled ? "2FA Enabled" : "Enable 2FA"}
+                  {twoFactorEnabled ? "2FA Enabled ✓" : "Enable 2FA"}
                 </button>
               </div>
             </>
@@ -549,59 +563,70 @@ export function DomainSettingsModal({
           {/* 4. TAB: NOTIFICATIONS */}
           {activeTab === "notifications" && (
             <>
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Notification Preferences</h1>
-                <p className="text-xs text-slate-500 font-medium mt-1">
+              <div className="space-y-1">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Notification Preferences</h1>
+                <p className="text-sm text-slate-500 font-medium">
                   Customize email notifications, deployment alerts, and security digests
                 </p>
               </div>
 
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-6 max-w-2xl">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <h4 className="text-xs font-extrabold text-slate-900">Deployment & Publishing Alerts</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Receive email confirmation every time site is published</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={emailAlerts.deployment}
-                    onChange={(e) => setEmailAlerts({ ...emailAlerts, deployment: e.target.checked })}
-                    className="w-4 h-4 cursor-pointer"
-                  />
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6 max-w-3xl">
+                <div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                    ALERT SUBSCRIPTIONS
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-1">Email & Security Notifications</h3>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <h4 className="text-xs font-extrabold text-slate-900">SSL & Domain Expiry Warnings</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Get notified 30 days before domain or SSL certificate renewal</p>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">Deployment & Publishing Alerts</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Receive email confirmation every time site is published</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={emailAlerts.deployment}
+                      onChange={(e) => setEmailAlerts({ ...emailAlerts, deployment: e.target.checked })}
+                      className="w-5 h-5 accent-slate-900 cursor-pointer"
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={emailAlerts.ssl}
-                    onChange={(e) => setEmailAlerts({ ...emailAlerts, ssl: e.target.checked })}
-                    className="w-4 h-4 cursor-pointer"
-                  />
+
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">SSL & Domain Expiry Warnings</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Get notified 30 days before domain or SSL certificate renewal</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={emailAlerts.ssl}
+                      onChange={(e) => setEmailAlerts({ ...emailAlerts, ssl: e.target.checked })}
+                      className="w-5 h-5 accent-slate-900 cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900">Security Login Alerts</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Alert on logins from unknown devices or IP locations</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={emailAlerts.security}
+                      onChange={(e) => setEmailAlerts({ ...emailAlerts, security: e.target.checked })}
+                      className="w-5 h-5 accent-slate-900 cursor-pointer"
+                    />
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <h4 className="text-xs font-extrabold text-slate-900">Security Login Alerts</h4>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Alert on logins from unknown devices or IP locations</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={emailAlerts.security}
-                    onChange={(e) => setEmailAlerts({ ...emailAlerts, security: e.target.checked })}
-                    className="w-4 h-4 cursor-pointer"
-                  />
+                <div className="pt-2">
+                  <button
+                    onClick={() => showToast("Notification preferences saved!")}
+                    className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg"
+                  >
+                    Save Preferences
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => showToast("Notification preferences saved!")}
-                  className="px-6 py-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md"
-                >
-                  Save Preferences
-                </button>
               </div>
             </>
           )}
@@ -609,48 +634,51 @@ export function DomainSettingsModal({
           {/* 5. TAB: ADVANCED SETTINGS */}
           {activeTab === "advanced" && (
             <>
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Advanced Developer Settings</h1>
-                <p className="text-xs text-slate-500 font-medium mt-1">
+              <div className="space-y-1">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Advanced Developer Settings</h1>
+                <p className="text-sm text-slate-500 font-medium">
                   Custom tracking scripts, search indexing, and maintenance controls
                 </p>
               </div>
 
-              {/* Custom Header Script */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-2">
-                  <Code className="w-4 h-4 text-blue-600" />
-                  <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
-                    CUSTOM HEAD SCRIPTS & ANALYTICS
-                  </h3>
+              {/* Custom Header Script Card */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6">
+                <div className="flex items-center gap-2.5">
+                  <Code className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                      CUSTOM HEAD SCRIPTS & ANALYTICS
+                    </span>
+                    <h3 className="text-base font-extrabold text-slate-900 mt-0.5">Inject Code Into HTML Head</h3>
+                  </div>
                 </div>
                 <textarea
-                  rows={4}
+                  rows={5}
                   value={headerScript}
                   onChange={(e) => setHeaderScript(e.target.value)}
-                  className="w-full bg-slate-900 text-emerald-400 font-mono text-xs p-4 rounded-xl focus:outline-none border border-slate-800"
+                  className="w-full bg-slate-900 text-emerald-400 font-mono text-xs p-5 rounded-2xl focus:outline-none border border-slate-800 shadow-inner"
                 />
                 <button
                   onClick={() => showToast("Header tracking script saved!")}
-                  className="px-6 py-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md"
+                  className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg"
                 >
                   Save Custom Script
                 </button>
               </div>
 
-              {/* Maintenance Toggle */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+              {/* Maintenance Toggle Card */}
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Maintenance Mode</h3>
-                  <p className="text-xs text-slate-500 mt-1">Temporarily display a maintenance notice to visitors</p>
+                  <h3 className="text-base font-black text-slate-900">Maintenance Mode</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-1">Temporarily display a maintenance notice to visitors</p>
                 </div>
                 <button
                   onClick={() => {
                     setMaintenanceMode(!maintenanceMode);
                     showToast(maintenanceMode ? "Maintenance mode disabled" : "Maintenance mode enabled");
                   }}
-                  className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                    maintenanceMode ? "bg-amber-600 text-white" : "bg-slate-200 text-slate-700"
+                  className={`px-6 py-3 rounded-2xl text-xs font-black transition-all cursor-pointer shadow-md shrink-0 ${
+                    maintenanceMode ? "bg-amber-600 hover:bg-amber-500 text-white" : "bg-slate-200 hover:bg-slate-300 text-slate-800"
                   }`}
                 >
                   {maintenanceMode ? "Maintenance Enabled" : "Disable Site"}
