@@ -136,14 +136,14 @@ export function EditorToolbar({
   ];
 
   const DESKTOP_SIZES = [
+    { label: "Desktop", width: "1200px" },
+    { label: "Desktop Large", width: "1440px" },
     { label: "Desktop XL", width: "1600px" },
-    { label: "Desktop", width: "1440px" },
-    { label: "Laptop", width: "1280px" },
   ];
 
   const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
   const activeTablet = TABLET_SIZES.find((s) => s.width === viewportWidth);
-  const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth) || (viewportWidth === "100%" ? DESKTOP_SIZES[1] : null);
+  const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth) || (viewportWidth === "100%" ? DESKTOP_SIZES[0] : null);
 
   const handleMobileClick = () => {
     let nextIdx = 0;
@@ -152,7 +152,7 @@ export function EditorToolbar({
     else if (viewportWidth === "425px") nextIdx = 0; // Mobile S (320px)
     else nextIdx = 1; // Default Mobile M
 
-    const target = MOBILE_SIZES[nextIdx];
+    const target = MOBILE_SIZES[nextIdx]!;
     setViewportWidth(target.width);
     showToast(`${target.label} (${target.width})`);
   };
@@ -164,19 +164,19 @@ export function EditorToolbar({
     else if (viewportWidth === "1024px") nextIdx = 0; // Tablet Mini (640px)
     else nextIdx = 1; // Default Tablet 768px
 
-    const target = TABLET_SIZES[nextIdx];
+    const target = TABLET_SIZES[nextIdx]!;
     setViewportWidth(target.width);
     showToast(`${target.label} (${target.width})`);
   };
 
   const handleDesktopClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "1600px" || viewportWidth === "100%") nextIdx = 1; // Desktop (1440px)
-    else if (viewportWidth === "1440px") nextIdx = 2; // Laptop (1280px)
-    else if (viewportWidth === "1280px") nextIdx = 0; // Desktop XL (1600px)
-    else nextIdx = 1; // Default Desktop 1440px
+    if (viewportWidth === "1200px" || viewportWidth === "100%") nextIdx = 1; // 1440px
+    else if (viewportWidth === "1440px") nextIdx = 2; // 1600px
+    else if (viewportWidth === "1600px") nextIdx = 0; // 1200px
+    else nextIdx = 0; // Default Desktop 1200px
 
-    const target = DESKTOP_SIZES[nextIdx];
+    const target = DESKTOP_SIZES[nextIdx]!;
     setViewportWidth(target.width);
     showToast(`${target.label} (${target.width})`);
   };

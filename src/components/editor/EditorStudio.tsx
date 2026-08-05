@@ -89,7 +89,7 @@ export function EditorStudio({
   subdomain = "greenfield",
   collegeName = "Greenfield University",
 }: EditorStudioProps) {
-  const [viewportWidth, setViewportWidth] = useState<string>("100%");
+  const [viewportWidth, setViewportWidth] = useState<string>("1200px");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>("domain");
