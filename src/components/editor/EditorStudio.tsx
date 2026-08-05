@@ -990,29 +990,28 @@ export function EditorStudio({
       {linkPopup && (
         <div
           onClick={() => setLinkPopup(null)}
-          className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] animate-in fade-in duration-100 cursor-default"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ top: `${linkPopup.y}px`, left: `${linkPopup.x}px` }}
-            className="fixed z-50 w-80 bg-[#0d1117] border border-blue-500/50 rounded-2xl p-4 shadow-2xl space-y-4 text-white text-xs animate-in zoom-in-95 duration-150"
+            className="w-full max-w-md bg-[#0d1117] border border-blue-500/50 rounded-2xl p-5 shadow-2xl space-y-4 text-white text-xs animate-in zoom-in-95 duration-150 cursor-default"
           >
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />
-                <span className="font-extrabold text-white">Button Navigation URL</span>
+                <span className="font-extrabold text-sm text-white">Button Navigation URL</span>
               </div>
               <button
                 onClick={() => setLinkPopup(null)}
-                className="text-neutral-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded hover:bg-neutral-800 cursor-pointer"
+                className="text-neutral-400 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-neutral-800 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="block text-[11px] font-mono text-neutral-400 font-bold mb-1">
+                <label className="block text-xs font-mono text-neutral-300 font-bold mb-1.5">
                   Target URL / Link Path
                 </label>
                 <input
@@ -1020,21 +1019,21 @@ export function EditorStudio({
                   value={linkPopup.currentUrl}
                   onChange={(e) => setLinkPopup({ ...linkPopup, currentUrl: e.target.value })}
                   placeholder="e.g. https://greenfield.edu.in/apply or #contact"
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:border-blue-500 focus:outline-none"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none"
                 />
               </div>
 
               {/* Quick Page Preset Links */}
               <div>
-                <label className="block text-[10px] font-mono text-neutral-500 font-bold mb-1 uppercase">
+                <label className="block text-[10px] font-mono text-neutral-400 font-bold mb-1.5 uppercase tracking-wider">
                   Quick Page Presets
                 </label>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {["/home", "/about", "/academics", "/contact", "/placements"].map((slug) => (
                     <button
                       key={slug}
                       onClick={() => setLinkPopup({ ...linkPopup, currentUrl: slug })}
-                      className="text-[10px] font-mono px-2 py-1 rounded-lg bg-neutral-800 hover:bg-blue-600 hover:text-white text-neutral-300 transition-colors cursor-pointer"
+                      className="text-xs font-mono px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-blue-600 hover:text-white text-neutral-300 transition-colors cursor-pointer"
                     >
                       {slug}
                     </button>
@@ -1043,29 +1042,31 @@ export function EditorStudio({
               </div>
 
               {/* Open in New Tab Toggle */}
-              <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+              <label className="flex items-center gap-3 cursor-pointer pt-1">
                 <input
                   type="checkbox"
                   checked={linkPopup.isNewTab}
                   onChange={(e) => setLinkPopup({ ...linkPopup, isNewTab: e.target.checked })}
                   className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
                 />
-                <span className="text-xs font-bold text-neutral-300">Open in New Tab (`target="_blank"`)</span>
+                <span className="text-xs font-bold text-neutral-300">
+                  Open in New Tab (<code className="text-blue-400 font-mono">target="_blank"</code>)
+                </span>
               </label>
 
               {/* Action Buttons */}
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-neutral-800 flex items-center justify-end gap-3">
                 <button
                   onClick={() => setLinkPopup(null)}
-                  className="px-3.5 py-1.5 rounded-xl text-neutral-400 hover:text-white font-bold hover:bg-neutral-800 cursor-pointer text-xs"
+                  className="px-4 py-2 rounded-xl text-neutral-400 hover:text-white font-bold hover:bg-neutral-800 cursor-pointer text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleSaveButtonUrl(linkPopup.currentUrl, linkPopup.isNewTab)}
-                  className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold shadow-md cursor-pointer text-xs"
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold shadow-md cursor-pointer text-xs flex items-center gap-1.5"
                 >
-                  🔗 Save Button URL
+                  <span>🔗 Save Button URL</span>
                 </button>
               </div>
             </div>

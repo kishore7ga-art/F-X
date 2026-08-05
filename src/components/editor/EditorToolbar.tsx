@@ -180,29 +180,29 @@ export function EditorToolbar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
       
-      {/* Outer Dock Container - Flat Design */}
-      <div className="bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-none p-1.5 flex items-center gap-1.5 text-slate-700 text-xs font-sans">
+      {/* Outer Dock Container - Sleek Flat Dark Bar */}
+      <div className="bg-[#0f172a]/95 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2 text-white text-xs font-sans">
         
-        {/* 1. Dark Navy Square Button: Toggles XITE Studio Settings Page On/Off */}
+        {/* 1. XITE Settings Button */}
         <button
           onClick={onOpenSettings}
-          className="h-9 w-9 flex items-center justify-center rounded-xl bg-[#0f172a] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-none"
+          className="h-8 w-8 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-500 text-white font-black transition-all cursor-pointer shadow-md shrink-0"
           title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
         >
           {isSettingsOpen ? (
             <X className="w-4 h-4 text-white" />
           ) : (
-            <img src="/xite-logo.png" alt="XITE Logo" className="w-5 h-5 object-contain rounded-sm" />
+            <img src="/xite-logo.png" alt="XITE Logo" className="w-4 h-4 object-contain rounded-sm" />
           )}
         </button>
 
-        <div className="h-5 w-px bg-slate-200 mx-0.5" />
+        <div className="h-4 w-px bg-slate-700 mx-0.5" />
 
-        {/* 2. System Tools & Drawer Pill - Flat */}
-        <div className="bg-white border border-slate-200/80 shadow-none rounded-xl px-2 py-1 flex items-center gap-1.5">
+        {/* 2. System Tools & Drawer Group */}
+        <div className="flex items-center gap-1">
           <button
             onClick={onToggleDrawer}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors cursor-pointer"
             title="Pages, Colors & Fonts Drawer"
           >
             <span className="text-xs font-black">☰</span>
@@ -210,24 +210,24 @@ export function EditorToolbar({
 
           <button
             onClick={handleManualSave}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 relative cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 relative cursor-pointer"
             title="Save Status"
           >
-            <Save className={`w-4 h-4 ${saving ? "animate-spin text-blue-600" : ""}`} />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+            <Save className={`w-4 h-4 ${saving ? "animate-spin text-blue-400" : ""}`} />
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[#0f172a]" />
           </button>
 
           <button
             onClick={handleCopyLink}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors cursor-pointer"
             title="Instant Share / Copy Live Website Link"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <LinkIcon className="w-4 h-4" />}
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <LinkIcon className="w-4 h-4" />}
           </button>
 
           <button
             onClick={handleOpenPreview}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer transition-colors"
             title="Open Live Website Preview in New Tab"
           >
             <ExternalLink className="w-4 h-4" />
@@ -236,7 +236,7 @@ export function EditorToolbar({
           {onSyncAdminWebsite && (
             <button
               onClick={onSyncAdminWebsite}
-              className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-purple-900/50 text-purple-300 transition-colors cursor-pointer"
               title="Load / Re-sync Admin Default Website Layout"
             >
               <Layers className="w-4 h-4" />
@@ -244,64 +244,51 @@ export function EditorToolbar({
           )}
         </div>
 
-        {/* 3. Section Controls Pill - Flat - ONLY rendered when a section on the canvas is selected */}
+        {/* 3. Selected Section Tools */}
         {isSectionSelected && hasSections && (
           <>
-            <div className="h-5 w-px bg-slate-200 mx-0.5" />
+            <div className="h-4 w-px bg-slate-700 mx-0.5" />
 
-            <div className="bg-white border border-slate-200/80 shadow-none rounded-xl px-3 py-1 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
-              <span className="font-extrabold text-slate-900 text-xs px-2.5 py-0.5 rounded-lg bg-slate-100">
+            <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+              <span className="font-extrabold text-white text-xs px-3 py-1 rounded-full bg-blue-600/30 border border-blue-500/40 text-blue-200">
                 {activeSectionTitle}
               </span>
 
               <button
                 onClick={onDuplicateSection}
-                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer"
                 title="Duplicate Section"
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
-              <button
-                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
-                title="Undo"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-              </button>
-              
+
               <button
                 onClick={handleRefreshSwap}
-                className="p-1 rounded hover:bg-slate-100 text-blue-600 font-bold transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-800 text-blue-400 font-bold transition-colors cursor-pointer"
                 title="Swap Variant"
               >
                 <RefreshCw className="w-3.5 h-3.5 hover:rotate-180 transition-transform duration-300" />
               </button>
 
               <button
-                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
-                title="Redo"
-              >
-                <Redo2 className="w-3.5 h-3.5" />
-              </button>
-              <button
                 onClick={onMoveUp}
-                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer"
                 title="Move Up"
               >
                 <ArrowUp className="w-3.5 h-3.5" />
               </button>
+
               <button
                 onClick={onMoveDown}
-                className="p-1 rounded hover:bg-slate-100 text-slate-600 cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer"
                 title="Move Down"
               >
                 <ArrowDown className="w-3.5 h-3.5" />
               </button>
 
-              <div className="h-4 w-px bg-slate-200 mx-0.5" />
-
               <button
                 onClick={onDeleteSection}
-                className="p-1 rounded hover:bg-red-50 text-red-600 cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-red-950/60 text-rose-400 cursor-pointer"
                 title="Delete Section"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -310,62 +297,47 @@ export function EditorToolbar({
           </>
         )}
 
-        <div className="h-5 w-px bg-slate-200 mx-0.5" />
+        <div className="h-4 w-px bg-slate-700 mx-0.5" />
 
-        {/* 4. Multi-Resolution Device Switcher Pill - Flat */}
-        <div className="bg-white border border-slate-200/80 shadow-none rounded-xl p-1 flex items-center gap-1">
-          {/* Desktop / Laptop Viewport Button */}
+        {/* 4. Multi-Resolution Viewport Switcher */}
+        <div className="flex items-center gap-1 bg-slate-800/80 rounded-full p-1 border border-slate-700/60">
           <button
             onClick={handleDesktopClick}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
               activeDesktop
-                ? "bg-slate-900 text-white shadow-none font-extrabold"
-                : "text-slate-500 hover:text-slate-900"
+                ? "bg-blue-600 text-white font-extrabold shadow-sm"
+                : "text-slate-400 hover:text-white"
             }`}
-            title={`Desktop / Laptop (Click to cycle Desktop 1440px / Laptop 1280px)`}
+            title="Desktop / Laptop (Click to cycle 1440px / 1280px / 1600px)"
           >
-            <Monitor className="w-4 h-4" />
-            {activeDesktop && (
-              <span className="text-[10px] font-mono font-bold px-1 rounded bg-slate-800 text-blue-300">
-                {activeDesktop.width}
-              </span>
-            )}
+            <Monitor className="w-3.5 h-3.5" />
+            <span className="font-mono font-bold text-[11px]">
+              {activeDesktop ? activeDesktop.width : "1440px"}
+            </span>
           </button>
 
-          {/* Tablet / Tablet Large Viewport Button */}
           <button
             onClick={handleTabletClick}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+            className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 text-xs ${
               activeTablet
-                ? "bg-slate-900 text-white shadow-none font-extrabold"
-                : "text-slate-500 hover:text-slate-900"
+                ? "bg-amber-600 text-white font-extrabold shadow-sm"
+                : "text-slate-400 hover:text-white"
             }`}
-            title={`Tablet (Click to cycle Tablet 768px / Tablet Large 1024px)`}
+            title="Tablet (Click to cycle 768px / 640px / 1024px)"
           >
-            <Tablet className="w-4 h-4" />
-            {activeTablet && (
-              <span className="text-[10px] font-mono font-bold px-1 rounded bg-slate-800 text-amber-300">
-                {activeTablet.width}
-              </span>
-            )}
+            <Tablet className="w-3.5 h-3.5" />
           </button>
 
-          {/* Mobile S / M / L Viewport Button */}
           <button
             onClick={handleMobileClick}
-            className={`p-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+            className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 text-xs ${
               activeMobile
-                ? "bg-slate-900 text-white shadow-none font-extrabold"
-                : "text-slate-500 hover:text-slate-900"
+                ? "bg-emerald-600 text-white font-extrabold shadow-sm"
+                : "text-slate-400 hover:text-white"
             }`}
-            title={`Mobile (Click to cycle Mobile S 320px / Mobile M 375px / Mobile L 425px)`}
+            title="Mobile (Click to cycle 375px / 320px / 425px)"
           >
-            <Smartphone className="w-4 h-4" />
-            {activeMobile && (
-              <span className="text-[10px] font-mono font-bold px-1 rounded bg-slate-800 text-emerald-300">
-                {activeMobile.width}
-              </span>
-            )}
+            <Smartphone className="w-3.5 h-3.5" />
           </button>
         </div>
 
