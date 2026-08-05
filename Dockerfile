@@ -38,6 +38,8 @@ RUN npx prisma generate
 # here, during the build, or not at all.
 ARG NEXT_PUBLIC_API_BASE_URL=""
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ARG BUILD_VERSION="v2.6.0-dokploy-force-rebuild-settings-flexbox"
+ENV BUILD_VERSION=$BUILD_VERSION
 
 RUN npm run build
 

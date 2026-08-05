@@ -27,6 +27,7 @@ services:
       # browser. Changing it requires a rebuild, not a restart.
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        BUILD_VERSION: "v2.6.0-dokploy-force-rebuild-settings-flexbox"
     restart: unless-stopped
     expose:
       - "3000"
@@ -59,6 +60,8 @@ services:
   frontend:
     build:
       context: .
+      args:
+        BUILD_VERSION: "v2.6.0-dokploy-force-rebuild-settings-flexbox"
     restart: unless-stopped
     expose:
       - "3000"
