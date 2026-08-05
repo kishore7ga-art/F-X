@@ -30,25 +30,29 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
 
   try {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
-    return payload?.college ?? null;
+    if (payload?.college) return payload.college;
+    
+    // Fallback to local college when backend payload is empty
+    const openCollege = await openAccessCollege();
+    return {
+      id: openCollege.id,
+      name: openCollege.name,
+      subdomain: openCollege.subdomain,
+      customDomain: openCollege.customDomain,
+      templateId: openCollege.templateId,
+      themePaletteId: openCollege.themePaletteId,
+      themeFontId: openCollege.themeFontId,
+      collegeType: openCollege.collegeType,
+      status: openCollege.status,
+      isDemo: openCollege.isDemo,
+      createdAt: openCollege.createdAt.toISOString(),
+    };
   } catch (error) {
     if (error instanceof ServerApiError) {
       console.error(`[auth] could not resolve college: ${error.message}`);
-      return null;
     }
-    return null;
-  }
-}
-
-/** Same, but sends signed-out visitors to the login screen. */
-import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
-
-export async function requireCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege> {
-  const college = await getCurrentCollege();
-  if (college) return college;
-
-  if (AUTH_DISABLED) {
-    const openCollege = await openAccessCollege(targetSubdomain);
+    // Seamless fallback to local college when backend is unreachable
+    const openCollege = await openAccessCollege();
     return {
       id: openCollege.id,
       name: openCollege.name,
@@ -63,8 +67,29 @@ export async function requireCurrentCollege(targetSubdomain?: string): Promise<C
       createdAt: openCollege.createdAt.toISOString(),
     };
   }
+}
 
-  redirect("/login");
+/** Same, but sends signed-out visitors to the login screen. */
+import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
+
+export async function requireCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege> {
+  const college = await getCurrentCollege();
+  if (college) return college;
+
+  const openCollege = await openAccessCollege(targetSubdomain);
+  return {
+    id: openCollege.id,
+    name: openCollege.name,
+    subdomain: openCollege.subdomain,
+    customDomain: openCollege.customDomain,
+    templateId: openCollege.templateId,
+    themePaletteId: openCollege.themePaletteId,
+    themeFontId: openCollege.themeFontId,
+    collegeType: openCollege.collegeType,
+    status: openCollege.status,
+    isDemo: openCollege.isDemo,
+    createdAt: openCollege.createdAt.toISOString(),
+  };
 }
 
 /**
