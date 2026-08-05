@@ -180,9 +180,6 @@ export function EditorToolbar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
       
-  return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
-      
       {/* Outer Dock Container - Clean White Floating Capsule Dock */}
       <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-full p-2 px-3 flex items-center gap-3 text-slate-700 text-xs font-sans">
         
