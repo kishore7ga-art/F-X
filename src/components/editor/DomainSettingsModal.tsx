@@ -194,12 +194,11 @@ export function DomainSettingsModal({
       <div
         style={{
           width: "100%",
-          maxWidth: "1400px",
-          margin: "0 auto",
+          maxWidth: "100%",
           display: "flex",
           flexDirection: "row",
           gap: "32px",
-          padding: "32px 24px",
+          padding: "32px 36px",
           boxSizing: "border-box",
         }}
         className="flex-1 min-h-0"
@@ -332,16 +331,20 @@ export function DomainSettingsModal({
                   <label className="block text-xs font-extrabold text-slate-700">
                     Domain Name / Subdomain Address
                   </label>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+                  <div
+                    style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px", width: "100%" }}
+                  >
                     <input
                       type="text"
                       value={customDomain}
                       onChange={(e) => setCustomDomain(e.target.value)}
-                      className="flex-1 w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-base font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
+                      style={{ flex: "1 1 0%", width: "100%", position: "static" }}
+                      className="bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-base font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
                     />
                     <button
                       onClick={handleSaveDomain}
-                      className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg shrink-0 whitespace-nowrap"
+                      style={{ position: "static", flexShrink: 0 }}
+                      className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg whitespace-nowrap"
                     >
                       Save Domain
                     </button>
