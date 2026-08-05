@@ -231,11 +231,11 @@ export function EditorStudio({
   }, [sections, currentPage.slug]);
 
   // Fetch sections & admin DB templates
-  const fetchDbSections = async (slug: string) => {
+  const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
     try {
-      // 1. If page is already saved by user in pageStore, load user's saved sections
-      if (pageStore[slug] && pageStore[slug].length > 0) {
+      // 1. If page is already saved by user in pageStore & forceSync is false, load user's saved sections
+      if (!forceSync && pageStore[slug] && pageStore[slug].length > 0) {
         setSections(pageStore[slug]);
         setActiveSectionIndex(0);
         setLoadingDb(false);
