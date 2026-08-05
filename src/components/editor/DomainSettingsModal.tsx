@@ -131,18 +131,33 @@ export function DomainSettingsModal({
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] bg-[#f8fafc] text-slate-900 font-sans flex flex-col overflow-y-auto select-none w-screen h-screen top-0 left-0 right-0 bottom-0">
-      
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 999999,
+        backgroundColor: "#f8fafc",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+      }}
+      className="text-slate-900 font-sans select-none"
+    >
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-black px-6 py-3.5 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in duration-200 flex items-center gap-2">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[1000000] bg-slate-900 text-white text-xs font-black px-6 py-3.5 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in duration-200 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Header Navigation Bar */}
-      <header className="h-18 border-b border-slate-200/90 bg-white/90 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+      <header className="h-18 border-b border-slate-200/90 bg-white/90 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-20 shrink-0 shadow-xs">
         <div className="flex items-center gap-4">
           <button
             onClick={onClose}
@@ -166,10 +181,24 @@ export function DomainSettingsModal({
       </header>
 
       {/* Main Settings Body */}
-      <div className="flex-1 max-w-7xl w-full mx-auto flex flex-col lg:flex-row gap-8 p-6 md:p-10 min-h-0">
-        
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "1280px",
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "row",
+          gap: "32px",
+          padding: "32px 24px",
+          boxSizing: "border-box",
+        }}
+        className="flex-1 min-h-0"
+      >
         {/* Left Sidebar Menu */}
-        <aside className="w-full lg:w-[260px] shrink-0 space-y-6 flex flex-col justify-between">
+        <aside
+          style={{ width: "240px", flexShrink: 0 }}
+          className="space-y-6 flex flex-col justify-between"
+        >
           <div className="space-y-2">
             <button
               onClick={() => setActiveTab("domain")}
