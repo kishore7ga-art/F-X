@@ -200,22 +200,12 @@ export function EditorToolbar({
 
         {/* 2. System Tools Group */}
         <div className="flex items-center gap-1.5">
-          {onSyncAdminWebsite && (
-            <button
-              onClick={onSyncAdminWebsite}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-              title="Load / Re-sync Admin Default Website Layout"
-            >
-              <Layers className="w-4 h-4" />
-            </button>
-          )}
-
           <button
             onClick={onToggleDrawer}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
             title="Pages, Colors & Fonts Drawer"
           >
-            <span className="text-xs font-black">🎨</span>
+            <Layers className="w-4 h-4" />
           </button>
 
           <button
