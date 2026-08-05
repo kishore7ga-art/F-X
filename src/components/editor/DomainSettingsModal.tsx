@@ -278,7 +278,15 @@ export function DomainSettingsModal({
         </aside>
 
         {/* Dynamic Content Area */}
-        <main className="flex-1 min-w-0 space-y-8">
+        <main
+          style={{
+            flex: "1 1 0%",
+            minWidth: 0,
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+          className="space-y-8"
+        >
           
           {/* 1. TAB: CUSTOM DOMAIN & SSL */}
           {activeTab === "domain" && (
@@ -291,7 +299,10 @@ export function DomainSettingsModal({
               </div>
 
               {/* Card 1: Primary Custom Domain */}
-              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6">
+              <div
+                style={{ width: "100%", boxSizing: "border-box" }}
+                className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
                   <div>
                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
