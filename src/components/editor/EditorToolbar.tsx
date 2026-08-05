@@ -137,8 +137,8 @@ export function EditorToolbar({
 
   const DESKTOP_SIZES = [
     { label: "Desktop", width: "1200px" },
-    { label: "Desktop Large", width: "1440px" },
-    { label: "Desktop XL", width: "1600px" },
+    { label: "Desktop Compact", width: "1024px" },
+    { label: "Desktop Mini", width: "800px" },
   ];
 
   const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
@@ -171,10 +171,10 @@ export function EditorToolbar({
 
   const handleDesktopClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "1200px" || viewportWidth === "100%") nextIdx = 1; // 1440px
-    else if (viewportWidth === "1440px") nextIdx = 2; // 1600px
-    else if (viewportWidth === "1600px") nextIdx = 0; // 1200px
-    else nextIdx = 0; // Default Desktop 1200px
+    if (viewportWidth === "1200px" || viewportWidth === "100%") nextIdx = 1; // Minimize down to 1024px
+    else if (viewportWidth === "1024px") nextIdx = 2; // Minimize down to 800px
+    else if (viewportWidth === "800px") nextIdx = 0; // Reset back to 1200px
+    else nextIdx = 0; // Default 1200px
 
     const target = DESKTOP_SIZES[nextIdx]!;
     setViewportWidth(target.width);
