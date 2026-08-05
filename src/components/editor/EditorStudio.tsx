@@ -150,6 +150,28 @@ export function EditorStudio({
     return corrected;
   };
 
+  // Parse full web HTML documents (with <!DOCTYPE>, <html>, <head>, <style>, <body>) for canvas rendering
+  const cleanFullWebCodeForCanvas = (code: string, width: string): string => {
+    if (!code) return "";
+
+    let cleanCode = code;
+
+    const bodyMatch = code.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
+    if (bodyMatch && bodyMatch[1]) {
+      const headMatch = code.match(/<head[\s\S]*?>([\s\S]*?)<\/head>/i);
+      const styles = headMatch ? headMatch[1] : "";
+      cleanCode = `${styles}\n${bodyMatch[1]}`;
+    } else {
+      cleanCode = code
+        .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+        .replace(/<\/?html[\s\S]*?>/gi, "")
+        .replace(/<\/?head[\s\S]*?>/gi, "")
+        .replace(/<\/?body[\s\S]*?>/gi, "");
+    }
+
+    return autoCorrectMobileCode(cleanCode, width);
+  };
+
   // Active Page State
   const [currentPage, setCurrentPage] = useState({ name: "Home", slug: "/home" });
 
@@ -801,7 +823,7 @@ export function EditorStudio({
                   }`}
                 >
                   <div
-                    dangerouslySetInnerHTML={{ __html: autoCorrectMobileCode(sec.code, viewportWidth) }}
+                    dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
                     className="w-full overflow-hidden"
                   />
                 </div>
