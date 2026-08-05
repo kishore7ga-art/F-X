@@ -45,6 +45,79 @@ export function DomainSettingsModal({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
+  // Team Access State
+  const [teamMembers, setTeamMembers] = useState([
+    { id: 1, name: "Kishore", email: "kishore@xite.co.in", role: "Owner Account", status: "Active" },
+    { id: 2, name: "College Admin", email: "admin@greenfield.edu.in", role: "Administrator", status: "Active" },
+    { id: 3, name: "Web Editor", email: "editor@greenfield.edu.in", role: "Content Editor", status: "Active" },
+  ]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("Content Editor");
+
+  // Security State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+
+  // Notification State
+  const [emailAlerts, setEmailAlerts] = useState({
+    deployment: true,
+    ssl: true,
+    security: true,
+    analytics: false,
+  });
+
+  // Advanced State
+  const [seoIndexing, setSeoIndexing] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [headerScript, setHeaderScript] = useState("<!-- Google Tag Manager / Analytics -->\n<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-XITE12345\"></script>");
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handlePublish = () => {
+    setPublishing(true);
+    setTimeout(() => {
+      setPublishing(false);
+      showToast("Website published successfully to production live!");
+    }, 1200);
+  };
+
+  const handleSaveDomain = () => {
+    setSavedDomain(customDomain);
+    showToast(`Domain saved: https://${customDomain}`);
+  };
+
+  const handleInviteMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    const newMember = {
+      id: Date.now(),
+      name: inviteEmail.split("@")[0] || "New Member",
+      email: inviteEmail,
+      role: inviteRole,
+      status: "Invited",
+    };
+    setTeamMembers((prev) => [...prev, newMember]);
+    setInviteEmail("");
+    showToast(`Invitation sent to ${inviteEmail}`);
+  };
+
+  const handleUpdatePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match!");
+      return;
+    }
+    showToast("Password updated successfully!");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
