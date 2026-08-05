@@ -154,155 +154,165 @@ export function DrawerPanel({
         )}
 
         {/* Header & Segmented Control Switcher */}
-        <div className="p-3 border-b border-slate-200 bg-slate-50/90 flex flex-col gap-3">
+        <div className="p-4 border-b border-slate-200 bg-slate-50/90 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-slate-900 tracking-wide uppercase">
+            <span className="text-xs font-black text-slate-900 tracking-wider uppercase">
               Pages, Colors & Fonts
             </span>
           </div>
 
-        {/* Segmented Switcher Control */}
-        <div className="bg-slate-200/70 p-1 rounded-xl flex items-center gap-1 border border-slate-200">
-          <button
-            onClick={() => setActiveTab("pages")}
-            className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === "pages" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Home className="w-3.5 h-3.5" />
-            <span>Pages</span>
-          </button>
+          {/* Segmented Switcher Control */}
+          <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 border border-slate-300/60">
+            <button
+              onClick={() => setActiveTab("pages")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === "pages"
+                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Home className="w-3.5 h-3.5" />
+              <span>Pages</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("colors")}
-            className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === "colors" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span>Colors</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("colors")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === "colors"
+                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Palette className="w-3.5 h-3.5" />
+              <span>Colors</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab("fonts")}
-            className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === "fonts" ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <Type className="w-3.5 h-3.5" />
-            <span>Fonts</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("fonts")}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === "fonts"
+                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Type className="w-3.5 h-3.5" />
+              <span>Fonts</span>
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Drawer Body Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
-        
-        {/* PAGES TAB */}
-        {activeTab === "pages" && (
-          <div className="space-y-1.5">
-            {pages.map((page) => {
-              const Icon = page.icon;
-              const isSelected = selectedPageSlug === page.slug;
-              return (
+        {/* Drawer Body Scroll Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
+          
+          {/* PAGES TAB */}
+          {activeTab === "pages" && (
+            <div className="space-y-2">
+              {pages.map((page) => {
+                const Icon = page.icon;
+                const isSelected = selectedPageSlug === page.slug;
+                return (
+                  <div
+                    key={page.id}
+                    onClick={() => handleSelectPage(page)}
+                    className={`group flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-blue-50/80 border-2 border-blue-500 shadow-sm text-slate-900"
+                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        isSelected ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"
+                      }`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className={`text-xs ${isSelected ? "font-extrabold text-slate-900" : "font-bold text-slate-800"}`}>
+                          {page.name}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-mono mt-0.5">{page.slug}</span>
+                      </div>
+                    </div>
+
+                    {/* Optional delete button for custom pages */}
+                    {pages.length > 1 && (
+                      <button
+                        onClick={(e) => handleDeletePage(e, page.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-600 transition-all cursor-pointer rounded-lg hover:bg-rose-50"
+                        title="Delete Page"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* COLORS TAB */}
+          {activeTab === "colors" && (
+            <div className="space-y-2.5">
+              {PALETTES.map((palette) => (
                 <div
-                  key={page.id}
-                  onClick={() => handleSelectPage(page)}
-                  className={`group flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-slate-100/90 border-slate-300 shadow-sm text-slate-900 font-extrabold"
-                      : "bg-white border-transparent hover:bg-slate-50 text-slate-700 font-semibold"
+                  key={palette.id}
+                  onClick={() => handleSelectPalette(palette.id, palette.name)}
+                  className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                    selectedPalette === palette.id
+                      ? "border-2 border-blue-600 bg-blue-50/60 shadow-sm"
+                      : "border-slate-200/80 bg-white hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-lg ${isSelected ? "bg-slate-900 text-white" : "text-slate-500"}`}>
-                      <Icon className="w-4 h-4" />
+                    <div className="flex items-center gap-1 border border-slate-200 p-1 rounded-full bg-slate-100">
+                      <div className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: palette.primary }} />
+                      <div className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: palette.accent }} />
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs">{page.name}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{page.slug}</span>
-                    </div>
+                    <span className="text-xs font-bold text-slate-900">{palette.name}</span>
                   </div>
-
-                  {/* Optional delete button for custom pages */}
-                  {pages.length > 1 && (
-                    <button
-                      onClick={(e) => handleDeletePage(e, page.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 transition-all cursor-pointer"
-                      title="Delete Page"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  {selectedPalette === palette.id && <Check className="w-4 h-4 text-blue-600" />}
                 </div>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
-        {/* COLORS TAB */}
-        {activeTab === "colors" && (
-          <div className="space-y-2">
-            {PALETTES.map((palette) => (
-              <div
-                key={palette.id}
-                onClick={() => handleSelectPalette(palette.id, palette.name)}
-                className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                  selectedPalette === palette.id
-                    ? "border-blue-600 bg-blue-50/50 shadow-sm"
-                    : "border-slate-200 bg-white hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 border border-slate-200 p-0.5 rounded-full">
-                    <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: palette.primary }} />
-                    <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: palette.accent }} />
+          {/* FONTS TAB */}
+          {activeTab === "fonts" && (
+            <div className="space-y-2.5">
+              {FONTS.map((font) => (
+                <div
+                  key={font.id}
+                  onClick={() => handleSelectFont(font.id, font.name)}
+                  className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                    selectedFont === font.id
+                      ? "border-2 border-blue-600 bg-blue-50/60 shadow-sm"
+                      : "border-slate-200/80 bg-white hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span className={`text-xs font-bold text-slate-900 ${font.font}`}>{font.name}</span>
+                    <span className="text-[11px] text-slate-500 mt-1 leading-relaxed">{font.detail}</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-900">{palette.name}</span>
+                  {selectedFont === font.id && <Check className="w-4 h-4 text-blue-600" />}
                 </div>
-                {selectedPalette === palette.id && <Check className="w-4 h-4 text-blue-600" />}
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
-        {/* FONTS TAB */}
-        {activeTab === "fonts" && (
-          <div className="space-y-2">
-            {FONTS.map((font) => (
-              <div
-                key={font.id}
-                onClick={() => handleSelectFont(font.id, font.name)}
-                className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                  selectedFont === font.id
-                    ? "border-blue-600 bg-blue-50/50 shadow-sm"
-                    : "border-slate-200 bg-white hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex flex-col">
-                  <span className={`text-xs font-bold text-slate-900 ${font.font}`}>{font.name}</span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">{font.detail}</span>
-                </div>
-                {selectedFont === font.id && <Check className="w-4 h-4 text-blue-600" />}
-              </div>
-            ))}
-          </div>
-        )}
-
-      </div>
-
-      {/* Add New Page Bottom Button */}
-      {activeTab === "pages" && (
-        <div className="p-3 border-t border-slate-200 bg-white">
-          <button
-            onClick={() => setShowNewPageModal(true)}
-            className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white font-black py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add New Page</span>
-          </button>
         </div>
-      )}
+
+        {/* Add New Page Bottom Button */}
+        {activeTab === "pages" && (
+          <div className="p-4 border-t border-slate-200 bg-white">
+            <button
+              onClick={() => setShowNewPageModal(true)}
+              className="w-full bg-[#0d1527] hover:bg-[#1a253d] text-white font-extrabold py-3.5 px-5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-blue-400" />
+              <span>Add New Page</span>
+            </button>
+          </div>
+        )}
 
       {/* Add New Page Modal */}
       {showNewPageModal && (

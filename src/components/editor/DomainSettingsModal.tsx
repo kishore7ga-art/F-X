@@ -159,68 +159,68 @@ export function DomainSettingsModal({
       </header>
 
       {/* Main Settings Body */}
-      <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 p-8">
+      <div className="flex-1 max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 p-6 md:p-8">
         
         {/* Left Sidebar Menu */}
         <aside className="space-y-6 flex flex-col justify-between h-[calc(100vh-120px)] sticky top-24">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <button
               onClick={() => setActiveTab("domain")}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2.5 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
                 activeTab === "domain"
                   ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/60"
+                  : "text-slate-600 hover:bg-slate-200/70"
               }`}
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-4 h-4 shrink-0" />
               <span>Custom Domain & SSL</span>
             </button>
 
             <button
               onClick={() => setActiveTab("team")}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2.5 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
                 activeTab === "team"
                   ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/60"
+                  : "text-slate-600 hover:bg-slate-200/70"
               }`}
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-4 h-4 shrink-0" />
               <span>Team Access & Roles</span>
             </button>
 
             <button
               onClick={() => setActiveTab("security")}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2.5 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
                 activeTab === "security"
                   ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/60"
+                  : "text-slate-600 hover:bg-slate-200/70"
               }`}
             >
-              <Key className="w-4 h-4" />
+              <Key className="w-4 h-4 shrink-0" />
               <span>Password & Security</span>
             </button>
 
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2.5 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
                 activeTab === "notifications"
                   ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/60"
+                  : "text-slate-600 hover:bg-slate-200/70"
               }`}
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4 shrink-0" />
               <span>Notifications</span>
             </button>
 
             <button
               onClick={() => setActiveTab("advanced")}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2.5 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
                 activeTab === "advanced"
                   ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/60"
+                  : "text-slate-600 hover:bg-slate-200/70"
               }`}
             >
-              <Sliders className="w-4 h-4" />
+              <Sliders className="w-4 h-4 shrink-0" />
               <span>Advanced Settings</span>
             </button>
           </div>
@@ -228,15 +228,15 @@ export function DomainSettingsModal({
           {/* Bottom User Pill */}
           <button
             onClick={() => setShowAccountModal(true)}
-            className="w-full text-left p-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center gap-3 transition-all cursor-pointer group"
+            className="w-full text-left p-3.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-sm flex items-center gap-3 transition-all cursor-pointer group"
             title="View Owner Account Details"
           >
-            <div className="w-8 h-8 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-xs group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-xs group-hover:scale-105 transition-transform shrink-0">
               K
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-extrabold text-slate-900">Kishore</span>
-              <span className="text-[10px] text-blue-600 font-bold group-hover:underline">Owner Account · Account Details ↗</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-extrabold text-slate-900 truncate">Kishore</span>
+              <span className="text-[10px] text-blue-600 font-bold group-hover:underline truncate">Owner Account · Details ↗</span>
             </div>
           </button>
         </aside>
@@ -249,33 +249,33 @@ export function DomainSettingsModal({
             <>
               <div>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">Publishing & Custom Domain Settings</h1>
-                <p className="text-xs text-slate-500 font-medium mt-1">
+                <p className="text-xs text-slate-500 font-semibold mt-1">
                   Configure A Record, CNAME, and SSL hosting for your website
                 </p>
               </div>
 
               {/* Card 1: Primary Custom Domain */}
               <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
                     PRIMARY CUSTOM DOMAIN
                   </span>
-                  <span className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-extrabold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>SSL Active & Connected</span>
                   </span>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <input
                     type="text"
                     value={customDomain}
                     onChange={(e) => setCustomDomain(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900"
+                    className="flex-1 min-w-[240px] bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900"
                   />
                   <button
                     onClick={handleSaveDomain}
-                    className="px-6 py-2.5 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md"
+                    className="px-6 py-2.5 bg-[#0f172a] hover:bg-black text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md shrink-0"
                   >
                     Save Domain
                   </button>
@@ -284,15 +284,15 @@ export function DomainSettingsModal({
 
               {/* Card 2: Production Live Callout Banner */}
               <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-6 space-y-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full border border-emerald-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-800 bg-emerald-100/90 px-3.5 py-1.5 rounded-full border border-emerald-300">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     <span>PRODUCTION LIVE</span>
-                    <span className="text-emerald-700 font-normal">· Last deployed Jul 31, 2026 at 05:35 AM</span>
+                    <span className="text-emerald-700 font-semibold">· Last deployed Jul 31, 2026 at 05:35 AM</span>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
                   <div>
                     <h3 className="text-base font-black text-slate-900">Publish Website to Production</h3>
                     <p className="text-xs text-slate-600 font-semibold mt-1">
@@ -300,13 +300,13 @@ export function DomainSettingsModal({
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       onClick={handlePublish}
                       disabled={publishing}
-                      className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
+                      className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer shrink-0"
                     >
-                      <Rocket className="w-4 h-4" />
+                      <Rocket className="w-4 h-4 shrink-0" />
                       <span>{publishing ? "Publishing..." : "Publish to Production"}</span>
                     </button>
 
@@ -314,7 +314,7 @@ export function DomainSettingsModal({
                       href={`https://${savedDomain}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
+                      className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-all cursor-pointer shrink-0"
                     >
                       Visit Live Site ↗
                     </a>
@@ -324,7 +324,7 @@ export function DomainSettingsModal({
 
               {/* Card 3: DNS Configuration Instructions Table */}
               <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">
                   DNS CONFIGURATION INSTRUCTIONS
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
@@ -335,27 +335,27 @@ export function DomainSettingsModal({
                   <table className="w-full text-left text-xs font-mono">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
                       <tr>
-                        <th className="p-3">TYPE</th>
-                        <th className="p-3">HOST/NAME</th>
-                        <th className="p-3">TARGET VALUE</th>
-                        <th className="p-3">STATUS</th>
+                        <th className="p-3.5">TYPE</th>
+                        <th className="p-3.5">HOST/NAME</th>
+                        <th className="p-3.5">TARGET VALUE</th>
+                        <th className="p-3.5">STATUS</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 text-slate-800 font-semibold">
                       <tr>
-                        <td className="p-3 text-blue-600 font-extrabold">A</td>
-                        <td className="p-3">@</td>
-                        <td className="p-3">76.76.21.21</td>
-                        <td className="p-3 text-emerald-600 font-bold flex items-center gap-1.5">
+                        <td className="p-3.5 text-blue-600 font-extrabold">A</td>
+                        <td className="p-3.5">@</td>
+                        <td className="p-3.5">76.76.21.21</td>
+                        <td className="p-3.5 text-emerald-600 font-bold flex items-center gap-1.5">
                           <Check className="w-4 h-4" />
                           <span>Active</span>
                         </td>
                       </tr>
                       <tr>
-                        <td className="p-3 text-blue-600 font-extrabold">CNAME</td>
-                        <td className="p-3">www</td>
-                        <td className="p-3">cname.xite.co.in</td>
-                        <td className="p-3 text-emerald-600 font-bold flex items-center gap-1.5">
+                        <td className="p-3.5 text-blue-600 font-extrabold">CNAME</td>
+                        <td className="p-3.5">www</td>
+                        <td className="p-3.5">cname.xite.co.in</td>
+                        <td className="p-3.5 text-emerald-600 font-bold flex items-center gap-1.5">
                           <Check className="w-4 h-4" />
                           <span>Active</span>
                         </td>
