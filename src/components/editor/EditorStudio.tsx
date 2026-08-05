@@ -94,9 +94,28 @@ export function EditorStudio({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>("domain");
   const [sections, setSections] = useState<SectionItem[]>([]);
+  const [historyStack, setHistoryStack] = useState<SectionItem[][]>([]);
+  const [redoStack, setRedoStack] = useState<SectionItem[][]>([]);
   const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
   const [loadingDb, setLoadingDb] = useState(true);
+
+  // Undo & Redo History Stack Handlers
+  const handleUndo = () => {
+    if (historyStack.length === 0) return;
+    const previousState = historyStack[historyStack.length - 1]!;
+    setRedoStack((prev) => [...prev, sections]);
+    setHistoryStack((prev) => prev.slice(0, prev.length - 1));
+    setSections(previousState);
+  };
+
+  const handleRedo = () => {
+    if (redoStack.length === 0) return;
+    const nextState = redoStack[redoStack.length - 1]!;
+    setHistoryStack((prev) => [...prev, sections]);
+    setRedoStack((prev) => prev.slice(0, prev.length - 1));
+    setSections(nextState);
+  };
 
   // Section Selector Modal
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
@@ -985,6 +1004,8 @@ export function EditorStudio({
           onAddSection={() => setShowAddSectionModal(true)}
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={handleSwapVariant}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
           onMoveUp={handleMoveUp}
           onMoveDown={handleMoveDown}
           onDeleteSection={handleDeleteSection}

@@ -33,6 +33,8 @@ interface EditorToolbarProps {
   onAddSection: () => void;
   onDuplicateSection?: () => void;
   onSwapVariant?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onDeleteSection?: () => void;
@@ -52,6 +54,8 @@ export function EditorToolbar({
   onAddSection,
   onDuplicateSection,
   onSwapVariant,
+  onUndo,
+  onRedo,
   onMoveUp,
   onMoveDown,
   onDeleteSection,
@@ -253,6 +257,7 @@ export function EditorToolbar({
               </button>
 
               <button
+                onClick={onUndo}
                 className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
                 title="Undo"
               >
@@ -268,6 +273,7 @@ export function EditorToolbar({
               </button>
 
               <button
+                onClick={onRedo}
                 className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
                 title="Redo"
               >
