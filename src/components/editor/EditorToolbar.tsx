@@ -180,99 +180,113 @@ export function EditorToolbar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
       
-      {/* Outer Dock Container - Sleek Flat Dark Bar */}
-      <div className="bg-[#0f172a]/95 backdrop-blur-xl border border-slate-700/80 rounded-full shadow-2xl p-1.5 flex items-center gap-2 text-white text-xs font-sans">
+      {/* Outer Dock Container - Ultra Sleek White Floating Pill */}
+      <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-300/80 shadow-2xl rounded-full px-3 py-1.5 flex items-center gap-2 text-slate-700 text-xs font-sans">
         
-        {/* 1. XITE Settings Button */}
+        {/* 1. Dark Navy Square Button */}
         <button
           onClick={onOpenSettings}
-          className="h-8 w-8 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-500 text-white font-black transition-all cursor-pointer shadow-md shrink-0"
+          className="h-7 w-7 flex items-center justify-center rounded-xl bg-[#0d1527] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-sm shrink-0"
           title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
         >
           {isSettingsOpen ? (
-            <X className="w-4 h-4 text-white" />
+            <X className="w-3.5 h-3.5 text-white" />
           ) : (
-            <img src="/xite-logo.png" alt="XITE Logo" className="w-4 h-4 object-contain rounded-sm" />
+            <span className="font-extrabold text-xs">x</span>
           )}
         </button>
 
-        <div className="h-4 w-px bg-slate-700 mx-0.5" />
+        <div className="h-4 w-px bg-slate-300 mx-0.5" />
 
-        {/* 2. System Tools & Drawer Group */}
+        {/* 2. System Tools Group */}
         <div className="flex items-center gap-1">
+          {onSyncAdminWebsite && (
+            <button
+              onClick={onSyncAdminWebsite}
+              className="p-1.5 rounded-lg hover:bg-slate-200/80 text-slate-600 transition-colors cursor-pointer"
+              title="Load / Re-sync Admin Default Website Layout"
+            >
+              <Layers className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           <button
             onClick={onToggleDrawer}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-200/80 text-slate-600 transition-colors cursor-pointer"
             title="Pages, Colors & Fonts Drawer"
           >
-            <span className="text-xs font-black">☰</span>
+            <span className="text-xs font-black">🎨</span>
           </button>
 
           <button
             onClick={handleManualSave}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 relative cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-200/80 text-slate-600 relative cursor-pointer"
             title="Save Status"
           >
-            <Save className={`w-4 h-4 ${saving ? "animate-spin text-blue-400" : ""}`} />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-[#0f172a]" />
+            <Save className={`w-3.5 h-3.5 ${saving ? "animate-spin text-blue-600" : ""}`} />
+            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-white" />
           </button>
 
           <button
             onClick={handleCopyLink}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-200/80 text-slate-600 transition-colors cursor-pointer"
             title="Instant Share / Copy Live Website Link"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <LinkIcon className="w-4 h-4" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <LinkIcon className="w-3.5 h-3.5" />}
           </button>
 
           <button
             onClick={handleOpenPreview}
-            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-200/80 text-slate-600 cursor-pointer transition-colors"
             title="Open Live Website Preview in New Tab"
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-3.5 h-3.5" />
           </button>
-
-          {onSyncAdminWebsite && (
-            <button
-              onClick={onSyncAdminWebsite}
-              className="p-1.5 rounded-lg hover:bg-purple-900/50 text-purple-300 transition-colors cursor-pointer"
-              title="Load / Re-sync Admin Default Website Layout"
-            >
-              <Layers className="w-4 h-4" />
-            </button>
-          )}
         </div>
 
         {/* 3. Selected Section Tools */}
         {isSectionSelected && hasSections && (
           <>
-            <div className="h-4 w-px bg-slate-700 mx-0.5" />
+            <div className="h-4 w-px bg-slate-300 mx-0.5" />
 
             <div className="flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
-              <span className="font-extrabold text-white text-xs px-3 py-1 rounded-full bg-blue-600/30 border border-blue-500/40 text-blue-200">
+              <span className="font-extrabold text-slate-900 text-xs px-2.5 py-0.5 rounded-lg bg-slate-100 border border-slate-200/60">
                 {activeSectionTitle}
               </span>
 
               <button
                 onClick={onDuplicateSection}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer"
+                className="p-1 rounded-lg hover:bg-slate-200/80 text-slate-600 cursor-pointer"
                 title="Duplicate Section"
               >
                 <Copy className="w-3.5 h-3.5" />
               </button>
 
               <button
+                className="p-1 rounded-lg hover:bg-slate-200/80 text-slate-600 cursor-pointer"
+                title="Undo"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+              </button>
+
+              <button
                 onClick={handleRefreshSwap}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-blue-400 font-bold transition-colors cursor-pointer"
+                className="p-1 rounded-lg hover:bg-slate-200/80 text-blue-600 font-bold transition-colors cursor-pointer"
                 title="Swap Variant"
               >
                 <RefreshCw className="w-3.5 h-3.5 hover:rotate-180 transition-transform duration-300" />
               </button>
 
               <button
+                className="p-1 rounded-lg hover:bg-slate-200/80 text-slate-600 cursor-pointer"
+                title="Redo"
+              >
+                <Redo2 className="w-3.5 h-3.5" />
+              </button>
+
+              <button
                 onClick={onMoveUp}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer"
+                className="p-1 rounded-lg hover:bg-slate-200/80 text-slate-600 cursor-pointer"
                 title="Move Up"
               >
                 <ArrowUp className="w-3.5 h-3.5" />
@@ -280,7 +294,7 @@ export function EditorToolbar({
 
               <button
                 onClick={onMoveDown}
-                className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 cursor-pointer"
+                className="p-1 rounded-lg hover:bg-slate-200/80 text-slate-600 cursor-pointer"
                 title="Move Down"
               >
                 <ArrowDown className="w-3.5 h-3.5" />
@@ -288,56 +302,78 @@ export function EditorToolbar({
 
               <button
                 onClick={onDeleteSection}
-                className="p-1.5 rounded-lg hover:bg-red-950/60 text-rose-400 cursor-pointer"
+                className="p-1 rounded-lg hover:bg-rose-100 text-rose-600 cursor-pointer"
                 title="Delete Section"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
+
+              {onClearSelection && (
+                <button
+                  onClick={onClearSelection}
+                  className="p-1 rounded-lg hover:bg-slate-200/80 text-slate-400 hover:text-slate-800 cursor-pointer"
+                  title="Deselect Section"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           </>
         )}
 
-        <div className="h-4 w-px bg-slate-700 mx-0.5" />
+        <div className="h-4 w-px bg-slate-300 mx-0.5" />
 
         {/* 4. Multi-Resolution Viewport Switcher */}
-        <div className="flex items-center gap-1 bg-slate-800/80 rounded-full p-1 border border-slate-700/60">
+        <div className="flex items-center gap-1">
           <button
             onClick={handleDesktopClick}
-            className={`px-2.5 py-1 rounded-full transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
+            className={`transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
               activeDesktop
-                ? "bg-blue-600 text-white font-extrabold shadow-sm"
-                : "text-slate-400 hover:text-white"
+                ? "bg-white border border-slate-200 shadow-sm rounded-xl px-2.5 py-1 text-slate-900 font-extrabold"
+                : "text-slate-500 hover:text-slate-900 p-1.5"
             }`}
             title="Desktop / Laptop (Click to cycle 1440px / 1280px / 1600px)"
           >
             <Monitor className="w-3.5 h-3.5" />
-            <span className="font-mono font-bold text-[11px]">
-              {activeDesktop ? activeDesktop.width : "1440px"}
-            </span>
+            {activeDesktop && (
+              <span className="font-mono font-extrabold text-[11px] text-slate-800">
+                {activeDesktop.width}
+              </span>
+            )}
           </button>
 
           <button
             onClick={handleTabletClick}
-            className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 text-xs ${
+            className={`transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
               activeTablet
-                ? "bg-amber-600 text-white font-extrabold shadow-sm"
-                : "text-slate-400 hover:text-white"
+                ? "bg-white border border-slate-200 shadow-sm rounded-xl px-2.5 py-1 text-slate-900 font-extrabold"
+                : "text-slate-500 hover:text-slate-900 p-1.5"
             }`}
             title="Tablet (Click to cycle 768px / 640px / 1024px)"
           >
             <Tablet className="w-3.5 h-3.5" />
+            {activeTablet && (
+              <span className="font-mono font-extrabold text-[11px] text-slate-800">
+                {activeTablet.width}
+              </span>
+            )}
           </button>
 
           <button
             onClick={handleMobileClick}
-            className={`p-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 text-xs ${
+            className={`transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
               activeMobile
-                ? "bg-emerald-600 text-white font-extrabold shadow-sm"
-                : "text-slate-400 hover:text-white"
+                ? "bg-white border border-slate-200 shadow-sm rounded-xl px-2.5 py-1 text-slate-900 font-extrabold"
+                : "text-slate-500 hover:text-slate-900 p-1.5"
             }`}
             title="Mobile (Click to cycle 375px / 320px / 425px)"
           >
             <Smartphone className="w-3.5 h-3.5" />
+            {activeMobile && (
+              <span className="font-mono font-extrabold text-[11px] text-slate-800">
+                {activeMobile.width}
+              </span>
+            )}
           </button>
         </div>
 
