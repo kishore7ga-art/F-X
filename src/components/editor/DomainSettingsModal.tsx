@@ -129,98 +129,99 @@ export function DomainSettingsModal({
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a] text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in duration-200">
-          {toastMessage}
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-black px-6 py-3.5 rounded-2xl shadow-2xl border border-slate-700 animate-in fade-in duration-200 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Header Navigation */}
-      <header className="h-16 border-b border-slate-200 bg-white px-8 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      {/* Top Header Navigation Bar */}
+      <header className="h-18 border-b border-slate-200/90 bg-white/90 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-20 shadow-xs">
         <div className="flex items-center gap-4">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 text-xs font-extrabold text-slate-700 hover:text-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
+            className="flex items-center gap-2 text-xs font-extrabold text-slate-700 hover:text-slate-900 px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Editor</span>
           </button>
-          <div className="h-4 w-px bg-slate-200" />
-          <span className="text-sm font-black text-slate-900 tracking-tight">XITE Studio Settings</span>
+          <div className="h-5 w-px bg-slate-200" />
+          <span className="text-base font-black text-slate-900 tracking-tight">XITE Studio Settings</span>
         </div>
 
         <a
           href={`https://${savedDomain}`}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white text-xs font-extrabold px-4 py-2 rounded-xl shadow-sm transition-all cursor-pointer"
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
         >
           <span>Visit Live Site ↗</span>
         </a>
       </header>
 
       {/* Main Settings Body */}
-      <div className="flex-1 max-w-6xl w-full mx-auto grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8 p-6 md:p-8">
+      <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-10 p-8 md:p-10">
         
         {/* Left Sidebar Menu */}
-        <aside className="space-y-6 flex flex-col justify-between h-[calc(100vh-120px)] sticky top-24">
-          <div className="space-y-1.5">
+        <aside className="space-y-6 flex flex-col justify-between h-[calc(100vh-140px)] sticky top-28">
+          <div className="space-y-2">
             <button
               onClick={() => setActiveTab("domain")}
-              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "domain"
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/70"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Globe className="w-4 h-4 shrink-0" />
+              <Globe className="w-4.5 h-4.5 shrink-0" />
               <span>Custom Domain & SSL</span>
             </button>
 
             <button
               onClick={() => setActiveTab("team")}
-              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "team"
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/70"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Users className="w-4 h-4 shrink-0" />
+              <Users className="w-4.5 h-4.5 shrink-0" />
               <span>Team Access & Roles</span>
             </button>
 
             <button
               onClick={() => setActiveTab("security")}
-              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "security"
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/70"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Key className="w-4 h-4 shrink-0" />
+              <Key className="w-4.5 h-4.5 shrink-0" />
               <span>Password & Security</span>
             </button>
 
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "notifications"
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/70"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Bell className="w-4 h-4 shrink-0" />
+              <Bell className="w-4.5 h-4.5 shrink-0" />
               <span>Notifications</span>
             </button>
 
             <button
               onClick={() => setActiveTab("advanced")}
-              className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer ${
+              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
                 activeTab === "advanced"
-                  ? "bg-slate-900 text-white shadow-md"
-                  : "text-slate-600 hover:bg-slate-200/70"
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
               }`}
             >
-              <Sliders className="w-4 h-4 shrink-0" />
+              <Sliders className="w-4.5 h-4.5 shrink-0" />
               <span>Advanced Settings</span>
             </button>
           </div>
@@ -228,83 +229,91 @@ export function DomainSettingsModal({
           {/* Bottom User Pill */}
           <button
             onClick={() => setShowAccountModal(true)}
-            className="w-full text-left p-3.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-sm flex items-center gap-3 transition-all cursor-pointer group"
+            className="w-full text-left p-4 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-sm flex items-center gap-3.5 transition-all cursor-pointer group"
             title="View Owner Account Details"
           >
-            <div className="w-9 h-9 rounded-full bg-[#0f172a] text-white flex items-center justify-center font-black text-xs group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xs group-hover:scale-105 transition-transform shrink-0 shadow-md">
               K
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-extrabold text-slate-900 truncate">Kishore</span>
-              <span className="text-[10px] text-blue-600 font-bold group-hover:underline truncate">Owner Account · Details ↗</span>
+              <span className="text-xs font-black text-slate-900 truncate">Kishore</span>
+              <span className="text-[11px] text-blue-600 font-bold group-hover:underline truncate">Owner Account · Details ↗</span>
             </div>
           </button>
         </aside>
 
         {/* Dynamic Content Area */}
-        <main className="space-y-6">
+        <main className="space-y-8">
           
           {/* 1. TAB: CUSTOM DOMAIN & SSL */}
           {activeTab === "domain" && (
             <>
-              <div>
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">Publishing & Custom Domain Settings</h1>
-                <p className="text-xs text-slate-500 font-semibold mt-1">
+              <div className="space-y-1">
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Publishing & Custom Domain Settings</h1>
+                <p className="text-sm text-slate-500 font-medium">
                   Configure A Record, CNAME, and SSL hosting for your website
                 </p>
               </div>
 
               {/* Card 1: Primary Custom Domain */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                    PRIMARY CUSTOM DOMAIN
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-extrabold bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200">
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                  <div>
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                      PRIMARY CUSTOM DOMAIN
+                    </span>
+                    <h3 className="text-base font-extrabold text-slate-900 mt-1">College Domain Routing</h3>
+                  </div>
+                  <span className="inline-flex items-center gap-2 text-xs text-emerald-700 font-extrabold bg-emerald-50 px-4 py-2 rounded-full border border-emerald-200">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>SSL Active & Connected</span>
                   </span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <input
-                    type="text"
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    className="flex-1 min-w-0 w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 shadow-inner"
-                  />
-                  <button
-                    onClick={handleSaveDomain}
-                    className="px-6 py-3 bg-[#0d1527] hover:bg-black text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md shrink-0 whitespace-nowrap"
-                  >
-                    Save Domain
-                  </button>
+                <div className="space-y-3">
+                  <label className="block text-xs font-extrabold text-slate-700">
+                    Domain Name / Subdomain Address
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <input
+                      type="text"
+                      value={customDomain}
+                      onChange={(e) => setCustomDomain(e.target.value)}
+                      className="flex-1 w-full bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-base font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
+                    />
+                    <button
+                      onClick={handleSaveDomain}
+                      className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg shrink-0 whitespace-nowrap"
+                    >
+                      Save Domain
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {/* Card 2: Production Live Callout Banner */}
-              <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-6 space-y-4 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/60 pb-3">
-                  <div className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-800 bg-emerald-100/90 px-3.5 py-1.5 rounded-full border border-emerald-300">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <div className="bg-slate-900 text-white rounded-3xl p-8 shadow-xl space-y-6 relative overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                  <div className="inline-flex items-center gap-2 text-xs font-black text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-4 py-1.5 rounded-full uppercase tracking-wider">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                     <span>PRODUCTION LIVE</span>
-                    <span className="text-emerald-700 font-semibold hidden sm:inline">· Last deployed Jul 31, 2026 at 05:35 AM</span>
                   </div>
+                  <span className="text-slate-400 text-xs font-medium">Last deployed Jul 31, 2026 at 05:35 AM</span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
-                  <div className="space-y-1">
-                    <h3 className="text-base font-black text-slate-900">Publish Website to Production</h3>
-                    <p className="text-xs text-slate-600 font-semibold">
-                      Target URL: <span className="font-mono text-slate-900 underline font-bold">https://{savedDomain}</span>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="space-y-1.5">
+                    <h3 className="text-xl font-black text-white">Publish Website to Production</h3>
+                    <p className="text-xs text-slate-400 font-medium">
+                      Target URL: <a href={`https://${savedDomain}`} target="_blank" rel="noreferrer" className="font-mono text-blue-400 underline font-bold">{`https://${savedDomain}`}</a>
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
                     <button
                       onClick={handlePublish}
                       disabled={publishing}
-                      className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap shrink-0"
+                      className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs px-6 py-3.5 rounded-2xl shadow-lg shadow-emerald-500/30 transition-all cursor-pointer whitespace-nowrap shrink-0"
                     >
                       <Rocket className="w-4 h-4 shrink-0" />
                       <span>{publishing ? "Publishing..." : "Publish to Production"}</span>
@@ -314,7 +323,7 @@ export function DomainSettingsModal({
                       href={`https://${savedDomain}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-3 bg-white border border-slate-300 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                      className="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-2xl border border-slate-700 transition-all cursor-pointer whitespace-nowrap shrink-0"
                     >
                       Visit Live Site ↗
                     </a>
@@ -323,40 +332,42 @@ export function DomainSettingsModal({
               </div>
 
               {/* Card 3: DNS Configuration Instructions Table */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  DNS CONFIGURATION INSTRUCTIONS
-                </h3>
-                <p className="text-xs text-slate-500 font-medium">
-                  Point your domain&apos;s DNS records to our servers to complete custom domain setup:
-                </p>
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6">
+                <div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                    DNS CONFIGURATION INSTRUCTIONS
+                  </span>
+                  <h3 className="text-base font-extrabold text-slate-900 mt-1">
+                    Point your domain&apos;s DNS records to our servers
+                  </h3>
+                </div>
 
-                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-sm">
                   <table className="w-full text-left text-xs font-mono">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
+                    <thead className="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-black tracking-wider">
                       <tr>
-                        <th className="p-3.5">TYPE</th>
-                        <th className="p-3.5">HOST/NAME</th>
-                        <th className="p-3.5">TARGET VALUE</th>
-                        <th className="p-3.5">STATUS</th>
+                        <th className="p-4">TYPE</th>
+                        <th className="p-4">HOST/NAME</th>
+                        <th className="p-4">TARGET VALUE</th>
+                        <th className="p-4">STATUS</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 text-slate-800 font-semibold">
-                      <tr>
-                        <td className="p-3.5 text-blue-600 font-extrabold">A</td>
-                        <td className="p-3.5">@</td>
-                        <td className="p-3.5">76.76.21.21</td>
-                        <td className="p-3.5 text-emerald-600 font-bold flex items-center gap-1.5">
-                          <Check className="w-4 h-4" />
+                    <tbody className="divide-y divide-slate-200 text-slate-800 font-bold">
+                      <tr className="hover:bg-slate-50">
+                        <td className="p-4 text-blue-600 font-black">A</td>
+                        <td className="p-4">@</td>
+                        <td className="p-4">76.76.21.21</td>
+                        <td className="p-4 text-emerald-600 font-extrabold flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
                           <span>Active</span>
                         </td>
                       </tr>
-                      <tr>
-                        <td className="p-3.5 text-blue-600 font-extrabold">CNAME</td>
-                        <td className="p-3.5">www</td>
-                        <td className="p-3.5">cname.xite.co.in</td>
-                        <td className="p-3.5 text-emerald-600 font-bold flex items-center gap-1.5">
-                          <Check className="w-4 h-4" />
+                      <tr className="hover:bg-slate-50">
+                        <td className="p-4 text-blue-600 font-black">CNAME</td>
+                        <td className="p-4">www</td>
+                        <td className="p-4">cname.xite.co.in</td>
+                        <td className="p-4 text-emerald-600 font-extrabold flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
                           <span>Active</span>
                         </td>
                       </tr>
