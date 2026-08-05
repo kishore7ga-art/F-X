@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   Globe,
@@ -36,6 +37,7 @@ export function DomainSettingsModal({
   subdomain = "greenfield",
   initialTab = "domain",
 }: DomainSettingsModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [customDomain, setCustomDomain] = useState(`${subdomain}.edu.in`);
   const [savedDomain, setSavedDomain] = useState(`${subdomain}.edu.in`);
   const [publishing, setPublishing] = useState(false);
@@ -43,38 +45,9 @@ export function DomainSettingsModal({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
-  // Team Access State
-  const [teamMembers, setTeamMembers] = useState([
-    { id: 1, name: "Kishore", email: "kishore@xite.co.in", role: "Owner Account", status: "Active" },
-    { id: 2, name: "College Admin", email: "admin@greenfield.edu.in", role: "Administrator", status: "Active" },
-    { id: 3, name: "Web Editor", email: "editor@greenfield.edu.in", role: "Content Editor", status: "Active" },
-  ]);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("Content Editor");
-
-  // Security State
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
-
-  // Notification State
-  const [emailAlerts, setEmailAlerts] = useState({
-    deployment: true,
-    ssl: true,
-    security: true,
-    analytics: false,
-  });
-
-  // Advanced State
-  const [seoIndexing, setSeoIndexing] = useState(true);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [headerScript, setHeaderScript] = useState("<!-- Google Tag Manager / Analytics -->\n<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-XITE12345\"></script>");
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (initialTab) {
@@ -82,50 +55,10 @@ export function DomainSettingsModal({
     }
   }, [initialTab, isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  const handlePublish = () => {
-    setPublishing(true);
-    setTimeout(() => {
-      setPublishing(false);
-      showToast("Website published successfully to production live!");
-    }, 1200);
-  };
-
-  const handleSaveDomain = () => {
-    setSavedDomain(customDomain);
-    showToast(`Domain saved: https://${customDomain}`);
-  };
-
-  const handleInviteMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail) return;
-    const newMember = {
-      id: Date.now(),
-      name: inviteEmail.split("@")[0] || "New Member",
-      email: inviteEmail,
-      role: inviteRole,
-      status: "Invited",
-    };
-    setTeamMembers((prev) => [...prev, newMember]);
-    setInviteEmail("");
-    showToast(`Invitation sent to ${inviteEmail}`);
-  };
-
-  const handleUpdatePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      showToast("Passwords do not match!");
-      return;
-    }
-    showToast("Password updated successfully!");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-[#f8fafc] text-slate-900 font-sans flex flex-col overflow-y-auto select-none">
+  return createPortal(
+    <div className="fixed inset-0 z-[99999] bg-[#f8fafc] text-slate-900 font-sans flex flex-col overflow-y-auto select-none w-screen h-screen top-0 left-0 right-0 bottom-0">
       
       {/* Toast Notification */}
       {toastMessage && (
@@ -753,6 +686,7 @@ export function DomainSettingsModal({
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
