@@ -191,81 +191,67 @@ export function DomainSettingsModal({
       </header>
 
       {/* Main Settings Body */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "100%",
-          display: "flex",
-          flexDirection: "row",
-          gap: "32px",
-          padding: "32px 36px",
-          boxSizing: "border-box",
-        }}
-        className="flex-1 min-h-0"
-      >
+      <div className="w-full max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8 flex-1 min-h-0 box-border">
         {/* Left Sidebar Menu */}
-        <aside
-          style={{ width: "240px", flexShrink: 0 }}
-          className="space-y-6 flex flex-col justify-between"
-        >
-          <div className="space-y-2 flex flex-col">
+        <aside className="w-full lg:w-64 shrink-0 space-y-4 lg:space-y-6 flex flex-col justify-between">
+          <div className="flex lg:flex-col overflow-x-auto lg:overflow-x-visible gap-2 pb-2 lg:pb-0 scrollbar-none">
             <button
               onClick={() => setActiveTab("domain")}
-              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
+              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "domain"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
               }`}
             >
-              <Globe className="w-4.5 h-4.5 shrink-0" />
+              <Globe className="w-4 h-4 shrink-0" />
               <span>Custom Domain & SSL</span>
             </button>
 
             <button
               onClick={() => setActiveTab("team")}
-              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
+              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "team"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
               }`}
             >
-              <Users className="w-4.5 h-4.5 shrink-0" />
+              <Users className="w-4 h-4 shrink-0" />
               <span>Team Access & Roles</span>
             </button>
 
             <button
               onClick={() => setActiveTab("security")}
-              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
+              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "security"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
               }`}
             >
-              <Key className="w-4.5 h-4.5 shrink-0" />
+              <Key className="w-4 h-4 shrink-0" />
               <span>Password & Security</span>
             </button>
 
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
+              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "notifications"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
               }`}
             >
-              <Bell className="w-4.5 h-4.5 shrink-0" />
+              <Bell className="w-4 h-4 shrink-0" />
               <span>Notifications</span>
             </button>
 
             <button
               onClick={() => setActiveTab("advanced")}
-              className={`w-full text-left px-4 py-3.5 rounded-2xl text-xs font-extrabold flex items-center gap-3.5 transition-all cursor-pointer ${
+              className={`shrink-0 lg:w-full text-left px-4 py-3 rounded-2xl text-xs font-extrabold flex items-center gap-3 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "advanced"
                   ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900"
+                  : "text-slate-600 hover:bg-slate-200/70 hover:text-slate-900 bg-white lg:bg-transparent border border-slate-200 lg:border-none"
               }`}
             >
-              <Sliders className="w-4.5 h-4.5 shrink-0" />
+              <Sliders className="w-4 h-4 shrink-0" />
               <span>Advanced Settings</span>
             </button>
           </div>
@@ -273,7 +259,7 @@ export function DomainSettingsModal({
           {/* Bottom User Pill */}
           <button
             onClick={() => setShowAccountModal(true)}
-            className="w-full text-left p-3.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-sm flex items-center gap-3 transition-all cursor-pointer group"
+            className="w-full text-left p-3.5 bg-white hover:bg-slate-50 border border-slate-200/90 rounded-2xl shadow-sm flex items-center gap-3 transition-all cursor-pointer group shrink-0"
             title="View Owner Account Details"
           >
             <div className="w-9 h-9 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xs group-hover:scale-105 transition-transform shrink-0 shadow-md">
@@ -287,24 +273,14 @@ export function DomainSettingsModal({
         </aside>
 
         {/* Dynamic Content Area */}
-        <main
-          style={{
-            flex: "1 1 0%",
-            minWidth: 0,
-            width: "100%",
-            boxSizing: "border-box",
-            display: "flex",
-            flexDirection: "column",
-            gap: "32px",
-          }}
-        >
+        <main className="flex-1 min-w-0 w-full space-y-6 sm:space-y-8 box-border">
           
           {/* 1. TAB: CUSTOM DOMAIN & SSL */}
           {activeTab === "domain" && (
             <>
               <div className="space-y-1">
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">Publishing & Custom Domain Settings</h1>
-                <p className="text-sm text-slate-500 font-medium">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Publishing & Custom Domain Settings</h1>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium">
                   Configure A Record, CNAME, and SSL hosting for your website
                 </p>
               </div>
