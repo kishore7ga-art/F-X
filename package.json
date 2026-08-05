@@ -1,13 +1,13 @@
 {
   "name": "college-saas",
-  "version": "0.2.0",
+  "version": "0.3.0-FORCE-CLEAN-BUILD",
   "private": true,
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node -e \"const fs=require('fs'); fs.rmSync('.next', {recursive:true, force:true});\" && next build",
     "start": "node scripts/start.mjs",
     "postinstall": "prisma generate",
     "lint": "eslint",
