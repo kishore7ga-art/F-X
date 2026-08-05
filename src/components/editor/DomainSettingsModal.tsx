@@ -45,6 +45,16 @@ export function DomainSettingsModal({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
+  const [lastDeployedTime, setLastDeployedTime] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("xite_last_published_time");
+        if (saved) return saved;
+      } catch {}
+    }
+    return "Aug 5, 2026 at 10:07 PM";
+  });
+
   // Team Access State
   const [teamMembers, setTeamMembers] = useState([
     { id: 1, name: "Kishore", email: "kishore@xite.co.in", role: "Owner Account", status: "Active" },
@@ -349,7 +359,7 @@ export function DomainSettingsModal({
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                     <span>PRODUCTION LIVE</span>
                   </div>
-                  <span className="text-slate-400 text-xs font-medium">Last deployed Jul 31, 2026 at 05:35 AM</span>
+                  <span className="text-slate-400 text-xs font-medium">Last deployed {lastDeployedTime}</span>
                 </div>
 
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
