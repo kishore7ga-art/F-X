@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "node -e \"const fs=require('fs'); if(fs.existsSync('.next')) fs.readdirSync('.next').forEach(f => { if(f !== 'cache') fs.rmSync('.next/' + f, {recursive:true, force:true}); });\" && next build",
+    "build": "next build",
     "start": "node scripts/start.mjs",
     "postinstall": "prisma generate",
     "lint": "eslint",

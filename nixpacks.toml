@@ -1,6 +1,7 @@
 # Nixpacks deployment configuration for Dokploy
 [variables]
-BUILD_CACHE_BUSTER = "v3.5.0-NIXPACKS-FORCE-NO-CACHE-AUG5"
+BUILD_CACHE_BUSTER = "v4.0.0-NO-CACHE-FORCE-REBUILD-AUG5"
+NIXPACKS_NO_CACHE = "1"
 NODE_ENV = "production"
 
 [phases.setup]
