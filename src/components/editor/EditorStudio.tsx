@@ -205,8 +205,12 @@ export function EditorStudio({
     if (typeof window !== "undefined") {
       try {
         const saved = localStorage.getItem("xite_saved_pages");
-        if (saved) return JSON.parse(saved);
-      } catch {}
+        if (saved && saved !== "undefined" && saved !== "null") {
+          return JSON.parse(saved);
+        }
+      } catch (e) {
+        console.warn("Could not parse xite_saved_pages from localStorage:", e);
+      }
     }
     return {};
   });
@@ -226,16 +230,14 @@ export function EditorStudio({
     }
   }, [sections, currentPage.slug]);
 
-  // Fetch sections/templates added by Admin in the Database
-  const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
+  // Fetch sections & admin DB templates
+  const fetchDbSections = async (slug: string) => {
+    setLoadingDb(true);
     try {
-      setLoadingDb(true);
-
-      // 1. If page is already saved by user in pageStore and forceSync is false, load user's saved sections!
-      const currentSaved = pageStore[slug];
-      if (!forceSync && currentSaved !== undefined && Array.isArray(currentSaved)) {
-        setSections(currentSaved);
-        setActiveSectionIndex(currentSaved.length > 0 ? 0 : null);
+      // 1. If page is already saved by user in pageStore, load user's saved sections
+      if (pageStore[slug] && pageStore[slug].length > 0) {
+        setSections(pageStore[slug]);
+        setActiveSectionIndex(0);
         setLoadingDb(false);
         return;
       }
@@ -246,8 +248,8 @@ export function EditorStudio({
           credentials: "include",
         });
         if (res.ok) {
-          const data = await res.json();
-          if (data.templates && data.templates.length > 0) {
+          const data = await res.json().catch(() => ({}));
+          if (data && data.templates && data.templates.length > 0) {
             fetchedTemplates = data.templates;
             setAdminDbTemplates(data.templates);
           }
@@ -259,7 +261,7 @@ export function EditorStudio({
         const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
         const defRes = await fetch(`${apiBase}/api/v1/default-website`);
         if (defRes.ok) {
-          const defData = await defRes.json();
+          const defData = await defRes.json().catch(() => ({}));
           if (defData && Array.isArray(defData.pages)) {
             const formattedSlug = slug.startsWith("/") ? slug : `/${slug}`;
             const matchedPage = defData.pages.find(
@@ -581,8 +583,8 @@ export function EditorStudio({
       try {
         const res = await fetch("/api/v1/admin/templates", { credentials: "include" });
         if (res.ok) {
-          const data = await res.json();
-          if (data.templates) {
+          const data = await res.json().catch(() => ({}));
+          if (data && data.templates) {
             templatesList = data.templates;
             setAdminDbTemplates(data.templates);
           }
@@ -630,8 +632,8 @@ export function EditorStudio({
       try {
         const res = await fetch("/api/v1/admin/templates", { credentials: "include" });
         if (res.ok) {
-          const data = await res.json();
-          if (data.templates && data.templates.length > 0) {
+          const data = await res.json().catch(() => ({}));
+          if (data && data.templates && data.templates.length > 0) {
             templatesList = data.templates;
             setAdminDbTemplates(data.templates);
           }
