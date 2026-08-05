@@ -160,10 +160,10 @@ export function DomainSettingsModal({
       </header>
 
       {/* Main Settings Body */}
-      <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-10 p-8 md:p-10">
+      <div className="flex-1 max-w-7xl w-full mx-auto flex flex-col lg:flex-row gap-8 p-6 md:p-10 min-h-0">
         
         {/* Left Sidebar Menu */}
-        <aside className="space-y-6 flex flex-col justify-between h-[calc(100vh-140px)] sticky top-28">
+        <aside className="w-full lg:w-[260px] shrink-0 space-y-6 flex flex-col justify-between">
           <div className="space-y-2">
             <button
               onClick={() => setActiveTab("domain")}
@@ -243,7 +243,7 @@ export function DomainSettingsModal({
         </aside>
 
         {/* Dynamic Content Area */}
-        <main className="space-y-8">
+        <main className="flex-1 min-w-0 space-y-8">
           
           {/* 1. TAB: CUSTOM DOMAIN & SSL */}
           {activeTab === "domain" && (
