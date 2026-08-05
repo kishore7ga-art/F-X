@@ -260,22 +260,22 @@ export function DomainSettingsModal({
                   <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
                     PRIMARY CUSTOM DOMAIN
                   </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-extrabold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-extrabold bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>SSL Active & Connected</span>
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <input
                     type="text"
                     value={customDomain}
                     onChange={(e) => setCustomDomain(e.target.value)}
-                    className="flex-1 min-w-[240px] bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900"
+                    className="flex-1 min-w-0 w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 shadow-inner"
                   />
                   <button
                     onClick={handleSaveDomain}
-                    className="px-6 py-2.5 bg-[#0f172a] hover:bg-black text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md shrink-0"
+                    className="px-6 py-3 bg-[#0d1527] hover:bg-black text-white text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md shrink-0 whitespace-nowrap"
                   >
                     Save Domain
                   </button>
@@ -283,28 +283,28 @@ export function DomainSettingsModal({
               </div>
 
               {/* Card 2: Production Live Callout Banner */}
-              <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-6 space-y-4 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-6 space-y-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/60 pb-3">
                   <div className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-800 bg-emerald-100/90 px-3.5 py-1.5 rounded-full border border-emerald-300">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     <span>PRODUCTION LIVE</span>
-                    <span className="text-emerald-700 font-semibold">· Last deployed Jul 31, 2026 at 05:35 AM</span>
+                    <span className="text-emerald-700 font-semibold hidden sm:inline">· Last deployed Jul 31, 2026 at 05:35 AM</span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
-                  <div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
+                  <div className="space-y-1">
                     <h3 className="text-base font-black text-slate-900">Publish Website to Production</h3>
-                    <p className="text-xs text-slate-600 font-semibold mt-1">
+                    <p className="text-xs text-slate-600 font-semibold">
                       Target URL: <span className="font-mono text-slate-900 underline font-bold">https://{savedDomain}</span>
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-3 shrink-0">
                     <button
                       onClick={handlePublish}
                       disabled={publishing}
-                      className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all cursor-pointer shrink-0"
+                      className="flex items-center gap-2 bg-[#10b981] hover:bg-[#059669] text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap shrink-0"
                     >
                       <Rocket className="w-4 h-4 shrink-0" />
                       <span>{publishing ? "Publishing..." : "Publish to Production"}</span>
@@ -314,7 +314,7 @@ export function DomainSettingsModal({
                       href={`https://${savedDomain}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-all cursor-pointer shrink-0"
+                      className="px-4 py-3 bg-white border border-slate-300 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-50 transition-all cursor-pointer whitespace-nowrap shrink-0"
                     >
                       Visit Live Site ↗
                     </a>

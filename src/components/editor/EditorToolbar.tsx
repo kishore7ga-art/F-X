@@ -180,23 +180,23 @@ export function EditorToolbar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
       
-      {/* Outer Dock Container - Ultra Sleek White Floating Pill */}
-      <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-300/80 shadow-2xl rounded-full px-3 py-1.5 flex items-center gap-2 text-slate-700 text-xs font-sans">
+      {/* Outer Dock Container - Ultra Sleek Floating Pill */}
+      <div className="bg-[#eef2f6]/95 backdrop-blur-xl border border-slate-300/90 shadow-2xl rounded-full pl-1.5 pr-3 py-1.5 flex items-center gap-2 text-slate-700 text-xs font-sans">
         
-        {/* 1. Dark Navy Square Button */}
+        {/* 1. Dark Navy Orb Button */}
         <button
           onClick={onOpenSettings}
-          className="h-7 w-7 flex items-center justify-center rounded-xl bg-[#0d1527] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-sm shrink-0"
+          className="h-8 w-8 flex items-center justify-center rounded-full bg-[#0d1527] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-md shrink-0"
           title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
         >
           {isSettingsOpen ? (
-            <X className="w-3.5 h-3.5 text-white" />
+            <X className="w-4 h-4 text-white" />
           ) : (
-            <span className="font-extrabold text-xs">x</span>
+            <span className="font-black text-xs tracking-tight">x</span>
           )}
         </button>
 
-        <div className="h-4 w-px bg-slate-300 mx-0.5" />
+        <div className="h-4 w-px bg-slate-300/80 mx-0.5" />
 
         {/* 2. System Tools Group */}
         <div className="flex items-center gap-1">
