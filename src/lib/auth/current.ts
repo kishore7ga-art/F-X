@@ -76,20 +76,24 @@ export async function requireCurrentCollege(targetSubdomain?: string): Promise<C
   const college = await getCurrentCollege();
   if (college) return college;
 
-  const openCollege = await openAccessCollege(targetSubdomain);
-  return {
-    id: openCollege.id,
-    name: openCollege.name,
-    subdomain: openCollege.subdomain,
-    customDomain: openCollege.customDomain,
-    templateId: openCollege.templateId,
-    themePaletteId: openCollege.themePaletteId,
-    themeFontId: openCollege.themeFontId,
-    collegeType: openCollege.collegeType,
-    status: openCollege.status,
-    isDemo: openCollege.isDemo,
-    createdAt: openCollege.createdAt.toISOString(),
-  };
+  if (AUTH_DISABLED) {
+    const openCollege = await openAccessCollege(targetSubdomain);
+    return {
+      id: openCollege.id,
+      name: openCollege.name,
+      subdomain: openCollege.subdomain,
+      customDomain: openCollege.customDomain,
+      templateId: openCollege.templateId,
+      themePaletteId: openCollege.themePaletteId,
+      themeFontId: openCollege.themeFontId,
+      collegeType: openCollege.collegeType,
+      status: openCollege.status,
+      isDemo: openCollege.isDemo,
+      createdAt: openCollege.createdAt.toISOString(),
+    };
+  }
+
+  redirect("/login");
 }
 
 /**
