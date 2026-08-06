@@ -640,8 +640,21 @@ export function EditorStudio({
       }
 
       let fetchedTemplates: any[] = [];
+      const apiBase = (() => {
+        if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+        if (
+          typeof window !== "undefined" &&
+          window.location.hostname !== "localhost" &&
+          window.location.hostname !== "127.0.0.1"
+        ) {
+          return "https://api.xite.co.in";
+        }
+        return "http://localhost:4000";
+      })();
+
       try {
-        const res = await fetch("/api/v1/admin/templates", {
+        const res = await fetch(`${apiBase}/api/v1/admin/templates`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -655,7 +668,6 @@ export function EditorStudio({
 
       // 2. Fetch Admin-configured Default Website Structure for new pages
       try {
-        const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
         const defRes = await fetch(`${apiBase}/api/v1/default-website`);
         if (defRes.ok) {
           const defData = await defRes.json().catch(() => ({}));
