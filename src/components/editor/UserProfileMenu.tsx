@@ -75,7 +75,7 @@ export function UserProfileMenu({
                   localStorage.clear();
                   sessionStorage.clear();
                 } catch {}
-                window.location.href = "/login";
+                window.location.href = "/";
               }}
               className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 flex items-center gap-2 text-red-400 font-bold cursor-pointer"
             >

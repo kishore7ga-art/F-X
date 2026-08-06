@@ -1537,7 +1537,7 @@ export function DomainSettingsModal({
                         localStorage.clear();
                         sessionStorage.clear();
                       } catch {}
-                      window.location.href = "/login";
+                      window.location.href = "/";
                     }}
                     style={{
                       width: "100%",

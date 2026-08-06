@@ -22,7 +22,7 @@ export async function POST() {
     } catch {}
   }
 
-  return NextResponse.json({ success: true, redirect: "/login" });
+  return NextResponse.json({ success: true, redirect: "/" });
 }
 
 export async function GET() {
@@ -42,5 +42,5 @@ export async function GET() {
     } catch {}
   }
 
-  return NextResponse.redirect(new URL("/login", "https://xite.co.in"));
+  return NextResponse.redirect(new URL("/", "https://xite.co.in"));
 }

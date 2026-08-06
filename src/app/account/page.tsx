@@ -18,7 +18,7 @@ export default function AccountDetailsPage() {
       localStorage.clear();
       sessionStorage.clear();
     } catch {}
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   return (
