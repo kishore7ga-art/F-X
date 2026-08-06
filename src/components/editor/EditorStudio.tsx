@@ -1175,7 +1175,7 @@ export function EditorStudio({
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans relative overflow-x-hidden select-none">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-x-hidden select-none">
       
       {/* Toast Notification Banner */}
       {toastMessage && (
@@ -1186,28 +1186,28 @@ export function EditorStudio({
       )}
 
       {/* Top Navbar Header */}
-      <header className="h-16 border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl px-4 sm:px-8 flex items-center sticky top-0 z-40 shadow-xl">
+      <header className="h-16 border-b border-slate-200 bg-white/95 backdrop-blur-xl px-4 sm:px-8 flex items-center sticky top-0 z-40 shadow-sm">
         <div className="w-full max-w-[1500px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2">
               <img src="/xite-logo.png" alt="XITE Logo" className="h-7 w-7 object-contain rounded-md" />
-              <span className="text-base font-black tracking-tight text-white">XITE</span>
+              <span className="text-base font-black tracking-tight text-slate-900">XITE</span>
             </Link>
-            <div className="h-4 w-px bg-slate-800" />
-            <div className="flex items-center gap-1.5 text-xs text-blue-400 font-black bg-blue-950/60 px-3 py-1 rounded-full border border-blue-800/60">
-              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+            <div className="h-4 w-px bg-slate-200" />
+            <div className="flex items-center gap-1.5 text-xs text-blue-700 font-black bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
               <span>{currentPage.name} Page</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-300 bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+            <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-700 bg-slate-100 px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>{subdomain}.xite.co.in</span>
             </div>
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 px-4 py-2 rounded-xl transition-all cursor-pointer shadow-md"
+              className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-300 px-4 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
             >
               <span>⚙️ Settings & Account</span>
             </button>
@@ -1218,10 +1218,10 @@ export function EditorStudio({
       {/* Main Studio Canvas Workspace */}
       <main
         onClick={() => setActiveSectionIndex(null)}
-        className="flex-1 w-full bg-[#0b0f19] p-4 sm:p-8 flex flex-col items-center justify-start pb-52 cursor-pointer min-h-screen"
+        className="flex-1 w-full bg-slate-100/90 p-4 sm:p-8 flex flex-col items-center justify-start pb-52 cursor-pointer min-h-screen"
       >
         <div
-          className="transition-all duration-300 min-h-[75vh] flex flex-col items-center justify-start mx-auto bg-white shadow-2xl rounded-2xl border border-slate-700/80 overflow-hidden max-w-full my-4"
+          className="transition-all duration-300 min-h-[75vh] flex flex-col items-center justify-start mx-auto bg-white shadow-xl rounded-2xl border border-slate-200/90 overflow-hidden max-w-full my-4"
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
           {sections.length === 0 ? (
