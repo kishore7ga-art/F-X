@@ -11,7 +11,6 @@ import {
   Sliders,
   ShieldCheck,
   Rocket,
-  Copy,
   Check,
   UserPlus,
   Mail,
@@ -21,7 +20,8 @@ import {
   Code,
   AlertTriangle,
   RefreshCw,
-  X,
+  Trash2,
+  ExternalLink,
 } from "lucide-react";
 
 interface DomainSettingsModalProps {
@@ -43,7 +43,6 @@ export function DomainSettingsModal({
   const [publishing, setPublishing] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [showAccountModal, setShowAccountModal] = useState(false);
 
   const [lastDeployedTime, setLastDeployedTime] = useState(() => {
     if (typeof window !== "undefined") {
@@ -52,7 +51,7 @@ export function DomainSettingsModal({
         if (saved) return saved;
       } catch {}
     }
-    return "Aug 6, 2026 at 11:25 AM";
+    return "Aug 6, 2026 at 11:35 AM";
   });
 
   // Team Access State
@@ -68,6 +67,22 @@ export function DomainSettingsModal({
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
+
+  // Notification State
+  const [emailAlerts, setEmailAlerts] = useState({
+    deployment: true,
+    ssl: true,
+    security: true,
+    analytics: false,
+  });
+
+  // Advanced State
+  const [seoIndexing, setSeoIndexing] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [headerScript, setHeaderScript] = useState(
+    '<!-- Google Tag Manager / Analytics -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XITE12345"></script>'
+  );
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -76,14 +91,17 @@ export function DomainSettingsModal({
 
   const handlePublish = () => {
     setPublishing(true);
-    const nowStr = new Date().toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }) + " at " + new Date().toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const nowStr =
+      new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }) +
+      " at " +
+      new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
     setTimeout(() => {
       setPublishing(false);
@@ -113,6 +131,18 @@ export function DomainSettingsModal({
     setTeamMembers((prev) => [...prev, newMember]);
     setInviteEmail("");
     showToast(`Invitation sent to ${inviteEmail}`);
+  };
+
+  const handleUpdatePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match!");
+      return;
+    }
+    showToast("Password updated successfully!");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   useEffect(() => {
@@ -393,7 +423,6 @@ export function DomainSettingsModal({
 
           {/* Bottom Owner User Pill */}
           <button
-            onClick={() => setShowAccountModal(true)}
             style={{
               width: "100%",
               textAlign: "left",
@@ -764,6 +793,577 @@ export function DomainSettingsModal({
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </>
+          )}
+
+          {/* TAB 2: TEAM ACCESS & ROLES */}
+          {activeTab === "team" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Team Access & Roles
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage team collaborators, editor permissions, and access levels
+                </p>
+              </div>
+
+              {/* Invite Team Member Form Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    INVITE NEW TEAM MEMBER
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Grant Access to Collaborators
+                  </h3>
+                </div>
+
+                <form onSubmit={handleInviteMember} style={{ display: "flex", flexDirection: "row", gap: "14px", alignItems: "center", width: "100%" }}>
+                  <input
+                    type="email"
+                    placeholder="colleague@greenfield.edu.in"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    style={{
+                      flex: "1 1 0%",
+                      height: "50px",
+                      paddingLeft: "20px",
+                      paddingRight: "20px",
+                      borderRadius: "14px",
+                      border: "1px solid #cbd5e1",
+                      backgroundColor: "#f8fafc",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#0f172a",
+                      outline: "none",
+                    }}
+                  />
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    style={{
+                      height: "50px",
+                      paddingLeft: "16px",
+                      paddingRight: "16px",
+                      borderRadius: "14px",
+                      border: "1px solid #cbd5e1",
+                      backgroundColor: "#ffffff",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="Administrator">Administrator</option>
+                    <option value="Content Editor">Content Editor</option>
+                    <option value="Billing Manager">Billing Manager</option>
+                  </select>
+                  <button
+                    type="submit"
+                    style={{
+                      height: "50px",
+                      paddingLeft: "24px",
+                      paddingRight: "24px",
+                      backgroundColor: "#0f172a",
+                      color: "#ffffff",
+                      fontSize: "13px",
+                      fontWeight: 900,
+                      borderRadius: "14px",
+                      border: "none",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <UserPlus style={{ width: "16px", height: "16px" }} />
+                    <span>Send Invite</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Team Members List Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    ACTIVE COLLABORATORS ({teamMembers.length})
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    People with Access to this Project
+                  </h3>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
+                  {teamMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "16px 20px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "16px",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "14px" }}>
+                        <div
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "12px",
+                            backgroundColor: member.role === "Owner Account" ? "#0f172a" : "#3b82f6",
+                            color: "#ffffff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 900,
+                            fontSize: "14px",
+                          }}
+                        >
+                          {member.name[0].toUpperCase()}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{member.name}</span>
+                          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>{member.email}</span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            padding: "6px 14px",
+                            borderRadius: "9999px",
+                            backgroundColor: member.role === "Owner Account" ? "#e0e7ff" : "#ecfdf5",
+                            color: member.role === "Owner Account" ? "#3730a3" : "#047857",
+                          }}
+                        >
+                          {member.role}
+                        </span>
+                        {member.role !== "Owner Account" && (
+                          <button
+                            onClick={() => {
+                              setTeamMembers((prev) => prev.filter((m) => m.id !== member.id));
+                              showToast(`Removed ${member.name}`);
+                            }}
+                            style={{
+                              backgroundColor: "transparent",
+                              border: "none",
+                              color: "#ef4444",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* TAB 3: PASSWORD & SECURITY */}
+          {activeTab === "security" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Password & Security
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage credentials, 2-Factor Authentication, and active login sessions
+                </p>
+              </div>
+
+              {/* Password Change Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    CHANGE ACCOUNT PASSWORD
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Update Login Credentials
+                  </h3>
+                </div>
+
+                <form onSubmit={handleUpdatePassword} style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>Current Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      style={{
+                        height: "50px",
+                        paddingLeft: "20px",
+                        paddingRight: "20px",
+                        borderRadius: "14px",
+                        border: "1px solid #cbd5e1",
+                        backgroundColor: "#f8fafc",
+                        fontSize: "14px",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "row", gap: "16px" }}>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>New Password</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••••••"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        style={{
+                          height: "50px",
+                          paddingLeft: "20px",
+                          paddingRight: "20px",
+                          borderRadius: "14px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#f8fafc",
+                          fontSize: "14px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>Confirm New Password</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        style={{
+                          height: "50px",
+                          paddingLeft: "20px",
+                          paddingRight: "20px",
+                          borderRadius: "14px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#f8fafc",
+                          fontSize: "14px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    style={{
+                      width: "200px",
+                      height: "50px",
+                      marginTop: "8px",
+                      backgroundColor: "#0f172a",
+                      color: "#ffffff",
+                      fontSize: "13px",
+                      fontWeight: 900,
+                      borderRadius: "14px",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Update Password
+                  </button>
+                </form>
+              </div>
+
+              {/* 2FA Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+                    Two-Factor Authentication (2FA)
+                  </h3>
+                  <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+                    Secure your account with an Authenticator App security code
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setTwoFactorEnabled(!twoFactorEnabled);
+                    showToast(`2FA ${!twoFactorEnabled ? "Enabled" : "Disabled"}`);
+                  }}
+                  style={{
+                    height: "44px",
+                    paddingLeft: "24px",
+                    paddingRight: "24px",
+                    borderRadius: "14px",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: twoFactorEnabled ? "#ecfdf5" : "#f1f5f9",
+                    color: twoFactorEnabled ? "#047857" : "#475569",
+                  }}
+                >
+                  {twoFactorEnabled ? "✓ 2FA Enabled" : "Enable 2FA"}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* TAB 4: NOTIFICATIONS */}
+          {activeTab === "notifications" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Notifications & Preferences
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage email alerts, deployment triggers, and security digests
+                </p>
+              </div>
+
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                  boxSizing: "border-box",
+                }}
+              >
+                {[
+                  { key: "deployment", title: "Deployment & Publishing Alerts", desc: "Get notified when website changes are published to production live" },
+                  { key: "ssl", title: "SSL & Custom Domain Health Alerts", desc: "Receive instant notifications for SSL certificate renewal or DNS issues" },
+                  { key: "security", title: "Security & Login Activity Alerts", desc: "Get email warnings for new device logins or password changes" },
+                  { key: "analytics", title: "Weekly Traffic & Analytics Summary", desc: "Receive weekly visitor counts and pageview reports in your inbox" },
+                ].map((item) => (
+                  <div
+                    key={item.key}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingBottom: "16px",
+                      borderBottom: "1px solid #f1f5f9",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>{item.title}</span>
+                      <span style={{ fontSize: "13px", color: "#64748b" }}>{item.desc}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEmailAlerts((prev) => {
+                          const updated = { ...prev, [item.key]: !prev[item.key as keyof typeof prev] };
+                          showToast(`Notification setting updated`);
+                          return updated;
+                        });
+                      }}
+                      style={{
+                        width: "56px",
+                        height: "32px",
+                        borderRadius: "9999px",
+                        border: "none",
+                        backgroundColor: emailAlerts[item.key as keyof typeof emailAlerts] ? "#0f172a" : "#cbd5e1",
+                        cursor: "pointer",
+                        position: "relative",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          backgroundColor: "#ffffff",
+                          position: "absolute",
+                          top: "4px",
+                          left: emailAlerts[item.key as keyof typeof emailAlerts] ? "28px" : "4px",
+                          transition: "all 0.2s",
+                        }}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* TAB 5: ADVANCED SETTINGS */}
+          {activeTab === "advanced" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Advanced Developer Settings
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Inject custom scripts, configure SEO indexing, and manage project lifecycle
+                </p>
+              </div>
+
+              {/* Custom Header Scripts Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    CUSTOM HEADER SCRIPTS
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Inject Analytics & Meta Tags inside &lt;head&gt;
+                  </h3>
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={headerScript}
+                  onChange={(e) => setHeaderScript(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "16px",
+                    borderRadius: "16px",
+                    border: "1px solid #cbd5e1",
+                    backgroundColor: "#0f172a",
+                    color: "#38bdf8",
+                    fontFamily: "monospace",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+
+                <button
+                  onClick={() => showToast("Custom header scripts saved!")}
+                  style={{
+                    width: "180px",
+                    height: "46px",
+                    backgroundColor: "#0f172a",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    borderRadius: "14px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Save Custom Scripts
+                </button>
+              </div>
+
+              {/* Danger Zone Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#fff1f2",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #fecdd3",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 900, color: "#9f1239", margin: 0 }}>
+                    Unpublish Website Project
+                  </h3>
+                  <p style={{ fontSize: "13px", color: "#be123c", margin: 0 }}>
+                    Take your website offline from production live domain
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => showToast("Project unpublished from production")}
+                  style={{
+                    height: "46px",
+                    paddingLeft: "24px",
+                    paddingRight: "24px",
+                    backgroundColor: "#e11d48",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    borderRadius: "14px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Unpublish Project
+                </button>
               </div>
             </>
           )}
