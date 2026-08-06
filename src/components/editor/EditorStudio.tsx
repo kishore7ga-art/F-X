@@ -631,15 +631,14 @@ export function EditorStudio({
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
     try {
-      // 1. If page is already saved by user in pageStore & forceSync is false, load user's saved sections
-      if (!forceSync && pageStore[slug] && pageStore[slug].length > 0) {
+      // 1. If page is already saved by user in pageStore & forceSync is false AND has multi-sections, load user's saved sections
+      if (!forceSync && pageStore[slug] && pageStore[slug].length > 1) {
         setSections(pageStore[slug]);
         setActiveSectionIndex(0);
         setLoadingDb(false);
         return;
       }
 
-      let fetchedTemplates: any[] = [];
       const apiBase = (() => {
         if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
         if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
@@ -653,29 +652,23 @@ export function EditorStudio({
         return "http://localhost:4000";
       })();
 
-      try {
-        const res = await fetch(`${apiBase}/api/v1/admin/templates`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data && data.templates && data.templates.length > 0) {
-            fetchedTemplates = data.templates;
-            setAdminDbTemplates(data.templates);
-          }
-        }
-      } catch {}
-
-      // 2. Fetch Admin-configured Default Website Structure for new pages
+      // 2. Fetch Admin-configured Default Website Structure for new pages (All 19 Admin Sections)
       try {
         const defRes = await fetch(`${apiBase}/api/v1/default-website`);
         if (defRes.ok) {
           const defData = await defRes.json().catch(() => ({}));
           if (defData && Array.isArray(defData.pages)) {
-            const formattedSlug = slug.startsWith("/") ? slug : `/${slug}`;
-            const matchedPage = defData.pages.find(
-              (p: any) => p.slug.toLowerCase() === formattedSlug.toLowerCase()
-            );
+            const cleanTargetSlug = slug.toLowerCase().replace(/^\//, "");
+            const matchedPage = defData.pages.find((p: any) => {
+              const pSlug = (p.slug || "").toLowerCase().replace(/^\//, "");
+              const pName = (p.title || p.name || "").toLowerCase();
+              return (
+                pSlug === cleanTargetSlug ||
+                pName === cleanTargetSlug ||
+                (cleanTargetSlug === "home" && (pSlug === "" || pSlug === "home" || pName.includes("home")))
+              );
+            });
+
             if (matchedPage && matchedPage.sections && matchedPage.sections.length > 0) {
               const loadedSections: SectionItem[] = matchedPage.sections.map((sec: any, idx: number) => ({
                 id: sec.id || `def-${idx}`,
@@ -692,6 +685,7 @@ export function EditorStudio({
                   localStorage.setItem("xite_saved_pages", JSON.stringify({ ...pageStore, [slug]: loadedSections }));
                 } catch {}
               }
+              setLoadingDb(false);
               return;
             }
           }
@@ -700,54 +694,23 @@ export function EditorStudio({
         console.warn("Could not load default website config:", err);
       }
 
-      // 2. If page is already saved in pageStore, load saved sections
-      if (pageStore[slug] && pageStore[slug].length > 0) {
-        setSections(pageStore[slug]);
-        setActiveSectionIndex(0);
-        return;
-      }
+      let fetchedTemplates: any[] = [];
+      try {
+        const res = await fetch(`${apiBase}/api/v1/admin/templates`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data && data.templates && data.templates.length > 0) {
+            fetchedTemplates = data.templates;
+            setAdminDbTemplates(data.templates);
+          }
+        }
+      } catch {}
 
-      // Extract target category ID from page slug (e.g. /home -> hero, /about -> about, /academics -> courses)
+      // 3. Fallback to DEFAULT_FULL_HOME_SECTIONS if no saved page or Admin config match
       const cleanSlug = slug.replace(/^\//, "").toLowerCase();
-      let targetCatId = cleanSlug;
-      if (cleanSlug === "home") targetCatId = "hero";
-      if (cleanSlug === "academics") targetCatId = "courses";
-
-      // Find template matching category in fetched Admin templates
-      const matchingAdminTpl = fetchedTemplates.find((tpl) => {
-        const nameLower = (tpl.name || "").toLowerCase();
-        return (
-          nameLower.includes(`[${targetCatId}]`) ||
-          nameLower.includes(targetCatId)
-        );
-      });
-
-      if (matchingAdminTpl && matchingAdminTpl.code) {
-        setSections([
-          {
-            id: matchingAdminTpl.id || `db-0`,
-            title: matchingAdminTpl.name,
-            code: matchingAdminTpl.code,
-            variantIndex: 0,
-          },
-        ]);
-        setActiveSectionIndex(0);
-        return;
-      }
-
-      // Fallback if no matching section added in Admin yet
       if (cleanSlug === "home" || slug === "/home" || slug === "/") {
-        setSections(DEFAULT_FULL_HOME_SECTIONS);
-      } else {
-        const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
-        setSections([
-          { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
-        ]);
-      }
-      setActiveSectionIndex(0);
-    } catch {
-      setAdminDbTemplates([]);
-      if (slug === "/home" || slug === "home" || slug === "/") {
         setSections(DEFAULT_FULL_HOME_SECTIONS);
       } else {
         const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
