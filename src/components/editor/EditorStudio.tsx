@@ -591,7 +591,14 @@ export function EditorStudio({
         .replace(/<\/?body[\s\S]*?>/gi, "");
     }
 
-    return autoCorrectMobileCode(cleanCode, width);
+    const containmentStyles = `<style>
+      .section-canvas-box { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow-x: hidden !important; }
+      .section-canvas-box * { box-sizing: border-box !important; }
+      .section-canvas-box img, .section-canvas-box video { max-width: 100% !important; height: auto !important; }
+      .section-canvas-box header, .section-canvas-box nav { max-width: 100% !important; width: 100% !important; }
+    </style>`;
+
+    return `${containmentStyles}<div class="section-canvas-box">${autoCorrectMobileCode(cleanCode, width)}</div>`;
   };
 
   // Active Page State
@@ -1179,27 +1186,40 @@ export function EditorStudio({
       )}
 
       {/* Top Navbar Header */}
-      <header className="h-16 border-b border-slate-200 bg-white/90 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+      <header className="h-16 border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-40 shadow-xl">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
             <img src="/xite-logo.png" alt="XITE Logo" className="h-7 w-7 object-contain rounded-md" />
-            <span className="text-base font-black tracking-tight text-slate-900">XITE</span>
+            <span className="text-base font-black tracking-tight text-white">XITE</span>
           </Link>
-          <div className="h-4 w-px bg-slate-200" />
-          <div className="flex items-center gap-1.5 text-xs text-blue-700 font-black bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>{currentPage.name}</span>
+          <div className="h-4 w-px bg-slate-800" />
+          <div className="flex items-center gap-1.5 text-xs text-blue-400 font-black bg-blue-950/60 px-3 py-1 rounded-full border border-blue-800/60">
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+            <span>{currentPage.name} Page</span>
           </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-300 bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{subdomain}.xite.co.in</span>
+          </div>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 px-4 py-2 rounded-xl transition-all cursor-pointer shadow-md"
+          >
+            <span>⚙️ Settings & Account</span>
+          </button>
         </div>
       </header>
 
-      {/* Main White Canvas Workspace */}
+      {/* Main Studio Canvas Workspace */}
       <main
         onClick={() => setActiveSectionIndex(null)}
-        className="flex-1 w-full bg-slate-100 p-4 sm:p-8 flex flex-col items-center justify-start pb-32 cursor-pointer"
+        className="flex-1 w-full bg-slate-900/90 p-4 sm:p-8 flex flex-col items-center justify-start pb-48 cursor-pointer min-h-screen"
       >
         <div
-          className="transition-all duration-300 min-h-[70vh] flex flex-col items-center justify-start mx-auto bg-white shadow-xl rounded-none border-x border-slate-200"
+          className="transition-all duration-300 min-h-[75vh] flex flex-col items-center justify-start mx-auto bg-white shadow-2xl rounded-2xl border border-slate-700/60 overflow-hidden"
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
           {sections.length === 0 ? (
