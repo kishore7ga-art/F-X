@@ -65,11 +65,22 @@ export function UserProfileMenu({
 
           <div className="pt-1 border-t border-slate-800">
             <button
-              onClick={() => logout()}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 flex items-center gap-2 text-red-400 font-bold"
+              onClick={async () => {
+                try {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                } catch {}
+                try {
+                  document.cookie = "xite_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                  document.cookie = "xite_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                  localStorage.clear();
+                  sessionStorage.clear();
+                } catch {}
+                window.location.href = "/login";
+              }}
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 flex items-center gap-2 text-red-400 font-bold cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sign Out</span>
+              <span>Log Out</span>
             </button>
           </div>
         </div>

@@ -1529,7 +1529,11 @@ export function DomainSettingsModal({
                   <button
                     onClick={async () => {
                       try {
+                        await fetch("/api/auth/logout", { method: "POST" });
+                      } catch {}
+                      try {
                         document.cookie = "xite_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                        document.cookie = "xite_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
                         localStorage.clear();
                         sessionStorage.clear();
                       } catch {}
