@@ -59,9 +59,9 @@ const PALETTES = [
 ];
 
 const FONTS = [
-  { id: "inter", name: "Inter", detail: "Clean modern sans-serif for high readability", font: "font-sans" },
-  { id: "serif", name: "Playfair Display", detail: "Classic academic serif typography", font: "font-serif" },
-  { id: "outfit", name: "Outfit & Roboto", detail: "Bold tech & modern geometric font pairing", font: "font-mono" },
+  { id: "inter", name: "Inter", detail: "Clean modern sans-serif for high readability" },
+  { id: "serif", name: "Playfair Display", detail: "Classic academic serif typography" },
+  { id: "outfit", name: "Outfit & Roboto", detail: "Bold tech & modern geometric font pairing" },
 ];
 
 export function DrawerPanel({
@@ -139,74 +139,179 @@ export function DrawerPanel({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-150 cursor-pointer"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+        backgroundColor: "rgba(0, 0, 0, 0.35)",
+        backdropFilter: "blur(2px)",
+        display: "flex",
+        flexDirection: "row",
+      }}
+      className="select-none"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="h-full w-80 bg-white border-r border-slate-200 shadow-2xl flex flex-col text-slate-800 font-sans cursor-default"
+        style={{
+          height: "100%",
+          width: "320px",
+          backgroundColor: "#ffffff",
+          borderRight: "1px solid #e2e8f0",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+          display: "flex",
+          flexDirection: "column",
+          boxSizing: "border-box",
+          position: "relative",
+        }}
+        className="text-slate-800 font-sans cursor-default"
       >
-        
         {/* Notification Toast */}
         {toastMessage && (
-          <div className="absolute top-2 left-3 right-3 z-50 p-2.5 bg-slate-900 text-white text-[11px] font-extrabold rounded-xl shadow-xl flex items-center justify-between animate-fade-in border border-slate-700">
+          <div
+            style={{
+              position: "absolute",
+              top: "12px",
+              left: "12px",
+              right: "12px",
+              zIndex: 10000,
+              padding: "10px 14px",
+              backgroundColor: "#0f172a",
+              color: "#ffffff",
+              fontSize: "12px",
+              fontWeight: 800,
+              borderRadius: "12px",
+              boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
+              border: "1px solid #334155",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <span>{toastMessage}</span>
           </div>
         )}
 
         {/* Header & Segmented Control Switcher */}
-        <div className="p-4 border-b border-slate-200 bg-slate-50/90 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-900 tracking-wider uppercase">
+        <div
+          style={{
+            padding: "16px",
+            borderBottom: "1px solid #e2e8f0",
+            backgroundColor: "#f8fafc",
+            display: "flex",
+            flexDirection: "column",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a", letterSpacing: "0.08em", textTransform: "uppercase" }}>
               Pages, Colors & Fonts
             </span>
+            <button
+              onClick={onClose}
+              style={{
+                backgroundColor: "transparent",
+                border: "none",
+                color: "#64748b",
+                cursor: "pointer",
+                padding: "4px",
+                borderRadius: "6px",
+              }}
+            >
+              <X style={{ width: "16px", height: "16px" }} />
+            </button>
           </div>
 
           {/* Segmented Switcher Control */}
-          <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 border border-slate-300/60">
+          <div
+            style={{
+              backgroundColor: "#e2e8f0",
+              padding: "4px",
+              borderRadius: "16px",
+              display: "flex",
+              flexDirection: "row",
+              gap: "4px",
+              border: "1px solid #cbd5e1",
+            }}
+          >
             <button
               onClick={() => setActiveTab("pages")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === "pages"
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+              style={{
+                flex: 1,
+                height: "36px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: activeTab === "pages" ? "#ffffff" : "transparent",
+                color: activeTab === "pages" ? "#0f172a" : "#64748b",
+                boxShadow: activeTab === "pages" ? "0 2px 4px rgba(0,0,0,0.06)" : "none",
+              }}
             >
-              <Home className="w-3.5 h-3.5" />
+              <Home style={{ width: "14px", height: "14px" }} />
               <span>Pages</span>
             </button>
 
             <button
               onClick={() => setActiveTab("colors")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === "colors"
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+              style={{
+                flex: 1,
+                height: "36px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: activeTab === "colors" ? "#ffffff" : "transparent",
+                color: activeTab === "colors" ? "#0f172a" : "#64748b",
+                boxShadow: activeTab === "colors" ? "0 2px 4px rgba(0,0,0,0.06)" : "none",
+              }}
             >
-              <Palette className="w-3.5 h-3.5" />
+              <Palette style={{ width: "14px", height: "14px" }} />
               <span>Colors</span>
             </button>
 
             <button
               onClick={() => setActiveTab("fonts")}
-              className={`flex-1 py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === "fonts"
-                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+              style={{
+                flex: 1,
+                height: "36px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: activeTab === "fonts" ? "#ffffff" : "transparent",
+                color: activeTab === "fonts" ? "#0f172a" : "#64748b",
+                boxShadow: activeTab === "fonts" ? "0 2px 4px rgba(0,0,0,0.06)" : "none",
+              }}
             >
-              <Type className="w-3.5 h-3.5" />
+              <Type style={{ width: "14px", height: "14px" }} />
               <span>Fonts</span>
             </button>
           </div>
         </div>
 
         {/* Drawer Body Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 no-scrollbar">
-          
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
           {/* PAGES TAB */}
           {activeTab === "pages" && (
-            <div className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {pages.map((page) => {
                 const Icon = page.icon;
                 const isSelected = selectedPageSlug === page.slug;
@@ -214,34 +319,60 @@ export function DrawerPanel({
                   <div
                     key={page.id}
                     onClick={() => handleSelectPage(page)}
-                    className={`group flex items-center justify-between p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-blue-50/80 border-2 border-blue-500 shadow-sm text-slate-900"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50 text-slate-700"
-                    }`}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 14px",
+                      borderRadius: "18px",
+                      backgroundColor: isSelected ? "#eff6ff" : "#ffffff",
+                      border: isSelected ? "2px solid #3b82f6" : "1px solid #e2e8f0",
+                      boxShadow: isSelected ? "0 2px 4px rgba(59,130,246,0.1)" : "none",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        isSelected ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"
-                      }`}>
-                        <Icon className="w-4 h-4" />
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
+                      <div
+                        style={{
+                          width: "36px",
+                          height: "36px",
+                          borderRadius: "12px",
+                          backgroundColor: isSelected ? "#0d1527" : "#f1f5f9",
+                          color: isSelected ? "#ffffff" : "#475569",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon style={{ width: "18px", height: "18px" }} />
                       </div>
-                      <div className="flex flex-col">
-                        <span className={`text-xs ${isSelected ? "font-extrabold text-slate-900" : "font-bold text-slate-800"}`}>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={{ fontSize: "13px", fontWeight: isSelected ? 900 : 700, color: "#0f172a" }}>
                           {page.name}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono mt-0.5">{page.slug}</span>
+                        <span style={{ fontSize: "11px", fontFamily: "monospace", color: "#64748b", marginTop: "2px" }}>
+                          {page.slug}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Optional delete button for custom pages */}
                     {pages.length > 1 && (
                       <button
                         onClick={(e) => handleDeletePage(e, page.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-600 transition-all cursor-pointer rounded-lg hover:bg-rose-50"
+                        style={{
+                          backgroundColor: "transparent",
+                          border: "none",
+                          color: "#94a3b8",
+                          cursor: "pointer",
+                          padding: "4px",
+                          borderRadius: "6px",
+                        }}
                         title="Delete Page"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 style={{ width: "14px", height: "14px" }} />
                       </button>
                     )}
                   </div>
@@ -252,103 +383,193 @@ export function DrawerPanel({
 
           {/* COLORS TAB */}
           {activeTab === "colors" && (
-            <div className="space-y-2.5">
-              {PALETTES.map((palette) => (
-                <div
-                  key={palette.id}
-                  onClick={() => handleSelectPalette(palette.id, palette.name)}
-                  className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                    selectedPalette === palette.id
-                      ? "border-2 border-blue-600 bg-blue-50/60 shadow-sm"
-                      : "border-slate-200/80 bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 border border-slate-200 p-1 rounded-full bg-slate-100">
-                      <div className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: palette.primary }} />
-                      <div className="w-4 h-4 rounded-full shadow-xs" style={{ backgroundColor: palette.accent }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {PALETTES.map((palette) => {
+                const isSelected = selectedPalette === palette.id;
+                return (
+                  <div
+                    key={palette.id}
+                    onClick={() => handleSelectPalette(palette.id, palette.name)}
+                    style={{
+                      padding: "14px",
+                      borderRadius: "16px",
+                      backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
+                      border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>{palette.name}</span>
+                      <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
+                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: palette.primary, border: "1px solid #cbd5e1" }} />
+                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: palette.accent, border: "1px solid #cbd5e1" }} />
+                      </div>
                     </div>
-                    <span className="text-xs font-bold text-slate-900">{palette.name}</span>
+                    {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a" }} />}
                   </div>
-                  {selectedPalette === palette.id && <Check className="w-4 h-4 text-blue-600" />}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
           {/* FONTS TAB */}
           {activeTab === "fonts" && (
-            <div className="space-y-2.5">
-              {FONTS.map((font) => (
-                <div
-                  key={font.id}
-                  onClick={() => handleSelectFont(font.id, font.name)}
-                  className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                    selectedFont === font.id
-                      ? "border-2 border-blue-600 bg-blue-50/60 shadow-sm"
-                      : "border-slate-200/80 bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex flex-col">
-                    <span className={`text-xs font-bold text-slate-900 ${font.font}`}>{font.name}</span>
-                    <span className="text-[11px] text-slate-500 mt-1 leading-relaxed">{font.detail}</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {FONTS.map((font) => {
+                const isSelected = selectedFont === font.id;
+                return (
+                  <div
+                    key={font.id}
+                    onClick={() => handleSelectFont(font.id, font.name)}
+                    style={{
+                      padding: "14px",
+                      borderRadius: "16px",
+                      backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
+                      border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "4px",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 900, color: "#0f172a" }}>{font.name}</span>
+                      {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a" }} />}
+                    </div>
+                    <span style={{ fontSize: "11px", color: "#64748b" }}>{font.detail}</span>
                   </div>
-                  {selectedFont === font.id && <Check className="w-4 h-4 text-blue-600" />}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-
         </div>
 
-        {/* Add New Page Bottom Button */}
+        {/* Bottom Sticky Add New Page Button */}
         {activeTab === "pages" && (
-          <div className="p-4 border-t border-slate-200 bg-white">
+          <div
+            style={{
+              padding: "16px",
+              borderTop: "1px solid #e2e8f0",
+              backgroundColor: "#ffffff",
+            }}
+          >
             <button
               onClick={() => setShowNewPageModal(true)}
-              className="w-full bg-[#0d1527] hover:bg-[#1a253d] text-white font-extrabold py-3.5 px-5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+              style={{
+                width: "100%",
+                height: "46px",
+                backgroundColor: "#0d1527",
+                color: "#ffffff",
+                fontSize: "13px",
+                fontWeight: 900,
+                borderRadius: "14px",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                boxShadow: "0 4px 6px rgba(13,21,39,0.2)",
+              }}
             >
-              <Plus className="w-4 h-4 text-blue-400" />
+              <Plus style={{ width: "16px", height: "16px" }} />
               <span>Add New Page</span>
             </button>
           </div>
         )}
+      </div>
 
-      {/* Add New Page Modal */}
+      {/* New Page Modal Dialog */}
       {showNewPageModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-xs bg-white rounded-2xl p-5 shadow-2xl space-y-4 border border-slate-200">
-            <h3 className="text-sm font-extrabold text-slate-900">Create New Page</h3>
-            <form onSubmit={handleAddPage} className="space-y-3">
-              <input
-                type="text"
-                value={newPageName}
-                onChange={(e) => setNewPageName(e.target.value)}
-                placeholder="Page Name (e.g. Research)"
-                required
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-slate-900"
-              />
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowNewPageModal(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-slate-900 hover:bg-black text-white font-black py-2 rounded-xl text-xs cursor-pointer"
-                >
-                  Create Page
-                </button>
-              </div>
-            </form>
-          </div>
+        <div
+          onClick={() => setShowNewPageModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 100000,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <form
+            onSubmit={handleAddPage}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "360px",
+              backgroundColor: "#ffffff",
+              borderRadius: "20px",
+              padding: "24px",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+            }}
+          >
+            <h3 style={{ fontSize: "16px", fontWeight: 900, color: "#0f172a", margin: 0 }}>Create New Website Page</h3>
+            <input
+              type="text"
+              placeholder="e.g. Research & Development"
+              value={newPageName}
+              onChange={(e) => setNewPageName(e.target.value)}
+              autoFocus
+              style={{
+                height: "46px",
+                paddingLeft: "16px",
+                paddingRight: "16px",
+                borderRadius: "12px",
+                border: "1px solid #cbd5e1",
+                fontSize: "14px",
+                outline: "none",
+              }}
+            />
+            <div style={{ display: "flex", flexDirection: "row", gap: "10px", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => setShowNewPageModal(false)}
+                style={{
+                  height: "40px",
+                  paddingLeft: "16px",
+                  paddingRight: "16px",
+                  borderRadius: "10px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{
+                  height: "40px",
+                  paddingLeft: "20px",
+                  paddingRight: "20px",
+                  borderRadius: "10px",
+                  border: "none",
+                  backgroundColor: "#0f172a",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                Create Page
+              </button>
+            </div>
+          </form>
         </div>
       )}
-
-      </div>
     </div>
   );
 }
