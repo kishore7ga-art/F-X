@@ -22,9 +22,6 @@ import { getSession } from "@/lib/auth/session";
 export type CurrentCollege = CollegePayload;
 
 export async function getCurrentCollege(): Promise<CurrentCollege | null> {
-  // The cookie is verified here first, so a signed-out visitor costs no round
-  // trip — and, more importantly, a backend that is down cannot make the login
-  // page look like a broken one.
   const session = await getSession();
   if (!session) return null;
 
@@ -32,40 +29,44 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
     if (payload?.college) return payload.college;
     
-    // Fallback to local college when backend payload is empty
-    const openCollege = await openAccessCollege();
-    return {
-      id: openCollege.id,
-      name: openCollege.name,
-      subdomain: openCollege.subdomain,
-      customDomain: openCollege.customDomain,
-      templateId: openCollege.templateId,
-      themePaletteId: openCollege.themePaletteId,
-      themeFontId: openCollege.themeFontId,
-      collegeType: openCollege.collegeType,
-      status: openCollege.status,
-      isDemo: openCollege.isDemo,
-      createdAt: openCollege.createdAt.toISOString(),
-    };
+    if (AUTH_DISABLED) {
+      const openCollege = await openAccessCollege();
+      return {
+        id: openCollege.id,
+        name: openCollege.name,
+        subdomain: openCollege.subdomain,
+        customDomain: openCollege.customDomain,
+        templateId: openCollege.templateId,
+        themePaletteId: openCollege.themePaletteId,
+        themeFontId: openCollege.themeFontId,
+        collegeType: openCollege.collegeType,
+        status: openCollege.status,
+        isDemo: openCollege.isDemo,
+        createdAt: openCollege.createdAt.toISOString(),
+      };
+    }
+    return null;
   } catch (error) {
     if (error instanceof ServerApiError) {
       console.error(`[auth] could not resolve college: ${error.message}`);
     }
-    // Seamless fallback to local college when backend is unreachable
-    const openCollege = await openAccessCollege();
-    return {
-      id: openCollege.id,
-      name: openCollege.name,
-      subdomain: openCollege.subdomain,
-      customDomain: openCollege.customDomain,
-      templateId: openCollege.templateId,
-      themePaletteId: openCollege.themePaletteId,
-      themeFontId: openCollege.themeFontId,
-      collegeType: openCollege.collegeType,
-      status: openCollege.status,
-      isDemo: openCollege.isDemo,
-      createdAt: openCollege.createdAt.toISOString(),
-    };
+    if (AUTH_DISABLED) {
+      const openCollege = await openAccessCollege();
+      return {
+        id: openCollege.id,
+        name: openCollege.name,
+        subdomain: openCollege.subdomain,
+        customDomain: openCollege.customDomain,
+        templateId: openCollege.templateId,
+        themePaletteId: openCollege.themePaletteId,
+        themeFontId: openCollege.themeFontId,
+        collegeType: openCollege.collegeType,
+        status: openCollege.status,
+        isDemo: openCollege.isDemo,
+        createdAt: openCollege.createdAt.toISOString(),
+      };
+    }
+    return null;
   }
 }
 
