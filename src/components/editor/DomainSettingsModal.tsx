@@ -22,6 +22,8 @@ import {
   RefreshCw,
   Trash2,
   ExternalLink,
+  LogOut,
+  User,
 } from "lucide-react";
 
 interface DomainSettingsModalProps {
@@ -423,18 +425,20 @@ export function DomainSettingsModal({
 
           {/* Bottom Owner User Pill */}
           <button
+            onClick={() => setActiveTab("account")}
             style={{
               width: "100%",
               textAlign: "left",
               padding: "14px",
-              backgroundColor: "#ffffff",
-              border: "1px solid #cbd5e1",
+              backgroundColor: activeTab === "account" ? "#eff6ff" : "#ffffff",
+              border: activeTab === "account" ? "2px solid #2563eb" : "1px solid #cbd5e1",
               borderRadius: "18px",
               display: "flex",
               alignItems: "center",
               gap: "12px",
               cursor: "pointer",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+              boxShadow: activeTab === "account" ? "0 4px 12px rgba(37,99,235,0.15)" : "0 2px 4px rgba(0,0,0,0.02)",
+              transition: "all 0.15s ease",
             }}
           >
             <div
@@ -442,7 +446,7 @@ export function DomainSettingsModal({
                 width: "36px",
                 height: "36px",
                 borderRadius: "12px",
-                backgroundColor: "#0f172a",
+                backgroundColor: activeTab === "account" ? "#2563eb" : "#0f172a",
                 color: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -458,7 +462,7 @@ export function DomainSettingsModal({
               <span style={{ fontSize: "13px", fontWeight: 900, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 Kishore
               </span>
-              <span style={{ fontSize: "11px", color: "#2563eb", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              <span style={{ fontSize: "11px", color: activeTab === "account" ? "#1d4ed8" : "#2563eb", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 Owner Account · Details ↗
               </span>
             </div>
@@ -1364,6 +1368,224 @@ export function DomainSettingsModal({
                 >
                   Unpublish Project
                 </button>
+              </div>
+            </>
+          )}
+
+          {/* TAB 6: ACCOUNT DETAILS, LOGIN & LOGOUT */}
+          {activeTab === "account" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Account Details & Session
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage your personal owner profile, active session, and sign in / sign out controls
+                </p>
+              </div>
+
+              {/* Owner Profile Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                    <div
+                      style={{
+                        width: "72px",
+                        height: "72px",
+                        borderRadius: "24px",
+                        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                        color: "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "28px",
+                        fontWeight: 900,
+                        boxShadow: "0 10px 25px -5px rgba(15,23,42,0.3)",
+                      }}
+                    >
+                      K
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <h2 style={{ fontSize: "22px", fontWeight: 900, color: "#0f172a", margin: 0 }}>Kishore</h2>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 12px",
+                            borderRadius: "9999px",
+                            backgroundColor: "#eff6ff",
+                            color: "#1d4ed8",
+                            border: "1px solid #bfdbfe",
+                            fontSize: "11px",
+                            fontWeight: 800,
+                          }}
+                        >
+                          👑 Owner Account
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "14px", color: "#64748b", fontWeight: 600 }}>kishore@xite.co.in</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                      onClick={() => setActiveTab("security")}
+                      style={{
+                        height: "44px",
+                        paddingLeft: "18px",
+                        paddingRight: "18px",
+                        borderRadius: "14px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px solid #cbd5e1",
+                        color: "#334155",
+                        fontSize: "13px",
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <Key style={{ width: "16px", height: "16px" }} />
+                      <span>Security</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Account Info Grid */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: "16px",
+                    marginTop: "8px",
+                  }}
+                >
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>ORGANIZATION</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", margin: "6px 0 0 0" }}>Greenfield University</p>
+                  </div>
+
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>SUBDOMAIN</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#2563eb", margin: "6px 0 0 0" }}>{subdomain}.xite.co.in</p>
+                  </div>
+
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>STATUS</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#047857", margin: "6px 0 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10b981" }}></span> Active & Verified
+                    </p>
+                  </div>
+
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACCOUNT TYPE</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", margin: "6px 0 0 0" }}>Super Administrator</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Session Control & Actions Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    SESSION ACTIONS
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Login & Sign Out Options
+                  </h3>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {/* Sign Out Button */}
+                  <button
+                    onClick={async () => {
+                      try {
+                        document.cookie = "xite_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                        localStorage.clear();
+                        sessionStorage.clear();
+                      } catch {}
+                      window.location.href = "/login";
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "16px 24px",
+                      borderRadius: "16px",
+                      backgroundColor: "#fff1f2",
+                      border: "1px solid #fecdd3",
+                      color: "#e11d48",
+                      fontSize: "14px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <LogOut style={{ width: "20px", height: "20px" }} />
+                      <span>Log Out of Account</span>
+                    </div>
+                    <span style={{ fontSize: "12px", opacity: 0.8 }}>End current session ➔</span>
+                  </button>
+
+                  {/* Login / Switch Account Button */}
+                  <button
+                    onClick={() => {
+                      window.location.href = "/login";
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "16px 24px",
+                      borderRadius: "16px",
+                      backgroundColor: "#f8fafc",
+                      border: "1px solid #cbd5e1",
+                      color: "#0f172a",
+                      fontSize: "14px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <Users style={{ width: "20px", height: "20px", color: "#2563eb" }} />
+                      <span>Log In / Switch Account</span>
+                    </div>
+                    <span style={{ fontSize: "12px", color: "#64748b" }}>Sign into another account ➔</span>
+                  </button>
+                </div>
               </div>
             </>
           )}
