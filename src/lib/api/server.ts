@@ -16,7 +16,7 @@ import { cookies } from "next/headers";
 const BASE =
   process.env.BACKEND_INTERNAL_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "";
+  "http://localhost:4000";
 
 export class ServerApiError extends Error {
   constructor(
