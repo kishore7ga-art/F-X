@@ -323,6 +323,151 @@ const PAGE_SECTION_TEMPLATES: Record<string, string> = {
 </section>`,
 };
 
+const DEFAULT_FULL_HOME_SECTIONS: SectionItem[] = [
+  {
+    id: "home-hero",
+    title: "Home Banner",
+    code: PAGE_SECTION_TEMPLATES["/home"],
+    variantIndex: 0,
+  },
+  {
+    id: "home-features",
+    title: "Key Features & Academic Highlights",
+    code: `<section style="background: #0d1117; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08);">
+  <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
+    <span style="background: rgba(37,99,235,0.15); color: #60a5fa; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; border: 1px solid rgba(59,130,246,0.3); text-transform: uppercase;">
+      WHY CHOOSE OUR INSTITUTION
+    </span>
+    <h2 style="font-size: 38px; font-weight: 900; margin-top: 18px; color: #ffffff;">World-Class Education & Excellence</h2>
+    <p style="font-size: 15px; color: #94a3b8; max-width: 650px; margin: 12px auto 0 auto; line-height: 1.6;">
+      Providing global opportunities, cutting-edge research laboratories, and industry-aligned curricula for tomorrow's leaders.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 48px; text-align: left;">
+      <div style="background: #161b22; padding: 32px; border-radius: 20px; border: 1px solid #30363d;">
+        <div style="width: 48px; height: 48px; background: #1f6feb; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px;">🎓</div>
+        <h3 style="font-size: 20px; font-weight: 800; margin-top: 18px; color: #ffffff;">Global Accreditation</h3>
+        <p style="font-size: 14px; color: #8b949e; margin-top: 8px; line-height: 1.6;">NAAC A++ Grade, NIRF Top Ranked Institution with worldwide degree recognition.</p>
+      </div>
+
+      <div style="background: #161b22; padding: 32px; border-radius: 20px; border: 1px solid #30363d;">
+        <div style="width: 48px; height: 48px; background: #238636; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px;">🔬</div>
+        <h3 style="font-size: 20px; font-weight: 800; margin-top: 18px; color: #ffffff;">Advanced R&D Labs</h3>
+        <p style="font-size: 14px; color: #8b949e; margin-top: 8px; line-height: 1.6;">State-of-the-art incubation centres, AI research facilities, and robotics hubs.</p>
+      </div>
+
+      <div style="background: #161b22; padding: 32px; border-radius: 20px; border: 1px solid #30363d;">
+        <div style="width: 48px; height: 48px; background: #8957e5; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px;">💼</div>
+        <h3 style="font-size: 20px; font-weight: 800; margin-top: 18px; color: #ffffff;">98%+ Placement Rate</h3>
+        <p style="font-size: 14px; color: #8b949e; margin-top: 8px; line-height: 1.6;">Top MNC recruiters including Fortune 500 companies hiring every year.</p>
+      </div>
+    </div>
+  </div>
+</section>`,
+    variantIndex: 0,
+  },
+  {
+    id: "home-stats",
+    title: "Campus Stats & Impact Numbers",
+    code: `<section style="background: #090d16; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08);">
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; text-align: center;">
+      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+        <h3 style="font-size: 46px; font-weight: 900; color: #38bdf8; margin: 0;">15,000+</h3>
+        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Active Students</p>
+      </div>
+      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+        <h3 style="font-size: 46px; font-weight: 900; color: #4ade80; margin: 0;">450+</h3>
+        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Expert Faculty</p>
+      </div>
+      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+        <h3 style="font-size: 46px; font-weight: 900; color: #fbbf24; margin: 0;">120+</h3>
+        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Global Programs</p>
+      </div>
+      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
+        <h3 style="font-size: 46px; font-weight: 900; color: #f472b6; margin: 0;">50,000+</h3>
+        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Global Alumni</p>
+      </div>
+    </div>
+  </div>
+</section>`,
+    variantIndex: 0,
+  },
+  {
+    id: "home-programs",
+    title: "Featured Academic Programs",
+    code: `<section style="background: #0d1117; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08);">
+  <div style="max-width: 1100px; margin: 0 auto;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+      <div>
+        <span style="background: rgba(168,85,247,0.15); color: #c084fc; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; border: 1px solid rgba(168,85,247,0.3); text-transform: uppercase;">
+          ACADEMIC DEPARTMENTS
+        </span>
+        <h2 style="font-size: 38px; font-weight: 900; margin-top: 16px; color: #ffffff;">Explore Programs & Courses</h2>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 40px;">
+      <div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;">
+        <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">UNDERGRADUATE</span>
+        <h3 style="font-size: 22px; font-weight: 800; margin-top: 8px; color: #ffffff;">B.Tech Computer Science & AI</h3>
+        <p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Full 4-year degree covering machine learning, data engineering, and software architecture.</p>
+        <button style="margin-top: 20px; padding: 10px 20px; background: #238636; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer;">Learn More ➔</button>
+      </div>
+
+      <div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;">
+        <span style="font-size: 11px; font-weight: 800; color: #a855f7; text-transform: uppercase;">POSTGRADUATE</span>
+        <h3 style="font-size: 22px; font-weight: 800; margin-top: 8px; color: #ffffff;">MBA International Business</h3>
+        <p style="font-size: 14px; color: #8b949e; margin-top: 8px;">2-year executive program with global immersion trips and industry mentorship.</p>
+        <button style="margin-top: 20px; padding: 10px 20px; background: #8957e5; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer;">Learn More ➔</button>
+      </div>
+
+      <div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;">
+        <span style="font-size: 11px; font-weight: 800; color: #f59e0b; text-transform: uppercase;">RESEARCH / PHD</span>
+        <h3 style="font-size: 22px; font-weight: 800; margin-top: 8px; color: #ffffff;">Doctoral Fellowships</h3>
+        <p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Fully funded research positions with monthly stipends and international publication support.</p>
+        <button style="margin-top: 20px; padding: 10px 20px; background: #d97706; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer;">Learn More ➔</button>
+      </div>
+    </div>
+  </div>
+</section>`,
+    variantIndex: 0,
+  },
+  {
+    id: "home-footer",
+    title: "Footer & Contact Information",
+    code: `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
+  <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px;">
+    <div>
+      <h3 style="font-size: 20px; font-weight: 900; color: #ffffff; margin: 0;">Greenfield University</h3>
+      <p style="font-size: 13px; color: #64748b; margin-top: 12px; line-height: 1.6;">Empowering future leaders through education, innovation, and global collaboration.</p>
+    </div>
+    <div>
+      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Quick Links</h4>
+      <ul style="list-style: none; padding: 0; margin: 12px 0 0 0; font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 8px;">
+        <li><a href="/home" style="color: #cbd5e1; text-decoration: none;">Home</a></li>
+        <li><a href="/about" style="color: #cbd5e1; text-decoration: none;">About Us</a></li>
+        <li><a href="/academics" style="color: #cbd5e1; text-decoration: none;">Academics</a></li>
+        <li><a href="/admissions" style="color: #cbd5e1; text-decoration: none;">Admissions</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Contact Campus</h4>
+      <p style="font-size: 13px; color: #cbd5e1; margin-top: 12px; line-height: 1.6;">
+        📍 Main Campus, University Road<br />
+        ✉️ admissions@greenfield.edu.in<br />
+        📞 +91 (080) 2345-6789
+      </p>
+    </div>
+  </div>
+  <div style="max-width: 1100px; margin: 40px auto 0 auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 12px; color: #64748b;">
+    © 2026 Greenfield University. Powered by XITE Website Builder.
+  </div>
+</footer>`,
+    variantIndex: 0,
+  },
+];
+
 interface EditorStudioProps {
   subdomain?: string;
   collegeName?: string;
@@ -342,6 +487,15 @@ export function EditorStudio({
   const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
   const [loadingDb, setLoadingDb] = useState(true);
+
+  // Check if user has explicitly logged out
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (sessionStorage.getItem("xite_user_logged_out") === "true") {
+        window.location.href = "/login";
+      }
+    }
+  }, []);
 
   // Undo & Redo History Stack Handlers
   const handleUndo = () => {
@@ -570,17 +724,25 @@ export function EditorStudio({
       }
 
       // Fallback if no matching section added in Admin yet
-      const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
-      setSections([
-        { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
-      ]);
+      if (cleanSlug === "home" || slug === "/home" || slug === "/") {
+        setSections(DEFAULT_FULL_HOME_SECTIONS);
+      } else {
+        const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
+        setSections([
+          { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
+        ]);
+      }
       setActiveSectionIndex(0);
     } catch {
       setAdminDbTemplates([]);
-      const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
-      setSections([
-        { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
-      ]);
+      if (slug === "/home" || slug === "home" || slug === "/") {
+        setSections(DEFAULT_FULL_HOME_SECTIONS);
+      } else {
+        const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
+        setSections([
+          { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
+        ]);
+      }
     } finally {
       setLoadingDb(false);
     }
