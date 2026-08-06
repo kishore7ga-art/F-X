@@ -12,9 +12,10 @@ export const metadata = { title: "Sign in — XITE" };
 export default async function LoginPage({
   searchParams,
 }: PageProps<"/login">) {
-  const { error, registered, email, force } = await searchParams;
+  const { error, registered, requested, email, force } = await searchParams;
   const signInError = typeof error === "string" ? error : null;
   const justRegistered = registered === "1";
+  const justRequested = requested === "1";
 
   const college = await getCurrentCollegeOrNull();
 
@@ -33,9 +34,11 @@ export default async function LoginPage({
       notice={
         signInError
           ? signInError
-          : justRegistered
-            ? "Account created — sign in to continue."
-            : null
+          : justRequested
+            ? "Access request submitted! Super Admin will review and activate your account soon."
+            : justRegistered
+              ? "Account created — sign in to continue."
+              : null
       }
     />
   );

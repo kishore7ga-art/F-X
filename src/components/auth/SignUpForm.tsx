@@ -191,11 +191,11 @@ export function SignUpForm() {
                     <Globe className="h-4 w-4" />
                   </div>
                   <input
-                    type="url"
+                    type="text"
                     required
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
-                    placeholder="https://www.madrascollege.ac.in"
+                    placeholder="www.madrascollege.ac.in"
                     className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-xs sm:text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-xs"
                   />
                 </div>
