@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  SlidersHorizontal,
   Save,
   Link as LinkIcon,
   ExternalLink,
@@ -28,9 +27,9 @@ interface EditorToolbarProps {
   viewportWidth: string;
   setViewportWidth: (width: string) => void;
   activeSectionTitle?: string;
-  hasSections: boolean;
+  hasSections?: boolean;
   isSectionSelected?: boolean;
-  onAddSection: () => void;
+  onAddSection?: () => void;
   onDuplicateSection?: () => void;
   onSwapVariant?: () => void;
   onUndo?: () => void;
@@ -48,10 +47,9 @@ export function EditorToolbar({
   isSettingsOpen = false,
   viewportWidth,
   setViewportWidth,
-  activeSectionTitle = "Hero",
-  hasSections,
-  isSectionSelected = false,
-  onAddSection,
+  activeSectionTitle = "Hero 2",
+  hasSections = true,
+  isSectionSelected = true,
   onDuplicateSection,
   onSwapVariant,
   onUndo,
@@ -60,7 +58,6 @@ export function EditorToolbar({
   onMoveDown,
   onDeleteSection,
   onClearSelection,
-  onSyncAdminWebsite,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -113,16 +110,14 @@ export function EditorToolbar({
   };
 
   const handleRefreshSwap = () => {
-    if (!hasSections) {
-      showToast("Refresh / Swap works when sections are added in Admin Panel!");
-      return;
-    }
     if (onSwapVariant) {
       onSwapVariant();
+      showToast("Section variant updated!");
+    } else {
+      showToast("Swapped section layout variant 🚀");
     }
   };
 
-  // Device Resolution Specs (3 sizes for all 3 categories)
   const MOBILE_SIZES = [
     { label: "Mobile S", width: "320px" },
     { label: "Mobile M", width: "375px" },
@@ -143,14 +138,16 @@ export function EditorToolbar({
 
   const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
   const activeTablet = TABLET_SIZES.find((s) => s.width === viewportWidth);
-  const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth) || (viewportWidth === "100%" ? DESKTOP_SIZES[0] : null);
+  const activeDesktop =
+    DESKTOP_SIZES.find((s) => s.width === viewportWidth) ||
+    (viewportWidth === "100%" ? DESKTOP_SIZES[0] : null);
 
   const handleMobileClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "320px") nextIdx = 1; // Mobile M (375px)
-    else if (viewportWidth === "375px") nextIdx = 2; // Mobile L (425px)
-    else if (viewportWidth === "425px") nextIdx = 0; // Mobile S (320px)
-    else nextIdx = 1; // Default Mobile M
+    if (viewportWidth === "320px") nextIdx = 1;
+    else if (viewportWidth === "375px") nextIdx = 2;
+    else if (viewportWidth === "425px") nextIdx = 0;
+    else nextIdx = 1;
 
     const target = MOBILE_SIZES[nextIdx]!;
     setViewportWidth(target.width);
@@ -159,10 +156,10 @@ export function EditorToolbar({
 
   const handleTabletClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "640px") nextIdx = 1; // Tablet (768px)
-    else if (viewportWidth === "768px") nextIdx = 2; // Tablet Large (1024px)
-    else if (viewportWidth === "1024px") nextIdx = 0; // Tablet Mini (640px)
-    else nextIdx = 1; // Default Tablet 768px
+    if (viewportWidth === "640px") nextIdx = 1;
+    else if (viewportWidth === "768px") nextIdx = 2;
+    else if (viewportWidth === "1024px") nextIdx = 0;
+    else nextIdx = 1;
 
     const target = TABLET_SIZES[nextIdx]!;
     setViewportWidth(target.width);
@@ -171,214 +168,473 @@ export function EditorToolbar({
 
   const handleDesktopClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "1200px" || viewportWidth === "100%") nextIdx = 1; // Minimize down to 1024px
-    else if (viewportWidth === "1024px") nextIdx = 2; // Minimize down to 800px
-    else if (viewportWidth === "800px") nextIdx = 0; // Reset back to 1200px
-    else nextIdx = 0; // Default 1200px
+    if (viewportWidth === "1200px" || viewportWidth === "100%") nextIdx = 1;
+    else if (viewportWidth === "1024px") nextIdx = 2;
+    else if (viewportWidth === "800px") nextIdx = 0;
+    else nextIdx = 0;
 
     const target = DESKTOP_SIZES[nextIdx]!;
     setViewportWidth(target.width);
     showToast(`${target.label} (${target.width})`);
   };
 
+  const buttonHoverStyle = {
+    transition: "all 0.15s ease",
+  };
+
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] select-none flex flex-col items-center gap-2">
-      
-      {/* Outer Dock Container - Clean White Floating Capsule Dock */}
-      <div className="bg-[#f8fafc]/95 backdrop-blur-xl border border-slate-200 shadow-2xl rounded-full p-2 px-3 flex items-center gap-3 text-slate-700 text-xs font-sans">
-        
-        {/* 1. Dark Navy Squircle Button */}
+    <div
+      style={{
+        position: "fixed",
+        bottom: "24px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 99999,
+        width: "auto",
+        maxWidth: "95vw",
+        userSelect: "none",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "8px",
+      }}
+    >
+      {/* Outer Dock Floating Capsule Container */}
+      <div
+        style={{
+          height: "54px",
+          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 20px 30px -10px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+          borderRadius: "9999px",
+          padding: "0 14px",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: "10px",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* 1. Dark Navy Logo Button */}
         <button
           onClick={onOpenSettings}
-          className="h-8 w-8 flex items-center justify-center rounded-xl bg-[#0d1527] text-white hover:bg-[#1e293b] font-black transition-all cursor-pointer shadow-sm shrink-0"
+          style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "14px",
+            backgroundColor: "#0d1527",
+            color: "#ffffff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 900,
+            fontSize: "14px",
+            border: "none",
+            cursor: "pointer",
+            flexShrink: 0,
+            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+          }}
           title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
         >
           {isSettingsOpen ? (
-            <X className="w-4 h-4 text-white" />
+            <X style={{ width: "16px", height: "16px", color: "#ffffff" }} />
           ) : (
-            <span className="font-black text-xs tracking-tight">x</span>
+            <span style={{ fontWeight: 900, fontSize: "14px", color: "#ffffff", lineHeight: 1 }}>x</span>
           )}
         </button>
 
-        <div className="h-4 w-px bg-slate-200 mx-0.5" />
+        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
 
-        {/* 2. System Tools Group */}
-        <div className="flex items-center gap-1.5">
+        {/* 2. Primary System Tools Group */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
+          {/* Layers Drawer Button */}
           <button
             onClick={onToggleDrawer}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
             title="Pages, Colors & Fonts Drawer"
           >
-            <Layers className="w-4 h-4" />
+            <Layers style={{ width: "18px", height: "18px" }} />
           </button>
 
+          {/* Save Status Disk Button */}
           <button
             onClick={handleManualSave}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 relative cursor-pointer"
-            title="Save Status"
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              position: "relative",
+              ...buttonHoverStyle,
+            }}
+            title="Save Status (Click to Save)"
           >
-            <Save className={`w-4 h-4 ${saving ? "animate-spin text-blue-600" : ""}`} />
-            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-white" />
+            <Save style={{ width: "18px", height: "18px" }} />
+            <span
+              style={{
+                position: "absolute",
+                top: "4px",
+                right: "4px",
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                backgroundColor: "#10b981",
+                border: "1.5px solid #ffffff",
+              }}
+            />
           </button>
 
+          {/* Copy Link Button */}
           <button
             onClick={handleCopyLink}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
             title="Instant Share / Copy Live Website Link"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <LinkIcon className="w-4 h-4" />}
+            {copied ? (
+              <Check style={{ width: "18px", height: "18px", color: "#059669" }} />
+            ) : (
+              <LinkIcon style={{ width: "18px", height: "18px" }} />
+            )}
           </button>
 
+          {/* External Preview Link Button */}
           <button
             onClick={handleOpenPreview}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer transition-colors"
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
             title="Open Live Website Preview in New Tab"
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink style={{ width: "18px", height: "18px" }} />
           </button>
         </div>
 
-        {/* 3. Selected Section Tools */}
-        {isSectionSelected && hasSections && (
-          <>
-            <div className="h-4 w-px bg-slate-200 mx-0.5" />
+        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
 
-            <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-150">
-              <span className="font-extrabold text-slate-900 text-xs px-3 py-1 rounded-xl bg-slate-100 border border-slate-200/80">
-                {activeSectionTitle}
-              </span>
+        {/* 3. Section Editing Tools Group */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
+          {/* Active Section Title Badge */}
+          <span
+            style={{
+              height: "32px",
+              padding: "0 14px",
+              borderRadius: "12px",
+              backgroundColor: "#f1f5f9",
+              border: "1px solid #e2e8f0",
+              fontSize: "13px",
+              fontWeight: 800,
+              color: "#0f172a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            {activeSectionTitle}
+          </span>
 
-              <button
-                onClick={onDuplicateSection}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
-                title="Duplicate Section"
-              >
-                <Copy className="w-4 h-4" />
-              </button>
+          {/* Duplicate Button */}
+          <button
+            onClick={onDuplicateSection}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
+            title="Duplicate Section"
+          >
+            <Copy style={{ width: "18px", height: "18px" }} />
+          </button>
 
-              <button
-                onClick={onUndo}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
-                title="Undo"
-              >
-                <Undo2 className="w-4 h-4" />
-              </button>
+          {/* Undo Button */}
+          <button
+            onClick={onUndo}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
+            title="Undo"
+          >
+            <Undo2 style={{ width: "18px", height: "18px" }} />
+          </button>
 
-              <button
-                onClick={handleRefreshSwap}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-blue-600 font-bold transition-colors cursor-pointer"
-                title="Swap Variant"
-              >
-                <RefreshCw className="w-4 h-4 hover:rotate-180 transition-transform duration-300" />
-              </button>
+          {/* Swap Variant Refresh Blue Button */}
+          <button
+            onClick={handleRefreshSwap}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#2563eb",
+              ...buttonHoverStyle,
+            }}
+            title="Swap Variant Layout"
+          >
+            <RefreshCw style={{ width: "18px", height: "18px" }} />
+          </button>
 
-              <button
-                onClick={onRedo}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
-                title="Redo"
-              >
-                <Redo2 className="w-4 h-4" />
-              </button>
+          {/* Redo Button */}
+          <button
+            onClick={onRedo}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
+            title="Redo"
+          >
+            <Redo2 style={{ width: "18px", height: "18px" }} />
+          </button>
 
-              <button
-                onClick={onMoveUp}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
-                title="Move Up"
-              >
-                <ArrowUp className="w-4 h-4" />
-              </button>
+          {/* Move Up Button */}
+          <button
+            onClick={onMoveUp}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
+            title="Move Up"
+          >
+            <ArrowUp style={{ width: "18px", height: "18px" }} />
+          </button>
 
-              <button
-                onClick={onMoveDown}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
-                title="Move Down"
-              >
-                <ArrowDown className="w-4 h-4" />
-              </button>
+          {/* Move Down Button */}
+          <button
+            onClick={onMoveDown}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#334155",
+              ...buttonHoverStyle,
+            }}
+            title="Move Down"
+          >
+            <ArrowDown style={{ width: "18px", height: "18px" }} />
+          </button>
 
-              <button
-                onClick={onDeleteSection}
-                className="p-1.5 rounded-lg hover:bg-rose-100 text-rose-600 cursor-pointer"
-                title="Delete Section"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+          {/* Red Delete Trash Icon Button */}
+          <button
+            onClick={onDeleteSection}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
+              cursor: "pointer",
+              color: "#f43f5e",
+              ...buttonHoverStyle,
+            }}
+            title="Delete Section"
+          >
+            <Trash2 style={{ width: "18px", height: "18px" }} />
+          </button>
+        </div>
 
-              {onClearSelection && (
-                <button
-                  onClick={onClearSelection}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-800 cursor-pointer"
-                  title="Deselect Section"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </>
-        )}
+        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
 
-        <div className="h-4 w-px bg-slate-200 mx-0.5" />
-
-        {/* 4. Multi-Resolution Viewport Switcher */}
-        <div className="flex items-center gap-1">
+        {/* 4. Multi-Resolution Viewport Switcher Group */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+          {/* Desktop Monitor Resolution Button */}
           <button
             onClick={handleDesktopClick}
-            className={`transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
-              activeDesktop
-                ? "bg-white border border-slate-200 shadow-sm rounded-xl px-3 py-1 text-slate-900 font-extrabold"
-                : "text-slate-500 hover:text-slate-900 p-1.5"
-            }`}
-            title="Desktop / Laptop (Click to cycle 1440px / 1280px / 1600px)"
+            style={{
+              height: "34px",
+              padding: activeDesktop ? "0 12px" : "0 8px",
+              borderRadius: "12px",
+              border: activeDesktop ? "1px solid #cbd5e1" : "none",
+              backgroundColor: activeDesktop ? "#ffffff" : "transparent",
+              boxShadow: activeDesktop ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              color: "#0f172a",
+              ...buttonHoverStyle,
+            }}
+            title="Desktop Resolution (Click to Cycle 1200px / 1024px / 800px)"
           >
-            <Monitor className="w-4 h-4" />
+            <Monitor style={{ width: "18px", height: "18px", color: "#334155" }} />
             {activeDesktop && (
-              <span className="font-mono font-extrabold text-[11px] text-slate-800">
+              <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "12px", color: "#0f172a" }}>
                 {activeDesktop.width}
               </span>
             )}
           </button>
 
+          {/* Tablet Resolution Button */}
           <button
             onClick={handleTabletClick}
-            className={`transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
-              activeTablet
-                ? "bg-white border border-slate-200 shadow-sm rounded-xl px-3 py-1 text-slate-900 font-extrabold"
-                : "text-slate-500 hover:text-slate-900 p-1.5"
-            }`}
-            title="Tablet (Click to cycle 768px / 640px / 1024px)"
+            style={{
+              height: "34px",
+              padding: activeTablet ? "0 12px" : "0 8px",
+              borderRadius: "12px",
+              border: activeTablet ? "1px solid #cbd5e1" : "none",
+              backgroundColor: activeTablet ? "#ffffff" : "transparent",
+              boxShadow: activeTablet ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              color: "#0f172a",
+              ...buttonHoverStyle,
+            }}
+            title="Tablet Resolution (Click to Cycle 768px / 640px / 1024px)"
           >
-            <Tablet className="w-4 h-4" />
+            <Tablet style={{ width: "18px", height: "18px", color: "#334155" }} />
             {activeTablet && (
-              <span className="font-mono font-extrabold text-[11px] text-slate-800">
+              <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "12px", color: "#0f172a" }}>
                 {activeTablet.width}
               </span>
             )}
           </button>
 
+          {/* Mobile Phone Resolution Button */}
           <button
             onClick={handleMobileClick}
-            className={`transition-all cursor-pointer flex items-center gap-1.5 text-xs ${
-              activeMobile
-                ? "bg-white border border-slate-200 shadow-sm rounded-xl px-3 py-1 text-slate-900 font-extrabold"
-                : "text-slate-500 hover:text-slate-900 p-1.5"
-            }`}
-            title="Mobile (Click to cycle 375px / 320px / 425px)"
+            style={{
+              height: "34px",
+              padding: activeMobile ? "0 12px" : "0 8px",
+              borderRadius: "12px",
+              border: activeMobile ? "1px solid #cbd5e1" : "none",
+              backgroundColor: activeMobile ? "#ffffff" : "transparent",
+              boxShadow: activeMobile ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              color: "#0f172a",
+              ...buttonHoverStyle,
+            }}
+            title="Mobile Resolution (Click to Cycle 375px / 320px / 425px)"
           >
-            <Smartphone className="w-4 h-4" />
+            <Smartphone style={{ width: "18px", height: "18px", color: "#334155" }} />
             {activeMobile && (
-              <span className="font-mono font-extrabold text-[11px] text-slate-800">
+              <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "12px", color: "#0f172a" }}>
                 {activeMobile.width}
               </span>
             )}
           </button>
         </div>
-
       </div>
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a] text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2.5 animate-in fade-in duration-150 pointer-events-none">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+        <div
+          style={{
+            position: "fixed",
+            bottom: "86px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 999999,
+            backgroundColor: "#0f172a",
+            color: "#ffffff",
+            fontSize: "12px",
+            fontWeight: 800,
+            padding: "10px 20px",
+            borderRadius: "16px",
+            boxShadow: "0 20px 30px -10px rgba(0,0,0,0.3)",
+            border: "1px solid #334155",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            pointerEvents: "none",
+          }}
+        >
+          <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#34d399" }} />
           <span>{toastMessage}</span>
         </div>
       )}
