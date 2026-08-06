@@ -1186,40 +1186,42 @@ export function EditorStudio({
       )}
 
       {/* Top Navbar Header */}
-      <header className="h-16 border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-40 shadow-xl">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/xite-logo.png" alt="XITE Logo" className="h-7 w-7 object-contain rounded-md" />
-            <span className="text-base font-black tracking-tight text-white">XITE</span>
-          </Link>
-          <div className="h-4 w-px bg-slate-800" />
-          <div className="flex items-center gap-1.5 text-xs text-blue-400 font-black bg-blue-950/60 px-3 py-1 rounded-full border border-blue-800/60">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-            <span>{currentPage.name} Page</span>
+      <header className="h-16 border-b border-slate-800 bg-slate-950/95 backdrop-blur-xl px-4 sm:px-8 flex items-center sticky top-0 z-40 shadow-xl">
+        <div className="w-full max-w-[1500px] mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/xite-logo.png" alt="XITE Logo" className="h-7 w-7 object-contain rounded-md" />
+              <span className="text-base font-black tracking-tight text-white">XITE</span>
+            </Link>
+            <div className="h-4 w-px bg-slate-800" />
+            <div className="flex items-center gap-1.5 text-xs text-blue-400 font-black bg-blue-950/60 px-3 py-1 rounded-full border border-blue-800/60">
+              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <span>{currentPage.name} Page</span>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-300 bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{subdomain}.xite.co.in</span>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-300 bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-800 shadow-inner">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>{subdomain}.xite.co.in</span>
+            </div>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 px-4 py-2 rounded-xl transition-all cursor-pointer shadow-md"
+            >
+              <span>⚙️ Settings & Account</span>
+            </button>
           </div>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 px-4 py-2 rounded-xl transition-all cursor-pointer shadow-md"
-          >
-            <span>⚙️ Settings & Account</span>
-          </button>
         </div>
       </header>
 
       {/* Main Studio Canvas Workspace */}
       <main
         onClick={() => setActiveSectionIndex(null)}
-        className="flex-1 w-full bg-slate-900/90 p-4 sm:p-8 flex flex-col items-center justify-start pb-48 cursor-pointer min-h-screen"
+        className="flex-1 w-full bg-[#0b0f19] p-4 sm:p-8 flex flex-col items-center justify-start pb-52 cursor-pointer min-h-screen"
       >
         <div
-          className="transition-all duration-300 min-h-[75vh] flex flex-col items-center justify-start mx-auto bg-white shadow-2xl rounded-2xl border border-slate-700/60 overflow-hidden"
+          className="transition-all duration-300 min-h-[75vh] flex flex-col items-center justify-start mx-auto bg-white shadow-2xl rounded-2xl border border-slate-700/80 overflow-hidden max-w-full my-4"
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
           {sections.length === 0 ? (
@@ -1245,7 +1247,7 @@ export function EditorStudio({
             </div>
           ) : (
             /* Pure Section Rendering for Current Page */
-            <div className="w-full">
+            <div className="w-full overflow-hidden">
               {sections.map((sec, idx) => (
                 <div
                   key={sec.id}
@@ -1255,7 +1257,7 @@ export function EditorStudio({
                   }}
                   onDoubleClick={(e) => handleSectionDoubleClick(e, idx)}
                   onContextMenu={(e) => handleSectionContextMenu(e, idx)}
-                  className={`w-full cursor-pointer relative transition-all group section-wrapper-container ${
+                  className={`w-full cursor-pointer relative transition-all group section-wrapper-container overflow-hidden ${
                     activeSectionIndex === idx ? "ring-2 ring-blue-600 ring-offset-2 z-10" : ""
                   }`}
                 >
@@ -1279,6 +1281,9 @@ export function EditorStudio({
                   <span>Add Section</span>
                 </button>
               </div>
+
+              {/* Bottom Clearance Spacer for Floating Dock */}
+              <div className="w-full h-36 bg-transparent pointer-events-none" />
             </div>
           )}
         </div>
