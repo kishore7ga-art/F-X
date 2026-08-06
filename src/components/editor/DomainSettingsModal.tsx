@@ -285,10 +285,20 @@ export function DomainSettingsModal({
                 </p>
               </div>
 
-              {/* Card 1: Primary Custom Domain */}
+              {/* Card 1: Custom Domain Input Form */}
               <div
-                style={{ width: "100%", boxSizing: "border-box" }}
-                className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid rgba(226, 232, 240, 0.9)",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
                   <div>
@@ -308,19 +318,59 @@ export function DomainSettingsModal({
                     Domain Name / Subdomain Address
                   </label>
                   <div
-                    style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px", width: "100%" }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: "16px",
+                      width: "100%",
+                      boxSizing: "border-box",
+                    }}
                   >
                     <input
                       type="text"
                       value={customDomain}
                       onChange={(e) => setCustomDomain(e.target.value)}
-                      style={{ flex: "1 1 0%", width: "100%", position: "static" }}
-                      className="bg-slate-50 border border-slate-300 rounded-2xl px-5 py-3.5 text-base font-mono text-slate-900 font-bold focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 shadow-inner"
+                      style={{
+                        flex: "1 1 0%",
+                        width: "100%",
+                        position: "static",
+                        top: "auto",
+                        right: "auto",
+                        height: "54px",
+                        paddingLeft: "20px",
+                        paddingRight: "20px",
+                        borderRadius: "16px",
+                        border: "1px solid #cbd5e1",
+                        backgroundColor: "#f8fafc",
+                        fontSize: "15px",
+                        fontFamily: "monospace",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        boxSizing: "border-box",
+                        outline: "none",
+                      }}
                     />
                     <button
                       onClick={handleSaveDomain}
-                      style={{ position: "static", flexShrink: 0 }}
-                      className="px-7 py-3.5 bg-slate-900 hover:bg-black text-white text-xs font-black rounded-2xl transition-all cursor-pointer shadow-lg whitespace-nowrap"
+                      style={{
+                        position: "static",
+                        top: "auto",
+                        right: "auto",
+                        height: "54px",
+                        paddingLeft: "28px",
+                        paddingRight: "28px",
+                        backgroundColor: "#0f172a",
+                        color: "#ffffff",
+                        fontSize: "13px",
+                        fontWeight: 900,
+                        borderRadius: "16px",
+                        border: "none",
+                        flexShrink: 0,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 10px 25px -5px rgba(15,23,42,0.3)",
+                      }}
                     >
                       Save Domain
                     </button>
@@ -330,8 +380,18 @@ export function DomainSettingsModal({
 
               {/* Card 2: Production Live Callout Banner */}
               <div
-                style={{ width: "100%", boxSizing: "border-box" }}
-                className="bg-slate-900 text-white rounded-3xl p-8 shadow-xl space-y-6 relative overflow-hidden"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  backgroundColor: "#0f172a",
+                  color: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
                   <div className="inline-flex items-center gap-2 text-xs font-black text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-4 py-1.5 rounded-full uppercase tracking-wider">
@@ -373,8 +433,18 @@ export function DomainSettingsModal({
 
               {/* Card 3: DNS Configuration Instructions Table */}
               <div
-                style={{ width: "100%", boxSizing: "border-box" }}
-                className="bg-white border border-slate-200/90 rounded-3xl p-7 shadow-sm space-y-6"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid rgba(226, 232, 240, 0.9)",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
               >
                 <div>
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
