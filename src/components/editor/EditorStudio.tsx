@@ -1019,28 +1019,86 @@ export function EditorStudio({
       {linkPopup && (
         <div
           onClick={() => setLinkPopup(null)}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150 cursor-pointer"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999,
+            backgroundColor: "rgba(0, 0, 0, 0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            boxSizing: "border-box",
+          }}
+          className="select-none cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-[#0d1117] border border-blue-500/50 rounded-2xl p-5 shadow-2xl space-y-4 text-white text-xs animate-in zoom-in-95 duration-150 cursor-default"
+            style={{
+              width: "440px",
+              maxWidth: "92vw",
+              backgroundColor: "#0b1222",
+              border: "1px solid #2563eb",
+              borderRadius: "24px",
+              padding: "24px 28px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 25px rgba(37, 99, 235, 0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              boxSizing: "border-box",
+            }}
+            className="text-white text-xs cursor-default"
           >
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]" />
-                <span className="font-extrabold text-sm text-white">Button Navigation URL</span>
+            {/* Modal Header */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderBottom: "1px solid #1e293b",
+                paddingBottom: "14px",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+                <span
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    backgroundColor: "#3b82f6",
+                    boxShadow: "0 0 10px #3b82f6",
+                  }}
+                />
+                <span style={{ fontSize: "16px", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.01em" }}>
+                  Button Navigation URL
+                </span>
               </div>
               <button
                 onClick={() => setLinkPopup(null)}
-                className="text-neutral-400 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-neutral-800 cursor-pointer"
+                style={{
+                  backgroundColor: "transparent",
+                  border: "none",
+                  color: "#94a3b8",
+                  fontSize: "14px",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  borderRadius: "8px",
+                }}
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-mono text-neutral-300 font-bold mb-1.5">
+            {/* Form Fields */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 800, color: "#cbd5e1" }}>
                   Target URL / Link Path
                 </label>
                 <input
@@ -1048,21 +1106,44 @@ export function EditorStudio({
                   value={linkPopup.currentUrl}
                   onChange={(e) => setLinkPopup({ ...linkPopup, currentUrl: e.target.value })}
                   placeholder="e.g. https://greenfield.edu.in/apply or #contact"
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:border-blue-500 focus:outline-none"
+                  style={{
+                    width: "100%",
+                    height: "46px",
+                    backgroundColor: "#162032",
+                    border: "1px solid #334155",
+                    borderRadius: "14px",
+                    paddingLeft: "16px",
+                    paddingRight: "16px",
+                    fontSize: "13px",
+                    color: "#ffffff",
+                    fontFamily: "monospace",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
                 />
               </div>
 
               {/* Quick Page Preset Links */}
-              <div>
-                <label className="block text-[10px] font-mono text-neutral-400 font-bold mb-1.5 uppercase tracking-wider">
-                  Quick Page Presets
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  QUICK PAGE PRESETS
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "8px" }}>
                   {["/home", "/about", "/academics", "/contact", "/placements"].map((slug) => (
                     <button
                       key={slug}
                       onClick={() => setLinkPopup({ ...linkPopup, currentUrl: slug })}
-                      className="text-xs font-mono px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-blue-600 hover:text-white text-neutral-300 transition-colors cursor-pointer"
+                      style={{
+                        fontSize: "12px",
+                        fontFamily: "monospace",
+                        fontWeight: 700,
+                        padding: "6px 14px",
+                        borderRadius: "10px",
+                        backgroundColor: linkPopup.currentUrl === slug ? "#2563eb" : "#1e293b",
+                        color: linkPopup.currentUrl === slug ? "#ffffff" : "#cbd5e1",
+                        border: "1px solid #334155",
+                        cursor: "pointer",
+                      }}
                     >
                       {slug}
                     </button>
@@ -1071,29 +1152,69 @@ export function EditorStudio({
               </div>
 
               {/* Open in New Tab Toggle */}
-              <label className="flex items-center gap-3 cursor-pointer pt-1">
+              <label style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px", cursor: "pointer", paddingTop: "4px" }}>
                 <input
                   type="checkbox"
                   checked={linkPopup.isNewTab}
                   onChange={(e) => setLinkPopup({ ...linkPopup, isNewTab: e.target.checked })}
-                  className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
+                  style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
                 />
-                <span className="text-xs font-bold text-neutral-300">
-                  Open in New Tab (<code className="text-blue-400 font-mono">target="_blank"</code>)
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#cbd5e1" }}>
+                  Open in New Tab (<code style={{ color: "#60a5fa", fontFamily: "monospace" }}>target="_blank"</code>)
                 </span>
               </label>
 
               {/* Action Buttons */}
-              <div className="pt-3 border-t border-neutral-800 flex items-center justify-end gap-3">
+              <div
+                style={{
+                  paddingTop: "16px",
+                  borderTop: "1px solid #1e293b",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  gap: "12px",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              >
                 <button
                   onClick={() => setLinkPopup(null)}
-                  className="px-4 py-2 rounded-xl text-neutral-400 hover:text-white font-bold hover:bg-neutral-800 cursor-pointer text-xs"
+                  style={{
+                    height: "42px",
+                    paddingLeft: "18px",
+                    paddingRight: "18px",
+                    borderRadius: "12px",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    color: "#94a3b8",
+                    fontSize: "13px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleSaveButtonUrl(linkPopup.currentUrl, linkPopup.isNewTab)}
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold shadow-md cursor-pointer text-xs flex items-center gap-1.5"
+                  style={{
+                    height: "42px",
+                    paddingLeft: "22px",
+                    paddingRight: "22px",
+                    borderRadius: "12px",
+                    backgroundColor: "#2563eb",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    border: "none",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)",
+                  }}
                 >
                   <span>🔗 Save Button URL</span>
                 </button>
