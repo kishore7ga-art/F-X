@@ -254,6 +254,41 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     }
   }, []);
 
+  const DESKTOP_WIDTHS = ["100%", "1200px", "1024px"];
+  const TABLET_WIDTHS = ["768px", "640px"];
+  const MOBILE_WIDTHS = ["375px", "320px", "425px"];
+
+  const isDesktop = DESKTOP_WIDTHS.includes(previewWidth);
+  const isTablet = TABLET_WIDTHS.includes(previewWidth);
+  const isMobile = MOBILE_WIDTHS.includes(previewWidth);
+
+  const handleDesktopClick = () => {
+    if (isDesktop) {
+      const nextIdx = (DESKTOP_WIDTHS.indexOf(previewWidth) + 1) % DESKTOP_WIDTHS.length;
+      setPreviewWidth(DESKTOP_WIDTHS[nextIdx]!);
+    } else {
+      setPreviewWidth("100%");
+    }
+  };
+
+  const handleTabletClick = () => {
+    if (isTablet) {
+      const nextIdx = (TABLET_WIDTHS.indexOf(previewWidth) + 1) % TABLET_WIDTHS.length;
+      setPreviewWidth(TABLET_WIDTHS[nextIdx]!);
+    } else {
+      setPreviewWidth("768px");
+    }
+  };
+
+  const handleMobileClick = () => {
+    if (isMobile) {
+      const nextIdx = (MOBILE_WIDTHS.indexOf(previewWidth) + 1) % MOBILE_WIDTHS.length;
+      setPreviewWidth(MOBILE_WIDTHS[nextIdx]!);
+    } else {
+      setPreviewWidth("375px");
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
@@ -269,34 +304,65 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           }}
           className="bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-2xl shadow-[0_12px_32px_rgba(15,23,42,0.12),0_2px_6px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 select-none transition-all duration-200"
         >
-          {[
-            { label: "100%", title: "Desktop / Laptop", width: "100%", Icon: Monitor },
-            { label: "768px", title: "Tablet", width: "768px", Icon: Tablet },
-            { label: "375px", title: "Mobile", width: "375px", Icon: Smartphone },
-          ].map((item) => {
-            const isActive = previewWidth === item.width;
-            const Icon = item.Icon;
-            return (
-              <button
-                key={item.width}
-                type="button"
-                onClick={() => setPreviewWidth(item.width)}
-                className={`flex items-center gap-1.5 h-8.5 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
-                  isActive
-                    ? "bg-white border border-slate-300/90 shadow-[0_2px_4px_rgba(0,0,0,0.05)] px-3 text-slate-900 font-extrabold"
-                    : "bg-transparent border border-transparent px-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
-                }`}
-                title={item.title}
-              >
-                <Icon className="w-4.5 h-4.5 text-slate-700 shrink-0" />
-                {isActive && (
-                  <span className="font-mono font-extrabold text-[12px] text-slate-900 tracking-tight">
-                    {item.label}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+          {/* Vertical Divider Line */}
+          <div className="h-4.5 w-[1px] bg-slate-200 shrink-0 mx-0.5" />
+
+          {/* 1. Desktop Button */}
+          <button
+            type="button"
+            onClick={handleDesktopClick}
+            className={`flex items-center gap-1.5 h-8.5 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
+              isDesktop
+                ? "bg-white border border-slate-300/90 shadow-[0_2px_4px_rgba(0,0,0,0.05)] px-3 text-slate-900 font-extrabold"
+                : "bg-transparent border border-transparent px-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
+            }`}
+            title="Desktop Resolution (Click to Cycle 100% / 1200px / 1024px)"
+          >
+            <Monitor className="w-4.5 h-4.5 text-slate-700 shrink-0" />
+            {isDesktop && (
+              <span className="font-mono font-extrabold text-[12px] text-slate-900 tracking-tight">
+                {previewWidth}
+              </span>
+            )}
+          </button>
+
+          {/* 2. Tablet Button */}
+          <button
+            type="button"
+            onClick={handleTabletClick}
+            className={`flex items-center gap-1.5 h-8.5 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
+              isTablet
+                ? "bg-white border border-slate-300/90 shadow-[0_2px_4px_rgba(0,0,0,0.05)] px-3 text-slate-900 font-extrabold"
+                : "bg-transparent border border-transparent px-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
+            }`}
+            title="Tablet Resolution (Click to Cycle 768px / 640px)"
+          >
+            <Tablet className="w-4.5 h-4.5 text-slate-700 shrink-0" />
+            {isTablet && (
+              <span className="font-mono font-extrabold text-[12px] text-slate-900 tracking-tight">
+                {previewWidth}
+              </span>
+            )}
+          </button>
+
+          {/* 3. Mobile Button */}
+          <button
+            type="button"
+            onClick={handleMobileClick}
+            className={`flex items-center gap-1.5 h-8.5 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
+              isMobile
+                ? "bg-white border border-slate-300/90 shadow-[0_2px_4px_rgba(0,0,0,0.05)] px-3 text-slate-900 font-extrabold"
+                : "bg-transparent border border-transparent px-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
+            }`}
+            title="Mobile Phone Resolution (Click to Cycle 375px / 320px / 425px)"
+          >
+            <Smartphone className="w-4.5 h-4.5 text-slate-700 shrink-0" />
+            {isMobile && (
+              <span className="font-mono font-extrabold text-[12px] text-slate-900 tracking-tight">
+                {previewWidth}
+              </span>
+            )}
+          </button>
         </div>
       )}
 
