@@ -79,10 +79,10 @@ export function EditorToolbar({
     const origin = window.location.origin;
     const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
     
-    // Live Website Public URL
+    // Clean Live Website Public URL
     const publicWebsiteUrl = isProd
-      ? `https://xite.co.in/preview/${sub}`
-      : `${origin}/preview/${sub}`;
+      ? `https://xite.co.in/site/${sub}`
+      : `${origin}/site/${sub}`;
 
     setShareUrl(publicWebsiteUrl);
     setShowShareModal(true);
@@ -90,7 +90,7 @@ export function EditorToolbar({
     try {
       await navigator.clipboard.writeText(publicWebsiteUrl);
       setCopied(true);
-      showToast("Public Live Website Link Copied! 🔗");
+      showToast("Clean Live Website Link Copied! 🔗");
       setTimeout(() => setCopied(false), 2500);
     } catch {
       // Clipboard fallback
@@ -103,10 +103,10 @@ export function EditorToolbar({
       const sub = subdomain || "greenfield";
       const origin = window.location.origin;
       const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-      const previewTargetUrl = isProd ? `https://xite.co.in/preview/${sub}` : `${origin}/preview/${sub}`;
+      const previewTargetUrl = isProd ? `https://xite.co.in/site/${sub}` : `${origin}/site/${sub}`;
       
       window.open(previewTargetUrl, "_blank");
-      showToast("Opening Live Full Website Preview in new tab... 🚀");
+      showToast("Opening Live Full Website in new tab... 🚀");
     }
   };
 

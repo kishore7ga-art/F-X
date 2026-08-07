@@ -31,6 +31,25 @@ import {
  * signing code as the rest of the app.
  */
 export async function proxy(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  const hostname = request.headers.get("host") || "";
+
+  // Handle clean subdomain mapping (e.g. kishore7ga-college.xite.co.in -> /site/kishore7ga-college)
+  const isCustomSubdomain =
+    hostname.includes(".xite.co.in") &&
+    !hostname.startsWith("admin.") &&
+    !hostname.startsWith("api.") &&
+    !hostname.startsWith("www.") &&
+    hostname !== "xite.co.in";
+
+  if (isCustomSubdomain) {
+    const subdomain = hostname.split(".")[0];
+    if (subdomain && !url.pathname.startsWith("/api") && !url.pathname.startsWith("/_next")) {
+      url.pathname = `/site/${subdomain}${url.pathname === "/" ? "" : url.pathname}`;
+      return NextResponse.rewrite(url);
+    }
+  }
+
   const response = NextResponse.next();
 
   const token = request.cookies.get(COOKIE_NAME)?.value;
