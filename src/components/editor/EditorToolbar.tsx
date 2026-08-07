@@ -60,6 +60,7 @@ export function EditorToolbar({
   onMoveDown,
   onDeleteSection,
   onClearSelection,
+  onSyncAdminWebsite,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,28 +72,29 @@ export function EditorToolbar({
   };
 
   const handleCopyLink = async () => {
-    const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-    if (!currentUrl) return;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "XITE Website Preview",
-          text: "Check out this live college website created on XITE!",
-          url: currentUrl,
-        });
-        showToast("Website link shared successfully! 🚀");
-        return;
-      } catch {}
-    }
+    if (typeof window === "undefined") return;
+    const sub = subdomain || "greenfield";
+    const previewUrl = `${window.location.origin}/preview/${sub}`;
 
     try {
-      await navigator.clipboard.writeText(currentUrl);
+      await navigator.clipboard.writeText(previewUrl);
       setCopied(true);
-      showToast("Live Website Link Copied! Ready to share anywhere 🚀");
+      showToast("Live Website Link Copied! Open in Chrome or any browser 🚀");
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      showToast("Failed to copy link.");
+      try {
+        const input = document.createElement("input");
+        input.value = previewUrl;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+        setCopied(true);
+        showToast("Live Website Link Copied! Open in Chrome or any browser 🚀");
+        setTimeout(() => setCopied(false), 2500);
+      } catch {
+        showToast("Failed to copy link.");
+      }
     }
   };
 
@@ -106,10 +108,13 @@ export function EditorToolbar({
 
   const handleManualSave = () => {
     setSaving(true);
+    if (onSyncAdminWebsite) {
+      onSyncAdminWebsite();
+    }
     setTimeout(() => {
       setSaving(false);
-      showToast("Changes saved successfully!");
-    }, 600);
+      showToast("Changes saved successfully! 💾");
+    }, 500);
   };
 
   const handleRefreshSwap = () => {
