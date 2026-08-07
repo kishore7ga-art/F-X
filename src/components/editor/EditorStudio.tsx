@@ -655,6 +655,18 @@ export function EditorStudio({
     }
   }, []);
 
+  // Helper to record history snapshot before mutating sections state
+  const setSectionsWithHistory: React.Dispatch<React.SetStateAction<SectionItem[]>> = (action) => {
+    setSections((prevSections) => {
+      const nextSections = typeof action === "function" ? action(prevSections) : action;
+      if (JSON.stringify(prevSections) !== JSON.stringify(nextSections)) {
+        setHistoryStack((history) => [...history.slice(-49), prevSections]);
+        setRedoStack([]);
+      }
+      return nextSections;
+    });
+  };
+
   // Undo & Redo History Stack Handlers
   const handleUndo = () => {
     if (historyStack.length === 0) return;
@@ -662,6 +674,7 @@ export function EditorStudio({
     setRedoStack((prev) => [...prev, sections]);
     setHistoryStack((prev) => prev.slice(0, prev.length - 1));
     setSections(previousState);
+    showToastNotification("↩️ Undo performed!");
   };
 
   const handleRedo = () => {
@@ -670,7 +683,37 @@ export function EditorStudio({
     setHistoryStack((prev) => [...prev, sections]);
     setRedoStack((prev) => prev.slice(0, prev.length - 1));
     setSections(nextState);
+    showToastNotification("↪️ Redo performed!");
   };
+
+  // Global Keyboard Shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.getAttribute("contenteditable") === "true")
+      ) {
+        return;
+      }
+
+      const isMac = typeof navigator !== "undefined" && navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+
+      if (ctrlOrCmd && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if (ctrlOrCmd && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [historyStack, redoStack, sections]);
 
   // Section Selector Modal
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
@@ -769,7 +812,7 @@ export function EditorStudio({
     const target = PALETTES_MAP[paletteId] || PALETTES_MAP["academic-blue"]!;
 
     // Transform color scheme across all sections
-    setSections((prevSections) =>
+    setSectionsWithHistory((prevSections) =>
       prevSections.map((sec) => {
         let code = sec.code;
         // Swap primary button background colors & accent highlights
@@ -798,7 +841,7 @@ export function EditorStudio({
     const targetFont = FONT_MAP[fontId] || FONT_MAP["inter"]!;
 
     // Update font-family style attribute across all sections
-    setSections((prevSections) =>
+    setSectionsWithHistory((prevSections) =>
       prevSections.map((sec) => {
         let code = sec.code;
         code = code.replace(/font-family:\s*[^;]+;/gi, `font-family: ${targetFont};`);
@@ -1280,7 +1323,7 @@ export function EditorStudio({
     }
 
     // 2. Direct string update in section HTML code & auto-save across state & localStorage
-    setSections((prevSections) => {
+    setSectionsWithHistory((prevSections) => {
       return prevSections.map((sec, idx) => {
         let newCode = sec.code;
 
@@ -1518,7 +1561,7 @@ export function EditorStudio({
 
       const newCode = cleanCanvasWrapperFromCode(clone.innerHTML);
       if (newCode) {
-        setSections((prev) =>
+        setSectionsWithHistory((prev) =>
           prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
         );
       }
@@ -1568,7 +1611,7 @@ export function EditorStudio({
         code: targetTemplate.code,
         variantIndex: 0,
       };
-      setSections((prev) => [...prev, newSection]);
+      setSectionsWithHistory((prev) => [...prev, newSection]);
       setActiveSectionIndex(sections.length);
     } else {
       const defaultCode = ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE;
@@ -1578,7 +1621,7 @@ export function EditorStudio({
         code: defaultCode,
         variantIndex: 0,
       };
-      setSections((prev) => [...prev, newSection]);
+      setSectionsWithHistory((prev) => [...prev, newSection]);
       setActiveSectionIndex(sections.length);
     }
   };
@@ -1642,7 +1685,7 @@ export function EditorStudio({
       const nextIdx = currentTplIdx >= 0 ? (currentTplIdx + 1) % catTemplates.length : (activeSec.variantIndex !== undefined ? (activeSec.variantIndex + 1) % catTemplates.length : 0);
       const nextTpl = catTemplates[nextIdx]!;
 
-      setSections((prev) =>
+      setSectionsWithHistory((prev) =>
         prev.map((sec, idx) => {
           if (idx !== activeSectionIndex) return sec;
           return {
@@ -1680,7 +1723,7 @@ export function EditorStudio({
     const baseTitle = activeSec.title.split(" (Variant")[0];
     const newTitle = `${baseTitle} (Variant ${nextIdx + 1})`;
 
-    setSections((prev) =>
+    setSectionsWithHistory((prev) =>
       prev.map((sec, idx) => {
         if (idx !== activeSectionIndex) return sec;
         return {
@@ -1704,7 +1747,7 @@ export function EditorStudio({
       code: current.code,
       variantIndex: current.variantIndex,
     };
-    setSections((prev) => [
+    setSectionsWithHistory((prev) => [
       ...prev.slice(0, activeSectionIndex + 1),
       duplicated,
       ...prev.slice(activeSectionIndex + 1),
@@ -1714,13 +1757,13 @@ export function EditorStudio({
 
   const handleDeleteSection = () => {
     if (activeSectionIndex === null || sections.length === 0) return;
-    setSections((prev) => prev.filter((_, idx) => idx !== activeSectionIndex));
+    setSectionsWithHistory((prev) => prev.filter((_, idx) => idx !== activeSectionIndex));
     setActiveSectionIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
   };
 
   const handleMoveUp = () => {
     if (activeSectionIndex === null || activeSectionIndex <= 0) return;
-    setSections((prev) => {
+    setSectionsWithHistory((prev) => {
       const copy = [...prev];
       const temp = copy[activeSectionIndex];
       copy[activeSectionIndex] = copy[activeSectionIndex - 1];
@@ -1732,7 +1775,7 @@ export function EditorStudio({
 
   const handleMoveDown = () => {
     if (activeSectionIndex === null || activeSectionIndex >= sections.length - 1) return;
-    setSections((prev) => {
+    setSectionsWithHistory((prev) => {
       const copy = [...prev];
       const temp = copy[activeSectionIndex];
       copy[activeSectionIndex] = copy[activeSectionIndex + 1];
@@ -1976,6 +2019,8 @@ export function EditorStudio({
           onSwapVariant={handleSwapVariant}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          canUndo={historyStack.length > 0}
+          canRedo={redoStack.length > 0}
           onMoveUp={handleMoveUp}
           onMoveDown={handleMoveDown}
           onDeleteSection={handleDeleteSection}
