@@ -685,6 +685,17 @@ export function EditorStudio({
     isNewTab: boolean;
   } | null>(null);
 
+  // Right-Click Logo & Branding Editor Modal State
+  const [logoPopup, setLogoPopup] = useState<{
+    x: number;
+    y: number;
+    sectionIndex: number;
+    targetElement: HTMLElement;
+    logoText: string;
+    bgColor: string;
+    imageUrl: string;
+  } | null>(null);
+
   const toastMessage = null;
 
   const showToast = (_msg?: string) => {
@@ -1076,10 +1087,52 @@ export function EditorStudio({
     };
   };
 
-  // Right-click handler for buttons/links to edit target URL
+  // Right-click handler for buttons/links and Logo elements
   const handleSectionContextMenu = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
     const target = e.target as HTMLElement;
     if (!target) return;
+
+    // Check if right-clicking on logo element or logo badge container (e.g. AU, 🎓, image)
+    let logoElem: HTMLElement | null = target;
+    let isLogo = false;
+    while (logoElem && logoElem !== e.currentTarget) {
+      const cls = (logoElem.className || "").toString().toLowerCase();
+      const txt = (logoElem.innerText || "").trim();
+      const isImg = logoElem.tagName === "IMG";
+      if (
+        isImg ||
+        cls.includes("logo") ||
+        logoElem.getAttribute("data-logo") === "true" ||
+        (txt.length <= 4 && txt.length >= 1 && (txt === "AU" || txt.includes("🎓") || txt.includes("MEC") || logoElem.style.borderRadius !== ""))
+      ) {
+        isLogo = true;
+        break;
+      }
+      logoElem = logoElem.parentElement;
+    }
+
+    if (isLogo && logoElem && logoElem !== e.currentTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const mouseX = Math.min(e.clientX, window.innerWidth - 440);
+      const mouseY = Math.min(e.clientY, window.innerHeight - 400);
+
+      const computedStyle = window.getComputedStyle(logoElem);
+      const bg = computedStyle.backgroundColor || "#f59e0b";
+      const isImg = logoElem.tagName === "IMG";
+
+      setLogoPopup({
+        x: Math.max(10, mouseX),
+        y: Math.max(10, mouseY),
+        sectionIndex,
+        targetElement: logoElem,
+        logoText: logoElem.innerText || "AU",
+        bgColor: bg,
+        imageUrl: isImg ? (logoElem as HTMLImageElement).src : "",
+      });
+      return;
+    }
 
     // Find nearest clickable link or button
     let linkElem: HTMLElement | null = target;
@@ -1121,6 +1174,58 @@ export function EditorStudio({
       currentUrl: currentHref,
       isNewTab: isNewTab,
     });
+  };
+
+  // Save updated Logo (Text, Badge Color, or Image URL)
+  const handleSaveLogo = (newText: string, newBgColor: string, newImageUrl: string) => {
+    if (!logoPopup) return;
+
+    const { sectionIndex, targetElement } = logoPopup;
+
+    if (newImageUrl.trim()) {
+      if (targetElement.tagName === "IMG") {
+        (targetElement as HTMLImageElement).src = newImageUrl.trim();
+      } else {
+        targetElement.innerHTML = `<img src="${newImageUrl.trim()}" alt="Logo" style="height: 36px; object-fit: contain; border-radius: 8px;" />`;
+      }
+    } else {
+      if (targetElement.tagName === "IMG") {
+        const parent = targetElement.parentElement;
+        if (parent) {
+          parent.innerHTML = `<span style="font-size: 16px; font-weight: 900; color: #ffffff;">${newText}</span>`;
+        }
+      } else {
+        targetElement.innerText = newText;
+        if (newBgColor) {
+          targetElement.style.backgroundColor = newBgColor;
+        }
+      }
+    }
+
+    // Extract section wrapper element to save updated HTML
+    const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
+    if (container) {
+      const clone = container.cloneNode(true) as HTMLElement;
+      const badges = clone.querySelectorAll('.pointer-events-none');
+      badges.forEach((b) => b.remove());
+
+      const editables = clone.querySelectorAll('[contenteditable]');
+      editables.forEach((el) => {
+        el.removeAttribute('contenteditable');
+        (el as HTMLElement).style.outline = '';
+        (el as HTMLElement).style.outlineOffset = '';
+        (el as HTMLElement).style.borderRadius = '';
+      });
+
+      const newCode = clone.innerHTML;
+      if (newCode) {
+        setSections((prev) =>
+          prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
+        );
+      }
+    }
+
+    setLogoPopup(null);
   };
 
   // Save updated URL & target attributes on button element
@@ -1824,6 +1929,132 @@ export function EditorStudio({
                   <span>🔗 Save Button URL</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎨 Right-Click Logo & Branding Customizer Modal */}
+      {logoPopup && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setLogoPopup(null)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "440px",
+              backgroundColor: "#0d1527",
+              border: "1px solid #334155",
+              borderRadius: "24px",
+              padding: "28px",
+              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.8)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              color: "#ffffff",
+              fontFamily: "system-ui, sans-serif",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "10px", backgroundColor: "#f59e0b", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "14px" }}>
+                  🎨
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>Edit Logo & Branding</h3>
+                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "2px 0 0 0" }}>Customize logo initials, badge color or logo image</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setLogoPopup(null)}
+                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "18px" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Inputs */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Logo Text / Badge Initials (e.g. AU, 🎓, MEC)
+                </label>
+                <input
+                  type="text"
+                  value={logoPopup.logoText}
+                  onChange={(e) => setLogoPopup({ ...logoPopup, logoText: e.target.value })}
+                  placeholder="e.g. AU or 🎓"
+                  style={{ width: "100%", height: "44px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "14px", fontWeight: "bold", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Badge Background Color
+                </label>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                  {["#f59e0b", "#2563eb", "#10b981", "#ef4444", "#8b5cf6", "#0f172a", "#d97706", "#64748b"].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setLogoPopup({ ...logoPopup, bgColor: color })}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "8px",
+                        backgroundColor: color,
+                        border: logoPopup.bgColor === color ? "3px solid #ffffff" : "1px solid rgba(255,255,255,0.2)",
+                        cursor: "pointer",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Custom Logo Image URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={logoPopup.imageUrl}
+                  onChange={(e) => setLogoPopup({ ...logoPopup, imageUrl: e.target.value })}
+                  placeholder="https://example.com/logo.png"
+                  style={{ width: "100%", height: "44px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b" }}>
+              <button
+                onClick={() => setLogoPopup(null)}
+                style={{ height: "40px", padding: "0 18px", borderRadius: "10px", border: "none", background: "transparent", color: "#94a3b8", fontWeight: 800, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSaveLogo(logoPopup.logoText, logoPopup.bgColor, logoPopup.imageUrl)}
+                style={{ height: "40px", padding: "0 22px", borderRadius: "10px", backgroundColor: "#2563eb", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}
+              >
+                Save Logo Changes 🎨
+              </button>
             </div>
           </div>
         </div>
