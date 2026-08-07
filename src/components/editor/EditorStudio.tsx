@@ -591,11 +591,36 @@ export function EditorStudio({
         .replace(/<\/?body[\s\S]*?>/gi, "");
     }
 
+    // Neutralize fixed/sticky positioning in inline HTML so canvas layout stays static & aligned
+    cleanCode = cleanCode
+      .replace(/position:\s*fixed/gi, "position: relative")
+      .replace(/position:\s*sticky/gi, "position: relative");
+
     const containmentStyles = `<style>
-      .section-canvas-box { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; overflow-x: hidden !important; }
-      .section-canvas-box * { box-sizing: border-box !important; }
-      .section-canvas-box img, .section-canvas-box video { max-width: 100% !important; height: auto !important; }
-      .section-canvas-box header, .section-canvas-box nav { max-width: 100% !important; width: 100% !important; }
+      .section-canvas-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        position: relative !important;
+      }
+      .section-canvas-box * {
+        box-sizing: border-box !important;
+        max-width: 100% !important;
+      }
+      .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
+        max-width: 100% !important;
+        height: auto !important;
+      }
+      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section, .section-canvas-box div {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
+      .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
+        position: relative !important;
+        top: auto !important;
+      }
     </style>`;
 
     return `${containmentStyles}<div class="section-canvas-box">${autoCorrectMobileCode(cleanCode, width)}</div>`;
