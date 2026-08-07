@@ -230,6 +230,11 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       }
       .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section {
         width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-top: 0 !important;
+        border-radius: 0 !important;
         box-sizing: border-box !important;
       }
       .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
@@ -246,26 +251,26 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
       {/* Sleek Floating Bottom Device Switcher Pill - High Contrast */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white/95 backdrop-blur-xl border border-slate-200 px-3 py-1.5 rounded-full shadow-2xl flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 px-3.5 py-1.5 rounded-full shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={() => setPreviewWidth("100%")}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
             previewWidth === "100%"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800"
           }`}
           title="Desktop Full Screen (100%)"
         >
           <Monitor className="w-3.5 h-3.5" />
           <span className="font-mono text-xs">Desktop</span>
         </button>
-        <div className="h-3.5 w-px bg-slate-200" />
+        <div className="h-3.5 w-px bg-slate-800" />
         <button
           onClick={() => setPreviewWidth("375px")}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
             previewWidth === "375px"
-              ? "bg-slate-900 text-white shadow-sm"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800"
           }`}
           title="Mobile Smartphone Preview (375px)"
         >
@@ -276,7 +281,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
       {/* Main Live Site View */}
       <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
-        previewWidth === "100%" ? "p-0 m-0 bg-white" : "py-16 px-4 bg-slate-100 pb-28"
+        previewWidth === "100%" ? "p-0 m-0 bg-white pb-32" : "py-16 px-4 bg-slate-100 pb-36"
       }`}>
         <div
           className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
@@ -293,6 +298,8 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
               className="w-full overflow-hidden"
             />
           ))}
+          {/* Bottom Clearance Spacer for Floating Device Switcher Pill */}
+          <div className="w-full h-32 bg-transparent pointer-events-none shrink-0" />
         </div>
       </main>
     </div>
