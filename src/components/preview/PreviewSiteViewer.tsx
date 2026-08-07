@@ -256,13 +256,13 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
-      {/* Sleek Floating Bottom Device Resolution Switcher Pill */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a]/95 backdrop-blur-xl border border-slate-700/80 p-1.5 rounded-full shadow-2xl flex items-center gap-1 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      {/* Sleek Floating Bottom Device Resolution Switcher Dock */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#0f172a]/95 backdrop-blur-2xl border border-slate-700/80 px-4 py-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={() => setPreviewWidth("100%")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "100%"
-              ? "bg-blue-600 text-white shadow-md"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
               : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Full Page Resolution (100% Edge-to-Edge)"
@@ -270,11 +270,12 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           <Monitor className="w-3.5 h-3.5" />
           <span>Full 100%</span>
         </button>
+        <div className="h-4 w-px bg-slate-700/80" />
         <button
           onClick={() => setPreviewWidth("1200px")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "1200px"
-              ? "bg-blue-600 text-white shadow-md"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
               : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Desktop Resolution (1200px)"
@@ -282,11 +283,12 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           <Monitor className="w-3.5 h-3.5" />
           <span>Desktop (1200px)</span>
         </button>
+        <div className="h-4 w-px bg-slate-700/80" />
         <button
           onClick={() => setPreviewWidth("768px")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "768px"
-              ? "bg-blue-600 text-white shadow-md"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
               : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Tablet Resolution (768px)"
@@ -294,11 +296,12 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           <Tablet className="w-3.5 h-3.5" />
           <span>Tablet (768px)</span>
         </button>
+        <div className="h-4 w-px bg-slate-700/80" />
         <button
           onClick={() => setPreviewWidth("375px")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "375px"
-              ? "bg-blue-600 text-white shadow-md"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
               : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Mobile Resolution (375px)"
@@ -310,13 +313,13 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
       {/* Main Live Site View */}
       <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
-        previewWidth === "100%" ? "p-0 m-0 bg-white pb-32" : "py-16 px-4 bg-slate-100 pb-36"
+        previewWidth === "100%" ? "p-0 m-0 bg-white pb-36" : "py-12 px-4 bg-slate-100/90 pb-36"
       }`}>
         <div
           className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
             previewWidth === "100%"
               ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
-              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300"
+              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
           }`}
           style={{ width: previewWidth, maxWidth: "100%" }}
         >
@@ -327,8 +330,8 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
               className="w-full overflow-hidden"
             />
           ))}
-          {/* Bottom Clearance Spacer for Floating Device Switcher Pill */}
-          <div className="w-full h-32 bg-transparent pointer-events-none shrink-0" />
+          {/* Bottom Clearance Spacer for Floating Device Switcher Dock */}
+          <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />
         </div>
       </main>
     </div>
