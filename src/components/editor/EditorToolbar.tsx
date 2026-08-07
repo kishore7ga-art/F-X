@@ -413,7 +413,6 @@ export function EditorToolbar({
           {/* Undo Button */}
           <button
             onClick={onUndo}
-            disabled={!canUndo}
             style={{
               width: "34px",
               height: "34px",
@@ -421,14 +420,13 @@ export function EditorToolbar({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: canUndo ? "1px solid rgba(37,99,235,0.4)" : "1px solid transparent",
-              backgroundColor: canUndo ? "rgba(37,99,235,0.12)" : "transparent",
-              cursor: canUndo ? "pointer" : "not-allowed",
-              color: canUndo ? "#2563eb" : "#94a3b8",
-              opacity: canUndo ? 1 : 0.4,
-              transition: "all 0.15s ease",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              backgroundColor: canUndo ? "rgba(37,99,235,0.2)" : "rgba(255, 255, 255, 0.05)",
+              cursor: "pointer",
+              color: canUndo ? "#60a5fa" : "#cbd5e1",
+              ...buttonHoverStyle,
             }}
-            title={canUndo ? "Undo Action (Ctrl + Z)" : "Undo (No History)"}
+            title="Undo Action (Ctrl + Z)"
           >
             <Undo2 style={{ width: "18px", height: "18px" }} />
           </button>
@@ -457,7 +455,6 @@ export function EditorToolbar({
           {/* Redo Button */}
           <button
             onClick={onRedo}
-            disabled={!canRedo}
             style={{
               width: "34px",
               height: "34px",
@@ -465,14 +462,13 @@ export function EditorToolbar({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              border: canRedo ? "1px solid rgba(37,99,235,0.4)" : "1px solid transparent",
-              backgroundColor: canRedo ? "rgba(37,99,235,0.12)" : "transparent",
-              cursor: canRedo ? "pointer" : "not-allowed",
-              color: canRedo ? "#2563eb" : "#94a3b8",
-              opacity: canRedo ? 1 : 0.4,
-              transition: "all 0.15s ease",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              backgroundColor: canRedo ? "rgba(37,99,235,0.2)" : "rgba(255, 255, 255, 0.05)",
+              cursor: "pointer",
+              color: canRedo ? "#60a5fa" : "#cbd5e1",
+              ...buttonHoverStyle,
             }}
-            title={canRedo ? "Redo Action (Ctrl + Y)" : "Redo (No History)"}
+            title="Redo Action (Ctrl + Y)"
           >
             <Redo2 style={{ width: "18px", height: "18px" }} />
           </button>
