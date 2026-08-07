@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Monitor, Smartphone } from "lucide-react";
+import { Monitor, Tablet, Smartphone } from "lucide-react";
 
 interface SectionItem {
   id: string;
@@ -256,31 +256,55 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
-      {/* Sleek Floating Bottom Device Switcher Pill - Symmetric Rounded Cards */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a]/95 backdrop-blur-xl border border-slate-700/80 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      {/* Sleek Floating Bottom Device Resolution Switcher Pill */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a]/95 backdrop-blur-xl border border-slate-700/80 p-1.5 rounded-full shadow-2xl flex items-center gap-1 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={() => setPreviewWidth("100%")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
             previewWidth === "100%"
               ? "bg-blue-600 text-white shadow-md"
               : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
-          title="Desktop Full Screen (100%)"
+          title="Full Page Resolution (100% Edge-to-Edge)"
         >
           <Monitor className="w-3.5 h-3.5" />
-          <span>Desktop</span>
+          <span>Full 100%</span>
+        </button>
+        <button
+          onClick={() => setPreviewWidth("1200px")}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+            previewWidth === "1200px"
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+          }`}
+          title="Desktop Resolution (1200px)"
+        >
+          <Monitor className="w-3.5 h-3.5" />
+          <span>Desktop (1200px)</span>
+        </button>
+        <button
+          onClick={() => setPreviewWidth("768px")}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+            previewWidth === "768px"
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+          }`}
+          title="Tablet Resolution (768px)"
+        >
+          <Tablet className="w-3.5 h-3.5" />
+          <span>Tablet (768px)</span>
         </button>
         <button
           onClick={() => setPreviewWidth("375px")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
             previewWidth === "375px"
               ? "bg-blue-600 text-white shadow-md"
               : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
-          title="Mobile Smartphone Preview (375px)"
+          title="Mobile Resolution (375px)"
         >
           <Smartphone className="w-3.5 h-3.5" />
-          <span>Mobile</span>
+          <span>Mobile (375px)</span>
         </button>
       </div>
 
