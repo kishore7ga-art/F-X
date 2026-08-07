@@ -247,7 +247,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
       {/* Premium Floating Bottom Device Resolution Switcher Dock */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-950/90 backdrop-blur-xl border border-slate-800 p-1.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_25px_rgba(37,99,235,0.2)] flex items-center gap-1.5 overflow-hidden transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-4">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-950/95 backdrop-blur-2xl border border-slate-800/90 p-1.5 rounded-full shadow-[0_16px_40px_rgba(0,0,0,0.75),0_0_30px_rgba(37,99,235,0.2)] flex items-center gap-1 transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-4">
         {[
           { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
           { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },
@@ -262,8 +262,8 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
               onClick={() => setPreviewWidth(item.width)}
               className={`group flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 ${
                 isActive
-                  ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 text-white shadow-[0_4px_16px_rgba(37,99,235,0.45)] font-black border border-blue-400/40 scale-[1.04]"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/80 font-medium hover:scale-[1.02]"
+                  ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 text-white shadow-[0_4px_16px_rgba(37,99,235,0.5)] font-extrabold border border-blue-400/40"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/80 font-medium"
               }`}
               title={item.title}
             >
