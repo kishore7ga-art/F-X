@@ -477,7 +477,7 @@ export function EditorStudio({
   subdomain = "greenfield",
   collegeName = "Greenfield University",
 }: EditorStudioProps) {
-  const [viewportWidth, setViewportWidth] = useState<string>("1200px");
+  const [viewportWidth, setViewportWidth] = useState<string>("100%");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>("domain");
@@ -1213,10 +1213,16 @@ export function EditorStudio({
       {/* Main Studio Canvas Workspace */}
       <main
         onClick={() => setActiveSectionIndex(null)}
-        className="flex-1 w-full bg-slate-100/90 p-4 sm:p-8 flex flex-col items-center justify-start pb-52 cursor-pointer min-h-screen"
+        className={`flex-1 w-full flex flex-col items-center justify-start pb-52 cursor-pointer min-h-screen transition-all ${
+          viewportWidth === "100%" ? "bg-white p-0" : "bg-slate-100/90 p-4 sm:p-8"
+        }`}
       >
         <div
-          className="transition-all duration-300 min-h-[75vh] flex flex-col items-center justify-start mx-auto bg-white shadow-xl rounded-2xl border border-slate-200/90 overflow-hidden max-w-full my-4"
+          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
+            viewportWidth === "100%"
+              ? "w-full min-h-screen rounded-none border-none shadow-none my-0"
+              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
+          }`}
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
           {sections.length === 0 ? (
