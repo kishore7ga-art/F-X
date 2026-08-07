@@ -698,6 +698,63 @@ export function EditorStudio({
 
   const toastMessage = null;
 
+  const [_activePalette, setActivePalette] = useState("academic-blue");
+  const [_activeFont, setActiveFont] = useState("inter");
+
+  // Handle full-page Color Theme Palette Switch across all sections
+  const handlePaletteSelect = (paletteId: string) => {
+    setActivePalette(paletteId);
+
+    const PALETTES_MAP: Record<string, { primary: string; accent: string; headerBg: string }> = {
+      "academic-blue": { primary: "#0f172a", accent: "#2563eb", headerBg: "#0d1527" },
+      "emerald-gold": { primary: "#064e3b", accent: "#f59e0b", headerBg: "#022c22" },
+      "crimson-slate": { primary: "#881337", accent: "#e11d48", headerBg: "#4c0519" },
+      "midnight-purple": { primary: "#180828", accent: "#a855f7", headerBg: "#0d0418" },
+      "light-minimal": { primary: "#ffffff", accent: "#0f172a", headerBg: "#f8fafc" },
+    };
+
+    const target = PALETTES_MAP[paletteId] || PALETTES_MAP["academic-blue"]!;
+
+    // Transform color scheme across all sections
+    setSections((prevSections) =>
+      prevSections.map((sec) => {
+        let code = sec.code;
+        // Swap primary button background colors & accent highlights
+        code = code
+          .replace(/background:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `background: ${target.accent}`)
+          .replace(/background-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `background-color: ${target.accent}`)
+          .replace(/border-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `border-color: ${target.accent}`)
+          // Swap header/footer primary dark backgrounds
+          .replace(/<header style="background:\s*[^;]+;/gi, `<header style="background: ${target.headerBg};`)
+          .replace(/<footer style="background:\s*[^;]+;/gi, `<footer style="background: ${target.primary};`);
+
+        return { ...sec, code };
+      })
+    );
+  };
+
+  // Handle full-page Font Family Switch across all sections
+  const handleFontSelect = (fontId: string) => {
+    setActiveFont(fontId);
+
+    const FONT_MAP: Record<string, string> = {
+      inter: "'Inter', system-ui, -apple-system, sans-serif",
+      serif: "'Playfair Display', Georgia, serif",
+      outfit: "'Outfit', 'Roboto', system-ui, sans-serif",
+    };
+
+    const targetFont = FONT_MAP[fontId] || FONT_MAP["inter"]!;
+
+    // Update font-family style attribute across all sections
+    setSections((prevSections) =>
+      prevSections.map((sec) => {
+        let code = sec.code;
+        code = code.replace(/font-family:\s*[^;]+;/gi, `font-family: ${targetFont};`);
+        return { ...sec, code };
+      })
+    );
+  };
+
   const showToast = (_msg?: string) => {
     // Toast popups completely removed
   };
@@ -1695,6 +1752,8 @@ export function EditorStudio({
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onPageSelect={handlePageChange}
+        onPaletteSelect={handlePaletteSelect}
+        onFontSelect={handleFontSelect}
       />
 
       {/* Domain Settings Modal */}
