@@ -600,21 +600,24 @@ export function EditorStudio({
       .section-canvas-box {
         width: 100% !important;
         max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
         position: relative !important;
       }
       .section-canvas-box * {
         box-sizing: border-box !important;
-        max-width: 100% !important;
       }
       .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
         max-width: 100% !important;
         height: auto !important;
       }
-      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section, .section-canvas-box div {
-        max-width: 100% !important;
+      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section {
+        width: 100% !important;
         box-sizing: border-box !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
       }
       .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
       .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
@@ -1214,14 +1217,14 @@ export function EditorStudio({
       {/* Main Studio Canvas Workspace */}
       <main
         onClick={() => setActiveSectionIndex(null)}
-        className={`flex-1 w-full flex flex-col items-center justify-start pb-52 cursor-pointer min-h-screen transition-all ${
-          viewportWidth === "100%" ? "bg-white p-0" : "bg-slate-100/90 p-4 sm:p-8"
+        className={`flex-1 w-full flex flex-col items-center justify-start pb-64 cursor-pointer min-h-screen transition-all ${
+          viewportWidth === "100%" ? "bg-white p-0 m-0" : "bg-slate-100/90 p-4 sm:p-8"
         }`}
       >
         <div
           className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
             viewportWidth === "100%"
-              ? "w-full min-h-screen rounded-none border-none shadow-none my-0"
+              ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
               : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
           }`}
           style={{ width: viewportWidth, maxWidth: "100%" }}
@@ -1285,7 +1288,7 @@ export function EditorStudio({
               </div>
 
               {/* Bottom Clearance Spacer for Floating Dock */}
-              <div className="w-full h-36 bg-transparent pointer-events-none" />
+              <div className="w-full h-48 bg-transparent pointer-events-none shrink-0" />
             </div>
           )}
         </div>
