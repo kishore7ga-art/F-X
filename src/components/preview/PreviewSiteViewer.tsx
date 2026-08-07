@@ -297,30 +297,30 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         <div
           style={{
             position: "fixed",
-            bottom: "28px",
+            bottom: "24px",
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 99999,
           }}
-          className="bg-white/95 backdrop-blur-xl border border-slate-200/90 p-2 px-4 rounded-2xl shadow-[0_16px_40px_rgba(15,23,42,0.14),0_4px_12px_rgba(0,0,0,0.06)] flex items-center justify-center gap-2.5 select-none transition-all duration-200"
+          className="bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-full shadow-[0_16px_40px_rgba(15,23,42,0.14),0_4px_12px_rgba(0,0,0,0.06)] flex items-center justify-center gap-1.5 select-none transition-all duration-200"
         >
           {/* Vertical Divider Line */}
-          <div className="h-6 w-[1.5px] bg-slate-200 shrink-0 mx-1" />
+          <div className="h-4.5 w-[1px] bg-slate-200 shrink-0 mx-0.5" />
 
           {/* 1. Desktop Button */}
           <button
             type="button"
             onClick={handleDesktopClick}
-            className={`flex items-center gap-2 h-10 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
+            className={`flex items-center gap-2 h-9 transition-all duration-200 cursor-pointer rounded-full text-xs ${
               isDesktop
-                ? "bg-white border border-slate-300/90 shadow-[0_2px_6px_rgba(0,0,0,0.06)] px-4 text-slate-900 font-extrabold"
-                : "bg-transparent border border-transparent px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100/90 font-medium"
+                ? "bg-white border border-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(0,0,0,0.04)] px-3.5 text-slate-900 font-extrabold"
+                : "bg-transparent border border-transparent px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
             }`}
             title="Desktop Resolution (Click to Cycle 100% / 1200px / 1024px)"
           >
-            <Monitor className="w-5 h-5 text-slate-800 shrink-0" />
+            <Monitor className={`w-4.5 h-4.5 shrink-0 ${isDesktop ? "text-slate-900" : "text-slate-500"}`} />
             {isDesktop && (
-              <span className="font-mono font-black text-[13px] text-slate-900 tracking-tight ml-0.5">
+              <span className="font-mono font-extrabold text-[12.5px] text-slate-900 tracking-tight">
                 {previewWidth}
               </span>
             )}
@@ -330,16 +330,16 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           <button
             type="button"
             onClick={handleTabletClick}
-            className={`flex items-center gap-2 h-10 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
+            className={`flex items-center gap-2 h-9 transition-all duration-200 cursor-pointer rounded-full text-xs ${
               isTablet
-                ? "bg-white border border-slate-300/90 shadow-[0_2px_6px_rgba(0,0,0,0.06)] px-4 text-slate-900 font-extrabold"
-                : "bg-transparent border border-transparent px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100/90 font-medium"
+                ? "bg-white border border-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(0,0,0,0.04)] px-3.5 text-slate-900 font-extrabold"
+                : "bg-transparent border border-transparent px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
             }`}
             title="Tablet Resolution (Click to Cycle 768px / 640px)"
           >
-            <Tablet className="w-5 h-5 text-slate-800 shrink-0" />
+            <Tablet className={`w-4.5 h-4.5 shrink-0 ${isTablet ? "text-slate-900" : "text-slate-500"}`} />
             {isTablet && (
-              <span className="font-mono font-black text-[13px] text-slate-900 tracking-tight ml-0.5">
+              <span className="font-mono font-extrabold text-[12.5px] text-slate-900 tracking-tight">
                 {previewWidth}
               </span>
             )}
@@ -349,16 +349,16 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           <button
             type="button"
             onClick={handleMobileClick}
-            className={`flex items-center gap-2 h-10 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
+            className={`flex items-center gap-2 h-9 transition-all duration-200 cursor-pointer rounded-full text-xs ${
               isMobile
-                ? "bg-white border border-slate-300/90 shadow-[0_2px_6px_rgba(0,0,0,0.06)] px-4 text-slate-900 font-extrabold"
-                : "bg-transparent border border-transparent px-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100/90 font-medium"
+                ? "bg-white border border-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(0,0,0,0.04)] px-3.5 text-slate-900 font-extrabold"
+                : "bg-transparent border border-transparent px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
             }`}
             title="Mobile Phone Resolution (Click to Cycle 375px / 320px / 425px)"
           >
-            <Smartphone className="w-5 h-5 text-slate-800 shrink-0" />
+            <Smartphone className={`w-4.5 h-4.5 shrink-0 ${isMobile ? "text-slate-900" : "text-slate-500"}`} />
             {isMobile && (
-              <span className="font-mono font-black text-[13px] text-slate-900 tracking-tight ml-0.5">
+              <span className="font-mono font-extrabold text-[12.5px] text-slate-900 tracking-tight">
                 {previewWidth}
               </span>
             )}
