@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useId, useState } from "react";
+import React, { useEffect, useId, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -161,6 +161,9 @@ export const Beam = ({
 } & React.ComponentProps<typeof motion.svg>) => {
   const id = useId();
 
+  const randomDelay = useMemo(() => Math.random() * (1 - 0.2) + 0.2, []);
+  const randomRepeatDelay = useMemo(() => Math.random() * (2 - 1) + 1, []);
+
   return (
     <motion.svg
       width={width ?? "600"}
@@ -197,8 +200,8 @@ export const Beam = ({
             duration: hovered ? 0.5 : duration ?? 2,
             ease: "linear",
             repeat: Infinity,
-            delay: hovered ? Math.random() * (1 - 0.2) + 0.2 : 0,
-            repeatDelay: hovered ? Math.random() * (2 - 1) + 1 : delay ?? 1,
+            delay: hovered ? randomDelay : 0,
+            repeatDelay: hovered ? randomRepeatDelay : delay ?? 1,
           }}
         >
           <stop stopColor="#2EB9DF" stopOpacity="0" />
@@ -212,7 +215,6 @@ export const Beam = ({
 
 export const CircleIcon = ({
   className,
-  delay,
 }: {
   className?: string;
   delay?: number;

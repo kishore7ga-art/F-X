@@ -19,7 +19,7 @@ type ParticlesProps = {
 };
 
 // Module-level static init function to guarantee a 100% stable reference for ParticlesProvider across the app
-const staticInitEngine = async (engine: any) => {
+const staticInitEngine = async (engine: Parameters<typeof loadSlim>[0]) => {
   await loadSlim(engine);
 };
 
@@ -61,7 +61,7 @@ const SparklesInner = (props: ParticlesProps) => {
               events: {
                 onClick: { enable: true, mode: "push" },
                 onHover: { enable: false, mode: "repulse" },
-                resize: true as any,
+                resize: true,
               },
               modes: {
                 push: { quantity: 4 },

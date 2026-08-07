@@ -198,7 +198,7 @@ const MagneticButton = React.forwardRef<HTMLElement, MagneticButtonProps>(
       return () => ctx.revert();
     }, []);
 
-    const Comp = Component as any;
+    const Comp = Component as React.ComponentType<Record<string, unknown>>;
 
     return (
       <Comp

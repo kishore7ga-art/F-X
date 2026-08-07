@@ -1,8 +1,8 @@
 export {};
 
 declare global {
-  type PageProps<T extends string = string> = {
-    params: Promise<any>;
+  type PageProps = {
+    params: Promise<Record<string, string>>;
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
   };
 }

@@ -4,7 +4,6 @@ import React from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { AnimatedGroup } from '@/components/ui/animated-group'
-import { cn } from '@/lib/utils'
 
 const transitionVariants = {
     item: {
@@ -92,7 +91,7 @@ export function HeroSection() {
                                     </h1>
                                     <p
                                         className="mx-auto mt-8 max-w-2xl text-balance text-lg text-neutral-300">
-                                        Create, customize, and publish professional websites with our intuitive drag-and-drop builder. Launch your institution's website faster than ever.
+                                        Create, customize, and publish professional websites with our intuitive drag-and-drop builder. Launch your institution&apos;s website faster than ever.
                                     </p>
                                 </AnimatedGroup>
 
