@@ -247,7 +247,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
       {/* Premium Floating Bottom Device Resolution Switcher Dock */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-950/95 backdrop-blur-2xl border border-slate-800/90 p-2 px-3 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(37,99,235,0.2)] flex items-center gap-1.5 transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-4">
+      <div className="fixed bottom-6 inset-x-0 mx-auto w-max z-[9999] bg-slate-950/95 backdrop-blur-2xl border border-slate-800/90 p-2 px-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(37,99,235,0.2)] flex items-center gap-2 transition-all duration-300 select-none">
         {[
           { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
           { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },
