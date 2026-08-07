@@ -726,7 +726,33 @@ export function EditorStudio({
   const [_activePalette, setActivePalette] = useState("academic-blue");
   const [_activeFont, setActiveFont] = useState("inter");
 
-  // Handle full-page Color Theme Palette Switch across all sections
+  // Strip out canvas wrapper divs, containment styles, and html entity pollution from section code
+  const cleanCanvasWrapperFromCode = (rawCode: string): string => {
+    if (!rawCode) return "";
+
+    let clean = rawCode;
+
+    // 1. Remove canvas containment <style> blocks
+    clean = clean.replace(/<style[^>]*>[\s\S]*?\.section-canvas-box[\s\S]*?<\/style>/gi, "");
+
+    // 2. Un-escape HTML entities if present (&lt;, &gt;, &amp;)
+    clean = clean.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+
+    // 3. Strip outer wrapper divs injected by canvas rendering ([&>*:first-child], section-canvas-box, section-wrapper-container)
+    clean = clean.replace(/^<div[^>]*class="[^"]*(?:section-canvas-box|section-wrapper-container|items-center|overflow-hidden)[^"]*"[^>]*>([\s\S]*)<\/div>$/i, (_match, inner) => {
+      return inner ? inner.trim() : _match;
+    });
+
+    // 4. Strip nested wrapper divs containing [&>*:first-child] or section-canvas-box
+    clean = clean.replace(/<div[^>]*class="[^"]*\[&[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, "$1");
+    clean = clean.replace(/<div[^>]*class="[^"]*section-canvas-box[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, "$1");
+
+    // 5. Strip any top-level wrapper div with w-full overflow-hidden flex flex-col
+    clean = clean.replace(/^<div[^>]*class="[^"]*w-full overflow-hidden flex flex-col[^"]*"[^>]*>([\s\S]*)<\/div>$/i, "$1");
+
+    return clean.trim();
+  };
+
   // Enforce high-contrast text & link colors for header navigation based on background color
   const enforceHeaderContrast = (code: string, forceHeaderBg?: string): string => {
     if (!code || !code.includes("<header")) return code;
@@ -1236,17 +1262,7 @@ export function EditorStudio({
   };
 
   // Real-time image live update & auto-save handler
-  const handleUpdateAndSaveImage = (newParams: {
-    imageUrl?: string;
-    logoText?: string;
-    bgColor?: string;
-    linkUrl?: string;
-    applyAllLogos?: boolean;
-    applyAllBackgrounds?: boolean;
-    objectFit?: "cover" | "contain" | "fill";
-    borderRadius?: string;
-    activeTab?: "logo" | "background" | "image" | "style";
-  }) => {
+  const handleUpdateAndSaveImage = (newParams: Partial<NonNullable<typeof imagePopup>>) => {
     if (!imagePopup) return;
 
     const updatedPopup = { ...imagePopup, ...newParams };
@@ -1319,9 +1335,9 @@ export function EditorStudio({
           newCode = newCode.replace(/(<img[^>]*alt="[^"]*Emblem[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
           if (idx === sectionIndex) {
             const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
-            if (container) newCode = container.innerHTML;
+            if (container) newCode = cleanCanvasWrapperFromCode(container.innerHTML);
           }
-          return { ...sec, code: newCode };
+          return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
         // Multi-section background synchronization
@@ -1330,15 +1346,15 @@ export function EditorStudio({
           newCode = newCode.replace(/background-image:\s*url\([^)]+\)/gi, `background-image: url("${finalImageUrl}")`);
           if (idx === sectionIndex) {
             const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
-            if (container) newCode = container.innerHTML;
+            if (container) newCode = cleanCanvasWrapperFromCode(container.innerHTML);
           }
-          return { ...sec, code: newCode };
+          return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
         if (idx === sectionIndex) {
           const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
           if (container) {
-            return { ...sec, code: container.innerHTML };
+            return { ...sec, code: cleanCanvasWrapperFromCode(container.innerHTML) };
           }
         }
         return sec;
@@ -1526,7 +1542,7 @@ export function EditorStudio({
         (el as HTMLElement).style.borderRadius = '';
       });
 
-      const newCode = clone.innerHTML;
+      const newCode = cleanCanvasWrapperFromCode(clone.innerHTML);
       if (newCode) {
         setSections((prev) =>
           prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
