@@ -2217,18 +2217,20 @@ export function EditorStudio({
               </button>
             </div>
 
-            {/* Target Navigation Bar ("NAV TO THE LOGOS") */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "14px", border: "1px solid #1e293b" }}>
-              <span style={{ fontSize: "12px", fontWeight: 800, color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
-                🎯 Target Navigation:
-              </span>
-              <button
-                onClick={handleJumpToNavbarLogo}
-                style={{ backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "10px", padding: "6px 14px", fontSize: "11px", fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", boxShadow: "0 4px 12px rgba(37,99,235,0.3)" }}
-              >
-                🚀 Jump / Nav to Navbar Logo
-              </button>
-            </div>
+            {/* Target Navigation Bar ("NAV TO THE LOGOS") - ONLY Shown for Logo Target */}
+            {imagePopup.targetType === "logo" && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "14px", border: "1px solid #1e293b" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
+                  🎯 Target Navigation:
+                </span>
+                <button
+                  onClick={handleJumpToNavbarLogo}
+                  style={{ backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "10px", padding: "6px 14px", fontSize: "11px", fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", boxShadow: "0 4px 12px rgba(37,99,235,0.3)" }}
+                >
+                  🚀 Jump / Nav to Navbar Logo
+                </button>
+              </div>
+            )}
 
             {/* Streamlined Direct Inputs Body */}
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
