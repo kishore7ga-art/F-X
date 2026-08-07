@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Monitor, Tablet, Smartphone } from "lucide-react";
 
 interface SectionItem {
   id: string;
@@ -111,6 +112,7 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
 export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [sections, setSections] = useState<SectionItem[]>(DEFAULT_CLEAN_FULL_SECTIONS);
   const [loading, setLoading] = useState(true);
+  const [previewWidth, setPreviewWidth] = useState<string>("100%");
 
   useEffect(() => {
     let cancelled = false;
@@ -187,7 +189,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     );
   }
 
-  const cleanFullWebCodeForCanvas = (code: string): string => {
+  const cleanFullWebCodeForCanvas = (code: string, currentWidth: string): string => {
     if (!code) return "";
 
     let cleanCode = code;
@@ -243,16 +245,61 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
+      
+      {/* Clean Light-Mode Resolution Switcher Dock (Matches Studio Toolbar) */}
+      <div className="fixed bottom-6 inset-x-0 mx-auto w-max z-[9999] bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-2xl shadow-[0_12px_32px_rgba(15,23,42,0.12),0_2px_6px_rgba(0,0,0,0.04)] flex items-center gap-1.5 select-none transition-all duration-200">
+        <div className="h-5 w-px bg-slate-200 mr-1" />
+        {[
+          { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
+          { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },
+          { label: "768px", title: "Tablet 768px", width: "768px", Icon: Tablet },
+          { label: "375px", title: "Mobile 375px", width: "375px", Icon: Smartphone },
+        ].map((item) => {
+          const isActive = previewWidth === item.width;
+          const Icon = item.Icon;
+          return (
+            <button
+              key={item.width}
+              type="button"
+              onClick={() => setPreviewWidth(item.width)}
+              className={`flex items-center gap-1.5 h-8.5 transition-all duration-150 cursor-pointer rounded-xl text-xs ${
+                isActive
+                  ? "bg-white border border-slate-300/90 shadow-[0_2px_4px_rgba(0,0,0,0.05)] px-3 text-slate-900 font-extrabold"
+                  : "bg-transparent border border-transparent px-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
+              }`}
+              title={item.title}
+            >
+              <Icon className="w-4.5 h-4.5 text-slate-700 shrink-0" />
+              {isActive && (
+                <span className="font-mono font-extrabold text-[12px] text-slate-900 tracking-tight">
+                  {item.label}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Main Live Site View */}
-      <main className="w-full flex-1 flex flex-col items-center justify-start bg-white p-0 m-0">
-        <div className="w-full min-h-screen bg-white m-0 p-0">
+      <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
+        previewWidth === "100%" ? "p-0 m-0 bg-white pb-36" : "py-12 px-4 bg-slate-100/90 pb-36"
+      }`}>
+        <div
+          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
+            previewWidth === "100%"
+              ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
+              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
+          }`}
+          style={{ width: previewWidth, maxWidth: "100%" }}
+        >
           {sections.map((sec) => (
             <div
               key={sec.id}
-              dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code) }}
+              dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
               className="w-full overflow-hidden"
             />
           ))}
+          <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />
         </div>
       </main>
     </div>
