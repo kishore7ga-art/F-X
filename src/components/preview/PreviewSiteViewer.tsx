@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Monitor, Smartphone } from "lucide-react";
 
 interface SectionItem {
   id: string;
@@ -111,6 +112,7 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
 export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [sections, setSections] = useState<SectionItem[]>(DEFAULT_CLEAN_FULL_SECTIONS);
   const [loading, setLoading] = useState(true);
+  const [previewWidth, setPreviewWidth] = useState<string>("100%");
 
   useEffect(() => {
     let cancelled = false;
@@ -188,14 +190,55 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   }
 
   return (
-    <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden selection:bg-blue-600 selection:text-white">
-      {sections.map((sec) => (
+    <div className="min-h-screen w-full bg-slate-100 flex flex-col items-center justify-start font-sans overflow-x-hidden select-none relative">
+      
+      {/* Minimal Floating Top Viewport Pill (Desktop / Mobile ONLY) */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-950/90 backdrop-blur-xl border border-slate-800/80 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5">
+        <button
+          onClick={() => setPreviewWidth("100%")}
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            previewWidth === "100%"
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+          }`}
+        >
+          <Monitor className="w-3.5 h-3.5" />
+          <span>Desktop</span>
+        </button>
+        <button
+          onClick={() => setPreviewWidth("375px")}
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+            previewWidth === "375px"
+              ? "bg-blue-600 text-white shadow-md"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+          }`}
+        >
+          <Smartphone className="w-3.5 h-3.5" />
+          <span>Mobile</span>
+        </button>
+      </div>
+
+      {/* Main Live Site Canvas View */}
+      <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
+        previewWidth === "100%" ? "p-0 bg-white" : "py-16 px-4 bg-slate-100"
+      }`}>
         <div
-          key={sec.id}
-          dangerouslySetInnerHTML={{ __html: sec.code }}
-          className="w-full overflow-hidden"
-        />
-      ))}
+          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
+            previewWidth === "100%"
+              ? "w-full min-h-screen rounded-none border-none shadow-none"
+              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300"
+          }`}
+          style={{ width: previewWidth, maxWidth: "100%" }}
+        >
+          {sections.map((sec) => (
+            <div
+              key={sec.id}
+              dangerouslySetInnerHTML={{ __html: sec.code }}
+              className="w-full overflow-hidden"
+            />
+          ))}
+        </div>
+      </main>
     </div>
   );
 }
