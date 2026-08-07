@@ -619,7 +619,9 @@ export function EditorStudio({
       .section-canvas-box > nav,
       .section-canvas-box header,
       .section-canvas-box nav,
-      .section-canvas-box section {
+      .section-canvas-box section,
+      .section-canvas-box [style*="border-radius"],
+      .section-canvas-box [style*="max-width"] {
         width: 100% !important;
         max-width: 100% !important;
         margin-left: 0 !important;
