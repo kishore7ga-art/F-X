@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Monitor, Tablet, Smartphone, Save, Link as LinkIcon, Check } from "lucide-react";
+import { Monitor, Tablet, Smartphone } from "lucide-react";
 
 interface SectionItem {
   id: string;
@@ -113,15 +113,6 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [sections, setSections] = useState<SectionItem[]>(DEFAULT_CLEAN_FULL_SECTIONS);
   const [loading, setLoading] = useState(true);
   const [previewWidth, setPreviewWidth] = useState<string>("100%");
-  const [copied, setCopied] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -187,55 +178,6 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     };
   }, [subdomain]);
 
-  const handleSaveSite = () => {
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(sections));
-        const currentPages = localStorage.getItem("xite_saved_pages");
-        let pagesObj: Record<string, any> = {};
-        if (currentPages) {
-          try { pagesObj = JSON.parse(currentPages); } catch {}
-        }
-        pagesObj["/home"] = sections;
-        localStorage.setItem("xite_saved_pages", JSON.stringify(pagesObj));
-      } catch (err) {
-        console.warn("Error saving website sections:", err);
-      }
-    }
-
-    setSaved(true);
-    setHasUnsavedChanges(false);
-    showToast("Website changes saved successfully! 💾");
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handleCopyLink = async () => {
-    if (typeof window === "undefined") return;
-    const sub = subdomain || "greenfield";
-    const previewUrl = `${window.location.origin}/preview/${sub}`;
-
-    try {
-      await navigator.clipboard.writeText(previewUrl);
-      setCopied(true);
-      showToast("Live Website Link Copied! Open in Chrome or any browser 🚀");
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      try {
-        const input = document.createElement("input");
-        input.value = previewUrl;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand("copy");
-        document.body.removeChild(input);
-        setCopied(true);
-        showToast("Live Website Link Copied! Open in Chrome or any browser 🚀");
-        setTimeout(() => setCopied(false), 2500);
-      } catch {
-        showToast("Failed to copy link.");
-      }
-    }
-  };
-
   if (loading && sections.length === 0) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans">
@@ -247,7 +189,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     );
   }
 
-  const cleanFullWebCodeForCanvas = (code: string, currentWidth: string): string => {
+  const cleanFullWebCodeForCanvas = (code: string, _currentWidth: string): string => {
     if (!code) return "";
 
     let cleanCode = code;
@@ -304,53 +246,8 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
-      {/* Toast Feedback Notification */}
-      {toastMessage && (
-        <div className="fixed top-6 inset-x-0 mx-auto w-max z-[99999] bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl border border-slate-700 text-xs font-mono font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-3">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Clean Light-Mode Action & Resolution Switcher Dock */}
-      <div className="fixed bottom-6 inset-x-0 mx-auto w-max z-[9999] bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-2xl shadow-[0_12px_32px_rgba(15,23,42,0.12),0_2px_6px_rgba(0,0,0,0.04)] flex items-center gap-2 select-none transition-all duration-200">
-        
-        {/* 1. Save Button (Floppy Disk Icon with Green Badge Indicator) */}
-        <button
-          type="button"
-          onClick={handleSaveSite}
-          className="relative flex items-center justify-center w-8.5 h-8.5 rounded-xl border border-transparent text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all cursor-pointer"
-          title="Save Website Changes"
-        >
-          {saved ? (
-            <Check className="w-4.5 h-4.5 text-emerald-600 font-bold" />
-          ) : (
-            <>
-              <Save className="w-4.5 h-4.5 text-slate-700" />
-              {hasUnsavedChanges && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 border border-white" />
-              )}
-            </>
-          )}
-        </button>
-
-        {/* 2. Copy Link Button (Chain Link Icon) */}
-        <button
-          type="button"
-          onClick={handleCopyLink}
-          className="flex items-center justify-center w-8.5 h-8.5 rounded-xl border border-transparent text-slate-700 hover:text-slate-900 hover:bg-slate-100/80 transition-all cursor-pointer"
-          title="Copy Live Website Link (Shareable anywhere in Chrome or any browser)"
-        >
-          {copied ? (
-            <Check className="w-4.5 h-4.5 text-emerald-600 font-bold" />
-          ) : (
-            <LinkIcon className="w-4.5 h-4.5 text-slate-700" />
-          )}
-        </button>
-
-        <div className="h-5 w-px bg-slate-200 mx-0.5" />
-
-        {/* 3. Device Resolution Switcher Group */}
+      {/* Responsive Device Resolution Switcher Dock (Desktop 100%/1200px, Tablet 768px, Mobile 375px) */}
+      <div className="fixed bottom-6 inset-x-0 mx-auto w-max z-[9999] bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-2xl shadow-[0_12px_32px_rgba(15,23,42,0.12),0_2px_6px_rgba(0,0,0,0.04)] flex items-center gap-1.5 select-none transition-all duration-200">
         {[
           { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
           { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },

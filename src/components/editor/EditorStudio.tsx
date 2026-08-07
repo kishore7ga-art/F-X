@@ -917,6 +917,44 @@ export function EditorStudio({
     setActiveSectionIndex(0);
   };
 
+  const handlePersistWebsiteSave = async () => {
+    if (typeof window !== "undefined") {
+      try {
+        const updatedStore = { ...pageStore, [currentPage.slug]: sections };
+        localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(sections));
+        localStorage.setItem("xite_saved_pages", JSON.stringify(updatedStore));
+        setPageStore(updatedStore);
+      } catch (err) {
+        console.warn("Could not write to localStorage:", err);
+      }
+    }
+
+    try {
+      const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+      const apiBase = hostname === "localhost" || hostname === "127.0.0.1" ? "http://localhost:4000" : "https://api.xite.co.in";
+      await fetch(`${apiBase}/api/v1/default-website`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pages: [
+            {
+              slug: currentPage.slug || "/home",
+              title: currentPage.name || "Home",
+              sections: sections.map((sec, idx) => ({
+                id: sec.id || `sec-${idx}`,
+                title: sec.title || `Section #${idx + 1}`,
+                code: sec.code,
+                sortOrder: idx,
+              })),
+            },
+          ],
+        }),
+      });
+    } catch (err) {
+      console.warn("Could not save sections to backend API:", err);
+    }
+  };
+
   // Handle double-click inline text editing directly on section canvas
   const handleSectionDoubleClick = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
     const target = e.target as HTMLElement;
@@ -1526,7 +1564,7 @@ export function EditorStudio({
           onMoveUp={handleMoveUp}
           onMoveDown={handleMoveDown}
           onDeleteSection={handleDeleteSection}
-          onSyncAdminWebsite={() => fetchDbSections(currentPage.slug, true)}
+          onSyncAdminWebsite={handlePersistWebsiteSave}
         />
       )}
 
