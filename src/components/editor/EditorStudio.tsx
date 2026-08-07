@@ -1546,6 +1546,10 @@ export function EditorStudio({
                   onClick={(e) => {
                     e.stopPropagation();
                     setActiveSectionIndex(idx);
+                    const target = e.target as HTMLElement;
+                    if (target && (target.tagName === "IMG" || target.getAttribute("data-logo") === "true" || (target.className || "").toString().toLowerCase().includes("logo"))) {
+                      handleSectionContextMenu(e, idx);
+                    }
                   }}
                   onDoubleClick={(e) => handleSectionDoubleClick(e, idx)}
                   onContextMenu={(e) => handleSectionContextMenu(e, idx)}
