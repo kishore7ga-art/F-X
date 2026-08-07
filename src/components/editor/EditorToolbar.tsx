@@ -119,22 +119,20 @@ export function EditorToolbar({
   };
 
   const MOBILE_SIZES = [
-    { label: "Mobile S", width: "320px" },
     { label: "Mobile M", width: "375px" },
+    { label: "Mobile S", width: "320px" },
     { label: "Mobile L", width: "425px" },
   ];
 
   const TABLET_SIZES = [
-    { label: "Tablet Mini", width: "640px" },
     { label: "Tablet", width: "768px" },
-    { label: "Tablet Large", width: "1024px" },
+    { label: "Tablet Mini", width: "640px" },
   ];
 
   const DESKTOP_SIZES = [
     { label: "Full Width (100%)", width: "100%" },
     { label: "Desktop Widescreen", width: "1200px" },
     { label: "Desktop Compact", width: "1024px" },
-    { label: "Desktop Mini", width: "800px" },
   ];
 
   const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
@@ -143,10 +141,10 @@ export function EditorToolbar({
 
   const handleMobileClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "320px") nextIdx = 1;
-    else if (viewportWidth === "375px") nextIdx = 2;
+    if (viewportWidth === "375px") nextIdx = 1;
+    else if (viewportWidth === "320px") nextIdx = 2;
     else if (viewportWidth === "425px") nextIdx = 0;
-    else nextIdx = 1;
+    else nextIdx = 0;
 
     const target = MOBILE_SIZES[nextIdx]!;
     setViewportWidth(target.width);
@@ -155,10 +153,9 @@ export function EditorToolbar({
 
   const handleTabletClick = () => {
     let nextIdx = 0;
-    if (viewportWidth === "640px") nextIdx = 1;
-    else if (viewportWidth === "768px") nextIdx = 2;
-    else if (viewportWidth === "1024px") nextIdx = 0;
-    else nextIdx = 1;
+    if (viewportWidth === "768px") nextIdx = 1;
+    else if (viewportWidth === "640px") nextIdx = 0;
+    else nextIdx = 0;
 
     const target = TABLET_SIZES[nextIdx]!;
     setViewportWidth(target.width);
@@ -169,8 +166,7 @@ export function EditorToolbar({
     let nextIdx = 0;
     if (viewportWidth === "100%") nextIdx = 1;
     else if (viewportWidth === "1200px") nextIdx = 2;
-    else if (viewportWidth === "1024px") nextIdx = 3;
-    else if (viewportWidth === "800px") nextIdx = 0;
+    else if (viewportWidth === "1024px") nextIdx = 0;
     else nextIdx = 0;
 
     const target = DESKTOP_SIZES[nextIdx]!;
