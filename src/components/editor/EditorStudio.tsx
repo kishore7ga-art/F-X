@@ -678,12 +678,40 @@ export function EditorStudio({
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
     try {
-      // 1. If page is already saved by user in pageStore & forceSync is false AND has multi-sections, load user's saved sections
-      if (!forceSync && pageStore[slug] && pageStore[slug].length > 1) {
-        setSections(pageStore[slug]);
-        setActiveSectionIndex(0);
-        setLoadingDb(false);
-        return;
+      // 1. First check localStorage and pageStore for user's saved sections before calling default-website API
+      if (!forceSync && typeof window !== "undefined") {
+        try {
+          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}`);
+          const rawSaved = localStorage.getItem("xite_saved_pages");
+          let savedSecs: SectionItem[] | null = null;
+
+          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
+            const parsedActive = JSON.parse(rawActive);
+            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
+              savedSecs = parsedActive;
+            }
+          }
+
+          if (!savedSecs && pageStore[slug] && pageStore[slug].length > 0) {
+            savedSecs = pageStore[slug];
+          }
+
+          if (!savedSecs && rawSaved && rawSaved !== "undefined" && rawSaved !== "null") {
+            const parsedSaved = JSON.parse(rawSaved);
+            if (parsedSaved && Array.isArray(parsedSaved[slug]) && parsedSaved[slug].length > 0) {
+              savedSecs = parsedSaved[slug];
+            }
+          }
+
+          if (savedSecs && savedSecs.length > 0) {
+            setSections(savedSecs);
+            setActiveSectionIndex(0);
+            setLoadingDb(false);
+            return;
+          }
+        } catch (err) {
+          console.warn("Could not load saved sections from localStorage:", err);
+        }
       }
 
       const apiBase = (() => {
