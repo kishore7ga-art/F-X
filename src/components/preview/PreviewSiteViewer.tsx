@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Monitor, Tablet, Smartphone } from "lucide-react";
 
 interface SectionItem {
   id: string;
@@ -112,7 +111,6 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
 export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [sections, setSections] = useState<SectionItem[]>(DEFAULT_CLEAN_FULL_SECTIONS);
   const [loading, setLoading] = useState(true);
-  const [previewWidth, setPreviewWidth] = useState<string>("100%");
 
   useEffect(() => {
     let cancelled = false;
@@ -189,7 +187,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     );
   }
 
-  const cleanFullWebCodeForCanvas = (code: string, width: string): string => {
+  const cleanFullWebCodeForCanvas = (code: string): string => {
     if (!code) return "";
 
     let cleanCode = code;
@@ -245,62 +243,16 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
-      
-      {/* Premium Floating Bottom Device Resolution Switcher Dock */}
-      <div className="fixed bottom-6 inset-x-0 mx-auto w-max z-[9999] bg-slate-950/95 backdrop-blur-2xl border border-slate-800/90 p-2 px-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_30px_rgba(37,99,235,0.2)] flex items-center gap-2 transition-all duration-300 select-none">
-        {[
-          { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
-          { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },
-          { label: "768px", title: "Tablet 768px", width: "768px", Icon: Tablet },
-          { label: "375px", title: "Mobile 375px", width: "375px", Icon: Smartphone },
-        ].map((item) => {
-          const isActive = previewWidth === item.width;
-          const Icon = item.Icon;
-          return (
-            <button
-              key={item.width}
-              onClick={() => setPreviewWidth(item.width)}
-              className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 ${
-                isActive
-                  ? "text-white font-black"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800/60 font-medium"
-              }`}
-              title={item.title}
-            >
-              {isActive && (
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 rounded-full shadow-[0_4px_16px_rgba(37,99,235,0.5)] border border-blue-400/40 pointer-events-none" />
-              )}
-              <Icon className={`relative z-10 w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" : "text-slate-400 group-hover:text-blue-400"}`} />
-              <span className="relative z-10 tracking-tight">{item.label}</span>
-              {isActive && (
-                <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse shadow-[0_0_6px_#67e8f9]" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
       {/* Main Live Site View */}
-      <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
-        previewWidth === "100%" ? "p-0 m-0 bg-white pb-36" : "py-12 px-4 bg-slate-100/90 pb-36"
-      }`}>
-        <div
-          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
-            previewWidth === "100%"
-              ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
-              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
-          }`}
-          style={{ width: previewWidth, maxWidth: "100%" }}
-        >
+      <main className="w-full flex-1 flex flex-col items-center justify-start bg-white p-0 m-0">
+        <div className="w-full min-h-screen bg-white m-0 p-0">
           {sections.map((sec) => (
             <div
               key={sec.id}
-              dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
+              dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code) }}
               className="w-full overflow-hidden"
             />
           ))}
-          {/* Bottom Clearance Spacer for Floating Device Switcher Dock */}
-          <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />
         </div>
       </main>
     </div>
