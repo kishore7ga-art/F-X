@@ -753,54 +753,6 @@ export function EditorStudio({
     return clean.trim();
   };
 
-  // Enforce high-contrast text & link colors for header navigation based on background color
-  const enforceHeaderContrast = (code: string, forceHeaderBg?: string): string => {
-    if (!code || !code.includes("<header")) return code;
-
-    return code.replace(/(<header[\s\S]*?<\/header>)/gi, (headerHtml) => {
-      let fixed = headerHtml;
-
-      if (forceHeaderBg) {
-        fixed = fixed.replace(/<header style="background:\s*[^;]+;/gi, `<header style="background: ${forceHeaderBg};`);
-        fixed = fixed.replace(/<header style="background-color:\s*[^;]+;/gi, `<header style="background-color: ${forceHeaderBg};`);
-      }
-
-      // Check if header background is light (white, light gray, f8fafc, f1f5f9)
-      const bgMatch = fixed.match(/<header[^>]*style="[^"]*background(?:-color)?:\s*([^;"]+)/i);
-      const bgVal = (bgMatch ? bgMatch[1] : "").toLowerCase().trim();
-
-      const isLight =
-        bgVal.includes("#fff") ||
-        bgVal.includes("#ffffff") ||
-        bgVal.includes("#f8fafc") ||
-        bgVal.includes("#f1f5f9") ||
-        bgVal.includes("#e2e8f0") ||
-        bgVal.includes("rgb(255") ||
-        fixed.includes("bg-white") ||
-        fixed.includes("bg-slate-50") ||
-        fixed.includes("bg-slate-100");
-
-      if (isLight) {
-        // Light Header Background -> Ensure Text & Links are Dark Charcoal (#0f172a / #1e293b)!
-        fixed = fixed
-          .replace(/(color:\s*)#(ffffff|fff|f8fafc|cbd5e1|e2e8f0)(;?)/gi, "$1#0f172a$3")
-          .replace(/(color:\s*)#(94a3b8|64748b)(;?)/gi, "$1#475569$3")
-          .replace(/\btext-white\b/g, "text-slate-900")
-          .replace(/\btext-slate-300\b/g, "text-slate-800")
-          .replace(/\btext-slate-400\b/g, "text-slate-600");
-      } else {
-        // Dark Header Background -> Ensure Text & Links are White/Light (#ffffff / #cbd5e1)!
-        fixed = fixed
-          .replace(/(color:\s*)#(0f172a|000|000000|1e293b)(;?)/gi, "$1#ffffff$3")
-          .replace(/(color:\s*)#(475569|334155)(;?)/gi, "$1#cbd5e1$3")
-          .replace(/\btext-slate-900\b/g, "text-white")
-          .replace(/\btext-slate-800\b/g, "text-white")
-          .replace(/\btext-slate-700\b/g, "text-slate-300");
-      }
-      return fixed;
-    });
-  };
-
   // Handle full-page Color Theme Palette Switch across all sections
   const handlePaletteSelect = (paletteId: string) => {
     setActivePalette(paletteId);
@@ -824,10 +776,8 @@ export function EditorStudio({
           .replace(/background:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `background: ${target.accent}`)
           .replace(/background-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `background-color: ${target.accent}`)
           .replace(/border-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `border-color: ${target.accent}`)
-          // Swap footer primary dark background
+          .replace(/<header style="background:\s*[^;]+;/gi, `<header style="background: ${target.headerBg};`)
           .replace(/<footer style="background:\s*[^;]+;/gi, `<footer style="background: ${target.primary};`);
-
-        code = enforceHeaderContrast(code, target.headerBg);
 
         return { ...sec, code };
       })
@@ -903,7 +853,7 @@ export function EditorStudio({
   const cleanFullWebCodeForCanvas = (code: string, width: string): string => {
     if (!code) return "";
 
-    let cleanCode = enforceHeaderContrast(code);
+    let cleanCode = code;
 
     const bodyMatch = code.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
     if (bodyMatch && bodyMatch[1]) {
