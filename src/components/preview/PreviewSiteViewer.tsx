@@ -270,10 +270,9 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           className="bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-2xl shadow-[0_12px_32px_rgba(15,23,42,0.12),0_2px_6px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1.5 select-none transition-all duration-200"
         >
           {[
-            { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
-            { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },
-            { label: "768px", title: "Tablet 768px", width: "768px", Icon: Tablet },
-            { label: "375px", title: "Mobile 375px", width: "375px", Icon: Smartphone },
+            { label: "100%", title: "Desktop / Laptop", width: "100%", Icon: Monitor },
+            { label: "768px", title: "Tablet", width: "768px", Icon: Tablet },
+            { label: "375px", title: "Mobile", width: "375px", Icon: Smartphone },
           ].map((item) => {
             const isActive = previewWidth === item.width;
             const Icon = item.Icon;
