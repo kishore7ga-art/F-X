@@ -258,56 +258,32 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
-      {/* Sleek Floating Bottom Device Resolution Switcher Dock */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <button
-          onClick={() => setPreviewWidth("100%")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            previewWidth === "100%"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
-              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
-          }`}
-          title="Full Page Resolution (100% Edge-to-Edge)"
-        >
-          <Monitor className="w-3.5 h-3.5" />
-          <span>Full 100%</span>
-        </button>
-        <button
-          onClick={() => setPreviewWidth("1200px")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            previewWidth === "1200px"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
-              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
-          }`}
-          title="Desktop Resolution (1200px)"
-        >
-          <Monitor className="w-3.5 h-3.5" />
-          <span>Desktop</span>
-        </button>
-        <button
-          onClick={() => setPreviewWidth("768px")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            previewWidth === "768px"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
-              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
-          }`}
-          title="Tablet Resolution (768px)"
-        >
-          <Tablet className="w-3.5 h-3.5" />
-          <span>Tablet</span>
-        </button>
-        <button
-          onClick={() => setPreviewWidth("375px")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-            previewWidth === "375px"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
-              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
-          }`}
-          title="Mobile Resolution (375px)"
-        >
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>Mobile</span>
-        </button>
+      {/* Premium Floating Bottom Device Resolution Switcher Dock */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#0f172a]/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex items-center gap-1.5 overflow-hidden transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-4">
+        {[
+          { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
+          { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },
+          { label: "768px", title: "Tablet 768px", width: "768px", Icon: Tablet },
+          { label: "375px", title: "Mobile 375px", width: "375px", Icon: Smartphone },
+        ].map((item) => {
+          const isActive = previewWidth === item.width;
+          const Icon = item.Icon;
+          return (
+            <button
+              key={item.width}
+              onClick={() => setPreviewWidth(item.width)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                isActive
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/40 font-black border border-blue-400/40 scale-105"
+                  : "text-slate-300 hover:text-white hover:bg-slate-800/80 font-medium"
+              }`}
+              title={item.title}
+            >
+              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-slate-400"}`} />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Live Site View */}
