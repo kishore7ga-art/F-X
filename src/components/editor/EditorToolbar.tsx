@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 interface EditorToolbarProps {
+  subdomain?: string;
   onOpenSettings: () => void;
   onToggleDrawer: () => void;
   isSettingsOpen?: boolean;
@@ -42,6 +43,7 @@ interface EditorToolbarProps {
 }
 
 export function EditorToolbar({
+  subdomain = "greenfield",
   onOpenSettings,
   onToggleDrawer,
   isSettingsOpen = false,
@@ -97,7 +99,8 @@ export function EditorToolbar({
   const handleOpenPreview = (e: React.MouseEvent) => {
     e.preventDefault();
     if (typeof window !== "undefined") {
-      window.open(window.location.href, "_blank");
+      const sub = subdomain || "greenfield";
+      window.open(`/preview/${sub}`, "_blank");
     }
   };
 

@@ -1406,6 +1406,7 @@ export function EditorStudio({
       {/* Floating Bottom Toolbar Dock - Hidden when Settings Studio is open */}
       {!isSettingsOpen && (
         <EditorToolbar
+          subdomain={subdomain}
           onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
           isSettingsOpen={isSettingsOpen}
           onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}

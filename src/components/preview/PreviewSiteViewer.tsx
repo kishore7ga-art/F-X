@@ -1,0 +1,171 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+interface SectionItem {
+  id: string;
+  title: string;
+  code: string;
+}
+
+const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
+  {
+    id: "nav",
+    title: "Navbar / Header",
+    code: `<header style="background: #0d1527; color: #ffffff; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px;">🎓</div>
+      <span style="font-size: 20px; font-weight: 900; color: #ffffff;">GREENFIELD UNIVERSITY</span>
+    </div>
+    <nav style="display: flex; gap: 24px; font-size: 14px; font-weight: 700;">
+      <a href="#about" style="color: #cbd5e1; text-decoration: none;">About</a>
+      <a href="#courses" style="color: #cbd5e1; text-decoration: none;">Academics</a>
+      <a href="#admissions" style="color: #cbd5e1; text-decoration: none;">Admissions</a>
+      <a href="#placements" style="color: #cbd5e1; text-decoration: none;">Placements</a>
+      <a href="#contact" style="color: #cbd5e1; text-decoration: none;">Contact</a>
+    </nav>
+    <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 10px 24px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none;">Apply Now</a>
+  </header>`,
+  },
+  {
+    id: "hero",
+    title: "Hero Banner",
+    code: `<section style="background: #090d16; color: #ffffff; padding: 90px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
+    <div style="max-width: 900px; margin: 0 auto;">
+      <span style="background: rgba(37,99,235,0.2); border: 1px solid #2563eb; color: #60a5fa; padding: 6px 20px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">A++ Accredited University</span>
+      <h1 style="font-size: 52px; font-weight: 900; margin-top: 24px; line-height: 1.1; color: #ffffff;">Excellence in Higher Education & Innovation</h1>
+      <p style="font-size: 18px; color: #94a3b8; margin-top: 18px; line-height: 1.6; max-width: 720px; margin-left: auto; margin-right: auto;">Empowering future leaders with world-class faculty, modern research laboratories, and vibrant campus life.</p>
+      <div style="margin-top: 36px; display: flex; justify-content: center; gap: 16px;">
+        <a href="#courses" style="background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Explore Programs</a>
+        <a href="#contact" style="background: transparent; border: 1px solid #334155; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Contact Us</a>
+      </div>
+    </div>
+  </section>`,
+  },
+  {
+    id: "highlights",
+    title: "College Highlights",
+    code: `<section style="background: #0f172a; color: #ffffff; padding: 60px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
+    <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; text-align: center;">
+      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">#15</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">NIRF National Rank</p></div>
+      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">98.4%</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Placement Record</p></div>
+      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">500+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Top Recruiters</p></div>
+      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">15,000+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Active Students</p></div>
+    </div>
+  </section>`,
+  },
+  {
+    id: "about",
+    title: "About College",
+    code: `<section id="about" style="background: #ffffff; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
+    <div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 48px; align-items: center;">
+      <div>
+        <span style="color: #2563eb; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em;">OUR HERITAGE</span>
+        <h2 style="font-size: 36px; font-weight: 900; margin-top: 12px; color: #0f172a;">Building Tomorrow's Global Tech Leaders</h2>
+        <p style="font-size: 15px; color: #475569; margin-top: 16px; line-height: 1.7;">Established in 1985, Greenfield University has been at the forefront of academic excellence, technological innovation, and societal advancement for over four decades.</p>
+      </div>
+      <div style="background: #f1f5f9; padding: 32px; border-radius: 24px; border: 1px solid #e2e8f0;">
+        <h4 style="font-size: 18px; font-weight: 900; color: #0f172a; margin: 0;">Key Accreditations</h4>
+        <ul style="margin-top: 16px; padding-left: 20px; color: #334155; font-size: 14px; font-weight: 600; line-height: 1.8;">
+          <li>NAAC A++ Grade Accreditation</li>
+          <li>AICTE & UGC Approved University</li>
+          <li>NIRF Top 20 Engineering Institutions</li>
+        </ul>
+      </div>
+    </div>
+  </section>`,
+  },
+  {
+    id: "footer",
+    title: "Footer",
+    code: `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
+  <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px;">
+    <div>
+      <h3 style="font-size: 20px; font-weight: 900; color: #ffffff; margin: 0;">Greenfield University</h3>
+      <p style="font-size: 13px; color: #64748b; margin-top: 12px; line-height: 1.6;">Empowering future leaders through education, innovation, and global collaboration.</p>
+    </div>
+    <div>
+      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Quick Links</h4>
+      <ul style="list-style: none; padding: 0; margin: 12px 0 0 0; font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 8px;">
+        <li><a href="#about" style="color: #cbd5e1; text-decoration: none;">About Us</a></li>
+        <li><a href="#courses" style="color: #cbd5e1; text-decoration: none;">Academics</a></li>
+        <li><a href="#contact" style="color: #cbd5e1; text-decoration: none;">Contact Us</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Contact Campus</h4>
+      <p style="font-size: 13px; color: #cbd5e1; margin-top: 12px; line-height: 1.6;">
+        📍 Main Campus, University Road<br />
+        ✉️ admissions@greenfield.edu.in<br />
+        📞 +91 (080) 2345-6789
+      </p>
+    </div>
+  </div>
+  <div style="max-width: 1100px; margin: 40px auto 0 auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 12px; color: #64748b;">
+    © 2026 Greenfield University. Live Published Website.
+  </div>
+</footer>`,
+  },
+];
+
+export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
+  const [sections, setSections] = useState<SectionItem[]>(DEFAULT_CLEAN_FULL_SECTIONS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchSiteSections = async () => {
+      try {
+        const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+        const apiBase = hostname === "localhost" || hostname === "127.0.0.1" ? "http://localhost:4000" : "https://api.xite.co.in";
+        const res = await fetch(`${apiBase}/api/v1/default-website`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data && data.sections && Array.isArray(data.sections) && data.sections.length > 0) {
+            if (!cancelled) {
+              setSections(
+                data.sections.map((sec: any, idx: number) => ({
+                  id: sec.id || `sec-${idx}`,
+                  title: sec.title || `Section ${idx + 1}`,
+                  code: sec.code || "",
+                }))
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load backend published site sections:", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchSiteSections();
+    return () => {
+      cancelled = true;
+    };
+  }, [subdomain]);
+
+  if (loading && sections.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-mono text-slate-400">Loading published website preview...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden selection:bg-blue-600 selection:text-white">
+      {sections.map((sec) => (
+        <div
+          key={sec.id}
+          dangerouslySetInnerHTML={{ __html: sec.code }}
+          className="w-full overflow-hidden"
+        />
+      ))}
+    </div>
+  );
+}
