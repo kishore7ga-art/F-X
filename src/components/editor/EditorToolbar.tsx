@@ -74,23 +74,29 @@ export function EditorToolbar({
   const handleCopyLink = async () => {
     if (typeof window === "undefined") return;
     const sub = subdomain || "greenfield";
-    const previewUrl = `${window.location.origin}/preview/${sub}`;
+    const origin = window.location.origin;
+    const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+    
+    // Live Website Public URL
+    const publicWebsiteUrl = isProd
+      ? `https://xite.co.in/preview/${sub}`
+      : `${origin}/preview/${sub}`;
 
     try {
-      await navigator.clipboard.writeText(previewUrl);
+      await navigator.clipboard.writeText(publicWebsiteUrl);
       setCopied(true);
-      showToast("Live Website Link Copied! Open in Chrome or any browser 🚀");
+      showToast("Public Live Website Link Copied! Share with anyone to view your live website 🔗");
       setTimeout(() => setCopied(false), 2500);
     } catch {
       try {
         const input = document.createElement("input");
-        input.value = previewUrl;
+        input.value = publicWebsiteUrl;
         document.body.appendChild(input);
         input.select();
         document.execCommand("copy");
         document.body.removeChild(input);
         setCopied(true);
-        showToast("Live Website Link Copied! Open in Chrome or any browser 🚀");
+        showToast("Public Live Website Link Copied! Share with anyone to view your live website 🔗");
         setTimeout(() => setCopied(false), 2500);
       } catch {
         showToast("Failed to copy link.");
@@ -102,7 +108,12 @@ export function EditorToolbar({
     e.preventDefault();
     if (typeof window !== "undefined") {
       const sub = subdomain || "greenfield";
-      window.open(`/preview/${sub}`, "_blank");
+      const origin = window.location.origin;
+      const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+      const previewTargetUrl = isProd ? `https://xite.co.in/preview/${sub}` : `${origin}/preview/${sub}`;
+      
+      window.open(previewTargetUrl, "_blank");
+      showToast("Opening Live Full Website Preview in new tab... 🚀");
     }
   };
 
