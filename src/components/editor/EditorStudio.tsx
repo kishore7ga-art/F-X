@@ -1319,39 +1319,34 @@ export function EditorStudio({
             )}
 
             {/* Category Grid */}
-            <div className="grid gap-3 sm:grid-cols-2 max-h-[50vh] overflow-y-auto pr-1">
+            <div className="grid gap-3 sm:grid-cols-2 max-h-[55vh] overflow-y-auto pr-1">
               {SECTION_CATEGORIES.map((cat) => {
                 const Icon = cat.icon;
-                const hasAdminSection = adminDbTemplates.some(
-                  (tpl) =>
-                    tpl.name.toLowerCase().includes(cat.id) ||
-                    tpl.name.toLowerCase().includes(cat.name.toLowerCase())
-                ) || adminDbTemplates.length > 0;
+                const hasAdminTemplate = adminDbTemplates.some((tpl) => {
+                  const nameLower = (tpl.name || "").toLowerCase();
+                  return nameLower.includes(`[${cat.id}]`) || nameLower.includes(cat.id) || nameLower.includes(cat.name.toLowerCase());
+                });
 
                 return (
                   <div
                     key={cat.id}
                     onClick={() => handleSelectSectionCategory(cat)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer select-none ${
-                      hasAdminSection
-                        ? "bg-slate-50 border-slate-200 hover:border-slate-900 hover:bg-slate-100 shadow-sm"
-                        : "bg-slate-50/50 border-slate-200/60 opacity-60 hover:opacity-100"
-                    }`}
+                    className="p-4 rounded-2xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200 hover:border-blue-500 transition-all cursor-pointer select-none shadow-sm hover:shadow-md group"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="p-2.5 rounded-xl bg-slate-900 text-white">
+                      <div className="p-2.5 rounded-xl bg-slate-900 text-white group-hover:bg-blue-600 transition-colors">
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-xs font-black text-slate-900">{cat.name}</h4>
-                          {!hasAdminSection && (
-                            <span className="text-[9px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                              Requires Admin DB
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="text-xs font-black text-slate-900 group-hover:text-blue-900 truncate">{cat.name}</h4>
+                          {hasAdminTemplate && (
+                            <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0">
+                              Admin Variant
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{cat.description}</p>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">{cat.description}</p>
                       </div>
                     </div>
                   </div>
