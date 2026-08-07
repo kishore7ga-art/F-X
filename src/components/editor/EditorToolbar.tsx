@@ -65,6 +65,8 @@ export function EditorToolbar({
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -82,25 +84,16 @@ export function EditorToolbar({
       ? `https://xite.co.in/preview/${sub}`
       : `${origin}/preview/${sub}`;
 
+    setShareUrl(publicWebsiteUrl);
+    setShowShareModal(true);
+
     try {
       await navigator.clipboard.writeText(publicWebsiteUrl);
       setCopied(true);
-      showToast("Public Live Website Link Copied! Share with anyone to view your live website 🔗");
+      showToast("Public Live Website Link Copied! 🔗");
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      try {
-        const input = document.createElement("input");
-        input.value = publicWebsiteUrl;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand("copy");
-        document.body.removeChild(input);
-        setCopied(true);
-        showToast("Public Live Website Link Copied! Share with anyone to view your live website 🔗");
-        setTimeout(() => setCopied(false), 2500);
-      } catch {
-        showToast("Failed to copy link.");
-      }
+      // Clipboard fallback
     }
   };
 
@@ -654,6 +647,133 @@ export function EditorToolbar({
           <span>{toastMessage}</span>
         </div>
       )}
+      {/* 🔗 Share Public Live Website Link Modal */}
+      {showShareModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999999,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setShowShareModal(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "460px",
+              backgroundColor: "#0d1527",
+              border: "1px solid #2563eb",
+              borderRadius: "24px",
+              padding: "28px",
+              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(37, 99, 235, 0.3)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              color: "#ffffff",
+              fontFamily: "system-ui, sans-serif",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "38px", height: "38px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
+                  🔗
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>Share Live Website Link</h3>
+                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "2px 0 0 0" }}>Anyone with this link can view your live website</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowShareModal(false)}
+                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "18px" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Input URL display */}
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "8px", letterSpacing: "0.05em" }}>
+                Public Live Website Link
+              </label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={shareUrl}
+                  style={{
+                    flex: 1,
+                    height: "44px",
+                    backgroundColor: "#1e293b",
+                    border: "1px solid #334155",
+                    borderRadius: "12px",
+                    padding: "0 14px",
+                    color: "#60a5fa",
+                    fontSize: "13px",
+                    fontFamily: "monospace",
+                    fontWeight: "bold",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareUrl);
+                    showToast("Link Copied to Clipboard! 📋");
+                  }}
+                  style={{
+                    height: "44px",
+                    padding: "0 18px",
+                    borderRadius: "12px",
+                    backgroundColor: "#2563eb",
+                    color: "#ffffff",
+                    fontWeight: 800,
+                    fontSize: "13px",
+                    border: "none",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 4px 12px rgba(37,99,235,0.4)",
+                  }}
+                >
+                  📋 Copy
+                </button>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b" }}>
+              <button
+                onClick={() => setShowShareModal(false)}
+                style={{ height: "40px", padding: "0 18px", borderRadius: "10px", border: "none", background: "transparent", color: "#94a3b8", fontWeight: 800, cursor: "pointer" }}
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  window.open(shareUrl, "_blank");
+                  setShowShareModal(false);
+                }}
+                style={{ height: "40px", padding: "0 22px", borderRadius: "10px", backgroundColor: "#059669", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              >
+                <span>Open Link in New Tab ↗️</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
