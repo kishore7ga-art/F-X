@@ -705,6 +705,7 @@ export function EditorStudio({
     logoText: string;
     bgColor: string;
     imageUrl: string;
+    originalUrl: string;
     linkUrl: string;
     applyAllLogos: boolean;
     applyAllBackgrounds: boolean;
@@ -1211,6 +1212,8 @@ export function EditorStudio({
     }
   };
 
+
+
   // Real-time image live update & auto-save handler
   const handleUpdateAndSaveImage = (newParams: Partial<NonNullable<typeof imagePopup>>) => {
     if (!imagePopup) return;
@@ -1219,6 +1222,7 @@ export function EditorStudio({
     setImagePopup(updatedPopup);
 
     const { sectionIndex, targetElement, targetType } = updatedPopup;
+    const originalUrl = (imagePopup.originalUrl || "").trim();
     const finalImageUrl = (updatedPopup.imageUrl || "").trim();
     const finalLogoText = (updatedPopup.logoText || "").trim();
     const finalBgColor = updatedPopup.bgColor;
@@ -1226,7 +1230,7 @@ export function EditorStudio({
     const finalObjectFit = updatedPopup.objectFit || "cover";
     const finalBorderRadius = updatedPopup.borderRadius || "10px";
 
-    // 1. Live DOM manipulation for immediate visual response
+    // 1. Live DOM manipulation for immediate visual response on screen
     if (targetType === "logo") {
       if (finalImageUrl) {
         if (targetElement.tagName === "IMG") {
@@ -1275,38 +1279,57 @@ export function EditorStudio({
       }
     }
 
-    // 2. Extract updated HTML and auto-save across section state & localStorage
+    // 2. Direct string update in section HTML code & auto-save across state & localStorage
     setSections((prevSections) => {
       return prevSections.map((sec, idx) => {
-        // Multi-section logo synchronization across headers
-        if (updatedPopup.applyAllLogos && targetType === "logo" && finalImageUrl) {
-          let newCode = sec.code;
-          newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-          newCode = newCode.replace(/(<img[^>]*alt="[^"]*Emblem[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-          if (idx === sectionIndex) {
-            const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
-            if (container) newCode = cleanCanvasWrapperFromCode(container.innerHTML);
+        let newCode = sec.code;
+
+        if (targetType === "logo") {
+          if (finalImageUrl) {
+            if (updatedPopup.applyAllLogos) {
+              newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+              newCode = newCode.replace(/(<img[^>]*alt="[^"]*Emblem[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+              newCode = newCode.replace(/(<img[^>]*class="[^"]*logo[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+            } else if (idx === sectionIndex) {
+              if (originalUrl && newCode.includes(originalUrl)) {
+                newCode = newCode.replaceAll(originalUrl, finalImageUrl);
+              } else {
+                newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+                newCode = newCode.replace(/(<img[^>]*class="[^"]*logo[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+              }
+            }
+          }
+          if (finalLinkUrl && idx === sectionIndex) {
+            newCode = newCode.replace(/(<a[^>]*class="[^"]*logo[^"]*"[^>]*href=")[^"]*(")/gi, `$1${finalLinkUrl}$2`);
           }
           return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
-        // Multi-section background synchronization
-        if (updatedPopup.applyAllBackgrounds && targetType === "background" && finalImageUrl) {
-          let newCode = sec.code;
-          newCode = newCode.replace(/background-image:\s*url\([^)]+\)/gi, `background-image: url("${finalImageUrl}")`);
-          if (idx === sectionIndex) {
-            const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
-            if (container) newCode = cleanCanvasWrapperFromCode(container.innerHTML);
+        if (targetType === "background") {
+          if (finalImageUrl) {
+            if (updatedPopup.applyAllBackgrounds) {
+              newCode = newCode.replace(/background-image:\s*url\([^)]+\)/gi, `background-image: url("${finalImageUrl}")`);
+            } else if (idx === sectionIndex) {
+              if (originalUrl && newCode.includes(originalUrl)) {
+                newCode = newCode.replaceAll(originalUrl, finalImageUrl);
+              }
+              newCode = newCode.replace(/(background(?:-image)?:\s*url\(["']?)[^"')]+(["']?\))/gi, `$1${finalImageUrl}$2`);
+            }
           }
           return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
-        if (idx === sectionIndex) {
-          const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
-          if (container) {
-            return { ...sec, code: cleanCanvasWrapperFromCode(container.innerHTML) };
+        if (targetType === "image" && idx === sectionIndex) {
+          if (finalImageUrl) {
+            if (originalUrl && newCode.includes(originalUrl)) {
+              newCode = newCode.replaceAll(originalUrl, finalImageUrl);
+            } else {
+              newCode = newCode.replace(/(<img[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+            }
           }
+          return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
+
         return sec;
       });
     });
@@ -1399,6 +1422,7 @@ export function EditorStudio({
         logoText: logoText || "AU",
         bgColor,
         imageUrl: imageUrl || "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80",
+        originalUrl: imageUrl,
         linkUrl: linkUrl || "/home",
         applyAllLogos: targetType === "logo",
         applyAllBackgrounds: targetType === "background",
