@@ -228,7 +228,13 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         max-width: 100% !important;
         height: auto !important;
       }
-      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section {
+      .section-canvas-box > div,
+      .section-canvas-box > header,
+      .section-canvas-box > section,
+      .section-canvas-box > nav,
+      .section-canvas-box header,
+      .section-canvas-box nav,
+      .section-canvas-box section {
         width: 100% !important;
         max-width: 100% !important;
         margin-left: 0 !important;
@@ -250,32 +256,31 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
-      {/* Sleek Floating Bottom Device Switcher Pill - High Contrast */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-950/95 backdrop-blur-xl border border-slate-800/80 px-3.5 py-1.5 rounded-full shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      {/* Sleek Floating Bottom Device Switcher Pill - Symmetric Rounded Cards */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a]/95 backdrop-blur-xl border border-slate-700/80 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={() => setPreviewWidth("100%")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
             previewWidth === "100%"
               ? "bg-blue-600 text-white shadow-md"
-              : "text-slate-400 hover:text-white hover:bg-slate-800"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Desktop Full Screen (100%)"
         >
           <Monitor className="w-3.5 h-3.5" />
-          <span className="font-mono text-xs">Desktop</span>
+          <span>Desktop</span>
         </button>
-        <div className="h-3.5 w-px bg-slate-800" />
         <button
           onClick={() => setPreviewWidth("375px")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer ${
             previewWidth === "375px"
               ? "bg-blue-600 text-white shadow-md"
-              : "text-slate-400 hover:text-white hover:bg-slate-800"
+              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Mobile Smartphone Preview (375px)"
         >
           <Smartphone className="w-3.5 h-3.5" />
-          <span className="font-mono text-xs">Mobile</span>
+          <span>Mobile</span>
         </button>
       </div>
 

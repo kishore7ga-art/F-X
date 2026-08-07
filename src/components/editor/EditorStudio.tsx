@@ -613,11 +613,20 @@ export function EditorStudio({
         max-width: 100% !important;
         height: auto !important;
       }
-      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section {
+      .section-canvas-box > div,
+      .section-canvas-box > header,
+      .section-canvas-box > section,
+      .section-canvas-box > nav,
+      .section-canvas-box header,
+      .section-canvas-box nav,
+      .section-canvas-box section {
         width: 100% !important;
-        box-sizing: border-box !important;
+        max-width: 100% !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
+        margin-top: 0 !important;
+        border-radius: 0 !important;
+        box-sizing: border-box !important;
       }
       .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
       .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
