@@ -468,6 +468,112 @@ const DEFAULT_FULL_HOME_SECTIONS: SectionItem[] = [
   },
 ];
 
+const getFullPageSections = (slug: string, pageName: string = "Home", collegeName: string = "MEC ENGINEERING COLLEGE"): SectionItem[] => {
+  const cleanSlug = slug.replace(/^\//, "").toLowerCase();
+
+  const sharedHeader = `<header style="background: #0d1527; color: #ffffff; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px;">🎓</div>
+      <div>
+        <span style="font-size: 18px; font-weight: 900; color: #ffffff; display: block; line-height: 1.2;">${collegeName.toUpperCase()}</span>
+        <span style="font-size: 11px; font-weight: 600; color: #94a3b8;">Autonomous • NAAC A++ Accredited</span>
+      </div>
+    </div>
+    <nav style="display: flex; gap: 24px; font-size: 14px; font-weight: 700;">
+      <a href="/home" style="color: #cbd5e1; text-decoration: none;">Home</a>
+      <a href="/about" style="color: #cbd5e1; text-decoration: none;">About</a>
+      <a href="/academics" style="color: #cbd5e1; text-decoration: none;">Academics</a>
+      <a href="/admissions" style="color: #cbd5e1; text-decoration: none;">Admissions</a>
+      <a href="/placements" style="color: #cbd5e1; text-decoration: none;">Placements</a>
+      <a href="/contact" style="color: #cbd5e1; text-decoration: none;">Contact</a>
+    </nav>
+    <a href="/admissions" style="background: #2563eb; color: #ffffff; padding: 10px 24px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none;">Apply Now</a>
+  </header>`;
+
+  const sharedFooter = `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
+  <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px;">
+    <div>
+      <h3 style="font-size: 20px; font-weight: 900; color: #ffffff; margin: 0;">${collegeName}</h3>
+      <p style="font-size: 13px; color: #64748b; margin-top: 12px; line-height: 1.6;">Empowering future leaders through education, innovation, and global collaboration.</p>
+    </div>
+    <div>
+      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Quick Links</h4>
+      <ul style="list-style: none; padding: 0; margin: 12px 0 0 0; font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 8px;">
+        <li><a href="/home" style="color: #cbd5e1; text-decoration: none;">Home</a></li>
+        <li><a href="/about" style="color: #cbd5e1; text-decoration: none;">About Us</a></li>
+        <li><a href="/academics" style="color: #cbd5e1; text-decoration: none;">Academics</a></li>
+        <li><a href="/admissions" style="color: #cbd5e1; text-decoration: none;">Admissions</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Contact Campus</h4>
+      <p style="font-size: 13px; color: #cbd5e1; margin-top: 12px; line-height: 1.6;">
+        📍 Main Campus, College Road<br />
+        ✉️ admissions@mec.edu.in<br />
+        📞 +91 (044) 2345-6789
+      </p>
+    </div>
+  </div>
+  <div style="max-width: 1100px; margin: 40px auto 0 auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 12px; color: #64748b;">
+    © 2026 ${collegeName}. All Rights Reserved.
+  </div>
+</footer>`;
+
+  if (cleanSlug === "about") {
+    return [
+      { id: "about-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
+      { id: "about-hero", title: "About Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">OUR HERITAGE & VISION</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">About ${collegeName}</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Founded with a commitment to academic rigor, technological innovation, and societal impact for over 4 decades.</p></div></section>`, variantIndex: 0 },
+      { id: "about-heritage", title: "Key Accreditations & Heritage", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px;"><div style="background: #1e293b; padding: 32px; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; color: #38bdf8;">NIRF Top 20</h3><p style="font-size: 14px; color: #94a3b8; margin-top: 10px;">Consistently ranked among the top engineering institutions nationwide.</p></div><div style="background: #1e293b; padding: 32px; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; color: #4ade80;">NAAC A++ Grade</h3><p style="font-size: 14px; color: #94a3b8; margin-top: 10px;">Highest national accreditation grade for infrastructure & quality education.</p></div><div style="background: #1e293b; padding: 32px; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; color: #c084fc;">100+ Global MOUs</h3><p style="font-size: 14px; color: #94a3b8; margin-top: 10px;">International student exchange and joint research partnerships with top foreign universities.</p></div></div></section>`, variantIndex: 0 },
+      { id: "about-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
+    ];
+  }
+
+  if (cleanSlug === "academics" || cleanSlug === "courses") {
+    return [
+      { id: "academics-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
+      { id: "academics-hero", title: "Academics Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(168,85,247,0.15); color: #c084fc; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">ACADEMIC EXCELLENCE</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Degree Programs & Courses</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Offering industry-aligned Undergraduate, Postgraduate, and PhD degrees designed for global careers.</p></div></section>`, variantIndex: 0 },
+      { id: "academics-list", title: "Offered Programs", code: `<section style="background: #0d1117; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;"><div style="background: #161b22; border-radius: 20px; padding: 32px; border: 1px solid #30363d;"><h3 style="font-size: 24px; font-weight: 900; color: #38bdf8;">B.Tech Computer Science & AI</h3><p style="font-size: 14px; color: #8b949e; margin-top: 10px;">4-year degree covering AI/ML algorithms, cloud computing, and software development.</p></div><div style="background: #161b22; border-radius: 20px; padding: 32px; border: 1px solid #30363d;"><h3 style="font-size: 24px; font-weight: 900; color: #a855f7;">B.Tech Electronics & Robotics</h3><p style="font-size: 14px; color: #8b949e; margin-top: 10px;">Specialized training in embedded systems, IoT sensors, and autonomous robotics.</p></div><div style="background: #161b22; border-radius: 20px; padding: 32px; border: 1px solid #30363d;"><h3 style="font-size: 24px; font-weight: 900; color: #f59e0b;">MBA Tech Management</h3><p style="font-size: 14px; color: #8b949e; margin-top: 10px;">2-year postgraduate program blending technology leadership and business strategy.</p></div></div></section>`, variantIndex: 0 },
+      { id: "academics-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
+    ];
+  }
+
+  if (cleanSlug === "admissions") {
+    return [
+      { id: "admissions-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
+      { id: "admissions-hero", title: "Admissions Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(37,99,235,0.2); color: #60a5fa; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">ADMISSIONS OPEN 2026</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Join ${collegeName}</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Step into a world of innovation, research, and top-tier global placement opportunities.</p><div style="margin-top: 28px;"><a href="#apply" style="background: #2563eb; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 900; text-decoration: none;">Submit Application</a></div></div></section>`, variantIndex: 0 },
+      { id: "admissions-steps", title: "Application Process", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; text-align: center;"><div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><div style="font-size: 32px; font-weight: 900; color: #38bdf8;">1</div><h4 style="font-size: 18px; font-weight: 800; margin-top: 10px;">Fill Online Form</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Register online and enter your academic details.</p></div><div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><div style="font-size: 32px; font-weight: 900; color: #38bdf8;">2</div><h4 style="font-size: 18px; font-weight: 800; margin-top: 10px;">Entrance Test</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Appear for national or university entrance exam.</p></div><div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><div style="font-size: 32px; font-weight: 900; color: #38bdf8;">3</div><h4 style="font-size: 18px; font-weight: 800; margin-top: 10px;">Counseling & Seat</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Attend counseling session and confirm enrollment.</p></div></div></section>`, variantIndex: 0 },
+      { id: "admissions-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
+    ];
+  }
+
+  if (cleanSlug === "placements") {
+    return [
+      { id: "placements-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
+      { id: "placements-hero", title: "Placements Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(34,197,94,0.2); color: #4ade80; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">98.4% PLACEMENT RECORD</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Placements & Career Opportunities</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Highest Package: 50 LPA+ | 300+ Fortune 500 Recruiters Visiting Annually</p></div></section>`, variantIndex: 0 },
+      { id: "placements-stats", title: "Placement Statistics", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; text-align: center;"><div style="padding: 28px; background: #1e293b; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 42px; font-weight: 900; color: #4ade80; margin: 0;">50 LPA</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Highest Package</p></div><div style="padding: 28px; background: #1e293b; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 42px; font-weight: 900; color: #38bdf8; margin: 0;">12.5 LPA</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Average Package</p></div><div style="padding: 28px; background: #1e293b; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 42px; font-weight: 900; color: #fbbf24; margin: 0;">300+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Recruiting MNCs</p></div></div></section>`, variantIndex: 0 },
+      { id: "placements-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
+    ];
+  }
+
+  if (cleanSlug === "contact") {
+    return [
+      { id: "contact-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
+      { id: "contact-hero", title: "Contact Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(37,99,235,0.2); color: #60a5fa; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">CAMPUS HELPDESK</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Contact ${collegeName}</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px;">Have questions? Reach out to our admissions team or visit our main campus.</p></div></section>`, variantIndex: 0 },
+      { id: "contact-form", title: "Enquiry Form & Campus Details", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px;"><div style="background: #1e293b; padding: 36px; border-radius: 24px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; margin-top: 0;">Send Us a Message</h3><div style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;"><input type="text" placeholder="Your Full Name" style="width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 14px;" /><input type="email" placeholder="Your Email Address" style="width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 14px;" /><textarea placeholder="Your Message or Admission Query" rows="4" style="width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 14px;"></textarea><button style="background: #2563eb; color: #ffffff; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 14px; border: none; cursor: pointer;">Submit Inquiry</button></div></div><div style="display: flex; flex-direction: column; justify-content: center; gap: 24px;"><div><h4 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0;">📍 Campus Address</h4><p style="font-size: 14px; color: #94a3b8; margin-top: 6px; line-height: 1.6;">Main Institutional Campus, University Road, Tech City, Pin: 600028</p></div><div><h4 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0;">📞 Helpline & Email</h4><p style="font-size: 14px; color: #94a3b8; margin-top: 6px; line-height: 1.6;">Phone: +91 (044) 2345-6789<br />Email: admissions@mec.edu.in</p></div></div></div></section>`, variantIndex: 0 },
+      { id: "contact-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
+    ];
+  }
+
+  // Default Home Page (Full 5-Section Web Page)
+  return [
+    { id: "home-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
+    { id: "home-hero", title: "Home Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 90px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 950px; margin: 0 auto;"><span style="background: rgba(37,99,235,0.2); border: 1px solid #2563eb; color: #60a5fa; padding: 6px 20px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">Admission Portal 2026 • NEW</span><h1 style="font-size: 52px; font-weight: 900; margin-top: 24px; line-height: 1.1; color: #ffffff;">Build Your Career at ${collegeName}</h1><p style="font-size: 18px; color: #94a3b8; margin-top: 18px; line-height: 1.6; max-width: 720px; margin-left: auto; margin-right: auto;">Experience world-class technological education with advanced AI/ML research labs, top-tier global faculty, and 100% placement assurance with industry leaders.</p><div style="margin-top: 36px; display: flex; justify-content: center; gap: 16px;"><a href="/admissions" style="background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Apply For Admission ➔</a><a href="/contact" style="background: transparent; border: 1px solid #334155; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Campus Video</a></div></div></section>`, variantIndex: 0 },
+    { id: "home-stats", title: "Campus Highlights & Stats", code: `<section style="background: #0f172a; color: #ffffff; padding: 60px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; text-align: center;"><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">50 LPA+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Highest CTC Offered</p></div><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #4ade80; margin: 0;">300+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Hiring Companies</p></div><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #fbbf24; margin: 0;">NAAC A++</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Grade Accreditation</p></div><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #f472b6; margin: 0;">15,000+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Active Students</p></div></div></section>`, variantIndex: 0 },
+    { id: "home-programs", title: "Featured Programs", code: `<section style="background: #0d1117; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1100px; margin: 0 auto;"><div style="text-align: center;"><span style="background: rgba(168,85,247,0.15); color: #c084fc; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">ACADEMIC DEPARTMENTS</span><h2 style="font-size: 38px; font-weight: 900; margin-top: 16px; color: #ffffff;">Explore Degrees & Courses</h2></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 40px;"><div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;"><h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">B.Tech Computer Science & AI</h3><p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Full 4-year degree covering machine learning, data engineering, and software architecture.</p></div><div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;"><h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">MBA International Business</h3><p style="font-size: 14px; color: #8b949e; margin-top: 8px;">2-year executive program with global immersion trips and industry mentorship.</p></div><div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;"><h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">Doctoral Fellowships</h3><p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Fully funded research positions with monthly stipends and international publication support.</p></div></div></div></section>`, variantIndex: 0 },
+    { id: "home-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
+  ];
+};
+
 interface EditorStudioProps {
   subdomain?: string;
   collegeName?: string;
@@ -771,16 +877,9 @@ export function EditorStudio({
         }
       } catch {}
 
-      // 3. Fallback to DEFAULT_FULL_HOME_SECTIONS if no saved page or Admin config match
-      const cleanSlug = slug.replace(/^\//, "").toLowerCase();
-      if (cleanSlug === "home" || slug === "/home" || slug === "/") {
-        setSections(DEFAULT_FULL_HOME_SECTIONS);
-      } else {
-        const pageCode = PAGE_SECTION_TEMPLATES[slug] || PAGE_SECTION_TEMPLATES["/home"];
-        setSections([
-          { id: `page-${slug}`, title: `${currentPage.name} Banner`, code: pageCode, variantIndex: 0 },
-        ]);
-      }
+      // 3. Fallback to complete full-page sections if no saved page or Admin config match
+      const fullPageSecs = getFullPageSections(slug, currentPage.name, collegeName);
+      setSections(fullPageSecs);
     } finally {
       setLoadingDb(false);
     }
@@ -812,43 +911,9 @@ export function EditorStudio({
       return;
     }
 
-    // Otherwise load matching section added by Admin for target page
-    const cleanSlug = pageSlug.replace(/^\//, "").toLowerCase();
-    let targetCatId = cleanSlug;
-    if (cleanSlug === "home") targetCatId = "hero";
-    if (cleanSlug === "academics") targetCatId = "courses";
-
-    const matchingAdminTpl = adminDbTemplates.find((tpl) => {
-      const nameLower = (tpl.name || "").toLowerCase();
-      return (
-        nameLower.includes(`[${targetCatId}]`) ||
-        nameLower.includes(targetCatId)
-      );
-    });
-
-    if (matchingAdminTpl && matchingAdminTpl.code) {
-      setSections([
-        { id: `page-${pageSlug}`, title: matchingAdminTpl.name, code: matchingAdminTpl.code, variantIndex: 0 },
-      ]);
-      setActiveSectionIndex(0);
-      return;
-    }
-
-    const pageCode = PAGE_SECTION_TEMPLATES[pageSlug] || `<!-- ${pageName} Section -->
-<section style="background: #09090b; color: #ffffff; padding: 90px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-  <div style="max-width: 850px; margin: 0 auto;">
-    <span style="background: #27272a; color: #a1a1aa; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">
-      ${pageName.toUpperCase()} PAGE
-    </span>
-    <h1 style="font-size: 46px; font-weight: 900; margin-top: 20px; color: #ffffff;">${pageName}</h1>
-    <p style="font-size: 16px; color: #71717a; margin-top: 14px;">Welcome to the official ${pageName} portal page for ${collegeName}.</p>
-  </div>
-</section>`;
-
-    const initialSections = [
-      { id: `page-${pageSlug}`, title: `${pageName} Banner`, code: pageCode, variantIndex: 0 },
-    ];
-    setSections(initialSections);
+    // Load complete multi-section full-page website for target page
+    const fullPageSecs = getFullPageSections(pageSlug, pageName, collegeName);
+    setSections(fullPageSecs);
     setActiveSectionIndex(0);
   };
 
