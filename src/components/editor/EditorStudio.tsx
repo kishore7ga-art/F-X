@@ -67,7 +67,7 @@ const SECTION_CATEGORIES = [
 const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
   navbar: `<header style="background: #0d1527; color: #ffffff; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1);">
     <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 40px; height: 40px; border-radius: 10px; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px;">🎓</div>
+      <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
       <span style="font-size: 20px; font-weight: 900; color: #ffffff;">GREENFIELD UNIVERSITY</span>
     </div>
     <nav style="display: flex; gap: 24px; font-size: 14px; font-weight: 700;">
@@ -525,7 +525,7 @@ const getFullPageSections = (slug: string, pageName: string = "Home", collegeNam
 
   const sharedHeader = `<header style="background: #0d1527; color: #ffffff; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1);">
     <div style="display: flex; align-items: center; gap: 12px;">
-      <div style="width: 40px; height: 40px; border-radius: 10px; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px;">🎓</div>
+      <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
       <div>
         <span style="font-size: 18px; font-weight: 900; color: #ffffff; display: block; line-height: 1.2;">${collegeName.toUpperCase()}</span>
         <span style="font-size: 11px; font-weight: 600; color: #94a3b8;">Autonomous • NAAC A++ Accredited</span>
@@ -1992,9 +1992,82 @@ export function EditorStudio({
 
             {/* Inputs */}
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* File Upload Option */}
               <div>
                 <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Logo Text / Badge Initials (e.g. AU, 🎓, MEC)
+                  Upload Logo File from Device
+                </label>
+                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
+                  <span>📁 Select Logo Image File</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          if (typeof ev.target?.result === "string") {
+                            setLogoPopup({ ...logoPopup, imageUrl: ev.target.result });
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              {/* Preset Emblem Logos */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Or Choose Preset Emblem Logo
+                </label>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  {[
+                    { label: "University Crest", url: "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" },
+                    { label: "Campus Shield", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=120&auto=format&fit=crop&q=80" },
+                    { label: "Tech Seal", url: "https://images.unsplash.com/photo-1562774053-701939374585?w=120&auto=format&fit=crop&q=80" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.url}
+                      onClick={() => setLogoPopup({ ...logoPopup, imageUrl: preset.url })}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        backgroundColor: logoPopup.imageUrl === preset.url ? "#2563eb" : "#1e293b",
+                        color: logoPopup.imageUrl === preset.url ? "#ffffff" : "#cbd5e1",
+                        border: "1px solid #334155",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Image URL */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Custom Logo Image URL
+                </label>
+                <input
+                  type="text"
+                  value={logoPopup.imageUrl}
+                  onChange={(e) => setLogoPopup({ ...logoPopup, imageUrl: e.target.value })}
+                  placeholder="https://yourcollege.edu.in/logo.png"
+                  style={{ width: "100%", height: "44px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {/* Text / Badge Initials */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Logo Text / Badge Initials (Fallback)
                 </label>
                 <input
                   type="text"
@@ -2005,9 +2078,10 @@ export function EditorStudio({
                 />
               </div>
 
+              {/* Badge Colors */}
               <div>
                 <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Badge Background Color
+                  Badge Accent Color
                 </label>
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
                   {["#f59e0b", "#2563eb", "#10b981", "#ef4444", "#8b5cf6", "#0f172a", "#d97706", "#64748b"].map((color) => (
@@ -2025,19 +2099,6 @@ export function EditorStudio({
                     />
                   ))}
                 </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Custom Logo Image URL (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={logoPopup.imageUrl}
-                  onChange={(e) => setLogoPopup({ ...logoPopup, imageUrl: e.target.value })}
-                  placeholder="https://example.com/logo.png"
-                  style={{ width: "100%", height: "44px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                />
               </div>
             </div>
 
