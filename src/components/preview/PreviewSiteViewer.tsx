@@ -259,7 +259,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
       {/* Premium Floating Bottom Device Resolution Switcher Dock */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#0f172a]/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex items-center gap-1.5 overflow-hidden transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-4">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-950/90 backdrop-blur-xl border border-slate-800 p-1.5 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_25px_rgba(37,99,235,0.2)] flex items-center gap-1.5 overflow-hidden transition-all duration-300 select-none animate-in fade-in slide-in-from-bottom-4">
         {[
           { label: "100%", title: "Full 100%", width: "100%", Icon: Monitor },
           { label: "1200px", title: "Desktop 1200px", width: "1200px", Icon: Monitor },
@@ -272,15 +272,18 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
             <button
               key={item.width}
               onClick={() => setPreviewWidth(item.width)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`group flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 ${
                 isActive
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/40 font-black border border-blue-400/40 scale-105"
-                  : "text-slate-300 hover:text-white hover:bg-slate-800/80 font-medium"
+                  ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 text-white shadow-[0_4px_16px_rgba(37,99,235,0.45)] font-black border border-blue-400/40 scale-[1.04]"
+                  : "text-slate-400 hover:text-white hover:bg-slate-800/80 font-medium hover:scale-[1.02]"
               }`}
               title={item.title}
             >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-slate-400"}`} />
-              <span>{item.label}</span>
+              <Icon className={`w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" : "text-slate-400 group-hover:text-blue-400"}`} />
+              <span className="tracking-tight">{item.label}</span>
+              {isActive && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-300 animate-pulse shadow-[0_0_6px_#67e8f9]" />
+              )}
             </button>
           );
         })}
