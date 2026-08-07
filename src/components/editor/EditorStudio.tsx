@@ -685,18 +685,43 @@ export function EditorStudio({
     isNewTab: boolean;
   } | null>(null);
 
-  // Right-Click Logo & Branding Editor Modal State
-  const [logoPopup, setLogoPopup] = useState<{
+  // Dynamic Toast Notification State
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToastNotification = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
+  // Right-Click Image, Logo & Background Editor Modal State
+  const [imagePopup, setImagePopup] = useState<{
     x: number;
     y: number;
     sectionIndex: number;
     targetElement: HTMLElement;
+    targetType: "logo" | "image" | "background";
     logoText: string;
     bgColor: string;
     imageUrl: string;
+    linkUrl: string;
+    applyAllLogos: boolean;
+    applyAllBackgrounds: boolean;
+    activeTab: "logo" | "background" | "image" | "style";
+    objectFit: "cover" | "contain" | "fill";
+    borderRadius: string;
   } | null>(null);
 
-  const toastMessage = null;
+  // Backward compatibility alias for legacy logoPopup state access
+  const logoPopup = imagePopup;
+  const setLogoPopup = (val: any) => {
+    if (!val) {
+      setImagePopup(null);
+      return;
+    }
+    setImagePopup((prev) => (prev ? { ...prev, ...val } : val));
+  };
 
   const [_activePalette, setActivePalette] = useState("academic-blue");
   const [_activeFont, setActiveFont] = useState("inter");
@@ -1144,49 +1169,226 @@ export function EditorStudio({
     };
   };
 
-  // Right-click handler for buttons/links and Logo elements
+  // Smoothly scroll canvas viewport to top Navbar header section
+  const handleJumpToNavbarLogo = () => {
+    if (typeof document === "undefined") return;
+    const headerSection = document.querySelector("header") || document.querySelector(".section-wrapper-container");
+    if (headerSection) {
+      headerSection.scrollIntoView({ behavior: "smooth", block: "center" });
+      headerSection.classList.add("ring-4", "ring-amber-400");
+      setTimeout(() => {
+        headerSection.classList.remove("ring-4", "ring-amber-400");
+      }, 2000);
+      showToastNotification("🚀 Navigated to Header Navbar Logo!");
+    } else {
+      showToastNotification("Header Navbar section not found on canvas!");
+    }
+  };
+
+  // Real-time image live update & auto-save handler
+  const handleUpdateAndSaveImage = (newParams: {
+    imageUrl?: string;
+    logoText?: string;
+    bgColor?: string;
+    linkUrl?: string;
+    applyAllLogos?: boolean;
+    applyAllBackgrounds?: boolean;
+    objectFit?: "cover" | "contain" | "fill";
+    borderRadius?: string;
+    activeTab?: "logo" | "background" | "image" | "style";
+  }) => {
+    if (!imagePopup) return;
+
+    const updatedPopup = { ...imagePopup, ...newParams };
+    setImagePopup(updatedPopup);
+
+    const { sectionIndex, targetElement, targetType } = updatedPopup;
+    const finalImageUrl = (updatedPopup.imageUrl || "").trim();
+    const finalLogoText = (updatedPopup.logoText || "").trim();
+    const finalBgColor = updatedPopup.bgColor;
+    const finalLinkUrl = (updatedPopup.linkUrl || "").trim();
+    const finalObjectFit = updatedPopup.objectFit || "cover";
+    const finalBorderRadius = updatedPopup.borderRadius || "10px";
+
+    // 1. Live DOM manipulation for immediate visual response
+    if (targetType === "logo") {
+      if (finalImageUrl) {
+        if (targetElement.tagName === "IMG") {
+          (targetElement as HTMLImageElement).src = finalImageUrl;
+          targetElement.style.objectFit = finalObjectFit;
+          targetElement.style.borderRadius = finalBorderRadius;
+        } else {
+          targetElement.innerHTML = `<img src="${finalImageUrl}" alt="Logo" data-logo="true" style="height: 38px; width: 38px; object-fit: ${finalObjectFit}; border-radius: ${finalBorderRadius}; cursor: pointer;" />`;
+        }
+      } else if (finalLogoText) {
+        if (targetElement.tagName === "IMG") {
+          const parent = targetElement.parentElement;
+          if (parent) {
+            parent.innerHTML = `<span style="font-size: 16px; font-weight: 900; color: #ffffff; background: ${finalBgColor}; padding: 6px 12px; border-radius: ${finalBorderRadius}; display: inline-block;">${finalLogoText}</span>`;
+          }
+        } else {
+          targetElement.innerText = finalLogoText;
+          targetElement.style.backgroundColor = finalBgColor;
+        }
+      }
+    } else if (targetType === "background") {
+      if (finalImageUrl) {
+        targetElement.style.backgroundImage = `url("${finalImageUrl}")`;
+        targetElement.style.backgroundSize = "cover";
+        targetElement.style.backgroundPosition = "center";
+      }
+    } else {
+      if (targetElement.tagName === "IMG") {
+        (targetElement as HTMLImageElement).src = finalImageUrl;
+        targetElement.style.objectFit = finalObjectFit;
+        targetElement.style.borderRadius = finalBorderRadius;
+      } else {
+        targetElement.style.backgroundImage = `url("${finalImageUrl}")`;
+        targetElement.style.backgroundSize = "cover";
+      }
+    }
+
+    // Update Logo Link destination if set
+    if (finalLinkUrl) {
+      let anchorParent: HTMLElement | null = targetElement;
+      while (anchorParent && anchorParent.tagName !== "A" && anchorParent !== document.body) {
+        anchorParent = anchorParent.parentElement;
+      }
+      if (anchorParent && anchorParent.tagName === "A") {
+        anchorParent.setAttribute("href", finalLinkUrl);
+      }
+    }
+
+    // 2. Extract updated HTML and auto-save across section state & localStorage
+    setSections((prevSections) => {
+      return prevSections.map((sec, idx) => {
+        // Multi-section logo synchronization across headers
+        if (updatedPopup.applyAllLogos && targetType === "logo" && finalImageUrl) {
+          let newCode = sec.code;
+          newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+          newCode = newCode.replace(/(<img[^>]*alt="[^"]*Emblem[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+          if (idx === sectionIndex) {
+            const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
+            if (container) newCode = container.innerHTML;
+          }
+          return { ...sec, code: newCode };
+        }
+
+        // Multi-section background synchronization
+        if (updatedPopup.applyAllBackgrounds && targetType === "background" && finalImageUrl) {
+          let newCode = sec.code;
+          newCode = newCode.replace(/background-image:\s*url\([^)]+\)/gi, `background-image: url("${finalImageUrl}")`);
+          if (idx === sectionIndex) {
+            const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
+            if (container) newCode = container.innerHTML;
+          }
+          return { ...sec, code: newCode };
+        }
+
+        if (idx === sectionIndex) {
+          const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
+          if (container) {
+            return { ...sec, code: container.innerHTML };
+          }
+        }
+        return sec;
+      });
+    });
+
+    showToastNotification("⚡ Image & Logo updated & auto-saved!");
+  };
+
+  // Right-click handler for Images, Logos, Section Backgrounds, and Buttons
   const handleSectionContextMenu = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
     const target = e.target as HTMLElement;
     if (!target) return;
 
-    // Check if right-clicking on logo element or logo badge container (e.g. AU, 🎓, image)
-    let logoElem: HTMLElement | null = target;
-    let isLogo = false;
-    while (logoElem && logoElem !== e.currentTarget) {
-      const cls = (logoElem.className || "").toString().toLowerCase();
-      const txt = (logoElem.innerText || "").trim();
-      const isImg = logoElem.tagName === "IMG";
-      if (
-        isImg ||
-        cls.includes("logo") ||
-        logoElem.getAttribute("data-logo") === "true" ||
-        (txt.length <= 4 && txt.length >= 1 && (txt === "AU" || txt.includes("🎓") || txt.includes("MEC") || logoElem.style.borderRadius !== ""))
-      ) {
-        isLogo = true;
+    let currElem: HTMLElement | null = target;
+    let targetType: "logo" | "image" | "background" | null = null;
+    let imageUrl = "";
+    let logoText = "";
+    let bgColor = "#2563eb";
+    let linkUrl = "";
+    let objectFit: "cover" | "contain" | "fill" = "cover";
+    let borderRadius = "10px";
+
+    while (currElem && currElem !== e.currentTarget) {
+      const tagName = currElem.tagName;
+      const cls = (currElem.className || "").toString().toLowerCase();
+      const isDataLogo = currElem.getAttribute("data-logo") === "true";
+      const compStyle = window.getComputedStyle(currElem);
+      const bgImg = compStyle.backgroundImage || currElem.style.backgroundImage || "";
+
+      if (currElem.tagName === "A" || currElem.getAttribute("href")) {
+        linkUrl = currElem.getAttribute("href") || "";
+      }
+
+      if (tagName === "IMG") {
+        imageUrl = (currElem as HTMLImageElement).src || currElem.getAttribute("src") || "";
+        if (isDataLogo || cls.includes("logo") || currElem.parentElement?.className?.toLowerCase().includes("logo")) {
+          targetType = "logo";
+        } else {
+          targetType = "image";
+        }
+        objectFit = (compStyle.objectFit as any) || "cover";
+        borderRadius = compStyle.borderRadius || "10px";
+        break;
+      } else if (isDataLogo || cls.includes("logo") || (currElem.innerText && currElem.innerText.trim().length <= 4 && (currElem.innerText.includes("AU") || currElem.innerText.includes("🎓") || currElem.innerText.includes("MEC")))) {
+        targetType = "logo";
+        logoText = currElem.innerText?.trim() || "LOGO";
+        const imgChild = currElem.querySelector("img");
+        if (imgChild) {
+          imageUrl = imgChild.src;
+        }
+        bgColor = compStyle.backgroundColor !== "rgba(0, 0, 0, 0)" ? compStyle.backgroundColor : "#2563eb";
+        break;
+      } else if (bgImg && bgImg !== "none" && bgImg.includes("url(")) {
+        targetType = "background";
+        const match = bgImg.match(/url\(["']?(.*?)["']?\)/);
+        if (match && match[1]) imageUrl = match[1];
         break;
       }
-      logoElem = logoElem.parentElement;
+      currElem = currElem.parentElement;
     }
 
-    if (isLogo && logoElem && logoElem !== e.currentTarget) {
+    // Fallback: check section background if right clicked empty space
+    if (!targetType) {
+      const secWrapper = target.closest(".section-wrapper-container") as HTMLElement;
+      if (secWrapper) {
+        const compStyle = window.getComputedStyle(secWrapper);
+        const bgImg = compStyle.backgroundImage || secWrapper.style.backgroundImage || "";
+        if (bgImg && bgImg !== "none" && bgImg.includes("url(")) {
+          targetType = "background";
+          const match = bgImg.match(/url\(["']?(.*?)["']?\)/);
+          if (match && match[1]) imageUrl = match[1];
+          currElem = secWrapper;
+        }
+      }
+    }
+
+    // Open Image & Logo Customizer Modal if Image/Logo/Background detected
+    if (targetType && currElem) {
       e.preventDefault();
       e.stopPropagation();
 
-      const mouseX = Math.min(e.clientX, window.innerWidth - 440);
-      const mouseY = Math.min(e.clientY, window.innerHeight - 400);
+      const mouseX = Math.min(e.clientX, window.innerWidth - 480);
+      const mouseY = Math.min(e.clientY, window.innerHeight - 480);
 
-      const computedStyle = window.getComputedStyle(logoElem);
-      const bg = computedStyle.backgroundColor || "#f59e0b";
-      const isImg = logoElem.tagName === "IMG";
-
-      setLogoPopup({
+      setImagePopup({
         x: Math.max(10, mouseX),
         y: Math.max(10, mouseY),
         sectionIndex,
-        targetElement: logoElem,
-        logoText: logoElem.innerText || "AU",
-        bgColor: bg,
-        imageUrl: isImg ? (logoElem as HTMLImageElement).src : "",
+        targetElement: currElem,
+        targetType,
+        logoText: logoText || "AU",
+        bgColor,
+        imageUrl: imageUrl || "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80",
+        linkUrl: linkUrl || "/home",
+        applyAllLogos: targetType === "logo",
+        applyAllBackgrounds: targetType === "background",
+        activeTab: targetType === "logo" ? "logo" : targetType === "background" ? "background" : "image",
+        objectFit,
+        borderRadius,
       });
       return;
     }
@@ -1208,7 +1410,7 @@ export function EditorStudio({
       if (target.tagName === "A" || target.tagName === "BUTTON" || target.getAttribute("href")) {
         linkElem = target;
       } else {
-        return; // Standard element, don't hijack context menu
+        return;
       }
     }
 
@@ -1233,56 +1435,9 @@ export function EditorStudio({
     });
   };
 
-  // Save updated Logo (Text, Badge Color, or Image URL)
   const handleSaveLogo = (newText: string, newBgColor: string, newImageUrl: string) => {
-    if (!logoPopup) return;
-
-    const { sectionIndex, targetElement } = logoPopup;
-
-    if (newImageUrl.trim()) {
-      if (targetElement.tagName === "IMG") {
-        (targetElement as HTMLImageElement).src = newImageUrl.trim();
-      } else {
-        targetElement.innerHTML = `<img src="${newImageUrl.trim()}" alt="Logo" style="height: 36px; object-fit: contain; border-radius: 8px;" />`;
-      }
-    } else {
-      if (targetElement.tagName === "IMG") {
-        const parent = targetElement.parentElement;
-        if (parent) {
-          parent.innerHTML = `<span style="font-size: 16px; font-weight: 900; color: #ffffff;">${newText}</span>`;
-        }
-      } else {
-        targetElement.innerText = newText;
-        if (newBgColor) {
-          targetElement.style.backgroundColor = newBgColor;
-        }
-      }
-    }
-
-    // Extract section wrapper element to save updated HTML
-    const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
-    if (container) {
-      const clone = container.cloneNode(true) as HTMLElement;
-      const badges = clone.querySelectorAll('.pointer-events-none');
-      badges.forEach((b) => b.remove());
-
-      const editables = clone.querySelectorAll('[contenteditable]');
-      editables.forEach((el) => {
-        el.removeAttribute('contenteditable');
-        (el as HTMLElement).style.outline = '';
-        (el as HTMLElement).style.outlineOffset = '';
-        (el as HTMLElement).style.borderRadius = '';
-      });
-
-      const newCode = clone.innerHTML;
-      if (newCode) {
-        setSections((prev) =>
-          prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
-        );
-      }
-    }
-
-    setLogoPopup(null);
+    handleUpdateAndSaveImage({ logoText: newText, bgColor: newBgColor, imageUrl: newImageUrl });
+    setImagePopup(null);
   };
 
   // Save updated URL & target attributes on button element
@@ -1997,8 +2152,8 @@ export function EditorStudio({
         </div>
       )}
 
-      {/* 🎨 Right-Click Logo & Branding Customizer Modal */}
-      {logoPopup && (
+      {/* 🎨 Right-Click Image, Logo & Section Background Customizer Modal */}
+      {imagePopup && (
         <div
           style={{
             position: "fixed",
@@ -2007,177 +2162,510 @@ export function EditorStudio({
             right: 0,
             bottom: 0,
             zIndex: 999999,
-            backgroundColor: "rgba(0, 0, 0, 0.75)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
+            backgroundColor: "rgba(3, 7, 18, 0.82)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "20px",
           }}
-          onClick={() => setLogoPopup(null)}
+          onClick={() => setImagePopup(null)}
         >
           <div
             style={{
               width: "100%",
-              maxWidth: "440px",
+              maxWidth: "520px",
               backgroundColor: "#0d1527",
               border: "1px solid #334155",
-              borderRadius: "24px",
+              borderRadius: "28px",
               padding: "28px",
-              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.8)",
+              boxShadow: "0 30px 80px -20px rgba(0, 0, 0, 0.9)",
               display: "flex",
               flexDirection: "column",
               gap: "20px",
               color: "#ffffff",
-              fontFamily: "system-ui, sans-serif",
+              fontFamily: "system-ui, -apple-system, sans-serif",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "36px", height: "36px", borderRadius: "10px", backgroundColor: "#f59e0b", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "14px" }}>
-                  🎨
+            {/* Header with Target Badge & Nav to Logo Action */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", borderBottom: "1px solid #1e293b", paddingBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "42px", height: "42px", borderRadius: "14px", backgroundColor: "#2563eb", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "18px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}>
+                  {imagePopup.targetType === "logo" ? "🏷️" : imagePopup.targetType === "background" ? "🎨" : "🖼️"}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>Edit Logo & Branding</h3>
-                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "2px 0 0 0" }}>Customize logo initials, badge color or logo image</p>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <h3 style={{ fontSize: "17px", fontWeight: 900, margin: 0, color: "#ffffff" }}>
+                      {imagePopup.targetType === "logo" ? "Edit Logo & Branding" : imagePopup.targetType === "background" ? "Edit Section Background" : "Edit Image & Media"}
+                    </h3>
+                    <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "9999px", backgroundColor: imagePopup.targetType === "logo" ? "#1e3a8a" : "#1e293b", color: imagePopup.targetType === "logo" ? "#60a5fa" : "#38bdf8", border: "1px solid #334155", textTransform: "uppercase" }}>
+                      {imagePopup.targetType}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "3px 0 0 0" }}>
+                    Changes apply immediately & auto-save automatically ⚡
+                  </p>
                 </div>
               </div>
               <button
-                onClick={() => setLogoPopup(null)}
-                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "18px" }}
+                onClick={() => setImagePopup(null)}
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #334155", borderRadius: "10px", width: "32px", height: "32px", color: "#94a3b8", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
                 ✕
               </button>
             </div>
 
-            {/* Inputs */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {/* File Upload Option */}
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Upload Logo File from Device
-                </label>
-                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
-                  <span>📁 Select Logo Image File</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          if (typeof ev.target?.result === "string") {
-                            setLogoPopup({ ...logoPopup, imageUrl: ev.target.result });
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-
-              {/* Preset Emblem Logos */}
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Or Choose Preset Emblem Logo
-                </label>
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  {[
-                    { label: "University Crest", url: "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" },
-                    { label: "Campus Shield", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=120&auto=format&fit=crop&q=80" },
-                    { label: "Tech Seal", url: "https://images.unsplash.com/photo-1562774053-701939374585?w=120&auto=format&fit=crop&q=80" },
-                  ].map((preset) => (
-                    <button
-                      key={preset.url}
-                      onClick={() => setLogoPopup({ ...logoPopup, imageUrl: preset.url })}
-                      style={{
-                        padding: "6px 12px",
-                        borderRadius: "8px",
-                        backgroundColor: logoPopup.imageUrl === preset.url ? "#2563eb" : "#1e293b",
-                        color: logoPopup.imageUrl === preset.url ? "#ffffff" : "#cbd5e1",
-                        border: "1px solid #334155",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Image URL */}
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Custom Logo Image URL
-                </label>
-                <input
-                  type="text"
-                  value={logoPopup.imageUrl}
-                  onChange={(e) => setLogoPopup({ ...logoPopup, imageUrl: e.target.value })}
-                  placeholder="https://yourcollege.edu.in/logo.png"
-                  style={{ width: "100%", height: "44px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
-
-              {/* Text / Badge Initials */}
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Logo Text / Badge Initials (Fallback)
-                </label>
-                <input
-                  type="text"
-                  value={logoPopup.logoText}
-                  onChange={(e) => setLogoPopup({ ...logoPopup, logoText: e.target.value })}
-                  placeholder="e.g. AU or 🎓"
-                  style={{ width: "100%", height: "44px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "14px", fontWeight: "bold", outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
-
-              {/* Badge Colors */}
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  Badge Accent Color
-                </label>
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-                  {["#f59e0b", "#2563eb", "#10b981", "#ef4444", "#8b5cf6", "#0f172a", "#d97706", "#64748b"].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setLogoPopup({ ...logoPopup, bgColor: color })}
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "8px",
-                        backgroundColor: color,
-                        border: logoPopup.bgColor === color ? "3px solid #ffffff" : "1px solid rgba(255,255,255,0.2)",
-                        cursor: "pointer",
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
+            {/* Quick Action Navigation Bar ("NAV TO THE LOGOS") */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "14px", border: "1px solid #1e293b" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
+                🎯 Target Navigation:
+              </span>
+              <button
+                onClick={handleJumpToNavbarLogo}
+                style={{ backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "10px", padding: "6px 14px", fontSize: "11px", fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", boxShadow: "0 4px 12px rgba(37,99,235,0.3)" }}
+              >
+                🚀 Jump / Nav to Navbar Logo
+              </button>
             </div>
 
-            {/* Actions */}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b" }}>
+            {/* Tab Switching Navigation Bar */}
+            <div style={{ display: "flex", gap: "6px", backgroundColor: "#161e31", padding: "4px", borderRadius: "14px", border: "1px solid #1e293b" }}>
+              {[
+                { id: "logo", label: "🏷️ Logo" },
+                { id: "background", label: "🎨 Background" },
+                { id: "image", label: "🖼️ Image" },
+                { id: "style", label: "⚙️ Styling" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleUpdateAndSaveImage({ activeTab: tab.id as any })}
+                  style={{
+                    flex: 1,
+                    padding: "8px 10px",
+                    borderRadius: "10px",
+                    border: "none",
+                    backgroundColor: imagePopup.activeTab === tab.id ? "#2563eb" : "transparent",
+                    color: imagePopup.activeTab === tab.id ? "#ffffff" : "#94a3b8",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Modal Body Contents based on Active Tab */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              
+              {/* Tab 1: Logo & Header Customization */}
+              {imagePopup.activeTab === "logo" && (
+                <>
+                  {/* File Upload for Logo */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Upload Logo File from Device
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
+                      <span>📁 Select Logo Image File</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              if (typeof ev.target?.result === "string") {
+                                handleUpdateAndSaveImage({ imageUrl: ev.target.result });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Preset Emblem Logos */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Choose Emblem Logo Presets
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                      {[
+                        { label: "University Crest", url: "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" },
+                        { label: "Campus Shield", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=120&auto=format&fit=crop&q=80" },
+                        { label: "Tech Seal", url: "https://images.unsplash.com/photo-1562774053-701939374585?w=120&auto=format&fit=crop&q=80" },
+                        { label: "Gold Emblem", url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=120&auto=format&fit=crop&q=80" },
+                        { label: "Minimalist Crest", url: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=120&auto=format&fit=crop&q=80" },
+                        { label: "Academy Badge", url: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=120&auto=format&fit=crop&q=80" },
+                      ].map((preset) => (
+                        <button
+                          key={preset.url}
+                          onClick={() => handleUpdateAndSaveImage({ imageUrl: preset.url })}
+                          style={{
+                            padding: "8px",
+                            borderRadius: "10px",
+                            backgroundColor: imagePopup.imageUrl === preset.url ? "#2563eb" : "#1e293b",
+                            color: imagePopup.imageUrl === preset.url ? "#ffffff" : "#cbd5e1",
+                            border: "1px solid #334155",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            textAlign: "center",
+                          }}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Logo Image URL */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Logo Image URL
+                    </label>
+                    <input
+                      type="text"
+                      value={imagePopup.imageUrl}
+                      onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
+                      placeholder="https://yourcollege.edu.in/logo.png"
+                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  {/* Logo Text Initials / Fallback */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Logo Initials / Text Badge
+                    </label>
+                    <input
+                      type="text"
+                      value={imagePopup.logoText}
+                      onChange={(e) => handleUpdateAndSaveImage({ logoText: e.target.value })}
+                      placeholder="e.g. AU or 🎓"
+                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "14px", fontWeight: "bold", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  {/* Badge Accent Color */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Badge Accent Color
+                    </label>
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                      {["#2563eb", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#0f172a", "#d97706", "#64748b"].map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => handleUpdateAndSaveImage({ bgColor: color })}
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "8px",
+                            backgroundColor: color,
+                            border: imagePopup.bgColor === color ? "3px solid #ffffff" : "1px solid rgba(255,255,255,0.2)",
+                            cursor: "pointer",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Logo Click Destination / Link URL */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Logo Navigation Destination (URL / Link)
+                    </label>
+                    <input
+                      type="text"
+                      value={imagePopup.linkUrl}
+                      onChange={(e) => handleUpdateAndSaveImage({ linkUrl: e.target.value })}
+                      placeholder="/home or https://yourcollege.edu.in"
+                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  {/* Sync Logo Across All Headers */}
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "12px", border: "1px solid #1e293b", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={imagePopup.applyAllLogos}
+                      onChange={(e) => handleUpdateAndSaveImage({ applyAllLogos: e.target.checked })}
+                      style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
+                      ⚡ Apply logo change to ALL header navbars across site
+                    </span>
+                  </label>
+                </>
+              )}
+
+              {/* Tab 2: Section Background Image Customization */}
+              {imagePopup.activeTab === "background" && (
+                <>
+                  {/* File Upload for Background */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Upload Section Background Image
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer" }}>
+                      <span>📁 Select Background File</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              if (typeof ev.target?.result === "string") {
+                                handleUpdateAndSaveImage({ imageUrl: ev.target.result });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Preset Background Images */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Select Preset Background Images
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
+                      {[
+                        { label: "Modern Tech Campus", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop&q=80" },
+                        { label: "Dark Grid Wave", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80" },
+                        { label: "Academic Library", url: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&auto=format&fit=crop&q=80" },
+                        { label: "Innovation Lab", url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80" },
+                      ].map((bg) => (
+                        <button
+                          key={bg.url}
+                          onClick={() => handleUpdateAndSaveImage({ imageUrl: bg.url })}
+                          style={{
+                            height: "60px",
+                            borderRadius: "12px",
+                            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url("${bg.url}")`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            border: imagePopup.imageUrl === bg.url ? "2px solid #2563eb" : "1px solid #334155",
+                            color: "#ffffff",
+                            fontSize: "11px",
+                            fontWeight: 900,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "flex-end",
+                            padding: "8px",
+                          }}
+                        >
+                          {bg.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Custom Background URL */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Background Image URL
+                    </label>
+                    <input
+                      type="text"
+                      value={imagePopup.imageUrl}
+                      onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
+                      placeholder="https://images.unsplash.com/your-bg.jpg"
+                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  {/* Sync Background Across All Sections */}
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "12px", border: "1px solid #1e293b", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={imagePopup.applyAllBackgrounds}
+                      onChange={(e) => handleUpdateAndSaveImage({ applyAllBackgrounds: e.target.checked })}
+                      style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
+                      Apply background image to ALL sections on this page
+                    </span>
+                  </label>
+                </>
+              )}
+
+              {/* Tab 3: Standard Image & Photo Customization */}
+              {imagePopup.activeTab === "image" && (
+                <>
+                  {/* File Upload from Device */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Upload Image File from Local Computer
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer" }}>
+                      <span>📁 Select Local Image File</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              if (typeof ev.target?.result === "string") {
+                                handleUpdateAndSaveImage({ imageUrl: ev.target.result });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Photo Gallery Presets */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Campus & Stock Image Gallery
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
+                      {[
+                        { label: "Graduation Cap", url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&auto=format&fit=crop&q=80" },
+                        { label: "Campus Hall", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400&auto=format&fit=crop&q=80" },
+                        { label: "Robotics Lab", url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&auto=format&fit=crop&q=80" },
+                        { label: "Student Avatar 1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" },
+                        { label: "Student Avatar 2", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80" },
+                        { label: "Auditorium", url: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400&auto=format&fit=crop&q=80" },
+                      ].map((img) => (
+                        <button
+                          key={img.url}
+                          onClick={() => handleUpdateAndSaveImage({ imageUrl: img.url })}
+                          style={{
+                            padding: "6px",
+                            borderRadius: "10px",
+                            backgroundColor: imagePopup.imageUrl === img.url ? "#2563eb" : "#1e293b",
+                            color: "#ffffff",
+                            border: "1px solid #334155",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            textAlign: "center",
+                          }}
+                        >
+                          {img.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Image URL Input */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Image URL
+                    </label>
+                    <input
+                      type="text"
+                      value={imagePopup.imageUrl}
+                      onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
+                      placeholder="https://images.unsplash.com/photo-xyz.jpg"
+                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Tab 4: Image Styling & Object Fit Controls */}
+              {imagePopup.activeTab === "style" && (
+                <>
+                  {/* Object Fit Options */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Object Fit Mode
+                    </label>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      {[
+                        { id: "cover", label: "Cover (Fill)" },
+                        { id: "contain", label: "Contain (Fit)" },
+                        { id: "fill", label: "Stretch Fill" },
+                      ].map((fit) => (
+                        <button
+                          key={fit.id}
+                          onClick={() => handleUpdateAndSaveImage({ objectFit: fit.id as any })}
+                          style={{
+                            flex: 1,
+                            padding: "8px",
+                            borderRadius: "10px",
+                            backgroundColor: imagePopup.objectFit === fit.id ? "#2563eb" : "#1e293b",
+                            color: imagePopup.objectFit === fit.id ? "#ffffff" : "#cbd5e1",
+                            border: "1px solid #334155",
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                          }}
+                        >
+                          {fit.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Border Radius Options */}
+                  <div>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                      Border Radius / Rounded Corners
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+                      {[
+                        { val: "0px", label: "Square (0px)" },
+                        { val: "8px", label: "Rounded (8px)" },
+                        { val: "16px", label: "Curved (16px)" },
+                        { val: "9999px", label: "Circle / Pill" },
+                      ].map((r) => (
+                        <button
+                          key={r.val}
+                          onClick={() => handleUpdateAndSaveImage({ borderRadius: r.val })}
+                          style={{
+                            padding: "8px 4px",
+                            borderRadius: "10px",
+                            backgroundColor: imagePopup.borderRadius === r.val ? "#2563eb" : "#1e293b",
+                            color: imagePopup.borderRadius === r.val ? "#ffffff" : "#cbd5e1",
+                            border: "1px solid #334155",
+                            fontSize: "11px",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            textAlign: "center",
+                          }}
+                        >
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+            </div>
+
+            {/* Footer Action Buttons */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "16px", borderTop: "1px solid #1e293b" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#4ade80", display: "flex", alignItems: "center", gap: "6px" }}>
+                ✓ Auto-Saved & Live Updated ⚡
+              </span>
               <button
-                onClick={() => setLogoPopup(null)}
-                style={{ height: "40px", padding: "0 18px", borderRadius: "10px", border: "none", background: "transparent", color: "#94a3b8", fontWeight: 800, cursor: "pointer" }}
+                onClick={() => setImagePopup(null)}
+                style={{ height: "42px", padding: "0 24px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleSaveLogo(logoPopup.logoText, logoPopup.bgColor, logoPopup.imageUrl)}
-                style={{ height: "40px", padding: "0 22px", borderRadius: "10px", backgroundColor: "#2563eb", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}
-              >
-                Save Logo Changes 🎨
+                Close Modal ✕
               </button>
             </div>
           </div>
