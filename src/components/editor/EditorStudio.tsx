@@ -2152,7 +2152,7 @@ export function EditorStudio({
         </div>
       )}
 
-      {/* 🎨 Right-Click Image, Logo & Section Background Customizer Modal */}
+      {/* 🎨 Streamlined Auto Right-Click Context-Aware Customizer Modal */}
       {imagePopup && (
         <div
           style={{
@@ -2175,36 +2175,36 @@ export function EditorStudio({
           <div
             style={{
               width: "100%",
-              maxWidth: "520px",
+              maxWidth: "460px",
               backgroundColor: "#0d1527",
               border: "1px solid #334155",
-              borderRadius: "28px",
-              padding: "28px",
+              borderRadius: "26px",
+              padding: "24px",
               boxShadow: "0 30px 80px -20px rgba(0, 0, 0, 0.9)",
               display: "flex",
               flexDirection: "column",
-              gap: "20px",
+              gap: "18px",
               color: "#ffffff",
               fontFamily: "system-ui, -apple-system, sans-serif",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header with Target Badge & Nav to Logo Action */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", borderBottom: "1px solid #1e293b", paddingBottom: "16px" }}>
+            {/* Context-Aware Modal Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", borderBottom: "1px solid #1e293b", paddingBottom: "14px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "42px", height: "42px", borderRadius: "14px", backgroundColor: "#2563eb", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "18px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}>
+                <div style={{ width: "40px", height: "40px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "18px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}>
                   {imagePopup.targetType === "logo" ? "🏷️" : imagePopup.targetType === "background" ? "🎨" : "🖼️"}
                 </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <h3 style={{ fontSize: "17px", fontWeight: 900, margin: 0, color: "#ffffff" }}>
-                      {imagePopup.targetType === "logo" ? "Edit Logo & Branding" : imagePopup.targetType === "background" ? "Edit Section Background" : "Edit Image & Media"}
+                    <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>
+                      {imagePopup.targetType === "logo" ? "Edit Logo & Branding" : imagePopup.targetType === "background" ? "Edit Section Background" : "Edit Image"}
                     </h3>
                     <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "9999px", backgroundColor: imagePopup.targetType === "logo" ? "#1e3a8a" : "#1e293b", color: imagePopup.targetType === "logo" ? "#60a5fa" : "#38bdf8", border: "1px solid #334155", textTransform: "uppercase" }}>
-                      {imagePopup.targetType}
+                      AUTO-{imagePopup.targetType}
                     </span>
                   </div>
-                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "3px 0 0 0" }}>
+                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "2px 0 0 0" }}>
                     Changes apply immediately & auto-save automatically ⚡
                   </p>
                 </div>
@@ -2217,7 +2217,7 @@ export function EditorStudio({
               </button>
             </div>
 
-            {/* Quick Action Navigation Bar ("NAV TO THE LOGOS") */}
+            {/* Target Navigation Bar ("NAV TO THE LOGOS") */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "14px", border: "1px solid #1e293b" }}>
               <span style={{ fontSize: "12px", fontWeight: 800, color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
                 🎯 Target Navigation:
@@ -2230,155 +2230,53 @@ export function EditorStudio({
               </button>
             </div>
 
-            {/* Tab Switching Navigation Bar */}
-            <div style={{ display: "flex", gap: "6px", backgroundColor: "#161e31", padding: "4px", borderRadius: "14px", border: "1px solid #1e293b" }}>
-              {[
-                { id: "logo", label: "🏷️ Logo" },
-                { id: "background", label: "🎨 Background" },
-                { id: "image", label: "🖼️ Image" },
-                { id: "style", label: "⚙️ Styling" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => handleUpdateAndSaveImage({ activeTab: tab.id as any })}
-                  style={{
-                    flex: 1,
-                    padding: "8px 10px",
-                    borderRadius: "10px",
-                    border: "none",
-                    backgroundColor: imagePopup.activeTab === tab.id ? "#2563eb" : "transparent",
-                    color: imagePopup.activeTab === tab.id ? "#ffffff" : "#94a3b8",
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Modal Body Contents based on Active Tab */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* Streamlined Direct Inputs Body */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               
-              {/* Tab 1: Logo & Header Customization */}
-              {imagePopup.activeTab === "logo" && (
-                <>
-                  {/* File Upload for Logo */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Upload Logo File from Device
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
-                      <span>📁 Select Logo Image File</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              if (typeof ev.target?.result === "string") {
-                                handleUpdateAndSaveImage({ imageUrl: ev.target.result });
-                              }
-                            };
-                            reader.readAsDataURL(file);
+              {/* 1. File Upload from Device */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  {imagePopup.targetType === "logo" ? "Upload Logo Image File" : imagePopup.targetType === "background" ? "Upload Background Image File" : "Upload Image File from Device"}
+                </label>
+                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "44px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "12px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
+                  <span>📁 Select Image File from Device</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          if (typeof ev.target?.result === "string") {
+                            handleUpdateAndSaveImage({ imageUrl: ev.target.result });
                           }
-                        }}
-                      />
-                    </label>
-                  </div>
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
 
-                  {/* Preset Emblem Logos */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Choose Emblem Logo Presets
-                    </label>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                      {[
-                        { label: "University Crest", url: "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" },
-                        { label: "Campus Shield", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=120&auto=format&fit=crop&q=80" },
-                        { label: "Tech Seal", url: "https://images.unsplash.com/photo-1562774053-701939374585?w=120&auto=format&fit=crop&q=80" },
-                        { label: "Gold Emblem", url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=120&auto=format&fit=crop&q=80" },
-                        { label: "Minimalist Crest", url: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=120&auto=format&fit=crop&q=80" },
-                        { label: "Academy Badge", url: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=120&auto=format&fit=crop&q=80" },
-                      ].map((preset) => (
-                        <button
-                          key={preset.url}
-                          onClick={() => handleUpdateAndSaveImage({ imageUrl: preset.url })}
-                          style={{
-                            padding: "8px",
-                            borderRadius: "10px",
-                            backgroundColor: imagePopup.imageUrl === preset.url ? "#2563eb" : "#1e293b",
-                            color: imagePopup.imageUrl === preset.url ? "#ffffff" : "#cbd5e1",
-                            border: "1px solid #334155",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            textAlign: "center",
-                          }}
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {/* 2. Custom Image / Background / Logo URL Input */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  {imagePopup.targetType === "logo" ? "Logo Image URL" : imagePopup.targetType === "background" ? "Background Image URL" : "Image URL"}
+                </label>
+                <input
+                  type="text"
+                  value={imagePopup.imageUrl}
+                  onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
+                  placeholder="https://images.unsplash.com/your-image.jpg"
+                  style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
 
-                  {/* Logo Image URL */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Logo Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={imagePopup.imageUrl}
-                      onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
-                      placeholder="https://yourcollege.edu.in/logo.png"
-                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-
-                  {/* Logo Text Initials / Fallback */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Logo Initials / Text Badge
-                    </label>
-                    <input
-                      type="text"
-                      value={imagePopup.logoText}
-                      onChange={(e) => handleUpdateAndSaveImage({ logoText: e.target.value })}
-                      placeholder="e.g. AU or 🎓"
-                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "14px", fontWeight: "bold", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-
-                  {/* Badge Accent Color */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Badge Accent Color
-                    </label>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
-                      {["#2563eb", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#0f172a", "#d97706", "#64748b"].map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => handleUpdateAndSaveImage({ bgColor: color })}
-                          style={{
-                            width: "32px",
-                            height: "32px",
-                            borderRadius: "8px",
-                            backgroundColor: color,
-                            border: imagePopup.bgColor === color ? "3px solid #ffffff" : "1px solid rgba(255,255,255,0.2)",
-                            cursor: "pointer",
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Logo Click Destination / Link URL */}
+              {/* 3. Logo Specific Destination Link & Sync Toggle */}
+              {imagePopup.targetType === "logo" && (
+                <>
                   <div>
                     <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                       Logo Navigation Destination (URL / Link)
@@ -2392,7 +2290,6 @@ export function EditorStudio({
                     />
                   </div>
 
-                  {/* Sync Logo Across All Headers */}
                   <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "12px", border: "1px solid #1e293b", cursor: "pointer" }}>
                     <input
                       type="checkbox"
@@ -2407,263 +2304,31 @@ export function EditorStudio({
                 </>
               )}
 
-              {/* Tab 2: Section Background Image Customization */}
-              {imagePopup.activeTab === "background" && (
-                <>
-                  {/* File Upload for Background */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Upload Section Background Image
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer" }}>
-                      <span>📁 Select Background File</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              if (typeof ev.target?.result === "string") {
-                                handleUpdateAndSaveImage({ imageUrl: ev.target.result });
-                              }
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  {/* Preset Background Images */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Select Preset Background Images
-                    </label>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "10px" }}>
-                      {[
-                        { label: "Modern Tech Campus", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop&q=80" },
-                        { label: "Dark Grid Wave", url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80" },
-                        { label: "Academic Library", url: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&auto=format&fit=crop&q=80" },
-                        { label: "Innovation Lab", url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80" },
-                      ].map((bg) => (
-                        <button
-                          key={bg.url}
-                          onClick={() => handleUpdateAndSaveImage({ imageUrl: bg.url })}
-                          style={{
-                            height: "60px",
-                            borderRadius: "12px",
-                            backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url("${bg.url}")`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                            border: imagePopup.imageUrl === bg.url ? "2px solid #2563eb" : "1px solid #334155",
-                            color: "#ffffff",
-                            fontSize: "11px",
-                            fontWeight: 900,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "flex-end",
-                            padding: "8px",
-                          }}
-                        >
-                          {bg.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Custom Background URL */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Background Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={imagePopup.imageUrl}
-                      onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
-                      placeholder="https://images.unsplash.com/your-bg.jpg"
-                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-
-                  {/* Sync Background Across All Sections */}
-                  <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "12px", border: "1px solid #1e293b", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={imagePopup.applyAllBackgrounds}
-                      onChange={(e) => handleUpdateAndSaveImage({ applyAllBackgrounds: e.target.checked })}
-                      style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
-                    />
-                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
-                      Apply background image to ALL sections on this page
-                    </span>
-                  </label>
-                </>
-              )}
-
-              {/* Tab 3: Standard Image & Photo Customization */}
-              {imagePopup.activeTab === "image" && (
-                <>
-                  {/* File Upload from Device */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Upload Image File from Local Computer
-                    </label>
-                    <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "46px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "14px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer" }}>
-                      <span>📁 Select Local Image File</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              if (typeof ev.target?.result === "string") {
-                                handleUpdateAndSaveImage({ imageUrl: ev.target.result });
-                              }
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  {/* Photo Gallery Presets */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Campus & Stock Image Gallery
-                    </label>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px" }}>
-                      {[
-                        { label: "Graduation Cap", url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&auto=format&fit=crop&q=80" },
-                        { label: "Campus Hall", url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=400&auto=format&fit=crop&q=80" },
-                        { label: "Robotics Lab", url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&auto=format&fit=crop&q=80" },
-                        { label: "Student Avatar 1", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" },
-                        { label: "Student Avatar 2", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80" },
-                        { label: "Auditorium", url: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=400&auto=format&fit=crop&q=80" },
-                      ].map((img) => (
-                        <button
-                          key={img.url}
-                          onClick={() => handleUpdateAndSaveImage({ imageUrl: img.url })}
-                          style={{
-                            padding: "6px",
-                            borderRadius: "10px",
-                            backgroundColor: imagePopup.imageUrl === img.url ? "#2563eb" : "#1e293b",
-                            color: "#ffffff",
-                            border: "1px solid #334155",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            textAlign: "center",
-                          }}
-                        >
-                          {img.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Image URL Input */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={imagePopup.imageUrl}
-                      onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
-                      placeholder="https://images.unsplash.com/photo-xyz.jpg"
-                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Tab 4: Image Styling & Object Fit Controls */}
-              {imagePopup.activeTab === "style" && (
-                <>
-                  {/* Object Fit Options */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Object Fit Mode
-                    </label>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      {[
-                        { id: "cover", label: "Cover (Fill)" },
-                        { id: "contain", label: "Contain (Fit)" },
-                        { id: "fill", label: "Stretch Fill" },
-                      ].map((fit) => (
-                        <button
-                          key={fit.id}
-                          onClick={() => handleUpdateAndSaveImage({ objectFit: fit.id as any })}
-                          style={{
-                            flex: 1,
-                            padding: "8px",
-                            borderRadius: "10px",
-                            backgroundColor: imagePopup.objectFit === fit.id ? "#2563eb" : "#1e293b",
-                            color: imagePopup.objectFit === fit.id ? "#ffffff" : "#cbd5e1",
-                            border: "1px solid #334155",
-                            fontSize: "12px",
-                            fontWeight: 800,
-                            cursor: "pointer",
-                          }}
-                        >
-                          {fit.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Border Radius Options */}
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Border Radius / Rounded Corners
-                    </label>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
-                      {[
-                        { val: "0px", label: "Square (0px)" },
-                        { val: "8px", label: "Rounded (8px)" },
-                        { val: "16px", label: "Curved (16px)" },
-                        { val: "9999px", label: "Circle / Pill" },
-                      ].map((r) => (
-                        <button
-                          key={r.val}
-                          onClick={() => handleUpdateAndSaveImage({ borderRadius: r.val })}
-                          style={{
-                            padding: "8px 4px",
-                            borderRadius: "10px",
-                            backgroundColor: imagePopup.borderRadius === r.val ? "#2563eb" : "#1e293b",
-                            color: imagePopup.borderRadius === r.val ? "#ffffff" : "#cbd5e1",
-                            border: "1px solid #334155",
-                            fontSize: "11px",
-                            fontWeight: 800,
-                            cursor: "pointer",
-                            textAlign: "center",
-                          }}
-                        >
-                          {r.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
+              {/* 4. Section Background Specific Sync Toggle */}
+              {imagePopup.targetType === "background" && (
+                <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "12px", border: "1px solid #1e293b", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={imagePopup.applyAllBackgrounds}
+                    onChange={(e) => handleUpdateAndSaveImage({ applyAllBackgrounds: e.target.checked })}
+                    style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
+                  />
+                  <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
+                    Apply background image to ALL sections on this page
+                  </span>
+                </label>
               )}
 
             </div>
 
             {/* Footer Action Buttons */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "16px", borderTop: "1px solid #1e293b" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "14px", borderTop: "1px solid #1e293b" }}>
               <span style={{ fontSize: "12px", fontWeight: 800, color: "#4ade80", display: "flex", alignItems: "center", gap: "6px" }}>
                 ✓ Auto-Saved & Live Updated ⚡
               </span>
               <button
                 onClick={() => setImagePopup(null)}
-                style={{ height: "42px", padding: "0 24px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}
+                style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}
               >
                 Close Modal ✕
               </button>
