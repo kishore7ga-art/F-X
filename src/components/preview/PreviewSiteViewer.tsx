@@ -215,20 +215,21 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       .section-canvas-box {
         width: 100% !important;
         max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
         box-sizing: border-box !important;
         overflow-x: hidden !important;
         position: relative !important;
       }
       .section-canvas-box * {
         box-sizing: border-box !important;
-        max-width: 100% !important;
       }
       .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
         max-width: 100% !important;
         height: auto !important;
       }
-      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section, .section-canvas-box div {
-        max-width: 100% !important;
+      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section {
+        width: 100% !important;
         box-sizing: border-box !important;
       }
       .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
@@ -244,35 +245,37 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   return (
     <div className="min-h-screen w-full bg-slate-100 flex flex-col items-center justify-start font-sans overflow-x-hidden select-none relative">
       
-      {/* Minimal Floating Top Viewport Pill (Desktop / Mobile ONLY) */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-slate-950/90 backdrop-blur-xl border border-slate-800/80 p-1.5 rounded-full shadow-2xl flex items-center gap-1.5">
+      {/* Sleek Floating Bottom Device Switcher Pill - Live Site Preview (Matching Bottom Dock) */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a]/95 backdrop-blur-xl border border-slate-700/80 px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={() => setPreviewWidth("100%")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             previewWidth === "100%"
-              ? "bg-blue-600 text-white shadow-md"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+              ? "bg-white text-slate-900 shadow-md border border-slate-200"
+              : "text-slate-300 hover:text-white hover:bg-slate-800"
           }`}
+          title="Desktop Full Width (100%)"
         >
-          <Monitor className="w-3.5 h-3.5" />
-          <span>Desktop</span>
+          <Monitor className="w-4 h-4 text-slate-700" />
+          <span className="font-mono font-black text-xs">100%</span>
         </button>
+        <div className="h-4 w-px bg-slate-700" />
         <button
           onClick={() => setPreviewWidth("375px")}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center gap-2 p-2 rounded-xl transition-all cursor-pointer ${
             previewWidth === "375px"
-              ? "bg-blue-600 text-white shadow-md"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+              ? "bg-white text-slate-900 shadow-md border border-slate-200"
+              : "text-slate-300 hover:text-white hover:bg-slate-800"
           }`}
+          title="Mobile Smartphone Preview (375px)"
         >
-          <Smartphone className="w-3.5 h-3.5" />
-          <span>Mobile</span>
+          <Smartphone className="w-4 h-4 text-slate-700" />
         </button>
       </div>
 
       {/* Main Live Site Canvas View */}
       <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
-        previewWidth === "100%" ? "p-0 bg-white" : "py-16 px-4 bg-slate-100"
+        previewWidth === "100%" ? "p-0 bg-white" : "py-16 px-4 bg-slate-100 pb-28"
       }`}>
         <div
           className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
@@ -286,9 +289,11 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
             <div
               key={sec.id}
               dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
-              className="w-full overflow-hidden flex flex-col items-center justify-center text-center [&>*:first-child]:w-full [&>*:first-child]:mx-auto"
+              className="w-full overflow-hidden"
             />
           ))}
+          {/* Bottom Clearance Spacer for Floating Device Switcher Pill */}
+          <div className="w-full h-24 bg-transparent pointer-events-none" />
         </div>
       </main>
     </div>
