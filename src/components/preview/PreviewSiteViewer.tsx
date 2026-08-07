@@ -189,6 +189,58 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     );
   }
 
+  const cleanFullWebCodeForCanvas = (code: string, width: string): string => {
+    if (!code) return "";
+
+    let cleanCode = code;
+
+    const bodyMatch = code.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
+    if (bodyMatch && bodyMatch[1]) {
+      const headMatch = code.match(/<head[\s\S]*?>([\s\S]*?)<\/head>/i);
+      const styles = headMatch ? headMatch[1] : "";
+      cleanCode = `${styles}\n${bodyMatch[1]}`;
+    } else {
+      cleanCode = code
+        .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+        .replace(/<\/?html[\s\S]*?>/gi, "")
+        .replace(/<\/?head[\s\S]*?>/gi, "")
+        .replace(/<\/?body[\s\S]*?>/gi, "");
+    }
+
+    cleanCode = cleanCode
+      .replace(/position:\s*fixed/gi, "position: relative")
+      .replace(/position:\s*sticky/gi, "position: relative");
+
+    const containmentStyles = `<style>
+      .section-canvas-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        position: relative !important;
+      }
+      .section-canvas-box * {
+        box-sizing: border-box !important;
+        max-width: 100% !important;
+      }
+      .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
+        max-width: 100% !important;
+        height: auto !important;
+      }
+      .section-canvas-box header, .section-canvas-box nav, .section-canvas-box section, .section-canvas-box div {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
+      .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
+        position: relative !important;
+        top: auto !important;
+      }
+    </style>`;
+
+    return `${containmentStyles}<div class="section-canvas-box">${cleanCode}</div>`;
+  };
+
   return (
     <div className="min-h-screen w-full bg-slate-100 flex flex-col items-center justify-start font-sans overflow-x-hidden select-none relative">
       
@@ -233,8 +285,8 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           {sections.map((sec) => (
             <div
               key={sec.id}
-              dangerouslySetInnerHTML={{ __html: sec.code }}
-              className="w-full overflow-hidden"
+              dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
+              className="w-full overflow-hidden flex flex-col items-center justify-center text-center [&>*:first-child]:w-full [&>*:first-child]:mx-auto"
             />
           ))}
         </div>
