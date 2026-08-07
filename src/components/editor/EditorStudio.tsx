@@ -652,6 +652,7 @@ export function EditorStudio({
         if (typeof window !== "undefined") {
           try {
             localStorage.setItem("xite_saved_pages", JSON.stringify(updated));
+            localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(sections));
           } catch {}
         }
         return updated;

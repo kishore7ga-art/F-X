@@ -114,6 +114,36 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
   useEffect(() => {
     let cancelled = false;
+
+    // 1. Load exact live sections edited in Editor Studio from localStorage
+    if (typeof window !== "undefined") {
+      try {
+        const savedActive = localStorage.getItem(`xite_active_sections_${subdomain}`);
+        if (savedActive && savedActive !== "undefined" && savedActive !== "null") {
+          const parsed = JSON.parse(savedActive);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSections(parsed);
+            setLoading(false);
+            return;
+          }
+        }
+
+        const savedPages = localStorage.getItem("xite_saved_pages");
+        if (savedPages && savedPages !== "undefined" && savedPages !== "null") {
+          const parsedPages = JSON.parse(savedPages);
+          const homeSecs = parsedPages["/home"] || parsedPages["/"] || Object.values(parsedPages)[0];
+          if (Array.isArray(homeSecs) && homeSecs.length > 0) {
+            setSections(homeSecs);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not read localStorage sections for live preview:", err);
+      }
+    }
+
+    // 2. Fallback to backend API if localStorage is empty
     const fetchSiteSections = async () => {
       try {
         const hostname = typeof window !== "undefined" ? window.location.hostname : "";
