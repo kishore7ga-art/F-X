@@ -1295,95 +1295,102 @@ export function EditorStudio({
       {showAddSectionModal && (
         <div
           onClick={() => setShowAddSectionModal(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-white rounded-3xl p-6 shadow-2xl space-y-6 border border-slate-200 cursor-default"
+            className="w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-slate-200 cursor-default relative animate-in zoom-in-95 duration-200"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
               <div>
-                <h3 className="text-lg font-black text-slate-900">What section do you want to add?</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Select a category or specific Admin section variant.</p>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">What section do you want to add?</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Select a category or specific Admin section variant.</p>
               </div>
               <button
                 onClick={() => setShowAddSectionModal(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-sm cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Admin DB Section Variants List */}
-            {adminDbTemplates.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-[10px] font-black text-slate-400 tracking-wider uppercase">
-                  Admin DB Section Variants ({adminDbTemplates.length})
-                </h4>
-                <div className="grid gap-2 sm:grid-cols-2 max-h-[25vh] overflow-y-auto pr-1">
-                  {adminDbTemplates.map((tpl) => (
-                    <div
-                      key={tpl.id || tpl.name}
-                      onClick={() => {
-                        const newSection: SectionItem = {
-                          id: `sec-${Date.now()}`,
-                          title: tpl.name,
-                          code: tpl.code,
-                          variantIndex: 0,
-                        };
-                        setSections((prev) => [...prev, newSection]);
-                        setActiveSectionIndex(sections.length);
-                        setShowAddSectionModal(false);
-                      }}
-                      className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-100 transition-all cursor-pointer flex items-center justify-between shadow-sm select-none"
-                    >
-                      <div className="truncate pr-2">
-                        <h5 className="text-xs font-black text-slate-900 truncate">{tpl.name}</h5>
-                        <p className="text-[10px] text-emerald-700 font-mono">Live DB Template</p>
+            {/* Scrollable Modal Content Body */}
+            <div className="flex-1 overflow-y-auto pr-1.5 space-y-6 pt-4 pb-2">
+              {/* Admin DB Section Variants List */}
+              {adminDbTemplates.length > 0 && (
+                <div className="space-y-2.5">
+                  <h4 className="text-[10px] font-black text-slate-400 tracking-wider uppercase">
+                    Admin DB Section Variants ({adminDbTemplates.length})
+                  </h4>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    {adminDbTemplates.map((tpl) => (
+                      <div
+                        key={tpl.id || tpl.name}
+                        onClick={() => {
+                          const newSection: SectionItem = {
+                            id: `sec-${Date.now()}`,
+                            title: tpl.name,
+                            code: tpl.code,
+                            variantIndex: 0,
+                          };
+                          setSections((prev) => [...prev, newSection]);
+                          setActiveSectionIndex(sections.length);
+                          setShowAddSectionModal(false);
+                        }}
+                        className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-100/90 transition-all cursor-pointer flex items-center justify-between shadow-sm select-none"
+                      >
+                        <div className="truncate pr-2">
+                          <h5 className="text-xs font-black text-slate-900 truncate">{tpl.name}</h5>
+                          <p className="text-[10px] text-emerald-700 font-mono font-bold">Live DB Template</p>
+                        </div>
+                        <span className="text-[10px] font-black bg-emerald-600 text-white px-3 py-1 rounded-full shrink-0 shadow-sm">
+                          + Add
+                        </span>
                       </div>
-                      <span className="text-[10px] font-extrabold bg-emerald-600 text-white px-2.5 py-1 rounded-full shrink-0 shadow-sm">
-                        + Add
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Built-in Category Grid */}
+              <div className="space-y-2.5">
+                <h4 className="text-[10px] font-black text-slate-400 tracking-wider uppercase">
+                  All Built-in Categories (19)
+                </h4>
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  {SECTION_CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    const hasAdminTemplate = adminDbTemplates.some((tpl) => {
+                      const nameLower = (tpl.name || "").toLowerCase();
+                      return nameLower.includes(`[${cat.id}]`) || nameLower.includes(cat.id) || nameLower.includes(cat.name.toLowerCase());
+                    });
+
+                    return (
+                      <div
+                        key={cat.id}
+                        onClick={() => handleSelectSectionCategory(cat)}
+                        className="p-4 rounded-2xl bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 hover:border-blue-500 transition-all duration-200 cursor-pointer select-none shadow-sm hover:shadow-md flex items-start gap-3.5 group"
+                      >
+                        <div className="p-3 rounded-2xl bg-slate-900 text-white group-hover:bg-blue-600 transition-colors shadow-sm shrink-0">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-black text-slate-900 group-hover:text-blue-950 truncate">{cat.name}</h4>
+                            {hasAdminTemplate && (
+                              <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">{cat.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            )}
-
-            {/* Category Grid */}
-            <div className="grid gap-3 sm:grid-cols-2 max-h-[55vh] overflow-y-auto pr-1">
-              {SECTION_CATEGORIES.map((cat) => {
-                const Icon = cat.icon;
-                const hasAdminTemplate = adminDbTemplates.some((tpl) => {
-                  const nameLower = (tpl.name || "").toLowerCase();
-                  return nameLower.includes(`[${cat.id}]`) || nameLower.includes(cat.id) || nameLower.includes(cat.name.toLowerCase());
-                });
-
-                return (
-                  <div
-                    key={cat.id}
-                    onClick={() => handleSelectSectionCategory(cat)}
-                    className="p-4 rounded-2xl bg-slate-50 hover:bg-blue-50/70 border border-slate-200 hover:border-blue-500 transition-all cursor-pointer select-none shadow-sm hover:shadow-md group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="p-2.5 rounded-xl bg-slate-900 text-white group-hover:bg-blue-600 transition-colors">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="text-xs font-black text-slate-900 group-hover:text-blue-900 truncate">{cat.name}</h4>
-                          {hasAdminTemplate && (
-                            <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0">
-                              Admin Variant
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">{cat.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>
