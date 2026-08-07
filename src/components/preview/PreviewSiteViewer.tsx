@@ -259,57 +259,54 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
       
       {/* Sleek Floating Bottom Device Resolution Switcher Dock */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-[#0f172a]/95 backdrop-blur-2xl border border-slate-700/80 px-4 py-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur-2xl border border-slate-700/80 p-1.5 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-1.5 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={() => setPreviewWidth("100%")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "100%"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
+              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Full Page Resolution (100% Edge-to-Edge)"
         >
           <Monitor className="w-3.5 h-3.5" />
           <span>Full 100%</span>
         </button>
-        <div className="h-4 w-px bg-slate-700/80" />
         <button
           onClick={() => setPreviewWidth("1200px")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "1200px"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
+              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Desktop Resolution (1200px)"
         >
           <Monitor className="w-3.5 h-3.5" />
-          <span>Desktop (1200px)</span>
+          <span>Desktop</span>
         </button>
-        <div className="h-4 w-px bg-slate-700/80" />
         <button
           onClick={() => setPreviewWidth("768px")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "768px"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
+              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Tablet Resolution (768px)"
         >
           <Tablet className="w-3.5 h-3.5" />
-          <span>Tablet (768px)</span>
+          <span>Tablet</span>
         </button>
-        <div className="h-4 w-px bg-slate-700/80" />
         <button
           onClick={() => setPreviewWidth("375px")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             previewWidth === "375px"
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black"
-              : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+              ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-black border border-blue-400/30"
+              : "text-slate-300 hover:text-white hover:bg-slate-800/80"
           }`}
           title="Mobile Resolution (375px)"
         >
           <Smartphone className="w-3.5 h-3.5" />
-          <span>Mobile (375px)</span>
+          <span>Mobile</span>
         </button>
       </div>
 
