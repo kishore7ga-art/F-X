@@ -2224,9 +2224,28 @@ export function EditorStudio({
       }
     }
 
+    // Clean up repeating "Default" suffixes from current title
+    const cleanBaseTitle = (activeSec.title || "")
+      .replace(/(\s*Default)+$/gi, "")
+      .replace(/(\s*Variant\s*\d+)+$/gi, "")
+      .trim() || catId.toUpperCase();
+
     // 2. STRICT Category Filtering: Collect ONLY templates that belong to THIS SPECIFIC category (catId)
     const matchingTemplates: { name: string; code: string }[] = [];
 
+    // Helper to add unique non-duplicate template variant
+    const addMatchingTemplate = (tplName: string, tplCode: string) => {
+      const trimmedCode = tplCode.trim();
+      if (!trimmedCode) return;
+      if (!matchingTemplates.some((m) => m.code.trim() === trimmedCode)) {
+        matchingTemplates.push({
+          name: tplName.replace(/(\s*Default)+$/gi, "").trim(),
+          code: trimmedCode,
+        });
+      }
+    };
+
+    // Filter Admin DB templates
     templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
       const tplCatLower = (tpl.category || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
@@ -2239,6 +2258,8 @@ export function EditorStudio({
 
       if (catId === "vision") {
         isMatch = tplCatLower === "vision" || tplCatLower.includes("vision") || nameLower.includes("vision") || nameLower.includes("mission") || tplCodeLower.includes("vision & mission");
+      } else if (catId === "admissions" || catId === "admission") {
+        isMatch = tplCatLower.includes("admission") || nameLower.includes("admission") || tplCodeLower.includes("admission");
       } else if (catId === "hero") {
         isMatch = tplCatLower === "hero" || tplCatLower.includes("hero") || nameLower.includes("hero") || nameLower.includes("banner");
       } else if (catId === "navbar" || catId === "header") {
@@ -2247,25 +2268,35 @@ export function EditorStudio({
         isMatch = tplCatLower === catId || tplCatLower.includes(catId) || nameLower.includes(catId) || nameLower.includes(`[${catId}]`);
       }
 
-      if (isMatch && !matchingTemplates.some((m) => m.code.trim() === codeStr)) {
-        matchingTemplates.push({ name: tpl.name || tpl.title || `${catId.toUpperCase()} Variant`, code: codeStr });
+      if (isMatch) {
+        addMatchingTemplate(tpl.name || tpl.title || `${cleanBaseTitle} Variant`, codeStr);
       }
     });
 
-    // Add default template for this SPECIFIC category if available
+    // Add default template for this category
     const categoryDefaultCode = liveAdminTemplatesMap[catId] || ALL_19_SECTION_TEMPLATES[catId];
     if (categoryDefaultCode) {
-      const starterCode = categoryDefaultCode.trim();
-      if (!matchingTemplates.some((m) => m.code.trim() === starterCode)) {
-        matchingTemplates.push({ name: `${activeSec.title || catId.toUpperCase()} Default`, code: starterCode });
-      }
+      addMatchingTemplate(`${cleanBaseTitle} (Layout 1)`, categoryDefaultCode);
     }
 
-    if (matchingTemplates.length > 0) {
-      const currentIdx = matchingTemplates.findIndex(
-        (t) => t.name === activeSec.title || t.code.trim() === activeSec.code.trim()
+    // Add secondary preset variants for Admissions and Vision if present
+    if (catId === "admissions" || catId === "admission") {
+      addMatchingTemplate(
+        "Admission Section (3-Step Application Process)",
+        `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1050px; margin: 0 auto;"><div style="text-align: center; max-width: 700px; margin: 0 auto;"><span style="color: #60a5fa; font-size: 12px; font-weight: 900; text-transform: uppercase;">SIMPLE 3-STEP ADMISSION</span><h2 style="font-size: 36px; font-weight: 900; margin-top: 10px;">How To Apply For Admission</h2></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-top: 44px; text-align: center;"><div style="background: #1e293b; padding: 32px 24px; border-radius: 20px; border: 1px solid #334155;"><div style="width: 48px; height: 48px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; margin: 0 auto 16px auto;">1</div><h4 style="font-size: 18px; font-weight: 900; color: #ffffff;">Fill Application Online</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Register on our portal and upload your academic credentials & ID proof.</p></div><div style="background: #1e293b; padding: 32px 24px; border-radius: 20px; border: 1px solid #334155;"><div style="width: 48px; height: 48px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; margin: 0 auto 16px auto;">2</div><h4 style="font-size: 18px; font-weight: 900; color: #ffffff;">Entrance & Interview</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Appear for university entrance assessment or national rank verification.</p></div><div style="background: #1e293b; padding: 32px 24px; border-radius: 20px; border: 1px solid #334155;"><div style="width: 48px; height: 48px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; margin: 0 auto 16px auto;">3</div><h4 style="font-size: 18px; font-weight: 900; color: #ffffff;">Seat Allocation</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Receive offer letter, complete fee payment, and join orientation day.</p></div></div></div></section>`
       );
-      const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % matchingTemplates.length : (activeSec.variantIndex !== undefined ? (activeSec.variantIndex + 1) % matchingTemplates.length : 0);
+    } else if (catId === "vision") {
+      addMatchingTemplate(
+        "Vision & Mission (Dark Minimal Banner)",
+        `<section style="background: #0f172a; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto; text-align: center;"><span style="color: #38bdf8; font-size: 12px; font-weight: 900; text-transform: uppercase;">PURPOSE & PHILOSOPHY</span><h2 style="font-size: 38px; font-weight: 900; margin-top: 12px; color: #ffffff;">Our Guiding Principles</h2><p style="font-size: 16px; color: #cbd5e1; margin-top: 20px; line-height: 1.8;">"To inspire intellectual curiosity, drive technological innovation for social good, and cultivate resilient leaders equipped for the global economy."</p></div></section>`
+      );
+    }
+
+    if (matchingTemplates.length > 1) {
+      const currentIdx = matchingTemplates.findIndex(
+        (t) => t.code.trim() === activeSec.code.trim()
+      );
+      const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % matchingTemplates.length : 0;
       const nextTpl = matchingTemplates[nextIdx]!;
 
       setSectionsWithHistory((prev) =>
@@ -2273,7 +2304,7 @@ export function EditorStudio({
           if (idx !== activeSectionIndex) return sec;
           return {
             ...sec,
-            title: nextTpl.name,
+            title: cleanBaseTitle,
             code: nextTpl.code,
             category: catId,
             variantIndex: nextIdx,
@@ -2281,11 +2312,18 @@ export function EditorStudio({
         })
       );
 
-      showToastNotification(`Swapped ${activeSec.title} to Variant ${nextIdx + 1}`);
+      showToastNotification(`Swapped ${cleanBaseTitle} to Layout ${nextIdx + 1} of ${matchingTemplates.length}`);
       return;
     }
 
-    showToastNotification(`No additional variants found for category "${catId}"`);
+    // Clean up title if currently corrupted
+    if (activeSec.title !== cleanBaseTitle) {
+      setSectionsWithHistory((prev) =>
+        prev.map((sec, idx) => (idx === activeSectionIndex ? { ...sec, title: cleanBaseTitle } : sec))
+      );
+    }
+
+    showToastNotification(`Currently using primary layout for "${cleanBaseTitle}"`);
   };
 
   const handleDuplicateSection = () => {
