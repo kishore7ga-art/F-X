@@ -276,8 +276,15 @@ export function DomainSettingsModal({
                 <div key={item.id} style={{ position: "relative", display: "flex", alignItems: "center" }}>
                   <button
                     type="button"
-                    onClick={() => setActiveNav(item.id)}
-                    onMouseEnter={() => setHoveredNav(item.id)}
+                    onClick={() => {
+                      setActiveNav(item.id);
+                      setHoveredNav(item.id);
+                      setTimeout(() => setHoveredNav((prev) => (prev === item.id ? null : prev)), 500);
+                    }}
+                    onMouseEnter={() => {
+                      setHoveredNav(item.id);
+                      setTimeout(() => setHoveredNav((prev) => (prev === item.id ? null : prev)), 500);
+                    }}
                     onMouseLeave={() => setHoveredNav(null)}
                     style={{
                       width: "44px",
@@ -296,7 +303,7 @@ export function DomainSettingsModal({
                     <Icon style={{ width: "20px", height: "20px", strokeWidth: isActive ? 2.2 : 1.8 }} />
                   </button>
 
-                  {/* Dark Speech Bubble Tooltip with Left Arrow Caret */}
+                  {/* Dark Speech Bubble Tooltip with Left Arrow Caret (0.5s auto-hide) */}
                   {isHovered && (
                     <div
                       style={{
@@ -316,6 +323,7 @@ export function DomainSettingsModal({
                         pointerEvents: "none",
                         display: "flex",
                         alignItems: "center",
+                        animation: "fadeIn 0.15s ease",
                       }}
                     >
                       {/* Left Triangle Arrow Caret */}
@@ -342,7 +350,7 @@ export function DomainSettingsModal({
             {/* Horizontal Divider Line */}
             <div style={{ width: "32px", height: "1px", backgroundColor: "#E5E5E5", margin: "6px 0" }} />
 
-            {/* Subscriptions, Billing & Payment Methods (Exact Screenshot Icons & Speech Bubbles) */}
+            {/* Subscriptions, Billing & Payment Methods */}
             {[
               { id: "subscriptions", label: "Premium Subscriptions", icon: Crown },
               { id: "billing", label: "Billing History", icon: Receipt },
@@ -356,8 +364,15 @@ export function DomainSettingsModal({
                 <div key={item.id} style={{ position: "relative", display: "flex", alignItems: "center" }}>
                   <button
                     type="button"
-                    onClick={() => setActiveNav(item.id)}
-                    onMouseEnter={() => setHoveredNav(item.id)}
+                    onClick={() => {
+                      setActiveNav(item.id);
+                      setHoveredNav(item.id);
+                      setTimeout(() => setHoveredNav((prev) => (prev === item.id ? null : prev)), 500);
+                    }}
+                    onMouseEnter={() => {
+                      setHoveredNav(item.id);
+                      setTimeout(() => setHoveredNav((prev) => (prev === item.id ? null : prev)), 500);
+                    }}
                     onMouseLeave={() => setHoveredNav(null)}
                     style={{
                       width: "44px",
@@ -368,7 +383,7 @@ export function DomainSettingsModal({
                       justifyContent: "center",
                       border: "none",
                       backgroundColor: isActive ? "#F5F5F3" : "transparent",
-                      color: isActive ? "#171717" : "#171717",
+                      color: isActive ? "#171717" : "#737373",
                       cursor: "pointer",
                       transition: "all 150ms ease",
                     }}
@@ -376,8 +391,8 @@ export function DomainSettingsModal({
                     <Icon style={{ width: "20px", height: "20px", strokeWidth: isActive ? 2.2 : 1.8 }} />
                   </button>
 
-                  {/* Dark Speech Bubble Tooltip with Left Arrow Caret */}
-                  {(isHovered || isActive) && (
+                  {/* Dark Speech Bubble Tooltip with Left Arrow Caret (0.5s auto-hide) */}
+                  {isHovered && (
                     <div
                       style={{
                         position: "absolute",
@@ -396,6 +411,7 @@ export function DomainSettingsModal({
                         pointerEvents: "none",
                         display: "flex",
                         alignItems: "center",
+                        animation: "fadeIn 0.15s ease",
                       }}
                     >
                       {/* Left Triangle Arrow Caret */}
