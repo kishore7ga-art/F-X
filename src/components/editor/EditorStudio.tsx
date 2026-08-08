@@ -1059,26 +1059,50 @@ export function EditorStudio({
         .section-canvas-box header nav:not(.mobile-drawer-menu nav),
         .section-canvas-box header ul:not(.mobile-drawer-menu ul),
         .section-canvas-box header .desktop-nav-links,
-        .section-canvas-box header .desktop-apply-btn,
-        .section-canvas-box header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
-        .section-canvas-box header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
-        .section-canvas-box header div[class*="top"]:not(.mobile-drawer-menu),
-        .section-canvas-box header div[class*="utility"]:not(.mobile-drawer-menu),
         header nav:not(.mobile-drawer-menu nav),
         header ul:not(.mobile-drawer-menu ul),
-        header .desktop-nav-links,
-        header .desktop-apply-btn,
-        header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
-        header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
-        header div[class*="top"]:not(.mobile-drawer-menu),
-        header div[class*="utility"]:not(.mobile-drawer-menu) {
+        header .desktop-nav-links {
           display: none !important;
+        }
+        .section-canvas-box header .desktop-apply-btn,
+        .section-canvas-box header a.desktop-apply-btn,
+        .section-canvas-box header button.desktop-apply-btn,
+        header .desktop-apply-btn,
+        header a.desktop-apply-btn,
+        header button.desktop-apply-btn {
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding: 6px 14px !important;
+          font-size: 12px !important;
+          font-weight: 800 !important;
+          white-space: nowrap !important;
+          flex-shrink: 0 !important;
+          position: relative !important;
+          top: auto !important;
+          transform: none !important;
         }
         .section-canvas-box .hamburger-toggle-btn,
         header .hamburger-toggle-btn {
-          display: flex !important;
-          margin-left: auto !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding: 6px 12px !important;
+          border-radius: 8px !important;
+          font-size: 20px !important;
+          cursor: pointer !important;
           flex-shrink: 0 !important;
+          position: relative !important;
+          top: auto !important;
+          transform: none !important;
+        }
+        .section-canvas-box header > div:first-child,
+        header > div:first-child {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          gap: 10px !important;
+          width: 100% !important;
         }
         .section-canvas-box .mobile-drawer-menu.active,
         header .mobile-drawer-menu.active {
@@ -1090,26 +1114,50 @@ export function EditorStudio({
           .section-canvas-box header nav:not(.mobile-drawer-menu nav),
           .section-canvas-box header ul:not(.mobile-drawer-menu ul),
           .section-canvas-box header .desktop-nav-links,
-          .section-canvas-box header .desktop-apply-btn,
-          .section-canvas-box header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
-          .section-canvas-box header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
-          .section-canvas-box header div[class*="top"]:not(.mobile-drawer-menu),
-          .section-canvas-box header div[class*="utility"]:not(.mobile-drawer-menu),
           header nav:not(.mobile-drawer-menu nav),
           header ul:not(.mobile-drawer-menu ul),
-          header .desktop-nav-links,
-          header .desktop-apply-btn,
-          header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
-          header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
-          header div[class*="top"]:not(.mobile-drawer-menu),
-          header div[class*="utility"]:not(.mobile-drawer-menu) {
+          header .desktop-nav-links {
             display: none !important;
+          }
+          .section-canvas-box header .desktop-apply-btn,
+          .section-canvas-box header a.desktop-apply-btn,
+          .section-canvas-box header button.desktop-apply-btn,
+          header .desktop-apply-btn,
+          header a.desktop-apply-btn,
+          header button.desktop-apply-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 6px 14px !important;
+            font-size: 12px !important;
+            font-weight: 800 !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            position: relative !important;
+            top: auto !important;
+            transform: none !important;
           }
           .section-canvas-box .hamburger-toggle-btn,
           header .hamburger-toggle-btn {
-            display: flex !important;
-            margin-left: auto !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 6px 12px !important;
+            border-radius: 8px !important;
+            font-size: 20px !important;
+            cursor: pointer !important;
             flex-shrink: 0 !important;
+            position: relative !important;
+            top: auto !important;
+            transform: none !important;
+          }
+          .section-canvas-box header > div:first-child,
+          header > div:first-child {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+            width: 100% !important;
           }
           .section-canvas-box .mobile-drawer-menu.active,
           header .mobile-drawer-menu.active {
@@ -2375,11 +2423,13 @@ export function EditorStudio({
                             `;
                             headerElem.appendChild(drawer);
                           } else {
-                            drawer.classList.toggle("active");
-                            if (drawer.style.display === "none" || !drawer.classList.contains("active")) {
-                              drawer.style.display = "none";
+                            const isCurrentlyHidden = drawer.style.display === "none" || !drawer.classList.contains("active");
+                            if (isCurrentlyHidden) {
+                              drawer.classList.add("active");
+                              drawer.style.setProperty("display", "block", "important");
                             } else {
-                              drawer.style.display = "block";
+                              drawer.classList.remove("active");
+                              drawer.style.setProperty("display", "none", "important");
                             }
                           }
                         }
