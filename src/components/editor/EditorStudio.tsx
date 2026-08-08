@@ -941,8 +941,31 @@ export function EditorStudio({
     if (!code) return "";
     const isMobile = width === "375px" || width === "425px";
     const isTablet = width === "640px" || width === "768px" || width === "1024px";
+    const isResponsiveView = isMobile || isTablet;
 
     let corrected = code;
+
+    // Inject hamburger button & drawer for headers if missing when in Tablet or Mobile view
+    if (isResponsiveView && corrected.includes("<header") && !corrected.includes("hamburger-toggle-btn")) {
+      corrected = corrected.replace(/<\/header>/gi, (match) => {
+        return `
+          <button class="hamburger-toggle-btn" style="display: flex !important; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 10;" aria-label="Toggle Menu">
+            ☰
+          </button>
+          <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;">
+            <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
+              <a href="#home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
+              <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
+              <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
+              <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
+              <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
+              <a href="#contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
+              <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 10px; border-radius: 8px; text-align: center; margin-top: 6px; font-weight: 800; text-decoration: none;">Apply Now</a>
+            </nav>
+          </div>
+        ${match}`;
+      });
+    }
 
     // Ensure all max-width containers have mx-auto / margin: 0 auto centering
     corrected = corrected.replace(/class="([^"]*max-w-[^"]*)"/gi, (_m, p1) => {
@@ -1027,25 +1050,52 @@ export function EditorStudio({
         top: auto !important;
       }
       
-      /* Universal Header Containment & Non-wrapping Navigation Links */
+      /* Universal Header Containment */
       header, .section-canvas-box header {
-        overflow: hidden !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+        position: relative !important;
       }
-      header nav, header .desktop-nav-links, header ul, header [class*="nav"] {
-        flex-wrap: nowrap !important;
-        gap: clamp(4px, 1.2vw, 16px) !important;
-        min-width: 0 !important;
+
+      /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
+      @media (max-width: 900px) {
+        header nav:not(.mobile-drawer-menu nav),
+        header .desktop-nav-links,
+        header ul:not(.mobile-drawer-menu ul),
+        header a[style*="background"]:not(.mobile-drawer-menu a),
+        header .desktop-apply-btn {
+          display: none !important;
+        }
+        header .hamburger-toggle-btn {
+          display: flex !important;
+        }
+        header .mobile-drawer-menu.active {
+          display: block !important;
+        }
       }
-      header nav a, header .desktop-nav-links a, header ul a, header [class*="nav"] a {
-        white-space: nowrap !important;
-        font-size: clamp(11px, 1.05vw, 14px) !important;
-        line-height: 1.2 !important;
-      }
-      header a[style*="background"], header button[style*="background"], header .desktop-apply-btn, header [class*="apply"] {
-        flex-shrink: 0 !important;
-        white-space: nowrap !important;
+
+      /* Desktop Viewport Rules (> 900px) */
+      @media (min-width: 901px) {
+        header .hamburger-toggle-btn,
+        header .mobile-drawer-menu {
+          display: none !important;
+        }
+        header nav, header .desktop-nav-links, header ul {
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          gap: clamp(4px, 1.2vw, 16px) !important;
+          min-width: 0 !important;
+        }
+        header nav a, header .desktop-nav-links a, header ul a {
+          white-space: nowrap !important;
+          font-size: clamp(11px, 1.05vw, 14px) !important;
+          line-height: 1.2 !important;
+        }
+        header a[style*="background"], header button[style*="background"], header .desktop-apply-btn {
+          display: inline-block !important;
+          flex-shrink: 0 !important;
+          white-space: nowrap !important;
+        }
       }
     </style>`;
 

@@ -239,25 +239,52 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         top: auto !important;
       }
 
-      /* Universal Header Containment & Non-wrapping Navigation Links */
+      /* Universal Header Containment */
       header, .section-canvas-box header {
-        overflow: hidden !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+        position: relative !important;
       }
-      header nav, header .desktop-nav-links, header ul, header [class*="nav"] {
-        flex-wrap: nowrap !important;
-        gap: clamp(4px, 1.2vw, 16px) !important;
-        min-width: 0 !important;
+
+      /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
+      @media (max-width: 900px) {
+        header nav:not(.mobile-drawer-menu nav),
+        header .desktop-nav-links,
+        header ul:not(.mobile-drawer-menu ul),
+        header a[style*="background"]:not(.mobile-drawer-menu a),
+        header .desktop-apply-btn {
+          display: none !important;
+        }
+        header .hamburger-toggle-btn {
+          display: flex !important;
+        }
+        header .mobile-drawer-menu.active {
+          display: block !important;
+        }
       }
-      header nav a, header .desktop-nav-links a, header ul a, header [class*="nav"] a {
-        white-space: nowrap !important;
-        font-size: clamp(11px, 1.05vw, 14px) !important;
-        line-height: 1.2 !important;
-      }
-      header a[style*="background"], header button[style*="background"], header .desktop-apply-btn, header [class*="apply"] {
-        flex-shrink: 0 !important;
-        white-space: nowrap !important;
+
+      /* Desktop Viewport Rules (> 900px) */
+      @media (min-width: 901px) {
+        header .hamburger-toggle-btn,
+        header .mobile-drawer-menu {
+          display: none !important;
+        }
+        header nav, header .desktop-nav-links, header ul {
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          gap: clamp(4px, 1.2vw, 16px) !important;
+          min-width: 0 !important;
+        }
+        header nav a, header .desktop-nav-links a, header ul a {
+          white-space: nowrap !important;
+          font-size: clamp(11px, 1.05vw, 14px) !important;
+          line-height: 1.2 !important;
+        }
+        header a[style*="background"], header button[style*="background"], header .desktop-apply-btn {
+          display: inline-block !important;
+          flex-shrink: 0 !important;
+          white-space: nowrap !important;
+        }
       }
     </style>`;
 
