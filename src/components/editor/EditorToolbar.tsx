@@ -408,27 +408,6 @@ export function EditorToolbar({
             <Copy style={{ width: "18px", height: "18px" }} />
           </button>
 
-          {/* Undo Button */}
-          <button
-            onClick={onUndo}
-            style={{
-              width: "34px",
-              height: "34px",
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              backgroundColor: canUndo ? "rgba(37,99,235,0.2)" : "rgba(255, 255, 255, 0.05)",
-              cursor: "pointer",
-              color: canUndo ? "#60a5fa" : "#cbd5e1",
-              ...buttonHoverStyle,
-            }}
-            title="Undo Action (Ctrl + Z)"
-          >
-            <Undo2 style={{ width: "18px", height: "18px" }} />
-          </button>
-
           {/* Swap Variant Refresh Blue Button */}
           <button
             onClick={handleRefreshSwap}
@@ -448,27 +427,6 @@ export function EditorToolbar({
             title="Swap Variant Layout"
           >
             <RefreshCw style={{ width: "18px", height: "18px" }} />
-          </button>
-
-          {/* Redo Button */}
-          <button
-            onClick={onRedo}
-            style={{
-              width: "34px",
-              height: "34px",
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              backgroundColor: canRedo ? "rgba(37,99,235,0.2)" : "rgba(255, 255, 255, 0.05)",
-              cursor: "pointer",
-              color: canRedo ? "#60a5fa" : "#cbd5e1",
-              ...buttonHoverStyle,
-            }}
-            title="Redo Action (Ctrl + Y)"
-          >
-            <Redo2 style={{ width: "18px", height: "18px" }} />
           </button>
 
           {/* Move Up Button */}

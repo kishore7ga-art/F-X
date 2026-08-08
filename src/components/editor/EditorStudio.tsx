@@ -1200,6 +1200,8 @@ export function EditorStudio({
 
     // Enable inline content editing
     textElem.contentEditable = "true";
+    textElem.style.userSelect = "text";
+    (textElem.style as any).webkitUserSelect = "text";
     textElem.focus();
 
     // Save pre-edit history snapshot so Undo restores original text
@@ -1801,7 +1803,7 @@ export function EditorStudio({
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-x-hidden select-none">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-x-hidden">
       
       {/* Toast Notification Banner */}
       {toastMessage && (
