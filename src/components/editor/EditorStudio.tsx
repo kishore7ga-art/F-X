@@ -1591,15 +1591,28 @@ export function EditorStudio({
   const handleSelectSectionCategory = async (cat: typeof SECTION_CATEGORIES[0]) => {
     setShowAddSectionModal(false);
 
+    const apiBase = (() => {
+      if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+      if (
+        typeof window !== "undefined" &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        return "https://api.xite.co.in";
+      }
+      return "http://localhost:4000";
+    })();
+
     let templatesList = adminDbTemplates;
 
-    // Fetch latest templates if empty
+    // Fetch latest templates from backend API if empty
     if (templatesList.length === 0) {
       try {
-        const res = await fetch("/api/v1/admin/templates", { credentials: "include" });
+        const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
-          if (data && data.templates) {
+          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
             templatesList = data.templates;
             setAdminDbTemplates(data.templates);
           }
@@ -1612,10 +1625,18 @@ export function EditorStudio({
     const catNameLower = cat.name.toLowerCase();
     const matchingTemplates = templatesList.filter((tpl) => {
       const nameLower = (tpl.name || "").toLowerCase();
+      const codeLower = (tpl.code || "").toLowerCase();
       return (
         nameLower.includes(`[${catIdLower}]`) ||
         nameLower.includes(catIdLower) ||
-        nameLower.includes(catNameLower)
+        nameLower.includes(catNameLower) ||
+        (catIdLower === "header" && (nameLower.includes("header") || nameLower.includes("nav") || codeLower.includes("<header"))) ||
+        (catIdLower === "features" && (nameLower.includes("feature") || nameLower.includes("highlight"))) ||
+        (catIdLower === "stats" && (nameLower.includes("stat") || nameLower.includes("metric"))) ||
+        (catIdLower === "hero" && (nameLower.includes("hero") || nameLower.includes("banner"))) ||
+        (catIdLower === "courses" && (nameLower.includes("course") || nameLower.includes("academic"))) ||
+        (catIdLower === "about" && nameLower.includes("about")) ||
+        (catIdLower === "contact" && nameLower.includes("contact"))
       );
     });
 
@@ -1643,64 +1664,144 @@ export function EditorStudio({
     }
   };
 
-  // Swap / Cycle between admin-added section variants (e.g. hero 1 <-> hero 2) or layout variations
+  // Swap / Cycle between admin-added section variants (e.g. hero 1 <-> hero 2) for the ACTIVE category ONLY
   const handleSwapVariant = async () => {
     if (activeSectionIndex === null || sections.length === 0) return;
 
     const activeSec = sections[activeSectionIndex];
     if (!activeSec) return;
 
+    const apiBase = (() => {
+      if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+      if (
+        typeof window !== "undefined" &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        return "https://api.xite.co.in";
+      }
+      return "http://localhost:4000";
+    })();
+
     let templatesList = adminDbTemplates;
 
     // Fetch latest templates from API if empty
     if (templatesList.length === 0) {
       try {
-        const res = await fetch("/api/v1/admin/templates", { credentials: "include" });
+        const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
-          if (data && data.templates && data.templates.length > 0) {
+          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
             templatesList = data.templates;
             setAdminDbTemplates(data.templates);
           }
         }
       } catch {}
+
+      // Also try default-website endpoint if admin templates list is empty
+      if (templatesList.length === 0) {
+        try {
+          const defRes = await fetch(`${apiBase}/api/v1/default-website`);
+          if (defRes.ok) {
+            const defData = await defRes.json().catch(() => ({}));
+            if (defData && Array.isArray(defData.pages)) {
+              const allPageSecs: any[] = [];
+              defData.pages.forEach((p: any) => {
+                if (Array.isArray(p.sections)) {
+                  p.sections.forEach((s: any) => {
+                    if (s && s.code) {
+                      allPageSecs.push({ name: s.title || "Section", code: s.code });
+                    }
+                  });
+                }
+              });
+              if (allPageSecs.length > 0) {
+                templatesList = allPageSecs;
+              }
+            }
+          }
+        } catch {}
+      }
     }
 
-    // Determine category ID of active section (header, hero, stats, features, about, courses, placements, faculty, contact, footer)
-    const titleLower = activeSec.title.toLowerCase();
-    let catId = "hero";
-    if (titleLower.includes("header") || titleLower.includes("nav")) catId = "header";
-    else if (titleLower.includes("stat")) catId = "stats";
-    else if (titleLower.includes("feature") || titleLower.includes("highlight")) catId = "features";
-    else if (titleLower.includes("about")) catId = "about";
-    else if (titleLower.includes("course") || titleLower.includes("academic")) catId = "courses";
-    else if (titleLower.includes("placement") || titleLower.includes("career")) catId = "placements";
-    else if (titleLower.includes("faculty") || titleLower.includes("staff")) catId = "faculty";
-    else if (titleLower.includes("contact")) catId = "contact";
-    else if (titleLower.includes("footer")) catId = "footer";
-    else if (titleLower.includes("hero") || titleLower.includes("banner")) catId = "hero";
+    // 1. Accurately determine Category ID of the ACTIVE section ONLY
+    const titleLower = (activeSec.title || "").toLowerCase();
+    const codeLower = (activeSec.code || "").toLowerCase();
 
-    // Filter DB templates matching active category ONLY
-    const catTemplates = templatesList.filter((tpl) => {
+    let catId = "hero";
+    if (
+      titleLower.includes("header") ||
+      titleLower.includes("nav") ||
+      codeLower.includes("<header") ||
+      codeLower.includes("navbar")
+    ) {
+      catId = "header";
+    } else if (
+      titleLower.includes("stat") ||
+      titleLower.includes("metric") ||
+      codeLower.includes("student-faculty ratio") ||
+      codeLower.includes("global university")
+    ) {
+      catId = "stats";
+    } else if (titleLower.includes("feature") || titleLower.includes("highlight")) {
+      catId = "features";
+    } else if (titleLower.includes("about")) {
+      catId = "about";
+    } else if (titleLower.includes("course") || titleLower.includes("academic")) {
+      catId = "courses";
+    } else if (titleLower.includes("placement") || titleLower.includes("career")) {
+      catId = "placements";
+    } else if (titleLower.includes("faculty") || titleLower.includes("staff") || titleLower.includes("team")) {
+      catId = "faculty";
+    } else if (titleLower.includes("footer") || codeLower.includes("<footer")) {
+      catId = "footer";
+    } else if (titleLower.includes("contact")) {
+      catId = "contact";
+    } else if (titleLower.includes("hero") || titleLower.includes("banner")) {
+      catId = "hero";
+    }
+
+    // 2. STRICT Category Filtering: Collect templates that belong ONLY to this active category (catId)
+    const matchingTemplates: { name: string; code: string }[] = [];
+
+    // Add matching DB templates
+    templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || "").toLowerCase();
-      return (
+      const tplCodeLower = (tpl.code || "").toLowerCase();
+      const isMatch =
         nameLower.includes(`[${catId}]`) ||
-        nameLower.includes(catId) ||
-        (catId === "header" && (nameLower.includes("header") || nameLower.includes("nav"))) ||
-        (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight"))) ||
-        (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric"))) ||
+        (catId === "header" && (nameLower.includes("header") || nameLower.includes("nav") || tplCodeLower.includes("<header"))) ||
         (catId === "hero" && (nameLower.includes("hero") || nameLower.includes("banner"))) ||
-        (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic"))) ||
+        (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric"))) ||
+        (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight"))) ||
         (catId === "about" && nameLower.includes("about")) ||
-        (catId === "contact" && nameLower.includes("contact"))
-      );
+        (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic"))) ||
+        (catId === "placements" && (nameLower.includes("placement") || nameLower.includes("career"))) ||
+        (catId === "faculty" && (nameLower.includes("faculty") || nameLower.includes("staff"))) ||
+        (catId === "contact" && nameLower.includes("contact")) ||
+        (catId === "footer" && (nameLower.includes("footer") || tplCodeLower.includes("<footer")));
+
+      if (isMatch && tpl.code && !matchingTemplates.some((m) => m.code === tpl.code)) {
+        matchingTemplates.push({ name: tpl.name || `${catId.toUpperCase()} Variant`, code: tpl.code });
+      }
     });
 
-    if (catTemplates.length > 0) {
-      // Find current template index in available category templates
-      const currentTplIdx = catTemplates.findIndex((tpl) => tpl.name === activeSec.title);
-      const nextIdx = currentTplIdx >= 0 ? (currentTplIdx + 1) % catTemplates.length : (activeSec.variantIndex !== undefined ? (activeSec.variantIndex + 1) % catTemplates.length : 0);
-      const nextTpl = catTemplates[nextIdx]!;
+    // If matching DB templates are less than 2, add starter variants for THIS category from ALL_19_SECTION_TEMPLATES
+    if (ALL_19_SECTION_TEMPLATES[catId]) {
+      const starterCode = ALL_19_SECTION_TEMPLATES[catId];
+      if (!matchingTemplates.some((m) => m.code === starterCode)) {
+        matchingTemplates.push({ name: `${catId.toUpperCase()} Default Variant`, code: starterCode });
+      }
+    }
+
+    if (matchingTemplates.length > 0) {
+      // Find current active template index in matching category templates
+      const currentIdx = matchingTemplates.findIndex(
+        (t) => t.name === activeSec.title || t.code.trim() === activeSec.code.trim()
+      );
+      const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % matchingTemplates.length : (activeSec.variantIndex !== undefined ? (activeSec.variantIndex + 1) % matchingTemplates.length : 0);
+      const nextTpl = matchingTemplates[nextIdx]!;
 
       setSectionsWithHistory((prev) =>
         prev.map((sec, idx) => {
@@ -1708,50 +1809,17 @@ export function EditorStudio({
           return {
             ...sec,
             title: nextTpl.name,
-            code: nextTpl.code || sec.code,
+            code: nextTpl.code,
             variantIndex: nextIdx,
           };
         })
       );
-      showToast(`Swapped to ${catId.toUpperCase()} Admin Variant: "${nextTpl.name}"`);
+
+      showToastNotification(`Swapped ${catId.toUpperCase()} to Variant ${nextIdx + 1}: "${nextTpl.name}"`);
       return;
     }
 
-    // Fallback if no specific category DB template exists: Cycle visual layout variations of THIS SAME section without changing category/title
-    const currentIdx = activeSec.variantIndex !== undefined ? activeSec.variantIndex : 0;
-    const nextIdx = (currentIdx + 1) % 3;
-
-    let newCode = activeSec.code;
-    if (nextIdx === 1) {
-      newCode = activeSec.code
-        .replace(/text-align:\s*center/gi, "text-align: left")
-        .replace(/margin:\s*0\s+auto/gi, "margin: 0");
-    } else if (nextIdx === 2) {
-      newCode = activeSec.code
-        .replace(/background:\s*#000000/gi, "background: #0f172a")
-        .replace(/background:\s*#09090b/gi, "background: #1e1b4b");
-    } else {
-      newCode = activeSec.code
-        .replace(/text-align:\s*left/gi, "text-align: center")
-        .replace(/background:\s*#0f172a/gi, "background: #000000")
-        .replace(/background:\s*#1e1b4b/gi, "background: #000000");
-    }
-
-    const baseTitle = activeSec.title.split(" (Variant")[0];
-    const newTitle = `${baseTitle} (Variant ${nextIdx + 1})`;
-
-    setSectionsWithHistory((prev) =>
-      prev.map((sec, idx) => {
-        if (idx !== activeSectionIndex) return sec;
-        return {
-          ...sec,
-          title: newTitle,
-          code: newCode,
-          variantIndex: nextIdx,
-        };
-      })
-    );
-    showToast(`Swapped ${baseTitle} to Layout Variant ${nextIdx + 1}`);
+    showToastNotification(`No additional variants found for category "${catId}"`);
   };
 
   const handleDuplicateSection = () => {
