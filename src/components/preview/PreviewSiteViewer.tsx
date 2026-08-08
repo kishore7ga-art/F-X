@@ -340,10 +340,16 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         const res = await fetch(`${apiBase}/api/v1/default-website`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
-          if (data && data.sections && Array.isArray(data.sections) && data.sections.length > 0) {
+          const pageSecs =
+            Array.isArray(data.sections) && data.sections.length > 0
+              ? data.sections
+              : Array.isArray(data.pages) && data.pages[0] && Array.isArray(data.pages[0].sections)
+              ? data.pages[0].sections
+              : [];
+          if (pageSecs.length > 0) {
             if (!cancelled) {
               setSections(
-                data.sections.map((sec: any, idx: number) => ({
+                pageSecs.map((sec: any, idx: number) => ({
                   id: sec.id || `sec-${idx}`,
                   title: sec.title || `Section ${idx + 1}`,
                   code: sec.code || "",
@@ -359,9 +365,14 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       }
     };
 
-    fetchSiteSections();
+    void fetchSiteSections();
+    const interval = setInterval(() => {
+      void fetchSiteSections();
+    }, 5000);
+
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [subdomain]);
 

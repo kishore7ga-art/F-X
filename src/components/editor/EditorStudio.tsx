@@ -1307,15 +1307,26 @@ export function EditorStudio({
     }
   }, [sections, currentPage.slug]);
 
+  // Live Admin templates map state
+  const [liveAdminTemplatesMap, setLiveAdminTemplatesMap] = useState<Record<string, string>>({});
+
   const getAll19DefaultSections = (slug: string = "/home"): SectionItem[] => {
     const cleanSlug = slug.replace(/^\//, "").toLowerCase() || "home";
-    return SECTION_CATEGORIES.map((cat, idx) => ({
-      id: `${cleanSlug}-${cat.id}-${idx}`,
-      title: cat.name,
-      code: ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE,
-      variantIndex: 0,
-      category: cat.id,
-    }));
+    return SECTION_CATEGORIES.map((cat, idx) => {
+      const liveCode =
+        liveAdminTemplatesMap[cat.id.toLowerCase()] ||
+        liveAdminTemplatesMap[`def-home-${cat.id}`.toLowerCase()] ||
+        liveAdminTemplatesMap[`def-${cat.id}`.toLowerCase()] ||
+        ALL_19_SECTION_TEMPLATES[cat.id] ||
+        DEFAULT_STARTER_CODE;
+      return {
+        id: `${cleanSlug}-${cat.id}-${idx}`,
+        title: cat.name,
+        code: liveCode,
+        variantIndex: 0,
+        category: cat.id,
+      };
+    });
   };
 
   // Fetch sections & admin DB templates
@@ -1383,64 +1394,82 @@ export function EditorStudio({
     void fetchDbSections(currentPage.slug);
   }, []);
 
-  // ALWAYS fetch Admin DB templates on mount so Swap Variant & Add Section have full templates loaded!
-  useEffect(() => {
-    const loadAdminTemplates = async () => {
-      const apiBase = (() => {
-        if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-        if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-        if (
-          typeof window !== "undefined" &&
-          window.location.hostname !== "localhost" &&
-          window.location.hostname !== "127.0.0.1"
-        ) {
-          return "https://api.xite.co.in";
-        }
-        return "http://localhost:4000";
-      })();
-
-      try {
-        const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-            setAdminDbTemplates(data.templates);
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn("Could not fetch admin templates:", e);
+  const loadAdminTemplates = async () => {
+    const apiBase = (() => {
+      if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+      if (
+        typeof window !== "undefined" &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
+        return "https://api.xite.co.in";
       }
+      return "http://localhost:4000";
+    })();
 
-      try {
-        const defRes = await fetch(`${apiBase}/api/v1/default-website`);
-        if (defRes.ok) {
-          const defData = await defRes.json().catch(() => ({}));
-          if (defData && Array.isArray(defData.pages)) {
-            const allSecs: any[] = [];
-            defData.pages.forEach((p: any) => {
-              if (Array.isArray(p.sections)) {
-                p.sections.forEach((s: any) => {
-                  if (s && (s.code || s.html || s.content)) {
-                    allSecs.push({
-                      id: s.id || s.title,
-                      name: s.title || s.name || "Section",
-                      code: s.code || s.html || s.content,
-                      category: s.category || s.type || s.id || "",
-                    });
+    try {
+      const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data && Array.isArray(data.templates) && data.templates.length > 0) {
+          setAdminDbTemplates(data.templates);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not fetch admin templates:", e);
+    }
+
+    try {
+      const defRes = await fetch(`${apiBase}/api/v1/default-website`);
+      if (defRes.ok) {
+        const defData = await defRes.json().catch(() => ({}));
+        if (defData && Array.isArray(defData.pages)) {
+          const allSecs: any[] = [];
+          const freshMap: Record<string, string> = {};
+          defData.pages.forEach((p: any) => {
+            if (Array.isArray(p.sections)) {
+              p.sections.forEach((s: any) => {
+                const code = s.code || s.html || s.content;
+                if (s && code) {
+                  allSecs.push({
+                    id: s.id || s.title,
+                    name: s.title || s.name || "Section",
+                    code: code,
+                    category: s.sectionType || s.category || s.type || s.id || "",
+                  });
+                  const secType = (s.sectionType || s.category || s.id || "").toLowerCase();
+                  if (secType) {
+                    freshMap[secType] = code;
                   }
-                });
-              }
-            });
-            if (allSecs.length > 0) {
-              setAdminDbTemplates(allSecs);
+                }
+              });
             }
+          });
+          if (allSecs.length > 0) {
+            setAdminDbTemplates(allSecs);
+            setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
           }
         }
-      } catch (e) {}
-    };
+      }
+    } catch (e) {}
+  };
 
+  // ALWAYS fetch Admin DB templates on mount & poll every 4s for live Admin section updates!
+  useEffect(() => {
     void loadAdminTemplates();
+    const interval = setInterval(() => {
+      void loadAdminTemplates();
+    }, 4000);
+    const handleFocus = () => {
+      void loadAdminTemplates();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handlePageChange = (pageName: string, pageSlug: string) => {
