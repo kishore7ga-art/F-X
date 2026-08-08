@@ -1430,7 +1430,6 @@ export function EditorStudio({
         const data = await res.json().catch(() => ({}));
         if (data && Array.isArray(data.templates) && data.templates.length > 0) {
           setAdminDbTemplates(data.templates);
-          return;
         }
       }
     } catch (e) {
