@@ -1394,10 +1394,7 @@ export function EditorStudio({
       }
     }, 20);
 
-    // Save pre-edit history snapshot so Undo restores original text
-    setHistoryStack((history) => [...history.slice(-49), sections]);
-    setRedoStack([]);
-
+    // Save pre-edit history snapshot via setSectionsWithHistory when editing completes in saveUpdatedContent
     const container = e.currentTarget;
 
     const saveUpdatedContent = () => {
@@ -2237,7 +2234,9 @@ export function EditorStudio({
                       return;
                     }
 
-                    setActiveSectionIndex(idx);
+                    if (activeSectionIndex !== idx) {
+                      setActiveSectionIndex(idx);
+                    }
 
                     if (target) {
                       const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger, header button, header svg") as HTMLElement;
