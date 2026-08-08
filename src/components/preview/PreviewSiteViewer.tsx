@@ -247,8 +247,13 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const pathname = window.location.pathname;
       const search = window.location.search;
-      if (search.includes("live=true") || search.includes("mode=live")) {
+      if (
+        pathname.startsWith("/site") ||
+        search.includes("live=true") ||
+        search.includes("mode=live")
+      ) {
         setIsLive(true);
       }
     }
@@ -256,7 +261,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
   const DESKTOP_WIDTHS = ["100%", "1200px", "1024px"];
   const TABLET_WIDTHS = ["768px", "640px"];
-  const MOBILE_WIDTHS = ["375px", "320px", "425px"];
+  const MOBILE_WIDTHS = ["375px", "425px"];
 
   const isDesktop = DESKTOP_WIDTHS.includes(previewWidth);
   const isTablet = TABLET_WIDTHS.includes(previewWidth);
@@ -354,7 +359,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
                 ? "bg-white border border-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(0,0,0,0.04)] px-3.5 text-slate-900 font-extrabold"
                 : "bg-transparent border border-transparent px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
             }`}
-            title="Mobile Phone Resolution (Click to Cycle 375px / 320px / 425px)"
+            title="Mobile Phone Resolution (Click to Cycle 375px / 425px)"
           >
             <Smartphone className={`w-4.5 h-4.5 shrink-0 ${isMobile ? "text-slate-900" : "text-slate-500"}`} />
             {isMobile && (

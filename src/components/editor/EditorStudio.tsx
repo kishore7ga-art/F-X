@@ -667,9 +667,16 @@ export function EditorStudio({
     });
   };
 
-  // Undo & Redo History Stack Handlers
+  // Undo & Redo History Stack Handlers (Applies to Text Edits & Page Sections)
   const handleUndo = () => {
-    if (historyStack.length === 0) return;
+    if (typeof document !== "undefined" && document.activeElement) {
+      (document.activeElement as HTMLElement).blur();
+    }
+
+    if (historyStack.length === 0) {
+      showToastNotification("ℹ️ At initial state (No earlier history)");
+      return;
+    }
     const previousState = historyStack[historyStack.length - 1]!;
     setRedoStack((prev) => [...prev, sections]);
     setHistoryStack((prev) => prev.slice(0, prev.length - 1));
@@ -678,7 +685,14 @@ export function EditorStudio({
   };
 
   const handleRedo = () => {
-    if (redoStack.length === 0) return;
+    if (typeof document !== "undefined" && document.activeElement) {
+      (document.activeElement as HTMLElement).blur();
+    }
+
+    if (redoStack.length === 0) {
+      showToastNotification("ℹ️ At latest state (No redo history)");
+      return;
+    }
     const nextState = redoStack[redoStack.length - 1]!;
     setHistoryStack((prev) => [...prev, sections]);
     setRedoStack((prev) => prev.slice(0, prev.length - 1));
@@ -690,12 +704,9 @@ export function EditorStudio({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
-      if (
-        activeEl &&
-        (activeEl.tagName === "INPUT" ||
-          activeEl.tagName === "TEXTAREA" ||
-          activeEl.getAttribute("contenteditable") === "true")
-      ) {
+
+      // Ignore shortcut only if user is typing inside form inputs / textareas
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
         return;
       }
 
@@ -857,7 +868,7 @@ export function EditorStudio({
   // Auto-correct responsive section code and alignment across all viewports
   const autoCorrectMobileCode = (code: string, width: string) => {
     if (!code) return "";
-    const isMobile = width === "320px" || width === "375px" || width === "425px";
+    const isMobile = width === "375px" || width === "425px";
     const isTablet = width === "640px" || width === "768px" || width === "1024px";
 
     let corrected = code;
@@ -1191,6 +1202,10 @@ export function EditorStudio({
     textElem.contentEditable = "true";
     textElem.focus();
 
+    // Save pre-edit history snapshot so Undo restores original text
+    setHistoryStack((history) => [...history.slice(-49), sections]);
+    setRedoStack([]);
+
     // Visual editing indicator highlight
     textElem.style.outline = "2px dashed #2563eb";
     textElem.style.outlineOffset = "4px";
@@ -1219,9 +1234,9 @@ export function EditorStudio({
         (el as HTMLElement).style.borderRadius = '';
       });
 
-      const newCode = clone.innerHTML;
+      const newCode = cleanCanvasWrapperFromCode(clone.innerHTML);
       if (newCode) {
-        setSections((prev) =>
+        setSectionsWithHistory((prev) =>
           prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
         );
       }

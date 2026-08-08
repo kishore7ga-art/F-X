@@ -136,7 +136,6 @@ export function EditorToolbar({
 
   const MOBILE_SIZES = [
     { label: "Mobile M", width: "375px" },
-    { label: "Mobile S", width: "320px" },
     { label: "Mobile L", width: "425px" },
   ];
 
@@ -158,7 +157,6 @@ export function EditorToolbar({
   const handleMobileClick = () => {
     let nextIdx = 0;
     if (viewportWidth === "375px") nextIdx = 1;
-    else if (viewportWidth === "320px") nextIdx = 2;
     else if (viewportWidth === "425px") nextIdx = 0;
     else nextIdx = 0;
 
@@ -612,7 +610,7 @@ export function EditorToolbar({
               color: "#0f172a",
               ...buttonHoverStyle,
             }}
-            title="Mobile Resolution (Click to Cycle 375px / 320px / 425px)"
+            title="Mobile Resolution (Click to Cycle 375px / 425px)"
           >
             <Smartphone style={{ width: "18px", height: "18px", color: "#334155" }} />
             {activeMobile && (
