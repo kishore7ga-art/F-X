@@ -65,19 +65,59 @@ const SECTION_CATEGORIES = [
 ];
 
 const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
-  navbar: `<header style="background: #0d1527; color: #ffffff; padding: 16px clamp(12px, 3vw, 40px); display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
-      <span style="font-size: clamp(14px, 1.5vw, 20px); font-weight: 900; color: #ffffff; white-space: nowrap;">GREENFIELD UNIVERSITY</span>
+  navbar: `<header style="background: #0d1527; color: #ffffff; padding: 16px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 100;">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+        <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
+        <span style="font-size: 18px; font-weight: 900; color: #ffffff; white-space: nowrap;">GREENFIELD UNIVERSITY</span>
+      </div>
+
+      <nav class="desktop-nav-links" style="display: flex; align-items: center; gap: clamp(8px, 1.8vw, 24px); font-size: 14px; font-weight: 700; flex-wrap: nowrap;">
+        <a href="#home" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Home</a>
+        <a href="#about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About</a>
+        <a href="#courses" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics</a>
+        <a href="#admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
+        <a href="#placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements</a>
+        <a href="#contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact</a>
+      </nav>
+
+      <a href="#apply" class="desktop-apply-btn" style="background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; flex-shrink: 0;">Apply Now</a>
+
+      <button class="hamburger-toggle-btn" style="display: none; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 8px 14px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center;" aria-label="Toggle Navigation Menu">
+        ☰
+      </button>
     </div>
-    <nav style="display: flex; gap: clamp(6px, 1.5vw, 24px); font-size: clamp(12px, 1.1vw, 14px); font-weight: 700; align-items: center; flex-wrap: nowrap;">
-      <a href="#about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About</a>
-      <a href="#courses" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics</a>
-      <a href="#admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
-      <a href="#placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements</a>
-      <a href="#contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact</a>
-    </nav>
-    <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 10px clamp(12px, 1.5vw, 24px); border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap;">Apply Now</a>
+
+    <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
+        <a href="#home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
+        <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
+        <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
+        <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
+        <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
+        <a href="#contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
+        <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 12px; border-radius: 8px; text-align: center; margin-top: 8px; font-weight: 800; text-decoration: none;">Apply Now</a>
+      </nav>
+    </div>
+
+    <script>
+      document.querySelector('.hamburger-toggle-btn').onclick = function() {
+        document.querySelector('.mobile-drawer-menu').classList.toggle('active');
+      };
+    </script>
+
+    <style>
+      @media (max-width: 900px) {
+        .desktop-nav-links, .desktop-apply-btn { display: none !important; }
+        .hamburger-toggle-btn { display: flex !important; }
+        .mobile-drawer-menu.active { display: block !important; }
+      }
+      @media (min-width: 901px) {
+        .hamburger-toggle-btn, .mobile-drawer-menu { display: none !important; }
+        .desktop-nav-links { display: flex !important; }
+        .desktop-apply-btn { display: inline-block !important; }
+      }
+    </style>
   </header>`,
 
   hero: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px 60px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid #e2e8f0;">
@@ -523,23 +563,56 @@ const DEFAULT_FULL_HOME_SECTIONS: SectionItem[] = [
 const getFullPageSections = (slug: string, pageName: string = "Home", collegeName: string = "MEC ENGINEERING COLLEGE"): SectionItem[] => {
   const cleanSlug = slug.replace(/^\//, "").toLowerCase();
 
-  const sharedHeader = `<header style="background: #0d1527; color: #ffffff; padding: 16px clamp(12px, 3vw, 40px); display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap;">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
-      <div>
-        <span style="font-size: clamp(14px, 1.5vw, 18px); font-weight: 900; color: #ffffff; display: block; line-height: 1.2; white-space: nowrap;">${collegeName.toUpperCase()}</span>
-        <span style="font-size: 11px; font-weight: 600; color: #94a3b8; white-space: nowrap;">Autonomous • NAAC A++ Accredited</span>
+  const sharedHeader = `<header style="background: #0d1527; color: #ffffff; padding: 16px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 100;">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+        <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
+        <div>
+          <span style="font-size: 18px; font-weight: 900; color: #ffffff; display: block; line-height: 1.2; white-space: nowrap;">${collegeName.toUpperCase()}</span>
+          <span style="font-size: 11px; font-weight: 600; color: #94a3b8; white-space: nowrap;">Autonomous • NAAC A++ Accredited</span>
+        </div>
       </div>
+
+      <nav class="desktop-nav-links" style="display: flex; align-items: center; gap: clamp(8px, 1.8vw, 24px); font-size: 14px; font-weight: 700; flex-wrap: nowrap;">
+        <a href="/home" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Home</a>
+        <a href="/about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About</a>
+        <a href="/academics" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics</a>
+        <a href="/admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
+        <a href="/placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements</a>
+        <a href="/contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact</a>
+      </nav>
+
+      <a href="/admissions" class="desktop-apply-btn" style="background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; flex-shrink: 0;">Apply Now</a>
+
+      <button class="hamburger-toggle-btn" style="display: none; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 8px 14px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center;" aria-label="Toggle Navigation Menu">
+        ☰
+      </button>
     </div>
-    <nav style="display: flex; gap: clamp(6px, 1.5vw, 24px); font-size: clamp(12px, 1.1vw, 14px); font-weight: 700; align-items: center; flex-wrap: nowrap;">
-      <a href="/home" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Home</a>
-      <a href="/about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About</a>
-      <a href="/academics" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics</a>
-      <a href="/admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
-      <a href="/placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements</a>
-      <a href="/contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact</a>
-    </nav>
-    <a href="/admissions" style="background: #2563eb; color: #ffffff; padding: 10px clamp(12px, 1.5vw, 24px); border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap;">Apply Now</a>
+
+    <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
+        <a href="/home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
+        <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
+        <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
+        <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
+        <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
+        <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
+        <a href="/admissions" style="background: #2563eb; color: #ffffff; padding: 12px; border-radius: 8px; text-align: center; margin-top: 8px; font-weight: 800; text-decoration: none;">Apply Now</a>
+      </nav>
+    </div>
+
+    <style>
+      @media (max-width: 900px) {
+        .desktop-nav-links, .desktop-apply-btn { display: none !important; }
+        .hamburger-toggle-btn { display: flex !important; }
+        .mobile-drawer-menu.active { display: block !important; }
+      }
+      @media (min-width: 901px) {
+        .hamburger-toggle-btn, .mobile-drawer-menu { display: none !important; }
+        .desktop-nav-links { display: flex !important; }
+        .desktop-apply-btn { display: inline-block !important; }
+      }
+    </style>
   </header>`;
 
   const sharedFooter = `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -1959,6 +2032,25 @@ export function EditorStudio({
                     e.stopPropagation();
                     setActiveSectionIndex(idx);
                     const target = e.target as HTMLElement;
+
+                    if (target) {
+                      const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger") as HTMLElement;
+                      if (hamburgerBtn) {
+                        const headerElem = hamburgerBtn.closest("header") || hamburgerBtn.closest(".section-wrapper-container") || target.closest("header");
+                        if (headerElem) {
+                          const drawer = headerElem.querySelector(".mobile-drawer-menu, nav.mobile-menu, nav:not(.desktop-nav-links)") as HTMLElement;
+                          if (drawer) {
+                            drawer.classList.toggle("active");
+                            if (drawer.style.display === "block" || drawer.classList.contains("active")) {
+                              drawer.style.display = "block";
+                            } else {
+                              drawer.style.display = "none";
+                            }
+                          }
+                        }
+                      }
+                    }
+
                     if (target && (target.tagName === "IMG" || target.getAttribute("data-logo") === "true" || (target.className || "").toString().toLowerCase().includes("logo"))) {
                       handleSectionContextMenu(e, idx);
                     }

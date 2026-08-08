@@ -386,6 +386,26 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           {sections.map((sec) => (
             <div
               key={sec.id}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target) {
+                  const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger") as HTMLElement;
+                  if (hamburgerBtn) {
+                    const headerElem = hamburgerBtn.closest("header") || target.closest("header");
+                    if (headerElem) {
+                      const drawer = headerElem.querySelector(".mobile-drawer-menu, nav.mobile-menu, nav:not(.desktop-nav-links)") as HTMLElement;
+                      if (drawer) {
+                        drawer.classList.toggle("active");
+                        if (drawer.style.display === "block" || drawer.classList.contains("active")) {
+                          drawer.style.display = "block";
+                        } else {
+                          drawer.style.display = "none";
+                        }
+                      }
+                    }
+                  }
+                }
+              }}
               dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
               className="w-full overflow-hidden"
             />
