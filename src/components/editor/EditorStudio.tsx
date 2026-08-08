@@ -1307,17 +1307,33 @@ export function EditorStudio({
     }
   }, [sections, currentPage.slug]);
 
+  // Helper to normalize category key aliases (e.g. admission <-> admissions, header <-> navbar)
+  const normalizeCategory = (cat?: string): string => {
+    if (!cat) return "";
+    const c = cat.toLowerCase().trim();
+    if (c === "admission" || c === "admissions") return "admissions";
+    if (c === "header" || c === "navbar" || c === "nav") return "navbar";
+    if (c === "awards" || c === "achievements") return "achievements";
+    if (c === "stats" || c === "highlights") return "highlights";
+    return c;
+  };
+
   // Live Admin templates map state
   const [liveAdminTemplatesMap, setLiveAdminTemplatesMap] = useState<Record<string, string>>({});
 
   const getAll19DefaultSections = (slug: string = "/home"): SectionItem[] => {
     const cleanSlug = slug.replace(/^\//, "").toLowerCase() || "home";
     return SECTION_CATEGORIES.map((cat, idx) => {
+      const normCat = normalizeCategory(cat.id);
       const liveCode =
+        liveAdminTemplatesMap[normCat] ||
         liveAdminTemplatesMap[cat.id.toLowerCase()] ||
+        liveAdminTemplatesMap["admissions"] ||
+        liveAdminTemplatesMap["admission"] ||
         liveAdminTemplatesMap[`def-home-${cat.id}`.toLowerCase()] ||
         liveAdminTemplatesMap[`def-${cat.id}`.toLowerCase()] ||
         ALL_19_SECTION_TEMPLATES[cat.id] ||
+        ALL_19_SECTION_TEMPLATES[normCat] ||
         DEFAULT_STARTER_CODE;
       return {
         id: `${cleanSlug}-${cat.id}-${idx}`,
@@ -1433,15 +1449,19 @@ export function EditorStudio({
               p.sections.forEach((s: any) => {
                 const code = s.code || s.html || s.content;
                 if (s && code) {
+                  const rawType = s.sectionType || s.category || s.type || s.id || "";
+                  const normType = normalizeCategory(rawType);
                   allSecs.push({
                     id: s.id || s.title,
                     name: s.title || s.name || "Section",
                     code: code,
-                    category: s.sectionType || s.category || s.type || s.id || "",
+                    category: normType || rawType,
                   });
-                  const secType = (s.sectionType || s.category || s.id || "").toLowerCase();
-                  if (secType) {
-                    freshMap[secType] = code;
+                  if (rawType) freshMap[rawType.toLowerCase()] = code;
+                  if (normType) freshMap[normType] = code;
+                  if (rawType.toLowerCase().includes("admission")) {
+                    freshMap["admissions"] = code;
+                    freshMap["admission"] = code;
                   }
                 }
               });
