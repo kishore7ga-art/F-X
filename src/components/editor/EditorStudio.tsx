@@ -40,6 +40,7 @@ interface SectionItem {
   title: string;
   code: string;
   variantIndex: number;
+  category?: string;
 }
 
 const SECTION_CATEGORIES = [
@@ -1997,21 +1998,24 @@ export function EditorStudio({
     const idLower = (activeSec.id || "").toLowerCase();
 
     let catId = "hero";
+    
+    // Check Hero FIRST so Hero sections are NEVER misclassified as Headers/Navbars
     if (
-      titleLower.includes("header") ||
-      titleLower.includes("nav") ||
-      idLower.includes("header") ||
-      codeLower.includes("<header") ||
-      codeLower.includes("navbar")
-    ) {
-      catId = "header";
-    } else if (
       titleLower.includes("hero") ||
       titleLower.includes("banner") ||
       idLower.includes("hero") ||
-      idLower.includes("banner")
+      idLower.includes("banner") ||
+      (activeSec.category && activeSec.category.toLowerCase().includes("hero"))
     ) {
       catId = "hero";
+    } else if (
+      titleLower.includes("header") ||
+      titleLower.includes("navbar") ||
+      idLower.includes("header") ||
+      idLower.includes("navbar") ||
+      (codeLower.includes("<header") && !codeLower.includes("admissions") && !codeLower.includes("empowering"))
+    ) {
+      catId = "header";
     } else if (
       titleLower.includes("stat") ||
       titleLower.includes("metric") ||
@@ -2036,7 +2040,7 @@ export function EditorStudio({
       catId = "stats";
     }
 
-    // 2. Comprehensive Category Filtering: Collect ALL templates that belong to this active category
+    // 2. STRICT & Comprehensive Category Filtering: Collect ONLY templates that belong to THIS category (catId)
     const matchingTemplates: { name: string; code: string }[] = [];
 
     templatesList.forEach((tpl) => {
@@ -2047,21 +2051,42 @@ export function EditorStudio({
 
       if (!codeStr) return;
 
-      const isMatch =
-        catLower === catId ||
-        catLower.includes(catId) ||
-        nameLower.includes(`[${catId}]`) ||
-        nameLower.includes(catId) ||
-        (catId === "header" && (nameLower.includes("header") || nameLower.includes("nav") || catLower.includes("header") || tplCodeLower.includes("<header"))) ||
-        (catId === "hero" && (nameLower.includes("hero") || nameLower.includes("banner") || catLower.includes("hero") || tplCodeLower.includes("admissions open") || tplCodeLower.includes("empowering"))) ||
-        (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric") || catLower.includes("stat"))) ||
-        (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight") || catLower.includes("feature"))) ||
-        (catId === "about" && (nameLower.includes("about") || catLower.includes("about"))) ||
-        (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic") || catLower.includes("course"))) ||
-        (catId === "placements" && (nameLower.includes("placement") || nameLower.includes("career") || catLower.includes("placement"))) ||
-        (catId === "faculty" && (nameLower.includes("faculty") || nameLower.includes("staff") || catLower.includes("faculty"))) ||
-        (catId === "contact" && (nameLower.includes("contact") || catLower.includes("contact"))) ||
-        (catId === "footer" && (nameLower.includes("footer") || catLower.includes("footer") || tplCodeLower.includes("<footer")));
+      let isMatch = false;
+
+      if (catId === "hero") {
+        // Hero matching: STRICTLY match hero templates ONLY (exclude headers/navbars!)
+        isMatch =
+          catLower === "hero" ||
+          catLower.includes("hero") ||
+          nameLower.includes("hero") ||
+          nameLower.includes("banner") ||
+          nameLower.includes("[hero]") ||
+          (tplCodeLower.includes("admissions open") && !tplCodeLower.includes("<header") && !tplCodeLower.includes("desktop-nav-links"));
+      } else if (catId === "header") {
+        // Header matching: STRICTLY match navbar/header templates ONLY
+        isMatch =
+          catLower === "header" ||
+          catLower.includes("header") ||
+          nameLower.includes("header") ||
+          nameLower.includes("navbar") ||
+          nameLower.includes("nav") ||
+          tplCodeLower.includes("desktop-nav-links") ||
+          tplCodeLower.startsWith("<header");
+      } else {
+        isMatch =
+          catLower === catId ||
+          catLower.includes(catId) ||
+          nameLower.includes(`[${catId}]`) ||
+          nameLower.includes(catId) ||
+          (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric") || catLower.includes("stat"))) ||
+          (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight") || catLower.includes("feature"))) ||
+          (catId === "about" && (nameLower.includes("about") || catLower.includes("about"))) ||
+          (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic") || catLower.includes("course"))) ||
+          (catId === "placements" && (nameLower.includes("placement") || nameLower.includes("career") || catLower.includes("placement"))) ||
+          (catId === "faculty" && (nameLower.includes("faculty") || nameLower.includes("staff") || catLower.includes("faculty"))) ||
+          (catId === "contact" && (nameLower.includes("contact") || catLower.includes("contact"))) ||
+          (catId === "footer" && (nameLower.includes("footer") || catLower.includes("footer") || tplCodeLower.includes("<footer")));
+      }
 
       if (isMatch && !matchingTemplates.some((m) => m.code.trim() === codeStr)) {
         matchingTemplates.push({ name: tpl.name || tpl.title || `${catId.toUpperCase()} Variant`, code: codeStr });
