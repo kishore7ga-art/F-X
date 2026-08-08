@@ -19,6 +19,14 @@ import {
   Lock,
   Smartphone,
   Shield,
+  Crown,
+  Receipt,
+  CreditCard,
+  Download,
+  Plus,
+  Trash2,
+  Calendar,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -38,6 +46,7 @@ export function DomainSettingsModal({
 }: DomainSettingsModalProps) {
   const [mounted, setMounted] = useState(false);
   const [activeNav, setActiveNav] = useState(initialTab || "advanced");
+  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [customDomain, setCustomDomain] = useState(`${subdomain}.edu.in`);
@@ -57,6 +66,12 @@ export function DomainSettingsModal({
   const [headerScript, setHeaderScript] = useState(
     '<!-- Google Analytics / Tag Manager -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XITE12345"></script>'
   );
+
+  // Payment Method Form State
+  const [cardHolder, setCardHolder] = useState("Kishore");
+  const [cardNumber, setCardNumber] = useState("•••• •••• •••• 4242");
+  const [cardExpiry, setCardExpiry] = useState("08/29");
+  const [cardCvc, setCardCvc] = useState("•••");
 
   const [lastDeployedTime, setLastDeployedTime] = useState(() => {
     if (typeof window !== "undefined") {
@@ -121,6 +136,11 @@ export function DomainSettingsModal({
     setConfirmPassword("");
   };
 
+  const handleAddCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    showToast("Payment method updated successfully! 💳");
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -137,7 +157,10 @@ export function DomainSettingsModal({
     { id: "domain", label: "Custom Domain & SSL", icon: Globe },
     { id: "deploy", label: "Production Deploy", icon: Rocket },
     { id: "security", label: "Password & Security", icon: Key },
-    { id: "advanced", label: "Advanced Settings & Custom Code", icon: Sliders },
+    { id: "advanced", label: "Advanced Settings", icon: Sliders },
+    { id: "subscriptions", label: "Premium Subscriptions", icon: Crown },
+    { id: "billing", label: "Billing History", icon: Receipt },
+    { id: "payments", label: "Payment Methods", icon: CreditCard },
   ];
 
   return createPortal(
@@ -203,7 +226,7 @@ export function DomainSettingsModal({
           top: 0,
           backgroundColor: "#FFFFFF",
           borderRight: "1px solid #E5E5E5",
-          padding: "24px 0",
+          padding: "20px 0",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -214,7 +237,7 @@ export function DomainSettingsModal({
         className="max-md:!hidden"
       >
         {/* Top Logo */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "28px", width: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", width: "100%" }}>
           <div
             style={{
               width: "36px",
@@ -236,34 +259,61 @@ export function DomainSettingsModal({
             <div style={{ width: "14px", height: "14px", borderTopLeftRadius: "14px", borderBottomLeftRadius: "14px", backgroundColor: "#FFFFFF", marginRight: "auto", marginLeft: "5px" }} />
           </div>
 
-          {/* Navigation Icons Group */}
-          <nav style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", width: "100%" }}>
+          {/* Navigation Icons Group with Tooltips */}
+          <nav style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", width: "100%" }}>
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeNav === item.id;
+              const isHovered = hoveredNav === item.id;
 
               return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveNav(item.id)}
-                  style={{
-                    width: "44px",
-                    height: "44px",
-                    borderRadius: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: isActive ? "#F5F5F3" : "transparent",
-                    color: isActive ? "#171717" : "#737373",
-                    cursor: "pointer",
-                    transition: "all 150ms ease",
-                  }}
-                  title={item.label}
-                >
-                  <Icon style={{ width: "20px", height: "20px", strokeWidth: isActive ? 2.2 : 1.8 }} />
-                </button>
+                <div key={item.id} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveNav(item.id)}
+                    onMouseEnter={() => setHoveredNav(item.id)}
+                    onMouseLeave={() => setHoveredNav(null)}
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "none",
+                      backgroundColor: isActive ? "#F5F5F3" : "transparent",
+                      color: isActive ? "#171717" : "#737373",
+                      cursor: "pointer",
+                      transition: "all 150ms ease",
+                    }}
+                  >
+                    <Icon style={{ width: "20px", height: "20px", strokeWidth: isActive ? 2.2 : 1.8 }} />
+                  </button>
+
+                  {/* Dark Pill Tooltip */}
+                  {isHovered && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: "54px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        backgroundColor: "#171717",
+                        color: "#FFFFFF",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        padding: "6px 12px",
+                        borderRadius: "8px",
+                        whiteSpace: "nowrap",
+                        zIndex: 100,
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
@@ -309,7 +359,7 @@ export function DomainSettingsModal({
         }}
         className="max-md:!p-4 max-md:!h-auto"
       >
-        {/* Top Header Row */}
+        {/* Top Header Row with Breadcrumb & User Details */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <button
             type="button"
@@ -390,55 +440,26 @@ export function DomainSettingsModal({
         </div>
 
         {/* ========================================================= */}
-        {/* TAB 4: ADVANCED SETTINGS & CUSTOM CODE (Exact Screenshot Match) */}
+        {/* TAB 4: ADVANCED SETTINGS & CUSTOM CODE */}
         {/* ========================================================= */}
         {activeNav === "advanced" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            {/* Eyebrow & Page Title */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
                 CODE INJECTION &amp; INDEXING
               </span>
-              <h1
-                style={{
-                  fontSize: "30px",
-                  fontWeight: 700,
-                  color: "#171717",
-                  lineHeight: 1.15,
-                  margin: 0,
-                  letterSpacing: "-0.02em",
-                }}
-              >
+              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
                 Advanced Settings &amp; Custom Code
               </h1>
             </div>
 
-            {/* Card 1: SEO & Maintenance Toggles Card */}
-            <div
-              style={{
-                borderRadius: "14px",
-                border: "1px solid #E5E5E5",
-                backgroundColor: "#FFFFFF",
-                padding: "24px 28px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "20px",
-                boxSizing: "border-box",
-              }}
-            >
-              {/* Row 1: Search Engine Indexing */}
+            {/* Toggles Card */}
+            <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "20px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
-                    Search Engine Indexing (SEO)
-                  </h4>
-                  <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>
-                    Allows Google, Bing, and search crawlers to index your college pages.
-                  </p>
+                  <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Search Engine Indexing (SEO)</h4>
+                  <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>Allows Google, Bing, and search crawlers to index your college pages.</p>
                 </div>
-
-                {/* iOS-Style Toggle Switch */}
                 <button
                   type="button"
                   onClick={() => {
@@ -459,34 +480,17 @@ export function DomainSettingsModal({
                     flexShrink: 0,
                   }}
                 >
-                  <div
-                    style={{
-                      width: "20px",
-                      height: "20px",
-                      borderRadius: "50%",
-                      backgroundColor: "#FFFFFF",
-                      transform: seoIndexing ? "translateX(22px)" : "translateX(0px)",
-                      transition: "transform 200ms ease",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                    }}
-                  />
+                  <div style={{ width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#FFFFFF", transform: seoIndexing ? "translateX(22px)" : "translateX(0px)", transition: "transform 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
                 </button>
               </div>
 
               <div style={{ height: "1px", backgroundColor: "#F0F0F0" }} />
 
-              {/* Row 2: Maintenance Mode */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
-                    Maintenance Mode
-                  </h4>
-                  <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>
-                    Shows a temporary maintenance announcement to website visitors.
-                  </p>
+                  <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Maintenance Mode</h4>
+                  <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>Shows a temporary maintenance announcement to website visitors.</p>
                 </div>
-
-                {/* iOS-Style Toggle Switch */}
                 <button
                   type="button"
                   onClick={() => {
@@ -507,45 +511,18 @@ export function DomainSettingsModal({
                     flexShrink: 0,
                   }}
                 >
-                  <div
-                    style={{
-                      width: "20px",
-                      height: "20px",
-                      borderRadius: "50%",
-                      backgroundColor: "#FFFFFF",
-                      transform: maintenanceMode ? "translateX(22px)" : "translateX(0px)",
-                      transition: "transform 200ms ease",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                    }}
-                  />
+                  <div style={{ width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#FFFFFF", transform: maintenanceMode ? "translateX(22px)" : "translateX(0px)", transition: "transform 200ms ease", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
                 </button>
               </div>
             </div>
 
-            {/* Card 2: Custom <head> Code Injection Card */}
-            <div
-              style={{
-                borderRadius: "14px",
-                border: "1px solid #E5E5E5",
-                backgroundColor: "#FFFFFF",
-                padding: "24px 28px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "14px",
-                boxSizing: "border-box",
-              }}
-            >
+            {/* Custom <head> Code Injection Card */}
+            <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
-                  Custom &lt;head&gt; Code Injection
-                </h4>
-                <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>
-                  Inject custom Google Analytics tags, Facebook Pixel, or third-party chat widgets.
-                </p>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Custom &lt;head&gt; Code Injection</h4>
+                <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>Inject custom Google Analytics tags, Facebook Pixel, or third-party chat widgets.</p>
               </div>
 
-              {/* Code Box */}
               <textarea
                 rows={4}
                 value={headerScript}
@@ -588,6 +565,250 @@ export function DomainSettingsModal({
         )}
 
         {/* ========================================================= */}
+        {/* TAB 5: PREMIUM SUBSCRIPTIONS (👑) */}
+        {/* ========================================================= */}
+        {activeNav === "subscriptions" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
+                LICENSE &amp; TIERS
+              </span>
+              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
+                Premium Subscriptions
+              </h1>
+            </div>
+
+            {/* Current Active Plan Banner */}
+            <div
+              style={{
+                borderRadius: "14px",
+                backgroundColor: "#171717",
+                color: "#FFFFFF",
+                padding: "24px 28px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+                boxSizing: "border-box",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Crown style={{ width: "20px", height: "20px", color: "#F59E0B" }} />
+                  <span style={{ fontSize: "18px", fontWeight: 700 }}>XITE Pro University License</span>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#10B981", backgroundColor: "rgba(16,185,129,0.15)", padding: "2px 8px", borderRadius: "12px" }}>
+                    Active • Renews Aug 2027
+                  </span>
+                </div>
+                <p style={{ fontSize: "13px", color: "#A3A3A3", margin: 0 }}>
+                  Unlimited institutional landing pages, auto SSL TLS 1.3, multi-region Edge CDN, and priority 24/7 SLA.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => showToast("Subscription is active on annual university billing! 👑")}
+                  style={{
+                    borderRadius: "8px",
+                    backgroundColor: "#FFFFFF",
+                    color: "#171717",
+                    padding: "9px 18px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Manage Tier
+                </button>
+              </div>
+            </div>
+
+            {/* Feature Checklist Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }} className="max-lg:!grid-cols-1">
+              {[
+                { title: "Custom Domain Routing", val: "Unlimited Subdomains", icon: Globe },
+                { title: "Edge CDN Bandwidth", val: "500 GB / Month", icon: Zap },
+                { title: "Priority Support SLA", val: "< 15 min response", icon: Shield },
+              ].map((c) => {
+                const Icon = c.icon;
+                return (
+                  <div key={c.title} style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "20px", display: "flex", flexDirection: "column", gap: "6px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#737373", fontSize: "12px", fontWeight: 600 }}>
+                      <Icon style={{ width: "16px", height: "16px" }} />
+                      <span>{c.title}</span>
+                    </div>
+                    <span style={{ fontSize: "18px", fontWeight: 700, color: "#171717" }}>{c.val}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 6: BILLING HISTORY (🧾) */}
+        {/* ========================================================= */}
+        {activeNav === "billing" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
+                INVOICES &amp; RECEIPTS
+              </span>
+              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
+                Billing History
+              </h1>
+            </div>
+
+            <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Past Invoices &amp; Statements</h4>
+                <button
+                  type="button"
+                  onClick={() => showToast("Downloading all statements ZIP... 📥")}
+                  style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: 600, color: "#2563EB", background: "transparent", border: "none", cursor: "pointer" }}
+                >
+                  <Download style={{ width: "13px", height: "13px" }} />
+                  <span>Download All</span>
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {[
+                  { id: "INV-2026-089", date: "Aug 1, 2026", desc: "XITE Pro University License (Annual)", amount: "$990.00", status: "Paid" },
+                  { id: "INV-2025-088", date: "Aug 1, 2025", desc: "XITE Pro University License (Annual)", amount: "$990.00", status: "Paid" },
+                  { id: "INV-2024-042", date: "Aug 1, 2024", desc: "XITE Starter Subscription", amount: "$290.00", status: "Paid" },
+                ].map((inv) => (
+                  <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: "10px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#171717" }}>{inv.id}</span>
+                      <span style={{ color: "#737373" }}>{inv.date}</span>
+                      <span style={{ fontWeight: 600, color: "#171717" }}>{inv.desc}</span>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <span style={{ fontWeight: 700, color: "#171717" }}>{inv.amount}</span>
+                      <span style={{ color: "#047857", backgroundColor: "#ECFDF5", padding: "2px 8px", borderRadius: "10px", fontWeight: 600 }}>● {inv.status}</span>
+                      <button
+                        type="button"
+                        onClick={() => showToast(`Downloaded invoice ${inv.id}.pdf 📄`)}
+                        style={{ display: "flex", alignItems: "center", gap: "4px", background: "transparent", border: "none", color: "#737373", cursor: "pointer", fontWeight: 600 }}
+                      >
+                        <Download style={{ width: "13px", height: "13px" }} />
+                        <span>PDF</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* TAB 7: PAYMENT METHODS (💳) */}
+        {/* ========================================================= */}
+        {activeNav === "payments" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
+                CARDS &amp; GATEWAYS
+              </span>
+              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
+                Payment Methods
+              </h1>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }} className="max-lg:!grid-cols-1">
+              {/* Saved Payment Card */}
+              <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Active Cards on File</h4>
+
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderRadius: "12px", backgroundColor: "#171717", color: "#FFFFFF" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <span style={{ fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.06em" }}>Primary Card</span>
+                    <span style={{ fontFamily: "monospace", fontSize: "15px", fontWeight: 700, letterSpacing: "0.1em" }}>Visa •••• 4242</span>
+                    <span style={{ fontSize: "11px", color: "#A3A3A3" }}>Expires 08/29 • Kishore</span>
+                  </div>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#10B981", backgroundColor: "rgba(16,185,129,0.15)", padding: "4px 8px", borderRadius: "8px" }}>
+                    DEFAULT
+                  </span>
+                </div>
+              </div>
+
+              {/* Add New Card Form */}
+              <form onSubmit={handleAddCard} style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Add New Payment Method</h4>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>Cardholder Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={cardHolder}
+                    onChange={(e) => setCardHolder(e.target.value)}
+                    style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>Card Number</label>
+                  <input
+                    type="text"
+                    required
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none", fontFamily: "monospace" }}
+                  />
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>Expiry</label>
+                    <input
+                      type="text"
+                      required
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(e.target.value)}
+                      style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none" }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>CVC</label>
+                    <input
+                      type="text"
+                      required
+                      value={cardCvc}
+                      onChange={(e) => setCardCvc(e.target.value)}
+                      style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none" }}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    borderRadius: "8px",
+                    backgroundColor: "#171717",
+                    color: "#FFFFFF",
+                    padding: "9px 18px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    border: "none",
+                    cursor: "pointer",
+                    alignSelf: "flex-start",
+                    marginTop: "4px",
+                  }}
+                >
+                  Save Card
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
         {/* TAB 1: CUSTOM DOMAIN & SSL */}
         {/* ========================================================= */}
         {activeNav === "domain" && (
@@ -596,37 +817,14 @@ export function DomainSettingsModal({
               <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
                 DOMAIN CONFIGURATION &amp; HOSTING
               </span>
-              <h1
-                style={{
-                  fontSize: "30px",
-                  fontWeight: 700,
-                  color: "#171717",
-                  lineHeight: 1.15,
-                  margin: 0,
-                  letterSpacing: "-0.02em",
-                }}
-              >
+              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
                 Publishing &amp; Custom Domain Settings for your College Website
               </h1>
             </div>
 
-            {/* Main Domain Setup Card */}
-            <div
-              style={{
-                borderRadius: "14px",
-                border: "1px solid #E5E5E5",
-                backgroundColor: "#FFFFFF",
-                padding: "24px 28px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-              }}
-            >
+            <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
-                  Primary Custom Domain
-                </h4>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Primary Custom Domain</h4>
                 <span style={{ fontSize: "11px", fontWeight: 600, color: "#047857", backgroundColor: "#ECFDF5", padding: "2px 8px", borderRadius: "12px" }}>
                   ● SSL Active &amp; Connected
                 </span>
@@ -670,23 +868,8 @@ export function DomainSettingsModal({
               </div>
             </div>
 
-            {/* DNS Instructions Table Card */}
-            <div
-              style={{
-                borderRadius: "14px",
-                border: "1px solid #E5E5E5",
-                backgroundColor: "#FFFFFF",
-                padding: "24px 28px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "14px",
-              }}
-            >
-              <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
-                DNS Configuration Records
-              </h4>
-
+            <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
+              <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>DNS Configuration Records</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {[
                   { type: "A Record", host: "@", value: "76.76.21.21", status: "Active" },
@@ -726,44 +909,20 @@ export function DomainSettingsModal({
               <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
                 EDGE CDN &amp; HOSTING
               </span>
-              <h1
-                style={{
-                  fontSize: "30px",
-                  fontWeight: 700,
-                  color: "#171717",
-                  lineHeight: 1.15,
-                  margin: 0,
-                  letterSpacing: "-0.02em",
-                }}
-              >
+              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
                 Production Deployment Center
               </h1>
             </div>
 
-            <div
-              style={{
-                borderRadius: "14px",
-                border: "1px solid #E5E5E5",
-                backgroundColor: "#FFFFFF",
-                padding: "24px 28px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-              }}
-            >
+            <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
-                  Trigger Live Production Build
-                </h4>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Trigger Live Production Build</h4>
                 <span style={{ fontSize: "11px", fontWeight: 600, color: "#047857", backgroundColor: "#ECFDF5", padding: "2px 8px", borderRadius: "12px" }}>
                   🟢 Ready to Deploy
                 </span>
               </div>
 
-              <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>
-                Compiles all 23 institutional college pages and synchronizes with the Edge CDN network.
-              </p>
+              <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>Compiles all 23 institutional college pages and synchronizes with the Edge CDN network.</p>
 
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <button
@@ -805,16 +964,7 @@ export function DomainSettingsModal({
               <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
                 AUTHENTICATION &amp; ACCESS
               </span>
-              <h1
-                style={{
-                  fontSize: "30px",
-                  fontWeight: 700,
-                  color: "#171717",
-                  lineHeight: 1.15,
-                  margin: 0,
-                  letterSpacing: "-0.02em",
-                }}
-              >
+              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
                 Password &amp; Security Settings
               </h1>
             </div>
@@ -833,9 +983,7 @@ export function DomainSettingsModal({
                 maxWidth: "600px",
               }}
             >
-              <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
-                Change Account Password
-              </h4>
+              <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Change Account Password</h4>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>Current Password</label>
