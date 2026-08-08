@@ -1065,6 +1065,14 @@ export function EditorStudio({
         flex-wrap: wrap !important;
       }
 
+      .section-canvas-box header div:first-child span,
+      .section-canvas-box header div:first-child a,
+      header div:first-child span,
+      header div:first-child a {
+        font-size: clamp(10px, 1.1vw, 13px) !important;
+        white-space: nowrap !important;
+      }
+
       .section-canvas-box .mobile-drawer-menu,
       header .mobile-drawer-menu {
         width: 100% !important;
@@ -1088,6 +1096,20 @@ export function EditorStudio({
         header .desktop-nav-links {
           display: none !important;
         }
+
+        .section-canvas-box header div[style*="display: flex"],
+        .section-canvas-box header div[style*="justify-content"],
+        header div[style*="display: flex"],
+        header div[style*="justify-content"],
+        header > div {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          gap: 10px !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+
         .section-canvas-box header .desktop-apply-btn,
         .section-canvas-box header a.desktop-apply-btn,
         .section-canvas-box header button.desktop-apply-btn,
@@ -1105,7 +1127,9 @@ export function EditorStudio({
           position: relative !important;
           top: auto !important;
           transform: none !important;
+          margin-left: auto !important;
         }
+
         .section-canvas-box .hamburger-toggle-btn,
         header .hamburger-toggle-btn {
           display: inline-flex !important;
@@ -1120,14 +1144,7 @@ export function EditorStudio({
           top: auto !important;
           transform: none !important;
         }
-        .section-canvas-box header > div:first-child,
-        header > div:first-child {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: space-between !important;
-          gap: 10px !important;
-          width: 100% !important;
-        }
+
         .section-canvas-box .mobile-drawer-menu.active,
         header .mobile-drawer-menu.active {
           display: block !important;
@@ -1146,6 +1163,20 @@ export function EditorStudio({
           header .desktop-nav-links {
             display: none !important;
           }
+
+          .section-canvas-box header div[style*="display: flex"],
+          .section-canvas-box header div[style*="justify-content"],
+          header div[style*="display: flex"],
+          header div[style*="justify-content"],
+          header > div {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
           .section-canvas-box header .desktop-apply-btn,
           .section-canvas-box header a.desktop-apply-btn,
           .section-canvas-box header button.desktop-apply-btn,
@@ -1163,7 +1194,9 @@ export function EditorStudio({
             position: relative !important;
             top: auto !important;
             transform: none !important;
+            margin-left: auto !important;
           }
+
           .section-canvas-box .hamburger-toggle-btn,
           header .hamburger-toggle-btn {
             display: inline-flex !important;
@@ -1178,14 +1211,7 @@ export function EditorStudio({
             top: auto !important;
             transform: none !important;
           }
-          .section-canvas-box header > div:first-child,
-          header > div:first-child {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            gap: 10px !important;
-            width: 100% !important;
-          }
+
           .section-canvas-box .mobile-drawer-menu.active,
           header .mobile-drawer-menu.active {
             display: block !important;
