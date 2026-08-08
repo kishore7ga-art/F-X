@@ -2086,7 +2086,7 @@ export function EditorStudio({
     }
   };
 
-  // Swap / Cycle between admin-added section variants (e.g. hero 1 <-> hero 2) for the ACTIVE category ONLY
+  // Swap / Cycle between section variants for the ACTIVE category ONLY
   const handleSwapVariant = async () => {
     if (activeSectionIndex === null || sections.length === 0) return;
 
@@ -2121,7 +2121,6 @@ export function EditorStudio({
         }
       } catch {}
 
-      // Also try default-website endpoint if admin templates list is empty
       if (templatesList.length === 0) {
         try {
           const defRes = await fetch(`${apiBase}/api/v1/default-website`);
@@ -2132,8 +2131,13 @@ export function EditorStudio({
               defData.pages.forEach((p: any) => {
                 if (Array.isArray(p.sections)) {
                   p.sections.forEach((s: any) => {
-                    if (s && s.code) {
-                      allPageSecs.push({ name: s.title || "Section", code: s.code });
+                    if (s && (s.code || s.html || s.content)) {
+                      allPageSecs.push({
+                        id: s.id || s.title,
+                        name: s.title || s.name || "Section",
+                        code: s.code || s.html || s.content,
+                        category: s.sectionType || s.category || s.id || "",
+                      });
                     }
                   });
                 }
@@ -2147,60 +2151,65 @@ export function EditorStudio({
       }
     }
 
-    // 1. Accurately determine Category ID of the ACTIVE section ONLY
+    // 1. Accurately determine Category ID of the ACTIVE section ONLY across ALL 19 categories
     const titleLower = (activeSec.title || "").toLowerCase();
     const codeLower = (activeSec.code || "").toLowerCase();
     const idLower = (activeSec.id || "").toLowerCase();
+    const secCategoryLower = (activeSec.category || "").toLowerCase();
 
-    let catId = "hero";
-    
-    // Check Hero FIRST so Hero sections are NEVER misclassified as Headers/Navbars
-    if (
-      titleLower.includes("hero") ||
-      titleLower.includes("banner") ||
-      idLower.includes("hero") ||
-      idLower.includes("banner") ||
-      (activeSec.category && activeSec.category.toLowerCase().includes("hero"))
-    ) {
-      catId = "hero";
-    } else if (
-      titleLower.includes("header") ||
-      titleLower.includes("navbar") ||
-      idLower.includes("header") ||
-      idLower.includes("navbar") ||
-      (codeLower.includes("<header") && !codeLower.includes("admissions") && !codeLower.includes("empowering"))
-    ) {
-      catId = "header";
-    } else if (
-      titleLower.includes("stat") ||
-      titleLower.includes("metric") ||
-      idLower.includes("stat")
-    ) {
-      catId = "stats";
-    } else if (titleLower.includes("feature") || titleLower.includes("highlight")) {
-      catId = "features";
-    } else if (titleLower.includes("about")) {
-      catId = "about";
-    } else if (titleLower.includes("course") || titleLower.includes("academic")) {
-      catId = "courses";
-    } else if (titleLower.includes("placement") || titleLower.includes("career")) {
-      catId = "placements";
-    } else if (titleLower.includes("faculty") || titleLower.includes("staff") || titleLower.includes("team")) {
-      catId = "faculty";
-    } else if (titleLower.includes("footer") || idLower.includes("footer") || codeLower.includes("<footer")) {
-      catId = "footer";
-    } else if (titleLower.includes("contact")) {
-      catId = "contact";
-    } else if (codeLower.includes("student-faculty ratio") || codeLower.includes("global university")) {
-      catId = "stats";
+    let catId = secCategoryLower;
+
+    if (!catId) {
+      if (titleLower.includes("nav") || titleLower.includes("header") || idLower.includes("nav") || idLower.includes("header") || (codeLower.includes("<header") && !codeLower.includes("admissions"))) {
+        catId = "navbar";
+      } else if (titleLower.includes("hero") || titleLower.includes("banner") || idLower.includes("hero") || idLower.includes("banner")) {
+        catId = "hero";
+      } else if (titleLower.includes("highlight") || titleLower.includes("stat") || titleLower.includes("metric") || idLower.includes("highlight") || idLower.includes("stat")) {
+        catId = "highlights";
+      } else if (titleLower.includes("about") || idLower.includes("about")) {
+        catId = "about";
+      } else if (titleLower.includes("vision") || titleLower.includes("mission") || idLower.includes("vision")) {
+        catId = "vision";
+      } else if (titleLower.includes("course") || titleLower.includes("program") || titleLower.includes("academic") || idLower.includes("course") || idLower.includes("program")) {
+        catId = "courses";
+      } else if (titleLower.includes("department") || idLower.includes("department")) {
+        catId = "departments";
+      } else if (titleLower.includes("admission") || idLower.includes("admission")) {
+        catId = "admissions";
+      } else if (titleLower.includes("placement") || titleLower.includes("recruiter") || titleLower.includes("career") || idLower.includes("placement")) {
+        catId = "placements";
+      } else if (titleLower.includes("facilit") || titleLower.includes("infrastruct") || idLower.includes("facilit")) {
+        catId = "facilities";
+      } else if (titleLower.includes("research") || titleLower.includes("patent") || titleLower.includes("r&d") || idLower.includes("research")) {
+        catId = "research";
+      } else if (titleLower.includes("news") || titleLower.includes("circular") || titleLower.includes("announcement") || idLower.includes("news")) {
+        catId = "news";
+      } else if (titleLower.includes("event") || titleLower.includes("calendar") || idLower.includes("event")) {
+        catId = "events";
+      } else if (titleLower.includes("gallery") || titleLower.includes("campus life") || idLower.includes("gallery")) {
+        catId = "gallery";
+      } else if (titleLower.includes("testimonial") || titleLower.includes("alumni") || titleLower.includes("say") || idLower.includes("testimonial")) {
+        catId = "testimonials";
+      } else if (titleLower.includes("achievement") || titleLower.includes("award") || titleLower.includes("recognition") || idLower.includes("achievement") || idLower.includes("award")) {
+        catId = "achievements";
+      } else if (titleLower.includes("contact") || titleLower.includes("enquiry") || titleLower.includes("inquiry") || idLower.includes("contact")) {
+        catId = "contact";
+      } else if (titleLower.includes("map") || titleLower.includes("location") || idLower.includes("map")) {
+        catId = "map";
+      } else if (titleLower.includes("footer") || idLower.includes("footer") || codeLower.includes("<footer")) {
+        catId = "footer";
+      } else {
+        const idParts = idLower.split("-");
+        catId = idParts.length >= 2 ? idParts[1]! : "custom";
+      }
     }
 
-    // 2. STRICT & Comprehensive Category Filtering: Collect ONLY templates that belong to THIS category (catId)
+    // 2. STRICT Category Filtering: Collect ONLY templates that belong to THIS SPECIFIC category (catId)
     const matchingTemplates: { name: string; code: string }[] = [];
 
     templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
-      const catLower = (tpl.category || tpl.type || tpl.catId || "").toLowerCase();
+      const tplCatLower = (tpl.category || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
       const codeStr = (tpl.code || tpl.html || tpl.content || tpl.templateCode || "").trim();
       const tplCodeLower = codeStr.toLowerCase();
 
@@ -2208,39 +2217,14 @@ export function EditorStudio({
 
       let isMatch = false;
 
-      if (catId === "hero") {
-        // Hero matching: STRICTLY match hero templates ONLY (exclude headers/navbars!)
-        isMatch =
-          catLower === "hero" ||
-          catLower.includes("hero") ||
-          nameLower.includes("hero") ||
-          nameLower.includes("banner") ||
-          nameLower.includes("[hero]") ||
-          (tplCodeLower.includes("admissions open") && !tplCodeLower.includes("<header") && !tplCodeLower.includes("desktop-nav-links"));
-      } else if (catId === "header") {
-        // Header matching: STRICTLY match navbar/header templates ONLY
-        isMatch =
-          catLower === "header" ||
-          catLower.includes("header") ||
-          nameLower.includes("header") ||
-          nameLower.includes("navbar") ||
-          nameLower.includes("nav") ||
-          tplCodeLower.includes("desktop-nav-links") ||
-          tplCodeLower.startsWith("<header");
+      if (catId === "vision") {
+        isMatch = tplCatLower === "vision" || tplCatLower.includes("vision") || nameLower.includes("vision") || nameLower.includes("mission") || tplCodeLower.includes("vision & mission");
+      } else if (catId === "hero") {
+        isMatch = tplCatLower === "hero" || tplCatLower.includes("hero") || nameLower.includes("hero") || nameLower.includes("banner");
+      } else if (catId === "navbar" || catId === "header") {
+        isMatch = tplCatLower.includes("nav") || tplCatLower.includes("header") || nameLower.includes("nav") || nameLower.includes("header");
       } else {
-        isMatch =
-          catLower === catId ||
-          catLower.includes(catId) ||
-          nameLower.includes(`[${catId}]`) ||
-          nameLower.includes(catId) ||
-          (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric") || catLower.includes("stat"))) ||
-          (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight") || catLower.includes("feature"))) ||
-          (catId === "about" && (nameLower.includes("about") || catLower.includes("about"))) ||
-          (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic") || catLower.includes("course"))) ||
-          (catId === "placements" && (nameLower.includes("placement") || nameLower.includes("career") || catLower.includes("placement"))) ||
-          (catId === "faculty" && (nameLower.includes("faculty") || nameLower.includes("staff") || catLower.includes("faculty"))) ||
-          (catId === "contact" && (nameLower.includes("contact") || catLower.includes("contact"))) ||
-          (catId === "footer" && (nameLower.includes("footer") || catLower.includes("footer") || tplCodeLower.includes("<footer")));
+        isMatch = tplCatLower === catId || tplCatLower.includes(catId) || nameLower.includes(catId) || nameLower.includes(`[${catId}]`);
       }
 
       if (isMatch && !matchingTemplates.some((m) => m.code.trim() === codeStr)) {
@@ -2248,16 +2232,16 @@ export function EditorStudio({
       }
     });
 
-    // Add built-in starter templates for this category if present
-    if (ALL_19_SECTION_TEMPLATES[catId]) {
-      const starterCode = ALL_19_SECTION_TEMPLATES[catId].trim();
+    // Add default template for this SPECIFIC category if available
+    const categoryDefaultCode = liveAdminTemplatesMap[catId] || ALL_19_SECTION_TEMPLATES[catId];
+    if (categoryDefaultCode) {
+      const starterCode = categoryDefaultCode.trim();
       if (!matchingTemplates.some((m) => m.code.trim() === starterCode)) {
-        matchingTemplates.push({ name: `${catId.toUpperCase()} Default Variant`, code: starterCode });
+        matchingTemplates.push({ name: `${activeSec.title || catId.toUpperCase()} Default`, code: starterCode });
       }
     }
 
     if (matchingTemplates.length > 0) {
-      // Find current active template index in matching category templates
       const currentIdx = matchingTemplates.findIndex(
         (t) => t.name === activeSec.title || t.code.trim() === activeSec.code.trim()
       );
@@ -2271,12 +2255,13 @@ export function EditorStudio({
             ...sec,
             title: nextTpl.name,
             code: nextTpl.code,
+            category: catId,
             variantIndex: nextIdx,
           };
         })
       );
 
-      showToastNotification(`Swapped ${catId.toUpperCase()} to Variant ${nextIdx + 1}: "${nextTpl.name}"`);
+      showToastNotification(`Swapped ${activeSec.title} to Variant ${nextIdx + 1}`);
       return;
     }
 
