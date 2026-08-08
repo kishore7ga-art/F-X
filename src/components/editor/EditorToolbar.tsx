@@ -432,33 +432,6 @@ export function EditorToolbar({
             <RefreshCw style={{ width: "18px", height: "18px" }} />
           </button>
 
-          {/* Edit Text Content Button */}
-          <button
-            onClick={() => {
-              if (onEditText) {
-                onEditText();
-              } else {
-                showToast("Click any text to edit directly or right-click! ✏️");
-              }
-            }}
-            style={{
-              width: "34px",
-              height: "34px",
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#0284c7",
-              ...buttonHoverStyle,
-            }}
-            title="Edit Text Content in Section"
-          >
-            <Type style={{ width: "18px", height: "18px" }} />
-          </button>
-
 
 
           {/* Move Up Button */}
