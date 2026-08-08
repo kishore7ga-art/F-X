@@ -1056,17 +1056,22 @@ export function EditorStudio({
 
       ${isResponsiveView ? `
         /* Forced Tablet & Mobile Rules when responsive viewport selected in Editor */
-        .section-canvas-box nav.desktop-nav-links,
-        .section-canvas-box .desktop-nav-links,
-        .section-canvas-box .desktop-apply-btn,
-        .section-canvas-box a.desktop-apply-btn,
-        .section-canvas-box button.desktop-apply-btn,
+        .section-canvas-box header nav:not(.mobile-drawer-menu nav),
+        .section-canvas-box header ul:not(.mobile-drawer-menu ul),
+        .section-canvas-box header .desktop-nav-links,
+        .section-canvas-box header .desktop-apply-btn,
+        .section-canvas-box header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
+        .section-canvas-box header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
+        .section-canvas-box header div[class*="top"]:not(.mobile-drawer-menu),
+        .section-canvas-box header div[class*="utility"]:not(.mobile-drawer-menu),
         header nav:not(.mobile-drawer-menu nav),
-        header .desktop-nav-links,
         header ul:not(.mobile-drawer-menu ul),
+        header .desktop-nav-links,
         header .desktop-apply-btn,
-        header a.desktop-apply-btn,
-        header button.desktop-apply-btn {
+        header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
+        header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
+        header div[class*="top"]:not(.mobile-drawer-menu),
+        header div[class*="utility"]:not(.mobile-drawer-menu) {
           display: none !important;
         }
         .section-canvas-box .hamburger-toggle-btn,
@@ -1082,17 +1087,22 @@ export function EditorStudio({
       ` : `
         /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
         @media (max-width: 900px) {
-          .section-canvas-box nav.desktop-nav-links,
-          .section-canvas-box .desktop-nav-links,
-          .section-canvas-box .desktop-apply-btn,
-          .section-canvas-box a.desktop-apply-btn,
-          .section-canvas-box button.desktop-apply-btn,
+          .section-canvas-box header nav:not(.mobile-drawer-menu nav),
+          .section-canvas-box header ul:not(.mobile-drawer-menu ul),
+          .section-canvas-box header .desktop-nav-links,
+          .section-canvas-box header .desktop-apply-btn,
+          .section-canvas-box header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
+          .section-canvas-box header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
+          .section-canvas-box header div[class*="top"]:not(.mobile-drawer-menu),
+          .section-canvas-box header div[class*="utility"]:not(.mobile-drawer-menu),
           header nav:not(.mobile-drawer-menu nav),
-          header .desktop-nav-links,
           header ul:not(.mobile-drawer-menu ul),
+          header .desktop-nav-links,
           header .desktop-apply-btn,
-          header a.desktop-apply-btn,
-          header button.desktop-apply-btn {
+          header a:not([data-logo]):not(.logo):not(.mobile-drawer-menu a),
+          header button:not(.hamburger-toggle-btn):not(.mobile-drawer-menu button),
+          header div[class*="top"]:not(.mobile-drawer-menu),
+          header div[class*="utility"]:not(.mobile-drawer-menu) {
             display: none !important;
           }
           .section-canvas-box .hamburger-toggle-btn,
