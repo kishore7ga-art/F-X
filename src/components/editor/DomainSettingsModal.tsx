@@ -53,11 +53,11 @@ export function DomainSettingsModal({
   isOpen,
   onClose,
   subdomain = "greenfield",
-  initialTab = "domain",
+  initialTab = "plan",
 }: DomainSettingsModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [activeNav, setActiveNav] = useState(initialTab || "domain");
-  const [activeProject, setActiveProject] = useState("Home & Hero");
+  const [activeNav, setActiveNav] = useState(initialTab || "plan");
+  const [activeProject, setActiveProject] = useState("Numero 10");
   const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -65,8 +65,8 @@ export function DomainSettingsModal({
   const [savedDomain, setSavedDomain] = useState(`${subdomain}.edu.in`);
   const [publishing, setPublishing] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [isVerifyingDNS, setIsVerifyingDNS] = useState(false);
-  const [dnsStatus, setDnsStatus] = useState("All 3 DNS Records Connected");
+  const [isTracking, setIsTracking] = useState(false);
+  const [trackedSeconds, setTrackedSeconds] = useState(19800); // 5.5 hours
 
   const [lastDeployedTime, setLastDeployedTime] = useState(() => {
     if (typeof window !== "undefined") {
@@ -114,15 +114,6 @@ export function DomainSettingsModal({
     }, 1200);
   };
 
-  const handleVerifyDNS = () => {
-    setIsVerifyingDNS(true);
-    setTimeout(() => {
-      setIsVerifyingDNS(false);
-      setDnsStatus("All 3 DNS Records Active & Verified");
-      showToast("SSL & DNS Routing Verified 100% Active! 🟢");
-    }, 1000);
-  };
-
   const handleSaveDomain = () => {
     setSavedDomain(customDomain);
     showToast(`Custom domain updated to https://${customDomain}`);
@@ -132,10 +123,25 @@ export function DomainSettingsModal({
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTracking) {
+      interval = setInterval(() => {
+        setTrackedSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTracking]);
+
   if (!isOpen || !mounted) return null;
 
+  const formatTrackedHours = () => {
+    const hours = (trackedSeconds / 3600).toFixed(1).replace(".", ",");
+    return hours;
+  };
+
   return createPortal(
-    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-[#F7F2EE] text-[#1A1A1A] font-sans antialiased select-none p-4 md:p-6 lg:p-8 overflow-y-auto min-h-screen">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-[#F7F2EE] text-[#1A1A1A] font-sans antialiased select-none p-3 md:p-6 overflow-y-auto min-h-screen">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
@@ -143,7 +149,7 @@ export function DomainSettingsModal({
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000000] flex items-center gap-2.5 rounded-2xl bg-[#1A1A1A] px-6 py-3.5 text-xs font-black text-white shadow-2xl border border-white/10"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[1000000] flex items-center gap-2.5 rounded-2xl bg-[#1A1A1A] px-6 py-3 text-xs font-black text-white shadow-2xl"
           >
             <span className="h-2 w-2 rounded-full bg-[#CEEAD6] animate-ping" />
             <span>{toastMessage}</span>
@@ -151,127 +157,117 @@ export function DomainSettingsModal({
         )}
       </AnimatePresence>
 
-      {/* Main 3-Column Floating Layout Container */}
-      <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-5 items-stretch relative my-auto">
+      {/* Main 3-Column Floating Layout Container with tight proportional max-width */}
+      <div className="w-full max-w-[1220px] flex flex-col lg:flex-row gap-4 items-stretch relative my-auto">
         
         {/* ========================================================= */}
-        {/* 1. LEFT NAVIGATION SIDEBAR (Dayzer Style Floating White Card) */}
+        {/* 1. LEFT NAVIGATION SIDEBAR (Floating Pill Column) */}
         {/* ========================================================= */}
-        <aside className="w-full lg:w-[270px] shrink-0 bg-white rounded-[32px] p-6 shadow-sm border border-[#EBE3DC]/80 flex flex-col justify-between min-h-[660px]">
-          <div className="space-y-6">
+        <aside className="w-full lg:w-[240px] shrink-0 bg-white rounded-[28px] p-5 shadow-sm border border-[#EBE3DC]/80 flex flex-col justify-between">
+          <div className="space-y-5">
             {/* Top Brand Logo */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white text-xs font-black shadow-xs">
-                  <div className="h-3.5 w-3.5 rounded-l-full bg-white mr-auto ml-1.5" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xl font-black tracking-tight text-[#1A1A1A] leading-none">
-                    XITE Studio
-                  </span>
-                  <span className="text-[10px] font-mono font-bold text-[#8C827A] mt-0.5">
-                    {subdomain}.edu.in
-                  </span>
-                </div>
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="h-7 w-7 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white text-xs font-black shadow-xs">
+                <div className="h-3 w-3 rounded-l-full bg-white mr-auto ml-1" />
               </div>
+              <span className="text-[17px] font-black tracking-tight text-[#1A1A1A]">
+                XITE Studio
+              </span>
             </div>
 
             {/* User Profile Card */}
-            <div className="flex items-center gap-3.5 pt-1">
+            <div className="flex items-center gap-3 px-1 pt-1">
               <div className="relative">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-tr from-[#1A1A1A] to-[#404040] text-white flex items-center justify-center font-black text-sm shadow-sm border border-slate-100">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#1A1A1A] to-[#444] text-white flex items-center justify-center font-black text-xs shadow-xs">
                   K
                 </div>
-                <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-[#34D399] border-2 border-white" />
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#34D399] border-2 border-white" />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-[14px] font-extrabold text-[#1A1A1A] tracking-tight truncate">
+                <span className="text-[13px] font-extrabold text-[#1A1A1A] tracking-tight truncate">
                   Kishore
                 </span>
-                <span className="text-[11px] font-semibold text-[#8C827A] truncate">
+                <span className="text-[10px] font-semibold text-[#8C827A] truncate">
                   Owner Account
                 </span>
               </div>
             </div>
 
             {/* Navigation Menu Links */}
-            <nav className="space-y-1.5 pt-1">
-              {/* Custom Domain & SSL (Active Tab) */}
+            <nav className="space-y-1 pt-1">
+              {/* Plan (Active) */}
               <button
                 type="button"
-                onClick={() => setActiveNav("domain")}
+                onClick={() => setActiveNav("plan")}
                 className={cn(
-                  "flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-extrabold transition-all text-left cursor-pointer",
-                  activeNav === "domain"
+                  "flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[12px] font-extrabold transition-all text-left cursor-pointer",
+                  activeNav === "plan"
                     ? "bg-[#F4ECE4] text-[#1A1A1A]"
                     : "text-[#6B635B] hover:bg-[#F9F5F1] hover:text-[#1A1A1A]"
                 )}
               >
-                <Globe className="h-4 w-4 shrink-0" />
-                <span>Custom Domain &amp; SSL</span>
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Custom Domain &amp; Plan</span>
               </button>
 
-              {/* Production Deployment */}
+              {/* Task List */}
               <button
                 type="button"
-                onClick={() => {
-                  setActiveNav("deploy");
-                  handlePublish();
-                }}
+                onClick={() => setActiveNav("tasks")}
                 className={cn(
-                  "flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold transition-all text-left cursor-pointer",
-                  activeNav === "deploy"
+                  "flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[12px] font-bold transition-all text-left cursor-pointer",
+                  activeNav === "tasks"
                     ? "bg-[#F4ECE4] text-[#1A1A1A] font-extrabold"
                     : "text-[#6B635B] hover:bg-[#F9F5F1] hover:text-[#1A1A1A]"
                 )}
               >
-                <Rocket className="h-4 w-4 shrink-0" />
-                <span>Production Deploy</span>
+                <CheckSquare className="h-3.5 w-3.5" />
+                <span>Production Tasks</span>
               </button>
 
-              {/* Website Sections & Pages (Collapsible) */}
-              <div className="pt-1">
+              {/* Projects Collapsible Group */}
+              <div className="pt-0.5">
                 <button
                   type="button"
                   onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                  className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-[13px] font-bold text-[#6B635B] hover:text-[#1A1A1A] cursor-pointer"
+                  className="flex w-full items-center justify-between rounded-2xl px-3.5 py-2 text-[12px] font-bold text-[#6B635B] hover:text-[#1A1A1A] cursor-pointer"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <Folder className="h-4 w-4 shrink-0" />
-                    <span>Website Pages</span>
+                  <div className="flex items-center gap-3">
+                    <Folder className="h-3.5 w-3.5" />
+                    <span>Pages &amp; Routes</span>
                   </div>
                   <ChevronDown
                     className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-200 text-[#8C827A]",
+                      "h-3 w-3 transition-transform duration-200 text-[#8C827A]",
                       isProjectsOpen ? "rotate-0" : "-rotate-90"
                     )}
                   />
                 </button>
 
-                {/* Sub-pages list with Dayzer colored markers */}
+                {/* Sub-projects list */}
                 {isProjectsOpen && (
-                  <div className="pl-6 pr-2 py-1.5 space-y-2">
+                  <div className="pl-5 pr-1 py-1 space-y-1.5">
                     {[
                       { name: "Home & Hero", color: "bg-[#F48FB1]" },
-                      { name: "Academics & Courses", color: "bg-[#FFB74D]" },
-                      { name: "Faculty & Team", color: "bg-[#64B5F6]" },
-                      { name: "Research & Events", color: "bg-[#81C784]" },
+                      { name: "Academics", color: "bg-[#FFB74D]" },
+                      { name: "Admissions", color: "bg-[#64B5F6]" },
+                      { name: "Placements", color: "bg-[#42A5F5]" },
                     ].map((proj) => (
                       <button
                         key={proj.name}
                         type="button"
                         onClick={() => {
                           setActiveProject(proj.name);
-                          showToast(`Selected page category: ${proj.name}`);
+                          showToast(`Selected page: ${proj.name}`);
                         }}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-xl px-3 py-1.5 text-[12px] font-bold transition-all text-left cursor-pointer",
+                          "flex w-full items-center gap-2.5 rounded-xl px-2.5 py-1 text-[11px] font-bold transition-all text-left cursor-pointer",
                           activeProject === proj.name
                             ? "text-[#1A1A1A] font-extrabold"
                             : "text-[#7D756D] hover:text-[#1A1A1A]"
                         )}
                       >
-                        <span className={cn("h-2.5 w-2.5 rounded-sm shrink-0", proj.color)} />
+                        <span className={cn("h-2 w-2 rounded-xs shrink-0", proj.color)} />
                         <span className="truncate">{proj.name}</span>
                       </button>
                     ))}
@@ -279,59 +275,44 @@ export function DomainSettingsModal({
                     <button
                       type="button"
                       onClick={() => {
-                        const name = prompt("Enter new college page title:");
+                        const name = prompt("Enter new page title:");
                         if (name) showToast(`Added page "${name}"`);
                       }}
-                      className="flex items-center gap-2 text-[11px] font-extrabold text-[#8C827A] hover:text-[#1A1A1A] pl-3 pt-1 cursor-pointer transition-colors"
+                      className="flex items-center gap-1.5 text-[10px] font-extrabold text-[#8C827A] hover:text-[#1A1A1A] pl-2.5 pt-0.5 cursor-pointer transition-colors"
                     >
-                      <Plus className="h-3 w-3" />
-                      <span>Add New Page</span>
+                      <Plus className="h-2.5 w-2.5" />
+                      <span>Add New</span>
                     </button>
                   </div>
                 )}
               </div>
 
-              {/* Team Access & Security */}
+              {/* Tags */}
               <button
                 type="button"
-                onClick={() => setActiveNav("security")}
+                onClick={() => setActiveNav("tags")}
                 className={cn(
-                  "flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold transition-all text-left cursor-pointer",
-                  activeNav === "security"
+                  "flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-[12px] font-bold transition-all text-left cursor-pointer",
+                  activeNav === "tags"
                     ? "bg-[#F4ECE4] text-[#1A1A1A] font-extrabold"
                     : "text-[#6B635B] hover:bg-[#F9F5F1] hover:text-[#1A1A1A]"
                 )}
               >
-                <Key className="h-4 w-4 shrink-0" />
-                <span>Password &amp; Security</span>
-              </button>
-
-              {/* Advanced Settings */}
-              <button
-                type="button"
-                onClick={() => setActiveNav("advanced")}
-                className={cn(
-                  "flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold transition-all text-left cursor-pointer",
-                  activeNav === "advanced"
-                    ? "bg-[#F4ECE4] text-[#1A1A1A] font-extrabold"
-                    : "text-[#6B635B] hover:bg-[#F9F5F1] hover:text-[#1A1A1A]"
-                )}
-              >
-                <Sliders className="h-4 w-4 shrink-0" />
-                <span>Advanced Settings</span>
+                <Tag className="h-3.5 w-3.5" />
+                <span>SEO &amp; Analytics</span>
               </button>
             </nav>
           </div>
 
           {/* Bottom Back to Editor Button */}
-          <div className="pt-4 border-t border-[#F0EAE4]">
+          <div className="pt-3 border-t border-[#F0EAE4]">
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-extrabold text-[#1A1A1A] hover:bg-[#F4ECE4] transition-all cursor-pointer w-full"
+              className="flex items-center gap-2.5 rounded-2xl px-3.5 py-2 text-[12px] font-extrabold text-[#1A1A1A] hover:bg-[#F4ECE4] transition-all cursor-pointer w-full"
             >
-              <div className="h-7 w-7 rounded-xl bg-[#1A1A1A] text-white flex items-center justify-center">
-                <ArrowLeft className="h-3.5 w-3.5" />
+              <div className="h-6 w-6 rounded-lg bg-[#1A1A1A] text-white flex items-center justify-center">
+                <ArrowLeft className="h-3 w-3" />
               </div>
               <span>Back to Editor</span>
             </button>
@@ -339,86 +320,80 @@ export function DomainSettingsModal({
         </aside>
 
         {/* ========================================================= */}
-        {/* 2. CENTER MAIN DASHBOARD SLATE (Dayzer Style Floating Slate) */}
+        {/* 2. CENTER MAIN DASHBOARD SLATE (Floating White Slate) */}
         {/* ========================================================= */}
-        <main className="flex-1 bg-white rounded-[36px] p-7 md:p-10 shadow-sm border border-[#EBE3DC]/80 flex flex-col justify-between space-y-8 min-h-[660px]">
-          {/* Top Navigation & Status Bar */}
-          <div className="flex items-center justify-between border-b border-[#F4EFEA] pb-5">
+        <main className="flex-1 bg-white rounded-[32px] p-6 md:p-8 shadow-sm border border-[#EBE3DC]/80 flex flex-col justify-between space-y-6">
+          {/* Top Date Navigation Bar */}
+          <div className="flex items-center justify-between border-b border-[#F4EFEA] pb-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center gap-2 text-xs font-extrabold text-[#6B635B] hover:text-[#1A1A1A] transition-colors cursor-pointer bg-white"
+              className="flex items-center gap-1.5 text-xs font-extrabold text-[#6B635B] hover:text-[#1A1A1A] transition-colors cursor-pointer bg-white"
             >
-              <span className="h-6 w-6 rounded-lg border border-[#E8E0D8] flex items-center justify-center text-[11px] font-bold">
+              <span className="h-5 w-5 rounded-md border border-[#E8E0D8] flex items-center justify-center text-[10px] font-bold">
                 ‹
               </span>
               <span>Back to Editor</span>
             </button>
 
-            <h2 className="text-[17px] font-black text-[#1A1A1A] tracking-tight">
+            <h2 className="text-[15px] font-black text-[#1A1A1A] tracking-tight">
               Publishing &amp; Custom Domain Settings
             </h2>
 
-            <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200/70 shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200/70">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>Production Live</span>
             </div>
           </div>
 
-          {/* Hero Main Headline & Actions */}
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#8C827A]">
-                Primary Domain Routing
-              </span>
-              <h1 className="text-2xl md:text-[28px] font-black tracking-tight text-[#1A1A1A] leading-[1.25] max-w-2xl">
-                Custom Domain Configuration &amp; Live Production Hosting
-              </h1>
-            </div>
+          {/* Hero Main Task Headline & Action Bar */}
+          <div className="space-y-3">
+            <h1 className="text-xl md:text-[24px] font-black tracking-tight text-[#1A1A1A] leading-[1.25] max-w-2xl">
+              Publishing &amp; Custom Domain Settings for your College Website
+            </h1>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
               {/* Connected domain badge and collaborator stack */}
-              <div className="flex items-center gap-6">
-                <div className="text-[12px] font-bold text-[#8C827A] leading-tight">
-                  Members<br />connected
+              <div className="flex items-center gap-4">
+                <div className="text-[11px] font-bold text-[#8C827A] leading-tight">
+                  Domain<br />routing
                 </div>
-                <div className="h-6 w-px bg-[#EBE3DC]" />
-                <div className="flex items-center -space-x-2">
-                  <div className="h-9 w-9 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-xs font-black border-2 border-white shadow-xs">
+                <div className="h-5 w-px bg-[#EBE3DC]" />
+                <div className="flex items-center -space-x-1.5">
+                  <div className="h-8 w-8 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[11px] font-black border-2 border-white shadow-xs">
                     K
                   </div>
                   <img
                     src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80"
-                    alt="Colleague"
-                    className="h-9 w-9 rounded-full object-cover border-2 border-white shadow-xs"
+                    alt="Admin"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-white shadow-xs"
                   />
                   <img
                     src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80"
-                    alt="Web Editor"
-                    className="h-9 w-9 rounded-full object-cover border-2 border-white shadow-xs"
+                    alt="Editor"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-white shadow-xs"
                   />
                 </div>
               </div>
 
-              {/* Actions: DNS Check + Open Live Site */}
-              <div className="flex items-center gap-3">
+              {/* Chat icon + Open Button */}
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={() => showToast("DNS routing active on all 3 records! 🟢")}
-                  className="h-10 w-10 rounded-2xl border border-[#E8E0D8] flex items-center justify-center text-[#1A1A1A] hover:bg-[#F7F2EE] transition cursor-pointer"
-                  title="Check DNS Help"
+                  className="h-9 w-9 rounded-xl border border-[#E8E0D8] flex items-center justify-center text-[#1A1A1A] hover:bg-[#F7F2EE] transition cursor-pointer"
                 >
-                  <MessageSquare className="h-4 w-4" />
+                  <MessageSquare className="h-3.5 w-3.5" />
                 </button>
 
                 <a
                   href={`/site/${subdomain}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-2xl bg-[#1A1A1A] px-7 py-2.5 text-xs font-black text-white hover:bg-black transition-all shadow-md active:scale-95 cursor-pointer inline-flex items-center gap-2"
+                  className="rounded-xl bg-[#1A1A1A] px-5 py-2 text-xs font-black text-white hover:bg-black transition-all shadow-xs active:scale-95 cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <span>Open Live Site</span>
-                  <ArrowUpRight className="h-3.5 w-3.5" />
+                  <ArrowUpRight className="h-3 w-3" />
                 </a>
               </div>
             </div>
@@ -427,72 +402,70 @@ export function DomainSettingsModal({
           {/* ========================================================= */}
           {/* Split 2-Column Dashboard Grid */}
           {/* ========================================================= */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5 pt-1">
             
-            {/* Left Column: Stats, Banner & Daily Plan Ring (5 Cols) */}
-            <div className="md:col-span-5 space-y-4">
-              <h3 className="text-lg font-black text-[#1A1A1A] tracking-tight">
+            {/* Left Column: Stats & Banners (5 Cols) */}
+            <div className="md:col-span-5 space-y-3.5">
+              <h3 className="text-[15px] font-black text-[#1A1A1A] tracking-tight">
                 Stats
               </h3>
 
-              {/* Pastel Green Banner "Good day, Kishore!" with Abstract Shapes */}
-              <div className="rounded-[28px] bg-[#CEEAD6] p-6 relative overflow-hidden flex flex-col justify-between min-h-[165px]">
-                <div className="relative z-10 space-y-3 max-w-[180px]">
-                  <h4 className="text-xl font-black text-[#1A1A1A] leading-tight tracking-tight">
+              {/* Pastel Green Banner "Good day, Kishore!" with Abstract Art */}
+              <div className="rounded-[24px] bg-[#CEEAD6] p-5 relative overflow-hidden flex flex-col justify-between min-h-[145px]">
+                <div className="relative z-10 space-y-2.5 max-w-[150px]">
+                  <h4 className="text-[17px] font-black text-[#1A1A1A] leading-tight tracking-tight">
                     Good day,<br />Kishore!
                   </h4>
                   <button
                     type="button"
-                    onClick={handleVerifyDNS}
-                    disabled={isVerifyingDNS}
-                    className="rounded-xl bg-white px-4 py-2 text-xs font-extrabold text-[#1A1A1A] shadow-xs hover:bg-[#F9F5F1] transition active:scale-95 cursor-pointer inline-flex items-center gap-1.5"
+                    onClick={handlePublish}
+                    disabled={publishing}
+                    className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-[#1A1A1A] shadow-xs hover:bg-[#F9F5F1] transition active:scale-95 cursor-pointer inline-flex items-center gap-1"
                   >
-                    {isVerifyingDNS ? (
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    {publishing ? (
+                      <RefreshCw className="h-3 w-3 animate-spin" />
                     ) : (
-                      <Check className="h-3.5 w-3.5 stroke-[2.5]" />
+                      <Rocket className="h-3 w-3" />
                     )}
-                    <span>{isVerifyingDNS ? "Verifying..." : "Verify SSL & DNS"}</span>
+                    <span>{publishing ? "Deploying..." : "Start tracking"}</span>
                   </button>
                 </div>
 
                 {/* Abstract Geometric Art in Background */}
-                <div className="absolute right-3 top-3 bottom-3 w-[150px] pointer-events-none flex items-center justify-center">
+                <div className="absolute right-2 top-2 bottom-2 w-[130px] pointer-events-none flex items-center justify-center">
                   <div className="relative w-full h-full">
-                    {/* Dark Circle */}
-                    <div className="absolute top-1 right-8 h-10 w-10 rounded-full bg-[#1A1A1A]" />
+                    {/* Circle */}
+                    <div className="absolute top-1 right-6 h-8 w-8 rounded-full bg-[#1A1A1A]" />
                     {/* Sparkle */}
-                    <div className="absolute top-4 right-1 text-white text-lg">✦</div>
+                    <div className="absolute top-3 right-1 text-white text-base">✦</div>
                     {/* Diagonal striped wedge */}
-                    <div className="absolute bottom-2 right-6 w-20 h-24 bg-[repeating-linear-gradient(45deg,#1A1A1A,#1A1A1A_3px,#CEEAD6_3px,#CEEAD6_7px)] opacity-90 transform -rotate-12 rounded-sm" />
+                    <div className="absolute bottom-1 right-4 w-16 h-20 bg-[repeating-linear-gradient(45deg,#1A1A1A,#1A1A1A_3px,#CEEAD6_3px,#CEEAD6_7px)] opacity-90 transform -rotate-12 rounded-xs" />
                     {/* Yellow half-circle */}
-                    <div className="absolute bottom-0 right-0 h-16 w-16 rounded-tl-full bg-[#FCE7AF]" />
-                    {/* Mini zigzag */}
-                    <div className="absolute bottom-0 right-14 w-6 h-6 bg-[repeating-linear-gradient(90deg,#1A1A1A,#1A1A1A_2px,transparent_2px,transparent_4px)]" />
+                    <div className="absolute bottom-0 right-0 h-12 w-12 rounded-tl-full bg-[#FCE7AF]" />
+                    {/* Mini zigzag triangle */}
+                    <div className="absolute bottom-0 right-10 w-5 h-5 bg-[repeating-linear-gradient(90deg,#1A1A1A,#1A1A1A_2px,transparent_2px,transparent_4px)]" />
                   </div>
                 </div>
               </div>
 
-              {/* Middle 2 Mini Stats Counters */}
-              <div className="grid grid-cols-2 gap-3.5">
-                {/* 23 Pages Published */}
-                <div className="rounded-[24px] bg-[#FAF7F4] p-4.5 border border-[#EBE3DC]/60 flex flex-col justify-between">
-                  <span className="text-2xl font-black text-[#1A1A1A]">23</span>
-                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#1A1A1A] mt-2">
-                    <span className="h-3.5 w-3.5 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[8px]">
+              {/* Middle 2 Mini Stats Boxes */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* 23 Live Pages */}
+                <div className="rounded-[20px] bg-[#FAF7F4] p-3.5 border border-[#EBE3DC]/60 flex flex-col justify-between">
+                  <span className="text-xl font-black text-[#1A1A1A]">23</span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-[#1A1A1A] mt-1.5">
+                    <span className="h-3 w-3 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[7px]">
                       ✓
                     </span>
                     <span>Pages live</span>
                   </div>
                 </div>
 
-                {/* 99.9% Uptime & Speed */}
-                <div className="rounded-[24px] bg-[#FAF7F4] p-4.5 border border-[#EBE3DC]/60 flex flex-col justify-between">
-                  <span className="text-2xl font-black text-[#1A1A1A]">
-                    99,9
-                  </span>
-                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#1A1A1A] mt-2">
-                    <span className="h-3.5 w-3.5 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[8px]">
+                {/* 99.9% Uptime */}
+                <div className="rounded-[20px] bg-[#FAF7F4] p-3.5 border border-[#EBE3DC]/60 flex flex-col justify-between">
+                  <span className="text-xl font-black text-[#1A1A1A]">99,9</span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-[#1A1A1A] mt-1.5">
+                    <span className="h-3 w-3 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[7px]">
                       ⚡
                     </span>
                     <span>Uptime score</span>
@@ -501,159 +474,142 @@ export function DomainSettingsModal({
               </div>
 
               {/* Bottom Pastel Yellow "Your daily plan" Card */}
-              <div className="rounded-[28px] bg-[#FCE7AF] p-5 flex items-center justify-between">
+              <div className="rounded-[24px] bg-[#FCE7AF] p-4 flex items-center justify-between">
                 <div>
-                  <h4 className="text-base font-black text-[#1A1A1A] tracking-tight">
-                    Site Health &amp; SEO
+                  <h4 className="text-[14px] font-black text-[#1A1A1A] tracking-tight">
+                    Your daily plan
                   </h4>
-                  <p className="text-xs font-bold text-[#6B635B] mt-0.5">
-                    {dnsStatus}
+                  <p className="text-[11px] font-bold text-[#6B635B] mt-0.5">
+                    4 of 6 completed
                   </p>
                 </div>
 
-                {/* 100% Circular Progress Ring */}
-                <div className="relative h-16 w-16 rounded-full bg-white flex items-center justify-center shadow-xs">
-                  <svg className="h-16 w-16 -rotate-90">
+                {/* 70% Progress Ring Circle */}
+                <div className="relative h-13 w-13 rounded-full bg-white flex items-center justify-center shadow-xs">
+                  <svg className="h-13 w-13 -rotate-90">
                     <circle
-                      cx="32"
-                      cy="32"
-                      r="26"
+                      cx="26"
+                      cy="26"
+                      r="20"
                       stroke="#F4E0A0"
-                      strokeWidth="5"
+                      strokeWidth="4"
                       fill="transparent"
                     />
                     <circle
-                      cx="32"
-                      cy="32"
-                      r="26"
+                      cx="26"
+                      cy="26"
+                      r="20"
                       stroke="#1A1A1A"
-                      strokeWidth="5"
+                      strokeWidth="4"
                       fill="transparent"
-                      strokeDasharray="163"
-                      strokeDashoffset="0"
+                      strokeDasharray="125"
+                      strokeDashoffset="37"
                       strokeLinecap="round"
                     />
                   </svg>
-                  <span className="absolute text-xs font-black text-[#1A1A1A]">
-                    100%
+                  <span className="absolute text-[10px] font-black text-[#1A1A1A]">
+                    70%
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: "DNS Records & Production Tasks" (7 Cols) */}
-            <div className="md:col-span-7 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-[#1A1A1A] tracking-tight">
-                  DNS Records &amp; Routing
-                </h3>
-                <span className="text-xs font-extrabold text-[#8C827A]">
-                  Auto SSL Active
-                </span>
-              </div>
+            {/* Right Column: "Your tasks today" Task Cards List (7 Cols) */}
+            <div className="md:col-span-7 space-y-3.5">
+              <h3 className="text-[15px] font-black text-[#1A1A1A] tracking-tight">
+                Your tasks today
+              </h3>
 
-              <div className="space-y-3.5">
-                {/* Record 1: A Record */}
-                <div className="rounded-[26px] bg-white p-5 border border-[#EBE3DC] hover:border-[#D4C8BE] transition-all shadow-xs space-y-2.5">
+              <div className="space-y-2.5">
+                {/* Task 1: Primary Custom Domain */}
+                <div
+                  className="rounded-[22px] bg-white p-4 border border-[#EBE3DC] hover:border-[#D4C8BE] transition-all shadow-xs space-y-2 group cursor-pointer"
+                  onClick={() => copyToClipboard("76.76.21.21", "a-record")}
+                >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#8C827A] font-mono">
-                      A RECORD • ROOT HOST
+                    <span className="text-[11px] font-extrabold text-[#8C827A]">
+                      Primary Domain
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard("76.76.21.21", "a-rec")}
-                      className="text-xs font-extrabold text-[#1A1A1A] hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>76.76.21.21</span>
-                      <Copy className="h-3 w-3" />
-                    </button>
+                    <span className="text-[11px] font-extrabold text-[#8C827A]">
+                      4h
+                    </span>
                   </div>
 
-                  <h4 className="text-sm font-black text-[#1A1A1A]">
-                    Point @ hostname to XITE Global IP
+                  <h4 className="text-[13px] font-black text-[#1A1A1A] group-hover:text-black transition-colors">
+                    Domain routing: {savedDomain}
                   </h4>
 
                   <div className="flex items-center gap-1.5 pt-0.5">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#1A1A1A]">
-                      <span className="h-4 w-4 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[9px] font-bold">
-                        1
-                      </span>
-                      <span>Connected &amp; Verified</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Record 2: CNAME Record */}
-                <div className="rounded-[26px] bg-white p-5 border border-[#EBE3DC] hover:border-[#D4C8BE] transition-all shadow-xs space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#8C827A] font-mono">
-                      CNAME RECORD • WWW SUBDOMAIN
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard("cname.xite.co.in", "cname-rec")}
-                      className="text-xs font-extrabold text-[#1A1A1A] hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>cname.xite.co.in</span>
-                      <Copy className="h-3 w-3" />
-                    </button>
-                  </div>
-
-                  <h4 className="text-sm font-black text-[#1A1A1A]">
-                    Canonical alias for www.{savedDomain}
-                  </h4>
-
-                  <div className="flex items-center gap-1.5 pt-0.5">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#6B635B]">
-                      <span className="h-3.5 w-3.5 rounded-full border border-[#8C827A] flex items-center justify-center text-[9px] font-bold">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#6B635B]">
+                      <span className="h-3 w-3 rounded-full border border-[#8C827A] flex items-center justify-center text-[8px] font-bold">
                         !
                       </span>
-                      <span>Active DNS Propagation</span>
+                      <span>A-Record: 76.76.21.21 Active</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Record 3: TXT Challenge */}
-                <div className="rounded-[26px] bg-white p-5 border border-[#EBE3DC] hover:border-[#D4C8BE] transition-all shadow-xs space-y-2.5">
+                {/* Task 2: Production Hosting */}
+                <div
+                  className="rounded-[22px] bg-white p-4 border border-[#EBE3DC] hover:border-[#D4C8BE] transition-all shadow-xs space-y-2 group cursor-pointer"
+                  onClick={() => copyToClipboard("cname.xite.co.in", "cname-rec")}
+                >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#8C827A] font-mono">
-                      TXT RECORD • SSL AUTH
+                    <span className="text-[11px] font-extrabold text-[#8C827A]">
+                      Production Hosting
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard("xite-auth-token-9884", "txt-rec")}
-                      className="text-xs font-extrabold text-[#1A1A1A] hover:text-blue-600 transition flex items-center gap-1 cursor-pointer"
-                    >
-                      <span className="truncate max-w-[140px]">xite-auth-token-9884</span>
-                      <Copy className="h-3 w-3 shrink-0" />
-                    </button>
+                    <span className="text-[11px] font-extrabold text-[#8C827A]">
+                      7d
+                    </span>
                   </div>
 
-                  <h4 className="text-sm font-black text-[#1A1A1A]">
-                    Automatic Let's Encrypt TLS Security Token
+                  <h4 className="text-[13px] font-black text-[#1A1A1A] group-hover:text-black transition-colors">
+                    Global CDN Edge &amp; SSL Certificate
                   </h4>
 
                   <div className="flex items-center gap-1.5 pt-0.5">
-                    <span className="text-[11px] font-bold text-emerald-700">
-                      ● Active &amp; Protected
-                    </span>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#1A1A1A]">
+                      <span className="h-3.5 w-3.5 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[8px] font-bold">
+                        1
+                      </span>
+                      <span>cname.xite.co.in Active</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Domain Input Field */}
-                <div className="pt-2">
-                  <div className="flex items-center gap-2 rounded-2xl bg-[#FAF7F4] p-2 border border-[#EBE3DC]">
+                {/* Task 3: DNS QA */}
+                <div
+                  className="rounded-[22px] bg-white p-4 border border-[#EBE3DC] hover:border-[#D4C8BE] transition-all shadow-xs space-y-2 group cursor-pointer"
+                  onClick={() => copyToClipboard("xite-auth-token-9884", "txt-rec")}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold text-[#8C827A]">
+                      DNS Security
+                    </span>
+                    <span className="text-[11px] font-extrabold text-[#8C827A]">
+                      2h
+                    </span>
+                  </div>
+
+                  <h4 className="text-[13px] font-black text-[#1A1A1A] group-hover:text-black transition-colors">
+                    Cross-platform and browser QA
+                  </h4>
+                </div>
+
+                {/* Quick Domain Input Box */}
+                <div className="pt-1">
+                  <div className="flex items-center gap-2 rounded-xl bg-[#FAF7F4] p-1.5 border border-[#EBE3DC]">
                     <input
                       type="text"
                       value={customDomain}
                       onChange={(e) => setCustomDomain(e.target.value)}
                       placeholder="e.g. kishore7ga-college.edu.in"
-                      className="flex-1 bg-transparent px-3 py-2 text-xs font-mono font-bold text-[#1A1A1A] focus:outline-none"
+                      className="flex-1 bg-transparent px-2.5 py-1 text-xs font-mono font-bold text-[#1A1A1A] focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={handleSaveDomain}
-                      className="rounded-xl bg-[#1A1A1A] px-5 py-2 text-xs font-extrabold text-white hover:bg-black transition cursor-pointer shadow-xs active:scale-95"
+                      className="rounded-lg bg-[#1A1A1A] px-4 py-1.5 text-[11px] font-extrabold text-white hover:bg-black transition cursor-pointer shadow-xs active:scale-95"
                     >
                       Save Domain
                     </button>
@@ -665,102 +621,105 @@ export function DomainSettingsModal({
         </main>
 
         {/* ========================================================= */}
-        {/* 3. RIGHT TOOL DOCK (Dayzer Style Floating Action Bar) */}
+        {/* 3. RIGHT TOOL DOCK (Floating Vertical Action Bar) */}
         {/* ========================================================= */}
-        <aside className="w-full lg:w-20 shrink-0 bg-white rounded-[32px] p-4 shadow-sm border border-[#EBE3DC]/80 flex flex-col items-center justify-between min-h-[660px]">
+        <aside className="w-full lg:w-[68px] shrink-0 bg-white rounded-[28px] p-3 shadow-sm border border-[#EBE3DC]/80 flex flex-col items-center justify-between">
           {/* Top Quick Action Tool Icons */}
-          <div className="flex flex-col items-center gap-6 w-full pt-2">
+          <div className="flex flex-col items-center gap-5 w-full pt-1">
             {/* ⚡ Lightning Icon */}
             <button
               type="button"
               onClick={handlePublish}
               disabled={publishing}
-              className="h-10 w-10 flex items-center justify-center text-[#1A1A1A] hover:scale-110 transition cursor-pointer"
+              className="h-8 w-8 flex items-center justify-center text-[#1A1A1A] hover:scale-110 transition cursor-pointer"
               title="Instant Production Deploy ⚡"
             >
-              <Zap className="h-5 w-5 fill-[#1A1A1A]" />
+              <Zap className="h-4 w-4 fill-[#1A1A1A]" />
             </button>
 
-            {/* New page */}
+            {/* New project */}
             <button
               type="button"
               onClick={() => {
-                const p = prompt("Enter new college page title:");
-                if (p) showToast(`Created page "${p}"`);
+                const p = prompt("New project name:");
+                if (p) showToast(`Created project "${p}"`);
               }}
-              className="flex flex-col items-center gap-1.5 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
+              className="flex flex-col items-center gap-1 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
             >
-              <div className="h-10 w-10 rounded-2xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
-                <FolderPlus className="h-4 w-4 text-[#1A1A1A]" />
+              <div className="h-8 w-8 rounded-xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
+                <FolderPlus className="h-3.5 w-3.5 text-[#1A1A1A]" />
               </div>
-              <span className="text-[10px] font-extrabold leading-tight">
-                New<br />page
+              <span className="text-[9px] font-extrabold leading-tight">
+                New<br />project
               </span>
             </button>
 
             {/* Add new task */}
             <button
               type="button"
-              onClick={handleVerifyDNS}
-              className="flex flex-col items-center gap-1.5 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
+              onClick={() => {
+                const t = prompt("New task description:");
+                if (t) showToast(`Added task "${t}"`);
+              }}
+              className="flex flex-col items-center gap-1 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
             >
-              <div className="h-10 w-10 rounded-2xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
-                <CheckSquare className="h-4 w-4 text-[#1A1A1A]" />
+              <div className="h-8 w-8 rounded-xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
+                <CheckSquare className="h-3.5 w-3.5 text-[#1A1A1A]" />
               </div>
-              <span className="text-[10px] font-extrabold leading-tight">
-                Verify<br />DNS
+              <span className="text-[9px] font-extrabold leading-tight">
+                Add new<br />task
               </span>
             </button>
 
             {/* Project chat */}
             <button
               type="button"
-              onClick={() => showToast("Opening XITE Support & Domain Chat")}
-              className="flex flex-col items-center gap-1.5 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
+              onClick={() => showToast("Opening Project Team Chat")}
+              className="flex flex-col items-center gap-1 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
             >
-              <div className="h-10 w-10 rounded-2xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
-                <MessageSquare className="h-4 w-4 text-[#1A1A1A]" />
+              <div className="h-8 w-8 rounded-xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
+                <MessageSquare className="h-3.5 w-3.5 text-[#1A1A1A]" />
               </div>
-              <span className="text-[10px] font-extrabold leading-tight">
-                Support<br />chat
+              <span className="text-[9px] font-extrabold leading-tight">
+                Project<br />chat
               </span>
             </button>
           </div>
 
           {/* Bottom Collaborator Avatars Stack */}
-          <div className="flex flex-col items-center gap-2.5 pb-2">
-            {/* Avatar 1 (Kishore, Owner) with green online dot */}
+          <div className="flex flex-col items-center gap-2 pb-1">
+            {/* Avatar 1 with green online dot */}
             <div className="relative">
-              <div className="h-9 w-9 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-xs font-black shadow-xs border border-white">
+              <div className="h-7 w-7 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[10px] font-black shadow-xs border border-white">
                 K
               </div>
-              <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-[#34D399] border-2 border-white" />
+              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[#34D399] border-2 border-white" />
             </div>
 
             {/* Avatar 2 */}
             <img
               src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80"
               alt="Admin"
-              className="h-9 w-9 rounded-full object-cover shadow-xs border border-white"
+              className="h-7 w-7 rounded-full object-cover shadow-xs border border-white"
             />
 
             {/* Avatar 3 */}
             <img
               src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80"
               alt="Editor"
-              className="h-9 w-9 rounded-full object-cover shadow-xs border border-white"
+              className="h-7 w-7 rounded-full object-cover shadow-xs border border-white"
             />
 
             {/* Plus add collaborator button */}
             <button
               type="button"
               onClick={() => {
-                const em = prompt("Invite administrator or editor email:");
+                const em = prompt("Invite collaborator email:");
                 if (em) showToast(`Invited ${em}`);
               }}
-              className="h-9 w-9 rounded-full border border-[#E8E0D8] bg-white flex items-center justify-center text-[#1A1A1A] hover:bg-[#F7F2EE] transition cursor-pointer"
+              className="h-7 w-7 rounded-full border border-[#E8E0D8] bg-white flex items-center justify-center text-[#1A1A1A] hover:bg-[#F7F2EE] transition cursor-pointer"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3" />
             </button>
           </div>
         </aside>
