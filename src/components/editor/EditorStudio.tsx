@@ -1270,6 +1270,66 @@ export function EditorStudio({
     void fetchDbSections(currentPage.slug);
   }, []);
 
+  // ALWAYS fetch Admin DB templates on mount so Swap Variant & Add Section have full templates loaded!
+  useEffect(() => {
+    const loadAdminTemplates = async () => {
+      const apiBase = (() => {
+        if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+        if (
+          typeof window !== "undefined" &&
+          window.location.hostname !== "localhost" &&
+          window.location.hostname !== "127.0.0.1"
+        ) {
+          return "https://api.xite.co.in";
+        }
+        return "http://localhost:4000";
+      })();
+
+      try {
+        const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
+            setAdminDbTemplates(data.templates);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Could not fetch admin templates:", e);
+      }
+
+      try {
+        const defRes = await fetch(`${apiBase}/api/v1/default-website`);
+        if (defRes.ok) {
+          const defData = await defRes.json().catch(() => ({}));
+          if (defData && Array.isArray(defData.pages)) {
+            const allSecs: any[] = [];
+            defData.pages.forEach((p: any) => {
+              if (Array.isArray(p.sections)) {
+                p.sections.forEach((s: any) => {
+                  if (s && (s.code || s.html || s.content)) {
+                    allSecs.push({
+                      id: s.id || s.title,
+                      name: s.title || s.name || "Section",
+                      code: s.code || s.html || s.content,
+                      category: s.category || s.type || s.id || "",
+                    });
+                  }
+                });
+              }
+            });
+            if (allSecs.length > 0) {
+              setAdminDbTemplates(allSecs);
+            }
+          }
+        }
+      } catch (e) {}
+    };
+
+    void loadAdminTemplates();
+  }, []);
+
   const handlePageChange = (pageName: string, pageSlug: string) => {
     // 1. Auto-save current page sections first
     setPageStore((prev) => {
@@ -1968,35 +2028,42 @@ export function EditorStudio({
       catId = "hero";
     }
 
-    // 2. STRICT Category Filtering: Collect templates that belong ONLY to this active category (catId)
+    // 2. Comprehensive Category Filtering: Collect ALL templates that belong to this active category
     const matchingTemplates: { name: string; code: string }[] = [];
 
-    // Add matching DB templates
     templatesList.forEach((tpl) => {
-      const nameLower = (tpl.name || "").toLowerCase();
-      const tplCodeLower = (tpl.code || "").toLowerCase();
-      const isMatch =
-        nameLower.includes(`[${catId}]`) ||
-        (catId === "header" && (nameLower.includes("header") || nameLower.includes("nav") || tplCodeLower.includes("<header"))) ||
-        (catId === "hero" && (nameLower.includes("hero") || nameLower.includes("banner"))) ||
-        (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric"))) ||
-        (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight"))) ||
-        (catId === "about" && nameLower.includes("about")) ||
-        (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic"))) ||
-        (catId === "placements" && (nameLower.includes("placement") || nameLower.includes("career"))) ||
-        (catId === "faculty" && (nameLower.includes("faculty") || nameLower.includes("staff"))) ||
-        (catId === "contact" && nameLower.includes("contact")) ||
-        (catId === "footer" && (nameLower.includes("footer") || tplCodeLower.includes("<footer")));
+      const nameLower = (tpl.name || tpl.title || "").toLowerCase();
+      const catLower = (tpl.category || tpl.type || tpl.catId || "").toLowerCase();
+      const codeStr = (tpl.code || tpl.html || tpl.content || tpl.templateCode || "").trim();
+      const tplCodeLower = codeStr.toLowerCase();
 
-      if (isMatch && tpl.code && !matchingTemplates.some((m) => m.code === tpl.code)) {
-        matchingTemplates.push({ name: tpl.name || `${catId.toUpperCase()} Variant`, code: tpl.code });
+      if (!codeStr) return;
+
+      const isMatch =
+        catLower === catId ||
+        catLower.includes(catId) ||
+        nameLower.includes(`[${catId}]`) ||
+        nameLower.includes(catId) ||
+        (catId === "header" && (nameLower.includes("header") || nameLower.includes("nav") || catLower.includes("header") || tplCodeLower.includes("<header"))) ||
+        (catId === "hero" && (nameLower.includes("hero") || nameLower.includes("banner") || catLower.includes("hero") || tplCodeLower.includes("admissions open") || tplCodeLower.includes("empowering"))) ||
+        (catId === "stats" && (nameLower.includes("stat") || nameLower.includes("metric") || catLower.includes("stat"))) ||
+        (catId === "features" && (nameLower.includes("feature") || nameLower.includes("highlight") || catLower.includes("feature"))) ||
+        (catId === "about" && (nameLower.includes("about") || catLower.includes("about"))) ||
+        (catId === "courses" && (nameLower.includes("course") || nameLower.includes("academic") || catLower.includes("course"))) ||
+        (catId === "placements" && (nameLower.includes("placement") || nameLower.includes("career") || catLower.includes("placement"))) ||
+        (catId === "faculty" && (nameLower.includes("faculty") || nameLower.includes("staff") || catLower.includes("faculty"))) ||
+        (catId === "contact" && (nameLower.includes("contact") || catLower.includes("contact"))) ||
+        (catId === "footer" && (nameLower.includes("footer") || catLower.includes("footer") || tplCodeLower.includes("<footer")));
+
+      if (isMatch && !matchingTemplates.some((m) => m.code.trim() === codeStr)) {
+        matchingTemplates.push({ name: tpl.name || tpl.title || `${catId.toUpperCase()} Variant`, code: codeStr });
       }
     });
 
-    // If matching DB templates are less than 2, add starter variants for THIS category from ALL_19_SECTION_TEMPLATES
+    // Add built-in starter templates for this category if present
     if (ALL_19_SECTION_TEMPLATES[catId]) {
-      const starterCode = ALL_19_SECTION_TEMPLATES[catId];
-      if (!matchingTemplates.some((m) => m.code === starterCode)) {
+      const starterCode = ALL_19_SECTION_TEMPLATES[catId].trim();
+      if (!matchingTemplates.some((m) => m.code.trim() === starterCode)) {
         matchingTemplates.push({ name: `${catId.toUpperCase()} Default Variant`, code: starterCode });
       }
     }
