@@ -812,6 +812,16 @@ export function EditorStudio({
     isNewTab: boolean;
   } | null>(null);
 
+  // Right-Click / Toolbar Content Text Editor Modal State
+  const [textPopup, setTextPopup] = useState<{
+    x: number;
+    y: number;
+    sectionIndex: number;
+    targetElement: HTMLElement;
+    currentText: string;
+    tagName: string;
+  } | null>(null);
+
   // Dynamic Toast Notification State (Disabled per user request)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -1379,10 +1389,20 @@ export function EditorStudio({
     textElem.style.outline = "2px dashed #2563eb";
     textElem.style.outlineOffset = "4px";
     textElem.style.borderRadius = "4px";
+    textElem.style.backgroundColor = "rgba(37, 99, 235, 0.08)";
     
     setTimeout(() => {
       textElem?.focus();
-    }, 10);
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(textElem!);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      } catch (err) {
+        // ignore selection error
+      }
+    }, 20);
 
     // Save pre-edit history snapshot so Undo restores original text
     setHistoryStack((history) => [...history.slice(-49), sections]);
@@ -1396,6 +1416,7 @@ export function EditorStudio({
       textElem.style.outline = "";
       textElem.style.outlineOffset = "";
       textElem.style.borderRadius = "";
+      textElem.style.backgroundColor = "";
 
       // Find the exact section root element inside .section-canvas-box
       const canvasBox = container.querySelector(".section-canvas-box") as HTMLElement;
@@ -1423,6 +1444,7 @@ export function EditorStudio({
         (el as HTMLElement).style.outline = '';
         (el as HTMLElement).style.outlineOffset = '';
         (el as HTMLElement).style.borderRadius = '';
+        (el as HTMLElement).style.backgroundColor = '';
       });
 
       const newCode = cleanCanvasWrapperFromCode(clone.outerHTML || clone.innerHTML);
@@ -1731,6 +1753,33 @@ export function EditorStudio({
       if (target.tagName === "A" || target.tagName === "BUTTON" || target.getAttribute("href")) {
         linkElem = target;
       } else {
+        // Intercept right-click on text elements for content editing modal
+        let textElem: HTMLElement | null = target;
+        const textTags = ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "A", "BUTTON", "LI", "STRONG", "EM", "B", "I", "TD", "TH", "DIV"];
+        while (textElem && textElem !== e.currentTarget && !textTags.includes(textElem.tagName)) {
+          textElem = textElem.parentElement;
+        }
+        if (!textElem || textElem === e.currentTarget) textElem = target;
+
+        if (textElem && textElem.innerText && textElem.innerText.trim().length > 0) {
+          if (textElem.tagName === "DIV" && textElem.children.length > 2) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const mouseX = Math.min(e.clientX, window.innerWidth - 480);
+          const mouseY = Math.min(e.clientY, window.innerHeight - 380);
+
+          setTextPopup({
+            x: Math.max(10, mouseX),
+            y: Math.max(10, mouseY),
+            sectionIndex,
+            targetElement: textElem,
+            currentText: textElem.innerText.trim(),
+            tagName: textElem.tagName,
+          });
+          return;
+        }
         return;
       }
     }
@@ -1806,6 +1855,53 @@ export function EditorStudio({
     }
 
     setLinkPopup(null);
+  };
+
+  // Save updated content text back to element & update section HTML
+  const handleSaveTextContent = (newText: string) => {
+    if (!textPopup) return;
+
+    const { sectionIndex, targetElement } = textPopup;
+
+    // Update target element live text
+    targetElement.innerText = newText;
+
+    // Extract section wrapper element to save updated HTML
+    const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
+    if (container) {
+      const canvasBox = container.querySelector(".section-canvas-box") as HTMLElement;
+      let sectionRoot: HTMLElement | null = null;
+      if (canvasBox) {
+        const children = Array.from(canvasBox.children).filter((child) => child.tagName !== "STYLE");
+        if (children.length > 0) {
+          sectionRoot = children[0] as HTMLElement;
+        }
+      }
+      if (!sectionRoot) {
+        sectionRoot = (container.querySelector("section, header, footer, main") as HTMLElement) || (container as HTMLElement);
+      }
+
+      const clone = sectionRoot.cloneNode(true) as HTMLElement;
+      const badges = clone.querySelectorAll('.pointer-events-none');
+      badges.forEach((b) => b.remove());
+
+      const editables = clone.querySelectorAll('[contenteditable]');
+      editables.forEach((el) => {
+        el.removeAttribute('contenteditable');
+        (el as HTMLElement).style.outline = '';
+        (el as HTMLElement).style.outlineOffset = '';
+        (el as HTMLElement).style.borderRadius = '';
+      });
+
+      const newCode = cleanCanvasWrapperFromCode(clone.outerHTML || clone.innerHTML);
+      if (newCode) {
+        setSectionsWithHistory((prev) =>
+          prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
+        );
+      }
+    }
+
+    setTextPopup(null);
   };
 
   // Select section category in modal: Fetch latest Admin DB templates and insert exact Admin code!
@@ -2155,7 +2251,20 @@ export function EditorStudio({
     });
 
     if (textElems.length > 0) {
-      (textElems[0] as HTMLElement).focus();
+      const firstElem = textElems[0] as HTMLElement;
+      try {
+        firstElem.focus();
+      } catch (e) {
+        // ignore focus error
+      }
+      setTextPopup({
+        x: Math.max(10, Math.floor(window.innerWidth / 2 - 240)),
+        y: Math.max(10, Math.floor(window.innerHeight / 2 - 190)),
+        sectionIndex: targetIndex,
+        targetElement: firstElem,
+        currentText: firstElem.innerText.trim(),
+        tagName: firstElem.tagName,
+      });
     }
   };
 
@@ -2431,6 +2540,7 @@ export function EditorStudio({
           onAddSection={() => setShowAddSectionModal(true)}
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={handleSwapVariant}
+          onEditText={handleEnableTextEditingForActiveSection}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={historyStack.length > 0}
@@ -2440,6 +2550,197 @@ export function EditorStudio({
           onDeleteSection={handleDeleteSection}
           onSyncAdminWebsite={handlePersistWebsiteSave}
         />
+      )}
+
+      {/* ✏️ Content Text Editor Modal */}
+      {textPopup && (
+        <div
+          onClick={() => setTextPopup(null)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999,
+            backgroundColor: "rgba(3, 7, 18, 0.82)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            boxSizing: "border-box",
+          }}
+          className="select-none cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%",
+              maxWidth: "480px",
+              backgroundColor: "#0d1527",
+              border: "1px solid #0284c7",
+              borderRadius: "24px",
+              padding: "24px 28px",
+              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(2, 132, 199, 0.3)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              color: "#ffffff",
+              fontFamily: "system-ui, sans-serif",
+              boxSizing: "border-box",
+            }}
+            className="cursor-default"
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #1e293b", paddingBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "38px", height: "38px", borderRadius: "12px", backgroundColor: "#0284c7", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
+                  ✏️
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>Edit Content Text</h3>
+                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "2px 0 0 0" }}>
+                    Element Tag: <code style={{ color: "#38bdf8", fontWeight: "bold" }}>&lt;{textPopup.tagName.toLowerCase()}&gt;</code>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTextPopup(null)}
+                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "18px", padding: "4px 8px", borderRadius: "8px" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Section Text Elements Quick Selector */}
+            {(() => {
+              const container = textPopup.targetElement?.closest('.section-wrapper-container');
+              const allTextNodes = container
+                ? (Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, a, button:not(.hamburger-toggle-btn), li, strong, em, b, i, td, th'))
+                    .filter(
+                      (el) =>
+                        (el as HTMLElement).innerText &&
+                        (el as HTMLElement).innerText.trim().length > 0 &&
+                        !(el.children.length > 2 && el.tagName === "DIV")
+                    ) as HTMLElement[])
+                : [];
+
+              if (allTextNodes.length <= 1) return null;
+
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Select Text Snippet in Section ({allTextNodes.length} items)
+                  </label>
+                  <select
+                    value={allTextNodes.indexOf(textPopup.targetElement)}
+                    onChange={(e) => {
+                      const selectedIdx = parseInt(e.target.value, 10);
+                      const selectedElem = allTextNodes[selectedIdx];
+                      if (selectedElem) {
+                        setTextPopup({
+                          ...textPopup,
+                          targetElement: selectedElem,
+                          currentText: selectedElem.innerText.trim(),
+                          tagName: selectedElem.tagName,
+                        });
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      height: "40px",
+                      backgroundColor: "#1e293b",
+                      border: "1px solid #334155",
+                      borderRadius: "12px",
+                      padding: "0 12px",
+                      color: "#60a5fa",
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      outline: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {allTextNodes.map((node, i) => {
+                      const snippet = node.innerText.trim().replace(/\s+/g, " ");
+                      const shortSnippet = snippet.length > 38 ? snippet.slice(0, 38) + "..." : snippet;
+                      return (
+                        <option key={i} value={i}>
+                          &lt;{node.tagName.toLowerCase()}&gt; {shortSnippet}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              );
+            })()}
+
+            {/* Text Input Area */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Text Content
+              </label>
+              <textarea
+                rows={4}
+                value={textPopup.currentText}
+                autoFocus
+                onChange={(e) => {
+                  const newText = e.target.value;
+                  setTextPopup({ ...textPopup, currentText: newText });
+                  if (textPopup.targetElement) {
+                    textPopup.targetElement.innerText = newText;
+                  }
+                }}
+                placeholder="Enter section content text..."
+                style={{
+                  width: "100%",
+                  backgroundColor: "#1e293b",
+                  border: "1px solid #334155",
+                  borderRadius: "14px",
+                  padding: "14px",
+                  color: "#ffffff",
+                  fontSize: "14px",
+                  fontFamily: "system-ui, sans-serif",
+                  lineHeight: "1.5",
+                  outline: "none",
+                  resize: "vertical",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b" }}>
+              <button
+                onClick={() => setTextPopup(null)}
+                style={{ height: "42px", padding: "0 18px", borderRadius: "12px", border: "none", background: "transparent", color: "#94a3b8", fontWeight: 800, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSaveTextContent(textPopup.currentText)}
+                style={{
+                  height: "42px",
+                  padding: "0 24px",
+                  borderRadius: "12px",
+                  backgroundColor: "#0284c7",
+                  color: "#ffffff",
+                  fontWeight: 900,
+                  fontSize: "13px",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  boxShadow: "0 4px 14px rgba(2, 132, 199, 0.4)",
+                }}
+              >
+                <span>💾 Save Text Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Floating Right-Click Button URL Navigation Popup */}
