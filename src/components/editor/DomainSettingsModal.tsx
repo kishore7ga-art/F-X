@@ -3,28 +3,29 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
-  ArrowLeft,
-  Globe,
-  Users,
-  Key,
-  Bell,
-  Sliders,
-  ShieldCheck,
-  Rocket,
-  Check,
-  UserPlus,
-  Mail,
-  Shield,
-  Lock,
-  Smartphone,
-  Code,
-  AlertTriangle,
-  RefreshCw,
-  Trash2,
-  ExternalLink,
+  Calendar,
+  CheckSquare,
+  Folder,
+  Tag,
   LogOut,
-  User,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  Zap,
+  FolderPlus,
+  Trash2,
+  Users,
+  Plus,
+  Check,
+  Clock,
+  ExternalLink,
+  ChevronDown,
+  Sparkles,
+  ArrowUpRight,
+  X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "motion/react";
 
 interface DomainSettingsModalProps {
   isOpen: boolean;
@@ -37,114 +38,51 @@ export function DomainSettingsModal({
   isOpen,
   onClose,
   subdomain = "greenfield",
-  initialTab = "domain",
+  initialTab = "plan",
 }: DomainSettingsModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [customDomain, setCustomDomain] = useState(`${subdomain}.edu.in`);
-  const [savedDomain, setSavedDomain] = useState(`${subdomain}.edu.in`);
-  const [publishing, setPublishing] = useState(false);
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeNav, setActiveNav] = useState(initialTab || "plan");
+  const [activeProject, setActiveProject] = useState("Numero 10");
+  const [isProjectsOpen, setIsProjectsOpen] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const [lastDeployedTime, setLastDeployedTime] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("xite_last_published_time");
-        if (saved) return saved;
-      } catch {}
-    }
-    return "Aug 6, 2026 at 11:35 AM";
-  });
+  // Dynamic state for tasks & tracking
+  const [isTracking, setIsTracking] = useState(false);
+  const [trackedSeconds, setTrackedSeconds] = useState(19800); // 5.5 hours
 
-  // Team Access State
-  const [teamMembers, setTeamMembers] = useState([
-    { id: 1, name: "Kishore", email: "kishore@xite.co.in", role: "Owner Account", status: "Active" },
-    { id: 2, name: "College Admin", email: "admin@greenfield.edu.in", role: "Administrator", status: "Active" },
-    { id: 3, name: "Web Editor", email: "editor@greenfield.edu.in", role: "Content Editor", status: "Active" },
+  const [tasks, setTasks] = useState([
+    {
+      id: "t1",
+      project: "Numero 10",
+      time: "4h",
+      title: "Blog and social posts",
+      tag: "Deadline is today",
+      tagType: "deadline",
+      completed: false,
+    },
+    {
+      id: "t2",
+      project: "Grace Aroma",
+      time: "7d",
+      title: "New campaign review",
+      tag: "1 new feedback",
+      tagType: "feedback",
+      completed: false,
+    },
+    {
+      id: "t3",
+      project: "Petz App",
+      time: "2h",
+      title: "Cross-platform and browser QA",
+      tag: null,
+      tagType: null,
+      completed: false,
+    },
   ]);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("Content Editor");
-
-  // Security State
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
-
-  // Notification State
-  const [emailAlerts, setEmailAlerts] = useState({
-    deployment: true,
-    ssl: true,
-    security: true,
-    analytics: false,
-  });
-
-  // Advanced State
-  const [seoIndexing, setSeoIndexing] = useState(true);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [headerScript, setHeaderScript] = useState(
-    '<!-- Google Tag Manager / Analytics -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XITE12345"></script>'
-  );
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const handlePublish = () => {
-    setPublishing(true);
-    const nowStr =
-      new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }) +
-      " at " +
-      new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-    setTimeout(() => {
-      setPublishing(false);
-      setLastDeployedTime(nowStr);
-      try {
-        localStorage.setItem("xite_last_published_time", nowStr);
-      } catch {}
-      showToast("Website published successfully to production live!");
-    }, 1200);
-  };
-
-  const handleSaveDomain = () => {
-    setSavedDomain(customDomain);
-    showToast(`Domain saved: https://${customDomain}`);
-  };
-
-  const handleInviteMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail) return;
-    const newMember = {
-      id: Date.now(),
-      name: inviteEmail.split("@")[0] || "New Member",
-      email: inviteEmail,
-      role: inviteRole,
-      status: "Invited",
-    };
-    setTeamMembers((prev) => [...prev, newMember]);
-    setInviteEmail("");
-    showToast(`Invitation sent to ${inviteEmail}`);
-  };
-
-  const handleUpdatePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      showToast("Passwords do not match!");
-      return;
-    }
-    showToast("Password updated successfully!");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
   };
 
   useEffect(() => {
@@ -152,1448 +90,570 @@ export function DomainSettingsModal({
   }, []);
 
   useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
+    let interval: NodeJS.Timeout;
+    if (isTracking) {
+      interval = setInterval(() => {
+        setTrackedSeconds((prev) => prev + 1);
+      }, 1000);
     }
-  }, [initialTab, isOpen]);
+    return () => clearInterval(interval);
+  }, [isTracking]);
 
   if (!isOpen || !mounted) return null;
 
+  const formatTrackedHours = () => {
+    const hours = (trackedSeconds / 3600).toFixed(1).replace(".", ",");
+    return hours;
+  };
+
   return createPortal(
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 999999,
-        backgroundColor: "#f8fafc",
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        boxSizing: "border-box",
-      }}
-      className="text-slate-900 font-sans select-none"
-    >
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-[#F7F2EE] text-[#1A1A1A] font-sans antialiased select-none p-4 md:p-8 overflow-y-auto min-h-screen">
       {/* Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: "fixed",
-            top: "80px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 1000000,
-            backgroundColor: "#0f172a",
-            color: "#ffffff",
-            fontSize: "13px",
-            fontWeight: 900,
-            padding: "14px 24px",
-            borderRadius: "16px",
-            boxShadow: "0 20px 30px -10px rgba(0,0,0,0.3)",
-            border: "1px solid #334155",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#34d399" }} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* Top Header Navigation Bar */}
-      <header
-        style={{
-          height: "72px",
-          minHeight: "72px",
-          backgroundColor: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
-          paddingLeft: "32px",
-          paddingRight: "32px",
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-          boxSizing: "border-box",
-          width: "100%",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
-          <button
-            onClick={onClose}
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: "8px",
-              fontSize: "13px",
-              fontWeight: 800,
-              color: "#334155",
-              padding: "10px 18px",
-              borderRadius: "14px",
-              backgroundColor: "#f1f5f9",
-              border: "1px solid #cbd5e1",
-              cursor: "pointer",
-            }}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000000] flex items-center gap-2.5 rounded-2xl bg-[#1A1A1A] px-6 py-3.5 text-xs font-black text-white shadow-2xl"
           >
-            <ArrowLeft style={{ width: "16px", height: "16px" }} />
-            <span>Back to Editor</span>
-          </button>
-          <div style={{ height: "20px", width: "1px", backgroundColor: "#cbd5e1" }} />
-          <span style={{ fontSize: "18px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" }}>
-            XITE Studio Settings
-          </span>
-        </div>
+            <span className="h-2 w-2 rounded-full bg-[#CEEAD6] animate-ping" />
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        <a
-          href={`https://${savedDomain}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            display: "inline-flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: "8px",
-            backgroundColor: "#059669",
-            color: "#ffffff",
-            fontSize: "13px",
-            fontWeight: 900,
-            paddingLeft: "22px",
-            paddingRight: "22px",
-            height: "44px",
-            borderRadius: "14px",
-            textDecoration: "none",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            boxShadow: "0 8px 16px -4px rgba(5,150,105,0.3)",
-          }}
-        >
-          <span>Visit Live Site ↗</span>
-        </a>
-      </header>
+      {/* Main 3-Column Floating Layout Container */}
+      <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-5 items-stretch relative">
+        
+        {/* ========================================================= */}
+        {/* 1. LEFT NAVIGATION SIDEBAR (Floating Pill Column) */}
+        {/* ========================================================= */}
+        <aside className="w-full lg:w-[260px] shrink-0 bg-white rounded-[32px] p-6 shadow-sm border border-[#EBE3DC]/80 flex flex-col justify-between min-h-[640px]">
+          <div className="space-y-6">
+            {/* Top Brand Logo */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-7 w-7 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white text-xs font-black">
+                  <div className="h-3 w-3 rounded-l-full bg-white mr-auto ml-1" />
+                </div>
+                <span className="text-xl font-black tracking-tight text-[#1A1A1A]">
+                  Dayzer
+                </span>
+              </div>
+            </div>
 
-      {/* Main Settings Body Container */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "1600px",
-          margin: "0 auto",
-          display: "flex",
-          flexDirection: "row",
-          gap: "32px",
-          padding: "32px 36px",
-          boxSizing: "border-box",
-          flex: 1,
-          minHeight: 0,
-        }}
-      >
-        {/* Left Sidebar Menu */}
-        <aside
-          style={{
-            width: "240px",
-            minWidth: "240px",
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            gap: "24px",
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+            {/* User Profile Card */}
+            <div className="flex items-center gap-3.5 pt-2">
+              <div className="relative">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                  alt="Kristin Watson"
+                  className="h-12 w-12 rounded-full object-cover shadow-sm border border-slate-100"
+                />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[14px] font-extrabold text-[#1A1A1A] tracking-tight truncate">
+                  Kristin Watson
+                </span>
+                <span className="text-[11px] font-semibold text-[#8C827A] truncate">
+                  UI/UX Designer
+                </span>
+              </div>
+            </div>
+
+            {/* Navigation Menu Links */}
+            <nav className="space-y-1.5 pt-2">
+              {/* Plan (Active) */}
+              <button
+                type="button"
+                onClick={() => setActiveNav("plan")}
+                className={cn(
+                  "flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-extrabold transition-all text-left cursor-pointer",
+                  activeNav === "plan"
+                    ? "bg-[#F4ECE4] text-[#1A1A1A]"
+                    : "text-[#6B635B] hover:bg-[#F9F5F1] hover:text-[#1A1A1A]"
+                )}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Plan</span>
+              </button>
+
+              {/* Task List */}
+              <button
+                type="button"
+                onClick={() => setActiveNav("tasks")}
+                className={cn(
+                  "flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold transition-all text-left cursor-pointer",
+                  activeNav === "tasks"
+                    ? "bg-[#F4ECE4] text-[#1A1A1A] font-extrabold"
+                    : "text-[#6B635B] hover:bg-[#F9F5F1] hover:text-[#1A1A1A]"
+                )}
+              >
+                <CheckSquare className="h-4 w-4" />
+                <span>Task List</span>
+              </button>
+
+              {/* Projects Collapsible Group */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsProjectsOpen(!isProjectsOpen)}
+                  className="flex w-full items-center justify-between rounded-2xl px-4 py-2.5 text-[13px] font-bold text-[#6B635B] hover:text-[#1A1A1A] cursor-pointer"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <Folder className="h-4 w-4" />
+                    <span>Projects</span>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 transition-transform duration-200 text-[#8C827A]",
+                      isProjectsOpen ? "rotate-0" : "-rotate-90"
+                    )}
+                  />
+                </button>
+
+                {/* Sub-projects list */}
+                {isProjectsOpen && (
+                  <div className="pl-6 pr-2 py-1.5 space-y-2">
+                    {[
+                      { name: "Numero 10", color: "bg-[#F48FB1]" },
+                      { name: "Grace Aroma", color: "bg-[#FFB74D]" },
+                      { name: "Petz App", color: "bg-[#64B5F6]" },
+                      { name: "Private Works", color: "bg-[#42A5F5]" },
+                    ].map((proj) => (
+                      <button
+                        key={proj.name}
+                        type="button"
+                        onClick={() => {
+                          setActiveProject(proj.name);
+                          showToast(`Selected project: ${proj.name}`);
+                        }}
+                        className={cn(
+                          "flex w-full items-center gap-3 rounded-xl px-3 py-1.5 text-[12px] font-bold transition-all text-left cursor-pointer",
+                          activeProject === proj.name
+                            ? "text-[#1A1A1A] font-extrabold"
+                            : "text-[#7D756D] hover:text-[#1A1A1A]"
+                        )}
+                      >
+                        <span className={cn("h-2.5 w-2.5 rounded-sm shrink-0", proj.color)} />
+                        <span className="truncate">{proj.name}</span>
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const name = prompt("Enter new project name:");
+                        if (name) showToast(`Added project "${name}"`);
+                      }}
+                      className="flex items-center gap-2 text-[11px] font-extrabold text-[#8C827A] hover:text-[#1A1A1A] pl-3 pt-1 cursor-pointer transition-colors"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span>Add New</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Tags */}
+              <button
+                type="button"
+                onClick={() => setActiveNav("tags")}
+                className={cn(
+                  "flex w-full items-center gap-3.5 rounded-2xl px-4 py-3 text-[13px] font-bold transition-all text-left cursor-pointer",
+                  activeNav === "tags"
+                    ? "bg-[#F4ECE4] text-[#1A1A1A] font-extrabold"
+                    : "text-[#6B635B] hover:bg-[#F9F5F1] hover:text-[#1A1A1A]"
+                )}
+              >
+                <Tag className="h-4 w-4" />
+                <span>Tags</span>
+              </button>
+            </nav>
+          </div>
+
+          {/* Bottom Log out Button */}
+          <div className="pt-4 border-t border-[#F0EAE4]">
             <button
-              onClick={() => setActiveTab("domain")}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "14px 18px",
-                borderRadius: "16px",
-                fontSize: "13px",
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                cursor: "pointer",
-                border: "none",
-                backgroundColor: activeTab === "domain" ? "#0f172a" : "transparent",
-                color: activeTab === "domain" ? "#ffffff" : "#475569",
-                boxShadow: activeTab === "domain" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
-              }}
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[13px] font-extrabold text-[#1A1A1A] hover:bg-[#F4ECE4] transition-all cursor-pointer w-full"
             >
-              <Globe style={{ width: "18px", height: "18px", flexShrink: 0 }} />
-              <span>Custom Domain & SSL</span>
+              <div className="h-7 w-7 rounded-xl bg-[#1A1A1A] text-white flex items-center justify-center">
+                <LogOut className="h-3.5 w-3.5 rotate-180" />
+              </div>
+              <span>Log out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* ========================================================= */}
+        {/* 2. CENTER MAIN DASHBOARD SLATE (The Big Floating White Slate) */}
+        {/* ========================================================= */}
+        <main className="flex-1 bg-white rounded-[36px] p-7 md:p-10 shadow-sm border border-[#EBE3DC]/80 flex flex-col justify-between space-y-8">
+          {/* Top Date Navigation Bar */}
+          <div className="flex items-center justify-between border-b border-[#F4EFEA] pb-6">
+            <button
+              type="button"
+              onClick={() => showToast("Navigating Archive")}
+              className="flex items-center gap-2 text-xs font-extrabold text-[#6B635B] hover:text-[#1A1A1A] transition-colors cursor-pointer bg-white"
+            >
+              <span className="h-6 w-6 rounded-lg border border-[#E8E0D8] flex items-center justify-center text-[10px]">
+                ‹
+              </span>
+              <span>Archive</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab("team")}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "14px 18px",
-                borderRadius: "16px",
-                fontSize: "13px",
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                cursor: "pointer",
-                border: "none",
-                backgroundColor: activeTab === "team" ? "#0f172a" : "transparent",
-                color: activeTab === "team" ? "#ffffff" : "#475569",
-                boxShadow: activeTab === "team" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
-              }}
-            >
-              <Users style={{ width: "18px", height: "18px", flexShrink: 0 }} />
-              <span>Team Access & Roles</span>
-            </button>
+            <h2 className="text-[17px] font-black text-[#1A1A1A] tracking-tight">
+              Today's Plan
+            </h2>
 
             <button
-              onClick={() => setActiveTab("security")}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "14px 18px",
-                borderRadius: "16px",
-                fontSize: "13px",
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                cursor: "pointer",
-                border: "none",
-                backgroundColor: activeTab === "security" ? "#0f172a" : "transparent",
-                color: activeTab === "security" ? "#ffffff" : "#475569",
-                boxShadow: activeTab === "security" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
-              }}
+              type="button"
+              onClick={() => showToast("Viewing This Week")}
+              className="flex items-center gap-2 text-xs font-extrabold text-[#6B635B] hover:text-[#1A1A1A] transition-colors cursor-pointer bg-white"
             >
-              <Key style={{ width: "18px", height: "18px", flexShrink: 0 }} />
-              <span>Password & Security</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("notifications")}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "14px 18px",
-                borderRadius: "16px",
-                fontSize: "13px",
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                cursor: "pointer",
-                border: "none",
-                backgroundColor: activeTab === "notifications" ? "#0f172a" : "transparent",
-                color: activeTab === "notifications" ? "#ffffff" : "#475569",
-                boxShadow: activeTab === "notifications" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
-              }}
-            >
-              <Bell style={{ width: "18px", height: "18px", flexShrink: 0 }} />
-              <span>Notifications</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("advanced")}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "14px 18px",
-                borderRadius: "16px",
-                fontSize: "13px",
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                gap: "14px",
-                cursor: "pointer",
-                border: "none",
-                backgroundColor: activeTab === "advanced" ? "#0f172a" : "transparent",
-                color: activeTab === "advanced" ? "#ffffff" : "#475569",
-                boxShadow: activeTab === "advanced" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
-              }}
-            >
-              <Sliders style={{ width: "18px", height: "18px", flexShrink: 0 }} />
-              <span>Advanced Settings</span>
+              <span>This Week</span>
+              <span className="h-6 w-6 rounded-lg border border-[#E8E0D8] flex items-center justify-center text-[10px]">
+                ›
+              </span>
             </button>
           </div>
 
-          {/* Bottom Owner User Pill */}
-          <button
-            onClick={() => setActiveTab("account")}
-            style={{
-              width: "100%",
-              textAlign: "left",
-              padding: "14px",
-              backgroundColor: activeTab === "account" ? "#eff6ff" : "#ffffff",
-              border: activeTab === "account" ? "2px solid #2563eb" : "1px solid #cbd5e1",
-              borderRadius: "18px",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              cursor: "pointer",
-              boxShadow: activeTab === "account" ? "0 4px 12px rgba(37,99,235,0.15)" : "0 2px 4px rgba(0,0,0,0.02)",
-              transition: "all 0.15s ease",
-            }}
-          >
-            <div
-              style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "12px",
-                backgroundColor: activeTab === "account" ? "#2563eb" : "#0f172a",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 900,
-                fontSize: "13px",
-                flexShrink: 0,
-              }}
-            >
-              K
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-              <span style={{ fontSize: "13px", fontWeight: 900, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                Kishore
-              </span>
-              <span style={{ fontSize: "11px", color: activeTab === "account" ? "#1d4ed8" : "#2563eb", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                Owner Account · Details ↗
-              </span>
-            </div>
-          </button>
-        </aside>
+          {/* Hero Main Task Headline & Action Bar */}
+          <div className="space-y-4">
+            <h1 className="text-2xl md:text-[28px] font-black tracking-tight text-[#1A1A1A] leading-[1.25] max-w-2xl">
+              Messaging ID framework development for the marketing branch
+            </h1>
 
-        {/* Dynamic Right Content Area */}
-        <main
-          style={{
-            flex: "1 1 0%",
-            minWidth: 0,
-            width: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "28px",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* TAB 1: CUSTOM DOMAIN & SSL */}
-          {activeTab === "domain" && (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
-                  Publishing & Custom Domain Settings
-                </h1>
-                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
-                  Configure A Record, CNAME, and SSL hosting for your website
-                </p>
-              </div>
-
-              {/* CARD 1: Custom Domain Input Form */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    width: "100%",
-                    borderBottom: "1px solid #f1f5f9",
-                    paddingBottom: "16px",
-                  }}
-                >
-                  <div>
-                    <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                      PRIMARY CUSTOM DOMAIN
-                    </span>
-                    <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
-                      College Domain Routing
-                    </h3>
-                  </div>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "12px",
-                      color: "#047857",
-                      fontWeight: 800,
-                      backgroundColor: "#ecfdf5",
-                      padding: "8px 16px",
-                      borderRadius: "9999px",
-                      border: "1px solid #a7f3d0",
-                    }}
-                  >
-                    <ShieldCheck style={{ width: "16px", height: "16px", color: "#059669" }} />
-                    <span>SSL Active & Connected</span>
-                  </span>
+            <div className="flex items-center justify-between pt-2">
+              {/* Members connected stack */}
+              <div className="flex items-center gap-6">
+                <div className="text-[12px] font-bold text-[#8C827A] leading-tight">
+                  Members<br />connected
                 </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
-                  <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>
-                    Domain Name / Subdomain Address
-                  </label>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: "16px",
-                      width: "100%",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={customDomain}
-                      onChange={(e) => setCustomDomain(e.target.value)}
-                      style={{
-                        flex: "1 1 0%",
-                        minWidth: 0,
-                        width: "100%",
-                        position: "static",
-                        top: "auto",
-                        right: "auto",
-                        height: "54px",
-                        paddingLeft: "20px",
-                        paddingRight: "20px",
-                        borderRadius: "16px",
-                        border: "1px solid #cbd5e1",
-                        backgroundColor: "#f8fafc",
-                        fontSize: "15px",
-                        fontFamily: "monospace",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        boxSizing: "border-box",
-                        outline: "none",
-                      }}
-                    />
-                    <button
-                      onClick={handleSaveDomain}
-                      style={{
-                        position: "static",
-                        top: "auto",
-                        right: "auto",
-                        height: "54px",
-                        paddingLeft: "28px",
-                        paddingRight: "28px",
-                        backgroundColor: "#0f172a",
-                        color: "#ffffff",
-                        fontSize: "13px",
-                        fontWeight: 900,
-                        borderRadius: "16px",
-                        border: "none",
-                        flexShrink: 0,
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        boxShadow: "0 10px 25px -5px rgba(15,23,42,0.3)",
-                      }}
-                    >
-                      Save Domain
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 2: Production Live Callout Banner */}
-              <div
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  backgroundColor: "#0f172a",
-                  color: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  boxShadow: "0 20px 25px -5px rgba(0,0,0,0.12)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    width: "100%",
-                    borderBottom: "1px solid #1e293b",
-                    paddingBottom: "16px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "11px",
-                      fontWeight: 900,
-                      color: "#34d399",
-                      backgroundColor: "rgba(16, 185, 129, 0.15)",
-                      border: "1px solid rgba(16, 185, 129, 0.3)",
-                      padding: "6px 14px",
-                      borderRadius: "9999px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#34d399" }} />
-                    <span>PRODUCTION LIVE</span>
-                  </div>
-                  <span style={{ color: "#94a3b8", fontSize: "12px", fontWeight: 600 }}>
-                    Last deployed {lastDeployedTime}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    width: "100%",
-                    gap: "24px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <h3 style={{ fontSize: "22px", fontWeight: 900, color: "#ffffff", margin: 0 }}>
-                      Publish Website to Production
-                    </h3>
-                    <p style={{ fontSize: "13px", color: "#94a3b8", fontWeight: 500, margin: 0 }}>
-                      Target URL:{" "}
-                      <a
-                        href={`https://${savedDomain}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: "#60a5fa", fontWeight: 800, fontFamily: "monospace", textDecoration: "underline" }}
-                      >
-                        https://{savedDomain}
-                      </a>
-                    </p>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "14px", flexShrink: 0 }}>
-                    <button
-                      onClick={handlePublish}
-                      disabled={publishing}
-                      style={{
-                        display: "inline-flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: "10px",
-                        backgroundColor: "#10b981",
-                        color: "#ffffff",
-                        fontWeight: 900,
-                        fontSize: "13px",
-                        height: "48px",
-                        paddingLeft: "24px",
-                        paddingRight: "24px",
-                        borderRadius: "14px",
-                        border: "none",
-                        cursor: "pointer",
-                        whiteSpace: "nowrap",
-                        flexShrink: 0,
-                        boxShadow: "0 10px 20px -5px rgba(16,185,129,0.4)",
-                      }}
-                    >
-                      <Rocket style={{ width: "16px", height: "16px", flexShrink: 0 }} />
-                      <span>{publishing ? "Publishing..." : "Publish to Production"}</span>
-                    </button>
-
-                    <a
-                      href={`https://${savedDomain}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        display: "inline-flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: "8px",
-                        backgroundColor: "#1e293b",
-                        color: "#f1f5f9",
-                        fontWeight: 800,
-                        fontSize: "13px",
-                        height: "48px",
-                        paddingLeft: "20px",
-                        paddingRight: "20px",
-                        borderRadius: "14px",
-                        border: "1px solid #334155",
-                        textDecoration: "none",
-                        whiteSpace: "nowrap",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span>Visit Live Site ↗</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* CARD 3: DNS Configuration Instructions Table */}
-              <div
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    DNS CONFIGURATION INSTRUCTIONS
-                  </span>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
-                    Point your domain&apos;s DNS records to our servers
-                  </h3>
-                </div>
-
-                <div style={{ width: "100%", overflowX: "auto", borderRadius: "16px", border: "1px solid #e2e8f0" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", fontFamily: "monospace" }}>
-                    <thead>
-                      <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 900 }}>
-                        <th style={{ padding: "16px 20px" }}>TYPE</th>
-                        <th style={{ padding: "16px 20px" }}>HOST/NAME</th>
-                        <th style={{ padding: "16px 20px" }}>TARGET VALUE</th>
-                        <th style={{ padding: "16px 20px" }}>STATUS</th>
-                      </tr>
-                    </thead>
-                    <tbody style={{ fontWeight: 700, color: "#0f172a" }}>
-                      <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                        <td style={{ padding: "16px 20px", color: "#2563eb", fontWeight: 900 }}>A</td>
-                        <td style={{ padding: "16px 20px" }}>@</td>
-                        <td style={{ padding: "16px 20px" }}>76.76.21.21</td>
-                        <td style={{ padding: "16px 20px", color: "#059669", fontWeight: 900 }}>✓ Active</td>
-                      </tr>
-                      <tr>
-                        <td style={{ padding: "16px 20px", color: "#2563eb", fontWeight: 900 }}>CNAME</td>
-                        <td style={{ padding: "16px 20px" }}>www</td>
-                        <td style={{ padding: "16px 20px" }}>cname.xite.co.in</td>
-                        <td style={{ padding: "16px 20px", color: "#059669", fontWeight: 900 }}>✓ Active</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* TAB 2: TEAM ACCESS & ROLES */}
-          {activeTab === "team" && (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
-                  Team Access & Roles
-                </h1>
-                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
-                  Manage team collaborators, editor permissions, and access levels
-                </p>
-              </div>
-
-              {/* Invite Team Member Form Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    INVITE NEW TEAM MEMBER
-                  </span>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
-                    Grant Access to Collaborators
-                  </h3>
-                </div>
-
-                <form onSubmit={handleInviteMember} style={{ display: "flex", flexDirection: "row", gap: "14px", alignItems: "center", width: "100%" }}>
-                  <input
-                    type="email"
-                    placeholder="colleague@greenfield.edu.in"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    style={{
-                      flex: "1 1 0%",
-                      height: "50px",
-                      paddingLeft: "20px",
-                      paddingRight: "20px",
-                      borderRadius: "14px",
-                      border: "1px solid #cbd5e1",
-                      backgroundColor: "#f8fafc",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      color: "#0f172a",
-                      outline: "none",
-                    }}
+                <div className="h-6 w-px bg-[#EBE3DC]" />
+                <div className="flex items-center -space-x-2">
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80"
+                    alt="Member 1"
+                    className="h-9 w-9 rounded-full object-cover border-2 border-white shadow-xs"
                   />
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    style={{
-                      height: "50px",
-                      paddingLeft: "16px",
-                      paddingRight: "16px",
-                      borderRadius: "14px",
-                      border: "1px solid #cbd5e1",
-                      backgroundColor: "#ffffff",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      color: "#0f172a",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <option value="Administrator">Administrator</option>
-                    <option value="Content Editor">Content Editor</option>
-                    <option value="Billing Manager">Billing Manager</option>
-                  </select>
-                  <button
-                    type="submit"
-                    style={{
-                      height: "50px",
-                      paddingLeft: "24px",
-                      paddingRight: "24px",
-                      backgroundColor: "#0f172a",
-                      color: "#ffffff",
-                      fontSize: "13px",
-                      fontWeight: 900,
-                      borderRadius: "14px",
-                      border: "none",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <UserPlus style={{ width: "16px", height: "16px" }} />
-                    <span>Send Invite</span>
-                  </button>
-                </form>
-              </div>
-
-              {/* Team Members List Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    ACTIVE COLLABORATORS ({teamMembers.length})
-                  </span>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
-                    People with Access to this Project
-                  </h3>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
-                  {teamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "16px 20px",
-                        backgroundColor: "#f8fafc",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "16px",
-                      }}
-                    >
-                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "14px" }}>
-                        <div
-                          style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "12px",
-                            backgroundColor: member.role === "Owner Account" ? "#0f172a" : "#3b82f6",
-                            color: "#ffffff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 900,
-                            fontSize: "14px",
-                          }}
-                        >
-                          {member.name[0].toUpperCase()}
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <span style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{member.name}</span>
-                          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>{member.email}</span>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: 800,
-                            padding: "6px 14px",
-                            borderRadius: "9999px",
-                            backgroundColor: member.role === "Owner Account" ? "#e0e7ff" : "#ecfdf5",
-                            color: member.role === "Owner Account" ? "#3730a3" : "#047857",
-                          }}
-                        >
-                          {member.role}
-                        </span>
-                        {member.role !== "Owner Account" && (
-                          <button
-                            onClick={() => {
-                              setTeamMembers((prev) => prev.filter((m) => m.id !== member.id));
-                              showToast(`Removed ${member.name}`);
-                            }}
-                            style={{
-                              backgroundColor: "transparent",
-                              border: "none",
-                              color: "#ef4444",
-                              fontSize: "12px",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                            }}
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  <img
+                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80"
+                    alt="Member 2"
+                    className="h-9 w-9 rounded-full object-cover border-2 border-white shadow-xs"
+                  />
                 </div>
               </div>
-            </>
-          )}
 
-          {/* TAB 3: PASSWORD & SECURITY */}
-          {activeTab === "security" && (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
-                  Password & Security
-                </h1>
-                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
-                  Manage credentials, 2-Factor Authentication, and active login sessions
-                </p>
-              </div>
-
-              {/* Password Change Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    CHANGE ACCOUNT PASSWORD
-                  </span>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
-                    Update Login Credentials
-                  </h3>
-                </div>
-
-                <form onSubmit={handleUpdatePassword} style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>Current Password</label>
-                    <input
-                      type="password"
-                      placeholder="••••••••••••"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      style={{
-                        height: "50px",
-                        paddingLeft: "20px",
-                        paddingRight: "20px",
-                        borderRadius: "14px",
-                        border: "1px solid #cbd5e1",
-                        backgroundColor: "#f8fafc",
-                        fontSize: "14px",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "row", gap: "16px" }}>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>New Password</label>
-                      <input
-                        type="password"
-                        placeholder="••••••••••••"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        style={{
-                          height: "50px",
-                          paddingLeft: "20px",
-                          paddingRight: "20px",
-                          borderRadius: "14px",
-                          border: "1px solid #cbd5e1",
-                          backgroundColor: "#f8fafc",
-                          fontSize: "14px",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>Confirm New Password</label>
-                      <input
-                        type="password"
-                        placeholder="••••••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        style={{
-                          height: "50px",
-                          paddingLeft: "20px",
-                          paddingRight: "20px",
-                          borderRadius: "14px",
-                          border: "1px solid #cbd5e1",
-                          backgroundColor: "#f8fafc",
-                          fontSize: "14px",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    style={{
-                      width: "200px",
-                      height: "50px",
-                      marginTop: "8px",
-                      backgroundColor: "#0f172a",
-                      color: "#ffffff",
-                      fontSize: "13px",
-                      fontWeight: 900,
-                      borderRadius: "14px",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Update Password
-                  </button>
-                </form>
-              </div>
-
-              {/* 2FA Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: 0 }}>
-                    Two-Factor Authentication (2FA)
-                  </h3>
-                  <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
-                    Secure your account with an Authenticator App security code
-                  </p>
-                </div>
+              {/* Chat icon + Open Button */}
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => {
-                    setTwoFactorEnabled(!twoFactorEnabled);
-                    showToast(`2FA ${!twoFactorEnabled ? "Enabled" : "Disabled"}`);
-                  }}
-                  style={{
-                    height: "44px",
-                    paddingLeft: "24px",
-                    paddingRight: "24px",
-                    borderRadius: "14px",
-                    fontSize: "13px",
-                    fontWeight: 900,
-                    border: "none",
-                    cursor: "pointer",
-                    backgroundColor: twoFactorEnabled ? "#ecfdf5" : "#f1f5f9",
-                    color: twoFactorEnabled ? "#047857" : "#475569",
-                  }}
+                  type="button"
+                  onClick={() => showToast("Opening project conversation")}
+                  className="h-10 w-10 rounded-2xl border border-[#E8E0D8] flex items-center justify-center text-[#1A1A1A] hover:bg-[#F7F2EE] transition cursor-pointer"
                 >
-                  {twoFactorEnabled ? "✓ 2FA Enabled" : "Enable 2FA"}
+                  <MessageSquare className="h-4 w-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => showToast("Opening workspace project")}
+                  className="rounded-2xl bg-[#1A1A1A] px-7 py-2.5 text-xs font-black text-white hover:bg-black transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  Open
                 </button>
               </div>
-            </>
-          )}
+            </div>
+          </div>
 
-          {/* TAB 4: NOTIFICATIONS */}
-          {activeTab === "notifications" && (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
-                  Notifications & Preferences
-                </h1>
-                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
-                  Manage email alerts, deployment triggers, and security digests
-                </p>
+          {/* ========================================================= */}
+          {/* Split 2-Column Dashboard Grid */}
+          {/* ========================================================= */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-2">
+            
+            {/* Left Column: Stats & Banners (5 Cols) */}
+            <div className="md:col-span-5 space-y-4">
+              <h3 className="text-lg font-black text-[#1A1A1A] tracking-tight">
+                Stats
+              </h3>
+
+              {/* Pastel Green Banner "Good day, Kristin!" with Abstract Art */}
+              <div className="rounded-[28px] bg-[#CEEAD6] p-6 relative overflow-hidden flex flex-col justify-between min-h-[160px]">
+                <div className="relative z-10 space-y-3 max-w-[170px]">
+                  <h4 className="text-xl font-black text-[#1A1A1A] leading-tight tracking-tight">
+                    Good day,<br />Kristin!
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTracking(!isTracking);
+                      showToast(isTracking ? "Paused time tracking" : "Started live time tracker!");
+                    }}
+                    className="rounded-xl bg-white px-4 py-2 text-xs font-extrabold text-[#1A1A1A] shadow-xs hover:bg-[#F9F5F1] transition active:scale-95 cursor-pointer inline-block"
+                  >
+                    {isTracking ? "Stop tracking" : "Start tracking"}
+                  </button>
+                </div>
+
+                {/* Abstract Geometric Art in Background */}
+                <div className="absolute right-3 top-3 bottom-3 w-[150px] pointer-events-none flex items-center justify-center">
+                  <div className="relative w-full h-full">
+                    {/* Circle */}
+                    <div className="absolute top-1 right-8 h-10 w-10 rounded-full bg-[#1A1A1A]" />
+                    {/* Sparkle */}
+                    <div className="absolute top-4 right-1 text-white text-lg">✦</div>
+                    {/* Diagonal striped wedge */}
+                    <div className="absolute bottom-2 right-6 w-20 h-24 bg-[repeating-linear-gradient(45deg,#1A1A1A,#1A1A1A_3px,#CEEAD6_3px,#CEEAD6_7px)] opacity-90 transform -rotate-12 rounded-sm" />
+                    {/* Yellow half-circle */}
+                    <div className="absolute bottom-0 right-0 h-16 w-16 rounded-tl-full bg-[#FCE7AF]" />
+                    {/* Mini zigzag triangle */}
+                    <div className="absolute bottom-0 right-14 w-6 h-6 bg-[repeating-linear-gradient(90deg,#1A1A1A,#1A1A1A_2px,transparent_2px,transparent_4px)]" />
+                  </div>
+                </div>
               </div>
 
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                  boxSizing: "border-box",
-                }}
-              >
-                {[
-                  { key: "deployment", title: "Deployment & Publishing Alerts", desc: "Get notified when website changes are published to production live" },
-                  { key: "ssl", title: "SSL & Custom Domain Health Alerts", desc: "Receive instant notifications for SSL certificate renewal or DNS issues" },
-                  { key: "security", title: "Security & Login Activity Alerts", desc: "Get email warnings for new device logins or password changes" },
-                  { key: "analytics", title: "Weekly Traffic & Analytics Summary", desc: "Receive weekly visitor counts and pageview reports in your inbox" },
-                ].map((item) => (
+              {/* Middle 2 Mini Stats Boxes */}
+              <div className="grid grid-cols-2 gap-3.5">
+                {/* 20 Tasks finished */}
+                <div className="rounded-[24px] bg-[#FAF7F4] p-4.5 border border-[#EBE3DC]/60 flex flex-col justify-between">
+                  <span className="text-2xl font-black text-[#1A1A1A]">20</span>
+                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#1A1A1A] mt-2">
+                    <span className="h-3.5 w-3.5 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[8px]">
+                      ✓
+                    </span>
+                    <span>Tasks finished</span>
+                  </div>
+                </div>
+
+                {/* 5,5 Tracked hours */}
+                <div className="rounded-[24px] bg-[#FAF7F4] p-4.5 border border-[#EBE3DC]/60 flex flex-col justify-between">
+                  <span className="text-2xl font-black text-[#1A1A1A]">
+                    {formatTrackedHours()}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#1A1A1A] mt-2">
+                    <span className="h-3.5 w-3.5 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[8px]">
+                      ⏱
+                    </span>
+                    <span>Tracked hours</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Pastel Yellow "Your daily plan" Card */}
+              <div className="rounded-[28px] bg-[#FCE7AF] p-5 flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-black text-[#1A1A1A] tracking-tight">
+                    Your daily plan
+                  </h4>
+                  <p className="text-xs font-bold text-[#6B635B] mt-0.5">
+                    4 of 6 completed
+                  </p>
+                </div>
+
+                {/* 70% Progress Ring Circle */}
+                <div className="relative h-16 w-16 rounded-full bg-white flex items-center justify-center shadow-xs">
+                  <svg className="h-16 w-16 -rotate-90">
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r="26"
+                      stroke="#F4E0A0"
+                      strokeWidth="5"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="32"
+                      cy="32"
+                      r="26"
+                      stroke="#1A1A1A"
+                      strokeWidth="5"
+                      fill="transparent"
+                      strokeDasharray="163"
+                      strokeDashoffset="48"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute text-xs font-black text-[#1A1A1A]">
+                    70%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: "Your tasks today" Task Cards List (7 Cols) */}
+            <div className="md:col-span-7 space-y-4">
+              <h3 className="text-lg font-black text-[#1A1A1A] tracking-tight">
+                Your tasks today
+              </h3>
+
+              <div className="space-y-3.5">
+                {tasks.map((task) => (
                   <div
-                    key={item.key}
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      paddingBottom: "16px",
-                      borderBottom: "1px solid #f1f5f9",
+                    key={task.id}
+                    className="rounded-[26px] bg-white p-5 border border-[#EBE3DC] hover:border-[#D4C8BE] transition-all shadow-xs space-y-3 group cursor-pointer"
+                    onClick={() => {
+                      showToast(`Opened task: ${task.title}`);
                     }}
                   >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <span style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>{item.title}</span>
-                      <span style={{ fontSize: "13px", color: "#64748b" }}>{item.desc}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-[#8C827A]">
+                        {task.project}
+                      </span>
+                      <span className="text-xs font-extrabold text-[#8C827A]">
+                        {task.time}
+                      </span>
                     </div>
-                    <button
-                      onClick={() => {
-                        setEmailAlerts((prev) => {
-                          const updated = { ...prev, [item.key]: !prev[item.key as keyof typeof prev] };
-                          showToast(`Notification setting updated`);
-                          return updated;
-                        });
-                      }}
-                      style={{
-                        width: "56px",
-                        height: "32px",
-                        borderRadius: "9999px",
-                        border: "none",
-                        backgroundColor: emailAlerts[item.key as keyof typeof emailAlerts] ? "#0f172a" : "#cbd5e1",
-                        cursor: "pointer",
-                        position: "relative",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "50%",
-                          backgroundColor: "#ffffff",
-                          position: "absolute",
-                          top: "4px",
-                          left: emailAlerts[item.key as keyof typeof emailAlerts] ? "28px" : "4px",
-                          transition: "all 0.2s",
-                        }}
-                      />
-                    </button>
+
+                    <h4 className="text-sm font-black text-[#1A1A1A] group-hover:text-black transition-colors">
+                      {task.title}
+                    </h4>
+
+                    {task.tag && (
+                      <div className="flex items-center gap-1.5 pt-1">
+                        {task.tagType === "deadline" ? (
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#6B635B]">
+                            <span className="h-3.5 w-3.5 rounded-full border border-[#8C827A] flex items-center justify-center text-[9px] font-bold">
+                              !
+                            </span>
+                            <span>{task.tag}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#1A1A1A]">
+                            <span className="h-4 w-4 rounded-full bg-[#1A1A1A] text-white flex items-center justify-center text-[9px] font-bold">
+                              1
+                            </span>
+                            <span>{task.tag}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            </>
-          )}
-
-          {/* TAB 5: ADVANCED SETTINGS */}
-          {activeTab === "advanced" && (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
-                  Advanced Developer Settings
-                </h1>
-                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
-                  Inject custom scripts, configure SEO indexing, and manage project lifecycle
-                </p>
-              </div>
-
-              {/* Custom Header Scripts Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    CUSTOM HEADER SCRIPTS
-                  </span>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
-                    Inject Analytics & Meta Tags inside &lt;head&gt;
-                  </h3>
-                </div>
-
-                <textarea
-                  rows={4}
-                  value={headerScript}
-                  onChange={(e) => setHeaderScript(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "16px",
-                    borderRadius: "16px",
-                    border: "1px solid #cbd5e1",
-                    backgroundColor: "#0f172a",
-                    color: "#38bdf8",
-                    fontFamily: "monospace",
-                    fontSize: "13px",
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
-                />
-
-                <button
-                  onClick={() => showToast("Custom header scripts saved!")}
-                  style={{
-                    width: "180px",
-                    height: "46px",
-                    backgroundColor: "#0f172a",
-                    color: "#ffffff",
-                    fontSize: "13px",
-                    fontWeight: 900,
-                    borderRadius: "14px",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Save Custom Scripts
-                </button>
-              </div>
-
-              {/* Danger Zone Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#fff1f2",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #fecdd3",
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <h3 style={{ fontSize: "16px", fontWeight: 900, color: "#9f1239", margin: 0 }}>
-                    Unpublish Website Project
-                  </h3>
-                  <p style={{ fontSize: "13px", color: "#be123c", margin: 0 }}>
-                    Take your website offline from production live domain
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => showToast("Project unpublished from production")}
-                  style={{
-                    height: "46px",
-                    paddingLeft: "24px",
-                    paddingRight: "24px",
-                    backgroundColor: "#e11d48",
-                    color: "#ffffff",
-                    fontSize: "13px",
-                    fontWeight: 900,
-                    borderRadius: "14px",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  Unpublish Project
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* TAB 6: ACCOUNT DETAILS, LOGIN & LOGOUT */}
-          {activeTab === "account" && (
-            <>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
-                  Account Details & Session
-                </h1>
-                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
-                  Manage your personal owner profile, active session, and sign in / sign out controls
-                </p>
-              </div>
-
-              {/* Owner Profile Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "24px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                    <div
-                      style={{
-                        width: "72px",
-                        height: "72px",
-                        borderRadius: "24px",
-                        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-                        color: "#ffffff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "28px",
-                        fontWeight: 900,
-                        boxShadow: "0 10px 25px -5px rgba(15,23,42,0.3)",
-                      }}
-                    >
-                      K
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <h2 style={{ fontSize: "22px", fontWeight: 900, color: "#0f172a", margin: 0 }}>Kishore</h2>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            padding: "4px 12px",
-                            borderRadius: "9999px",
-                            backgroundColor: "#eff6ff",
-                            color: "#1d4ed8",
-                            border: "1px solid #bfdbfe",
-                            fontSize: "11px",
-                            fontWeight: 800,
-                          }}
-                        >
-                          👑 Owner Account
-                        </span>
-                      </div>
-                      <span style={{ fontSize: "14px", color: "#64748b", fontWeight: 600 }}>kishore@xite.co.in</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      onClick={() => setActiveTab("security")}
-                      style={{
-                        height: "44px",
-                        paddingLeft: "18px",
-                        paddingRight: "18px",
-                        borderRadius: "14px",
-                        backgroundColor: "#f8fafc",
-                        border: "1px solid #cbd5e1",
-                        color: "#334155",
-                        fontSize: "13px",
-                        fontWeight: 800,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <Key style={{ width: "16px", height: "16px" }} />
-                      <span>Security</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Account Info Grid */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: "16px",
-                    marginTop: "8px",
-                  }}
-                >
-                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>ORGANIZATION</span>
-                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", margin: "6px 0 0 0" }}>Greenfield University</p>
-                  </div>
-
-                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>SUBDOMAIN</span>
-                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#2563eb", margin: "6px 0 0 0" }}>{subdomain}.xite.co.in</p>
-                  </div>
-
-                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>STATUS</span>
-                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#047857", margin: "6px 0 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10b981" }}></span> Active & Verified
-                    </p>
-                  </div>
-
-                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACCOUNT TYPE</span>
-                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", margin: "6px 0 0 0" }}>Super Administrator</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Session Control & Actions Card */}
-              <div
-                style={{
-                  width: "100%",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "24px",
-                  padding: "32px",
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <div>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                    SESSION ACTIONS
-                  </span>
-                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
-                    Login & Sign Out Options
-                  </h3>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {/* Sign Out Button */}
-                  <button
-                    onClick={async () => {
-                      try {
-                        await fetch("/api/auth/logout", { method: "POST" });
-                      } catch {}
-                      try {
-                        document.cookie = "xite_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-                        document.cookie = "xite_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-                        localStorage.clear();
-                        sessionStorage.clear();
-                      } catch {}
-                      window.location.href = "/";
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "16px 24px",
-                      borderRadius: "16px",
-                      backgroundColor: "#fff1f2",
-                      border: "1px solid #fecdd3",
-                      color: "#e11d48",
-                      fontSize: "14px",
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <LogOut style={{ width: "20px", height: "20px" }} />
-                      <span>Log Out of Account</span>
-                    </div>
-                    <span style={{ fontSize: "12px", opacity: 0.8 }}>End current session ➔</span>
-                  </button>
-
-                  {/* Login / Switch Account Button */}
-                  <button
-                    onClick={() => {
-                      window.location.href = "/login";
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "16px 24px",
-                      borderRadius: "16px",
-                      backgroundColor: "#f8fafc",
-                      border: "1px solid #cbd5e1",
-                      color: "#0f172a",
-                      fontSize: "14px",
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <Users style={{ width: "20px", height: "20px", color: "#2563eb" }} />
-                      <span>Log In / Switch Account</span>
-                    </div>
-                    <span style={{ fontSize: "12px", color: "#64748b" }}>Sign into another account ➔</span>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </main>
+
+        {/* ========================================================= */}
+        {/* 3. RIGHT TOOL DOCK / FLOATING VERTICAL ACTION BAR */}
+        {/* ========================================================= */}
+        <aside className="w-full lg:w-20 shrink-0 bg-white rounded-[32px] p-4 shadow-sm border border-[#EBE3DC]/80 flex flex-col items-center justify-between min-h-[640px]">
+          {/* Top Quick Action Tool Icons */}
+          <div className="flex flex-col items-center gap-6 w-full pt-2">
+            {/* ⚡ Lightning Icon */}
+            <button
+              type="button"
+              onClick={() => showToast("⚡ Instant Turbo Actions Ready")}
+              className="h-10 w-10 flex items-center justify-center text-[#1A1A1A] hover:scale-110 transition cursor-pointer"
+            >
+              <Zap className="h-5 w-5 fill-[#1A1A1A]" />
+            </button>
+
+            {/* New project */}
+            <button
+              type="button"
+              onClick={() => {
+                const p = prompt("New project name:");
+                if (p) showToast(`Created project "${p}"`);
+              }}
+              className="flex flex-col items-center gap-1.5 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
+            >
+              <div className="h-10 w-10 rounded-2xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
+                <FolderPlus className="h-4 w-4 text-[#1A1A1A]" />
+              </div>
+              <span className="text-[10px] font-extrabold leading-tight">
+                New<br />project
+              </span>
+            </button>
+
+            {/* Add new task */}
+            <button
+              type="button"
+              onClick={() => {
+                const t = prompt("New task description:");
+                if (t) {
+                  setTasks((prev) => [
+                    ...prev,
+                    {
+                      id: `t-${Date.now()}`,
+                      project: activeProject,
+                      time: "1h",
+                      title: t,
+                      tag: null,
+                      tagType: null,
+                      completed: false,
+                    },
+                  ]);
+                  showToast(`Added new task "${t}"`);
+                }
+              }}
+              className="flex flex-col items-center gap-1.5 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
+            >
+              <div className="h-10 w-10 rounded-2xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
+                <CheckSquare className="h-4 w-4 text-[#1A1A1A]" />
+              </div>
+              <span className="text-[10px] font-extrabold leading-tight">
+                Add new<br />task
+              </span>
+            </button>
+
+            {/* Project chat */}
+            <button
+              type="button"
+              onClick={() => showToast("Opening Project Team Chat")}
+              className="flex flex-col items-center gap-1.5 text-center text-[#6B635B] hover:text-[#1A1A1A] transition cursor-pointer group"
+            >
+              <div className="h-10 w-10 rounded-2xl bg-[#F7F2EE] group-hover:bg-[#EFE7DF] flex items-center justify-center transition">
+                <MessageSquare className="h-4 w-4 text-[#1A1A1A]" />
+              </div>
+              <span className="text-[10px] font-extrabold leading-tight">
+                Project<br />chat
+              </span>
+            </button>
+          </div>
+
+          {/* Bottom Collaborator Avatars Stack */}
+          <div className="flex flex-col items-center gap-2.5 pb-2">
+            {/* Avatar 1 with green online dot */}
+            <div className="relative">
+              <img
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80"
+                alt="Colleague 1"
+                className="h-9 w-9 rounded-full object-cover shadow-xs border border-white"
+              />
+              <span className="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-[#34D399] border-2 border-white" />
+            </div>
+
+            {/* Avatar 2 */}
+            <img
+              src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&auto=format&fit=crop&q=80"
+              alt="Colleague 2"
+              className="h-9 w-9 rounded-full object-cover shadow-xs border border-white"
+            />
+
+            {/* Avatar 3 */}
+            <img
+              src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80"
+              alt="Colleague 3"
+              className="h-9 w-9 rounded-full object-cover shadow-xs border border-white"
+            />
+
+            {/* Plus add collaborator button */}
+            <button
+              type="button"
+              onClick={() => {
+                const em = prompt("Invite collaborator email:");
+                if (em) showToast(`Invited ${em}`);
+              }}
+              className="h-9 w-9 rounded-full border border-[#E8E0D8] bg-white flex items-center justify-center text-[#1A1A1A] hover:bg-[#F7F2EE] transition cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        </aside>
       </div>
     </div>,
     document.body
