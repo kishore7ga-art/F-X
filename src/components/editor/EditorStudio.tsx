@@ -1059,12 +1059,21 @@ export function EditorStudio({
         header nav:not(.mobile-drawer-menu nav),
         header .desktop-nav-links,
         header ul:not(.mobile-drawer-menu ul),
+        header .desktop-apply-btn,
+        header a.desktop-apply-btn,
+        header button.desktop-apply-btn,
         header a[style*="background"]:not(.mobile-drawer-menu a),
-        header .desktop-apply-btn {
+        header a[style*="background-color"]:not(.mobile-drawer-menu a),
+        header button[style*="background"]:not(.mobile-drawer-menu button),
+        header button[style*="background-color"]:not(.mobile-drawer-menu button),
+        header a[href*="apply"]:not(.mobile-drawer-menu a),
+        header a[href*="login"]:not(.mobile-drawer-menu a) {
           display: none !important;
         }
         header .hamburger-toggle-btn {
           display: flex !important;
+          margin-left: auto !important;
+          flex-shrink: 0 !important;
         }
         header .mobile-drawer-menu.active {
           display: block !important;
@@ -1075,12 +1084,21 @@ export function EditorStudio({
           header nav:not(.mobile-drawer-menu nav),
           header .desktop-nav-links,
           header ul:not(.mobile-drawer-menu ul),
+          header .desktop-apply-btn,
+          header a.desktop-apply-btn,
+          header button.desktop-apply-btn,
           header a[style*="background"]:not(.mobile-drawer-menu a),
-          header .desktop-apply-btn {
+          header a[style*="background-color"]:not(.mobile-drawer-menu a),
+          header button[style*="background"]:not(.mobile-drawer-menu button),
+          header button[style*="background-color"]:not(.mobile-drawer-menu button),
+          header a[href*="apply"]:not(.mobile-drawer-menu a),
+          header a[href*="login"]:not(.mobile-drawer-menu a) {
             display: none !important;
           }
           header .hamburger-toggle-btn {
             display: flex !important;
+            margin-left: auto !important;
+            flex-shrink: 0 !important;
           }
           header .mobile-drawer-menu.active {
             display: block !important;
