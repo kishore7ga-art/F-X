@@ -858,23 +858,29 @@ export function EditorStudio({
 
     let clean = rawCode;
 
-    // 1. Remove canvas containment <style> blocks
-    clean = clean.replace(/<style[^>]*>[\s\S]*?\.section-canvas-box[\s\S]*?<\/style>/gi, "");
+    // 1. Remove injected canvas <style> blocks
+    clean = clean.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
 
-    // 2. Un-escape HTML entities if present (&lt;, &gt;, &amp;)
+    // 2. Remove mobile drawer overlays & hamburger buttons injected dynamically
+    clean = clean.replace(/<div[^>]*class="[^"]*mobile-drawer-menu[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
+    clean = clean.replace(/<button[^>]*class="[^"]*hamburger-toggle-btn[^"]*"[^>]*>[\s\S]*?<\/button>/gi, "");
+
+    // 3. Un-escape HTML entities if present (&lt;, &gt;, &amp;)
     clean = clean.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
-    // 3. Strip outer wrapper divs injected by canvas rendering ([&>*:first-child], section-canvas-box, section-wrapper-container)
+    // 4. Extract inner primary section element (<section>, <header>, <footer>, <main>)
+    const innerSectionMatch = clean.match(/<(section|header|footer|main)\b[\s\S]*?<\/\1>/i);
+    if (innerSectionMatch && innerSectionMatch[0]) {
+      return innerSectionMatch[0].trim();
+    }
+
+    // 5. Fallback: Strip outer canvas wrapper divs
     clean = clean.replace(/^<div[^>]*class="[^"]*(?:section-canvas-box|section-wrapper-container|items-center|overflow-hidden)[^"]*"[^>]*>([\s\S]*)<\/div>$/i, (_match, inner) => {
       return inner ? inner.trim() : _match;
     });
 
-    // 4. Strip nested wrapper divs containing [&>*:first-child] or section-canvas-box
     clean = clean.replace(/<div[^>]*class="[^"]*\[&[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, "$1");
     clean = clean.replace(/<div[^>]*class="[^"]*section-canvas-box[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, "$1");
-
-    // 5. Strip any top-level wrapper div with w-full overflow-hidden flex flex-col
-    clean = clean.replace(/^<div[^>]*class="[^"]*w-full overflow-hidden flex flex-col[^"]*"[^>]*>([\s\S]*)<\/div>$/i, "$1");
 
     return clean.trim();
   };
@@ -1391,8 +1397,10 @@ export function EditorStudio({
       textElem.style.outlineOffset = "";
       textElem.style.borderRadius = "";
 
-      // Clean up contentEditable attributes before saving HTML to user's local page state
-      const clone = container.cloneNode(true) as HTMLElement;
+      // Extract the primary section root element (<section>, <header>, <footer>, <main>) inside canvas wrapper
+      const sectionRoot = (container.querySelector("section, header, footer, main") as HTMLElement) || container;
+      const clone = sectionRoot.cloneNode(true) as HTMLElement;
+      
       const badges = clone.querySelectorAll('.pointer-events-none');
       badges.forEach((b) => b.remove());
 
@@ -1404,7 +1412,7 @@ export function EditorStudio({
         (el as HTMLElement).style.borderRadius = '';
       });
 
-      const newCode = cleanCanvasWrapperFromCode(clone.innerHTML);
+      const newCode = cleanCanvasWrapperFromCode(clone.outerHTML || clone.innerHTML);
       if (newCode) {
         setSectionsWithHistory((prev) =>
           prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
