@@ -1307,6 +1307,17 @@ export function EditorStudio({
     }
   }, [sections, currentPage.slug]);
 
+  const getAll19DefaultSections = (slug: string = "/home"): SectionItem[] => {
+    const cleanSlug = slug.replace(/^\//, "").toLowerCase() || "home";
+    return SECTION_CATEGORIES.map((cat, idx) => ({
+      id: `${cleanSlug}-${cat.id}-${idx}`,
+      title: cat.name,
+      code: ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE,
+      variantIndex: 0,
+      category: cat.id,
+    }));
+  };
+
   // Fetch sections & admin DB templates
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
@@ -1320,18 +1331,18 @@ export function EditorStudio({
 
           if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
             const parsedActive = JSON.parse(rawActive);
-            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
+            if (Array.isArray(parsedActive) && parsedActive.length > 2) {
               savedSecs = parsedActive;
             }
           }
 
-          if (!savedSecs && pageStore[slug] && pageStore[slug].length > 0) {
+          if (!savedSecs && pageStore[slug] && pageStore[slug].length > 2) {
             savedSecs = pageStore[slug];
           }
 
           if (!savedSecs && rawSaved && rawSaved !== "undefined" && rawSaved !== "null") {
             const parsedSaved = JSON.parse(rawSaved);
-            if (parsedSaved && Array.isArray(parsedSaved[slug]) && parsedSaved[slug].length > 0) {
+            if (parsedSaved && Array.isArray(parsedSaved[slug]) && parsedSaved[slug].length > 2) {
               savedSecs = parsedSaved[slug];
             }
           }
@@ -1347,32 +1358,21 @@ export function EditorStudio({
         }
       }
 
-      const apiBase = (() => {
-        if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-        if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-        if (
-          typeof window !== "undefined" &&
-          window.location.hostname !== "localhost" &&
-          window.location.hostname !== "127.0.0.1"
-        ) {
-          return "https://api.xite.co.in";
-        }
-        return "http://localhost:4000";
-      })();
+      // 2. If no custom sections saved (>2), initialize page with ALL 19 DEFAULT SECTIONS!
+      const default19Secs = getAll19DefaultSections(slug);
 
-      // 2. Initialize new/unsaved page with Header & Footer ONLY so ONLY user-added sections exist
-      const headerCode = sections.find((s) => s.id?.includes("header") || s.title?.toLowerCase().includes("header") || s.code?.includes("<header"))?.code || getSharedHeader(collegeName);
-      const footerCode = sections.find((s) => s.id?.includes("footer") || s.title?.toLowerCase().includes("footer") || s.code?.includes("<footer"))?.code || getSharedFooter(collegeName);
-
-      const cleanSlug = slug.replace(/^\//, "").toLowerCase();
-      const cleanPageSecs: SectionItem[] = [
-        { id: `${cleanSlug}-header`, title: "Navbar / Header", code: headerCode, variantIndex: 0 },
-        { id: `${cleanSlug}-footer`, title: "Footer", code: footerCode, variantIndex: 0 },
-      ];
-
-      setSections(cleanPageSecs);
+      setSections(default19Secs);
       setActiveSectionIndex(0);
-      setPageStore((prev) => ({ ...prev, [slug]: cleanPageSecs }));
+      setPageStore((prev) => ({ ...prev, [slug]: default19Secs }));
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(default19Secs));
+          const rawSaved = localStorage.getItem("xite_saved_pages");
+          const parsedSaved = rawSaved ? JSON.parse(rawSaved) : {};
+          parsedSaved[slug] = default19Secs;
+          localStorage.setItem("xite_saved_pages", JSON.stringify(parsedSaved));
+        } catch {}
+      }
       setLoadingDb(false);
     } finally {
       setLoadingDb(false);
@@ -2584,6 +2584,20 @@ export function EditorStudio({
 
             {/* Scrollable Modal Content Body */}
             <div className="flex-1 overflow-y-auto pr-1.5 space-y-6 pt-4 pb-2">
+              {/* Quick Action: Load All 19 Default Sections */}
+              <button
+                onClick={() => {
+                  const all19 = getAll19DefaultSections(currentPage.slug);
+                  setSections(all19);
+                  setActiveSectionIndex(0);
+                  setShowAddSectionModal(false);
+                }}
+                className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all cursor-pointer select-none"
+              >
+                <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
+                <span>Load All 19 Default Sections (Full 19 Sections Website)</span>
+              </button>
+
               {/* Admin DB Section Variants List */}
               {adminDbTemplates.length > 0 && (
                 <div className="space-y-2.5">
