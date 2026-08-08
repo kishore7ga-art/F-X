@@ -2413,7 +2413,6 @@ export function EditorStudio({
           onAddSection={() => setShowAddSectionModal(true)}
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={handleSwapVariant}
-          onEditText={handleEnableTextEditingForActiveSection}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={historyStack.length > 0}
