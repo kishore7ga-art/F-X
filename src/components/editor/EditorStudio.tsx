@@ -1344,11 +1344,16 @@ export function EditorStudio({
 
   // Handle double-click inline text editing directly on section canvas
   const handleSectionDoubleClick = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
+    e.stopPropagation();
     const target = e.target as HTMLElement;
     if (!target) return;
 
+    // Ignore container sections & structural wrappers
+    if (target.tagName === "SECTION" || target.tagName === "HEADER" || target.tagName === "FOOTER" || target.tagName === "MAIN") return;
+    if (target.tagName === "IMG" || target.tagName === "SVG" || (target.tagName === "BUTTON" && target.classList.contains("hamburger-toggle-btn"))) return;
+
     // Tags that can be edited inline
-    const editableTags = ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "A", "BUTTON", "LI", "STRONG", "EM", "B", "I", "TD", "TH"];
+    const editableTags = ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "A", "BUTTON", "LI", "STRONG", "EM", "B", "I", "TD", "TH", "DIV"];
 
     let textElem: HTMLElement | null = target;
     while (textElem && textElem !== e.currentTarget && !editableTags.includes(textElem.tagName)) {
@@ -1359,30 +1364,32 @@ export function EditorStudio({
       textElem = target;
     }
 
+    if (textElem.tagName === "DIV" && textElem.children.length > 2) return;
+
     // Enable inline content editing
     textElem.contentEditable = "true";
     textElem.style.userSelect = "text";
     (textElem.style as any).webkitUserSelect = "text";
-    textElem.focus();
+    textElem.style.outline = "2px dashed #2563eb";
+    textElem.style.outlineOffset = "4px";
+    textElem.style.borderRadius = "4px";
+    
+    setTimeout(() => {
+      textElem?.focus();
+    }, 10);
 
     // Save pre-edit history snapshot so Undo restores original text
     setHistoryStack((history) => [...history.slice(-49), sections]);
     setRedoStack([]);
 
-    // Visual editing indicator highlight
-    textElem.style.outline = "2px dashed #2563eb";
-    textElem.style.outlineOffset = "4px";
-    textElem.style.borderRadius = "4px";
-
-    e.stopPropagation();
-
     const container = e.currentTarget;
 
     const saveUpdatedContent = () => {
-      textElem!.contentEditable = "false";
-      textElem!.style.outline = "";
-      textElem!.style.outlineOffset = "";
-      textElem!.style.borderRadius = "";
+      if (!textElem) return;
+      textElem.contentEditable = "false";
+      textElem.style.outline = "";
+      textElem.style.outlineOffset = "";
+      textElem.style.borderRadius = "";
 
       // Clean up contentEditable attributes before saving HTML to user's local page state
       const clone = container.cloneNode(true) as HTMLElement;
@@ -2112,8 +2119,14 @@ export function EditorStudio({
                   key={sec.id}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setActiveSectionIndex(idx);
                     const target = e.target as HTMLElement;
+
+                    // If user is actively editing text in contenteditable, DO NOT trigger section re-render!
+                    if (target && (target.isContentEditable || target.getAttribute("contenteditable") === "true" || target.closest("[contenteditable='true']"))) {
+                      return;
+                    }
+
+                    setActiveSectionIndex(idx);
 
                     if (target) {
                       const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger, header button, header svg") as HTMLElement;
