@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
-  X,
   ArrowLeft,
   Globe,
   Users,
@@ -25,17 +24,7 @@ import {
   ExternalLink,
   LogOut,
   User,
-  Copy,
-  Sparkles,
-  CheckCircle2,
-  Clock,
-  Terminal,
-  Activity,
-  Layers,
-  Search,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "motion/react";
 
 interface DomainSettingsModalProps {
   isOpen: boolean;
@@ -51,12 +40,11 @@ export function DomainSettingsModal({
   initialTab = "domain",
 }: DomainSettingsModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [customDomain, setCustomDomain] = useState(`${subdomain}-college.edu.in`);
-  const [savedDomain, setSavedDomain] = useState(`${subdomain}-college.edu.in`);
+  const [customDomain, setCustomDomain] = useState(`${subdomain}.edu.in`);
+  const [savedDomain, setSavedDomain] = useState(`${subdomain}.edu.in`);
   const [publishing, setPublishing] = useState(false);
   const [activeTab, setActiveTab] = useState(initialTab);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const [lastDeployedTime, setLastDeployedTime] = useState(() => {
     if (typeof window !== "undefined") {
@@ -101,13 +89,6 @@ export function DomainSettingsModal({
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    showToast(`Copied ${text} to clipboard`);
-    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   const handlePublish = () => {
@@ -178,627 +159,1442 @@ export function DomainSettingsModal({
 
   if (!isOpen || !mounted) return null;
 
-  const NAV_ITEMS = [
-    { id: "domain", label: "Custom Domain & SSL", icon: Globe },
-    { id: "team", label: "Team Access & Roles", icon: Users },
-    { id: "security", label: "Password & Security", icon: Key },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "advanced", label: "Advanced Settings", icon: Sliders },
-  ];
-
   return createPortal(
-    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-950/65 backdrop-blur-md p-4 sm:p-6 overflow-y-auto font-sans select-none">
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 999999,
+        backgroundColor: "#f8fafc",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+        boxSizing: "border-box",
+      }}
+      className="text-slate-900 font-sans select-none"
+    >
       {/* Toast Notification */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-8 left-1/2 -translate-x-1/2 z-[1000000] flex items-center gap-2.5 rounded-2xl bg-slate-900 px-6 py-3 text-xs font-black text-white shadow-2xl border border-slate-800"
-          >
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>{toastMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {toastMessage && (
+        <div
+          style={{
+            position: "fixed",
+            top: "80px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1000000,
+            backgroundColor: "#0f172a",
+            color: "#ffffff",
+            fontSize: "13px",
+            fontWeight: 900,
+            padding: "14px 24px",
+            borderRadius: "16px",
+            boxShadow: "0 20px 30px -10px rgba(0,0,0,0.3)",
+            border: "1px solid #334155",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#34d399" }} />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
-      {/* Floating Center Modal Dialog Box */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 15 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-5xl h-[88vh] max-h-[850px] flex flex-col rounded-3xl bg-white text-slate-900 shadow-[0_30px_90px_rgba(0,0,0,0.35)] border border-slate-200/90 overflow-hidden"
+      {/* Top Header Navigation Bar */}
+      <header
+        style={{
+          height: "72px",
+          minHeight: "72px",
+          backgroundColor: "#ffffff",
+          borderBottom: "1px solid #e2e8f0",
+          paddingLeft: "32px",
+          paddingRight: "32px",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          boxSizing: "border-box",
+          width: "100%",
+        }}
       >
-        {/* Top Modal Header */}
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white/90 px-6 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100/90 px-3 py-1.5 text-xs font-extrabold text-slate-800 shadow-2xs hover:bg-slate-200 transition-all cursor-pointer active:scale-95"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back to Editor</span>
-            </button>
-
-            <div className="h-4 w-px bg-slate-200" />
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-black tracking-tight text-slate-900">
-                XITE Studio Settings
-              </span>
-              <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-extrabold text-blue-700 border border-blue-200/60">
-                {subdomain}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <a
-              href={`/site/${subdomain}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-extrabold text-white shadow-md shadow-emerald-500/20 hover:from-emerald-500 hover:to-teal-500 transition-all cursor-pointer active:scale-[0.99]"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              <span>Visit Live Site</span>
-            </a>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
+          <button
+            onClick={onClose}
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "8px",
+              fontSize: "13px",
+              fontWeight: 800,
+              color: "#334155",
+              padding: "10px 18px",
+              borderRadius: "14px",
+              backgroundColor: "#f1f5f9",
+              border: "1px solid #cbd5e1",
+              cursor: "pointer",
+            }}
+          >
+            <ArrowLeft style={{ width: "16px", height: "16px" }} />
+            <span>Back to Editor</span>
+          </button>
+          <div style={{ height: "20px", width: "1px", backgroundColor: "#cbd5e1" }} />
+          <span style={{ fontSize: "18px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.02em" }}>
+            XITE Studio Settings
+          </span>
         </div>
 
-        {/* Modal Split Body */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-50/70">
-          {/* Left Sidebar Menu */}
-          <aside className="w-full md:w-64 shrink-0 border-r border-slate-200/80 bg-white/70 p-3.5 flex flex-col justify-between overflow-y-auto">
-            <div className="space-y-1">
-              <div className="px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Settings Menu
-              </div>
-              {NAV_ITEMS.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.id;
+        <a
+          href={`https://${savedDomain}`}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: "inline-flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: "8px",
+            backgroundColor: "#059669",
+            color: "#ffffff",
+            fontSize: "13px",
+            fontWeight: 900,
+            paddingLeft: "22px",
+            paddingRight: "22px",
+            height: "44px",
+            borderRadius: "14px",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            boxShadow: "0 8px 16px -4px rgba(5,150,105,0.3)",
+          }}
+        >
+          <span>Visit Live Site ↗</span>
+        </a>
+      </header>
 
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setActiveTab(item.id)}
-                    className={cn(
-                      "flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all duration-150 text-left cursor-pointer",
-                      isActive
-                        ? "bg-slate-900 text-white font-extrabold shadow-md shadow-slate-900/10"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                    )}
-                  >
-                    <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-white" : "text-slate-500")} />
-                    <span className="truncate">{item.label}</span>
-                  </button>
-                );
-              })}
+      {/* Main Settings Body Container */}
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "1600px",
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "row",
+          gap: "32px",
+          padding: "32px 36px",
+          boxSizing: "border-box",
+          flex: 1,
+          minHeight: 0,
+        }}
+      >
+        {/* Left Sidebar Menu */}
+        <aside
+          style={{
+            width: "240px",
+            minWidth: "240px",
+            flexShrink: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            gap: "24px",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+            <button
+              onClick={() => setActiveTab("domain")}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "14px 18px",
+                borderRadius: "16px",
+                fontSize: "13px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                cursor: "pointer",
+                border: "none",
+                backgroundColor: activeTab === "domain" ? "#0f172a" : "transparent",
+                color: activeTab === "domain" ? "#ffffff" : "#475569",
+                boxShadow: activeTab === "domain" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
+              }}
+            >
+              <Globe style={{ width: "18px", height: "18px", flexShrink: 0 }} />
+              <span>Custom Domain & SSL</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("team")}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "14px 18px",
+                borderRadius: "16px",
+                fontSize: "13px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                cursor: "pointer",
+                border: "none",
+                backgroundColor: activeTab === "team" ? "#0f172a" : "transparent",
+                color: activeTab === "team" ? "#ffffff" : "#475569",
+                boxShadow: activeTab === "team" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
+              }}
+            >
+              <Users style={{ width: "18px", height: "18px", flexShrink: 0 }} />
+              <span>Team Access & Roles</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("security")}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "14px 18px",
+                borderRadius: "16px",
+                fontSize: "13px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                cursor: "pointer",
+                border: "none",
+                backgroundColor: activeTab === "security" ? "#0f172a" : "transparent",
+                color: activeTab === "security" ? "#ffffff" : "#475569",
+                boxShadow: activeTab === "security" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
+              }}
+            >
+              <Key style={{ width: "18px", height: "18px", flexShrink: 0 }} />
+              <span>Password & Security</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("notifications")}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "14px 18px",
+                borderRadius: "16px",
+                fontSize: "13px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                cursor: "pointer",
+                border: "none",
+                backgroundColor: activeTab === "notifications" ? "#0f172a" : "transparent",
+                color: activeTab === "notifications" ? "#ffffff" : "#475569",
+                boxShadow: activeTab === "notifications" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
+              }}
+            >
+              <Bell style={{ width: "18px", height: "18px", flexShrink: 0 }} />
+              <span>Notifications</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("advanced")}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "14px 18px",
+                borderRadius: "16px",
+                fontSize: "13px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                cursor: "pointer",
+                border: "none",
+                backgroundColor: activeTab === "advanced" ? "#0f172a" : "transparent",
+                color: activeTab === "advanced" ? "#ffffff" : "#475569",
+                boxShadow: activeTab === "advanced" ? "0 10px 20px -5px rgba(15,23,42,0.2)" : "none",
+              }}
+            >
+              <Sliders style={{ width: "18px", height: "18px", flexShrink: 0 }} />
+              <span>Advanced Settings</span>
+            </button>
+          </div>
+
+          {/* Bottom Owner User Pill */}
+          <button
+            onClick={() => setActiveTab("account")}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              padding: "14px",
+              backgroundColor: activeTab === "account" ? "#eff6ff" : "#ffffff",
+              border: activeTab === "account" ? "2px solid #2563eb" : "1px solid #cbd5e1",
+              borderRadius: "18px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              cursor: "pointer",
+              boxShadow: activeTab === "account" ? "0 4px 12px rgba(37,99,235,0.15)" : "0 2px 4px rgba(0,0,0,0.02)",
+              transition: "all 0.15s ease",
+            }}
+          >
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "12px",
+                backgroundColor: activeTab === "account" ? "#2563eb" : "#0f172a",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 900,
+                fontSize: "13px",
+                flexShrink: 0,
+              }}
+            >
+              K
             </div>
+            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <span style={{ fontSize: "13px", fontWeight: 900, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                Kishore
+              </span>
+              <span style={{ fontSize: "11px", color: activeTab === "account" ? "#1d4ed8" : "#2563eb", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                Owner Account · Details ↗
+              </span>
+            </div>
+          </button>
+        </aside>
 
-            {/* Bottom User Card */}
-            <div className="pt-3 mt-3 border-t border-slate-200/80">
-              <div className="flex items-center gap-2.5 rounded-xl bg-slate-100/80 p-2.5 border border-slate-200/70">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-slate-900 to-slate-700 text-white font-black text-[11px] shadow-sm">
-                  K
-                </div>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="truncate text-xs font-extrabold text-slate-900">Kishore</span>
-                  <span className="truncate text-[10px] font-semibold text-slate-500 flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    Owner Account
+        {/* Dynamic Right Content Area */}
+        <main
+          style={{
+            flex: "1 1 0%",
+            minWidth: 0,
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "28px",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* TAB 1: CUSTOM DOMAIN & SSL */}
+          {activeTab === "domain" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Publishing & Custom Domain Settings
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Configure A Record, CNAME, and SSL hosting for your website
+                </p>
+              </div>
+
+              {/* CARD 1: Custom Domain Input Form */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    borderBottom: "1px solid #f1f5f9",
+                    paddingBottom: "16px",
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                      PRIMARY CUSTOM DOMAIN
+                    </span>
+                    <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                      College Domain Routing
+                    </h3>
+                  </div>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "12px",
+                      color: "#047857",
+                      fontWeight: 800,
+                      backgroundColor: "#ecfdf5",
+                      padding: "8px 16px",
+                      borderRadius: "9999px",
+                      border: "1px solid #a7f3d0",
+                    }}
+                  >
+                    <ShieldCheck style={{ width: "16px", height: "16px", color: "#059669" }} />
+                    <span>SSL Active & Connected</span>
                   </span>
                 </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
+                  <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>
+                    Domain Name / Subdomain Address
+                  </label>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: "16px",
+                      width: "100%",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={customDomain}
+                      onChange={(e) => setCustomDomain(e.target.value)}
+                      style={{
+                        flex: "1 1 0%",
+                        minWidth: 0,
+                        width: "100%",
+                        position: "static",
+                        top: "auto",
+                        right: "auto",
+                        height: "54px",
+                        paddingLeft: "20px",
+                        paddingRight: "20px",
+                        borderRadius: "16px",
+                        border: "1px solid #cbd5e1",
+                        backgroundColor: "#f8fafc",
+                        fontSize: "15px",
+                        fontFamily: "monospace",
+                        fontWeight: 700,
+                        color: "#0f172a",
+                        boxSizing: "border-box",
+                        outline: "none",
+                      }}
+                    />
+                    <button
+                      onClick={handleSaveDomain}
+                      style={{
+                        position: "static",
+                        top: "auto",
+                        right: "auto",
+                        height: "54px",
+                        paddingLeft: "28px",
+                        paddingRight: "28px",
+                        backgroundColor: "#0f172a",
+                        color: "#ffffff",
+                        fontSize: "13px",
+                        fontWeight: 900,
+                        borderRadius: "16px",
+                        border: "none",
+                        flexShrink: 0,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 10px 25px -5px rgba(15,23,42,0.3)",
+                      }}
+                    >
+                      Save Domain
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </aside>
 
-          {/* Right Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-            {/* TAB 1: DOMAIN & SSL */}
-            {activeTab === "domain" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-black tracking-tight text-slate-900">
-                    Publishing &amp; Custom Domain Settings
-                  </h2>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    Configure A Record, CNAME, and SSL certificate hosting for your website.
-                  </p>
+              {/* CARD 2: Production Live Callout Banner */}
+              <div
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  backgroundColor: "#0f172a",
+                  color: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  boxShadow: "0 20px 25px -5px rgba(0,0,0,0.12)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    borderBottom: "1px solid #1e293b",
+                    paddingBottom: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "11px",
+                      fontWeight: 900,
+                      color: "#34d399",
+                      backgroundColor: "rgba(16, 185, 129, 0.15)",
+                      border: "1px solid rgba(16, 185, 129, 0.3)",
+                      padding: "6px 14px",
+                      borderRadius: "9999px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                    }}
+                  >
+                    <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#34d399" }} />
+                    <span>PRODUCTION LIVE</span>
+                  </div>
+                  <span style={{ color: "#94a3b8", fontSize: "12px", fontWeight: 600 }}>
+                    Last deployed {lastDeployedTime}
+                  </span>
                 </div>
 
-                {/* Card 1: Primary Custom Domain */}
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        PRIMARY CUSTOM DOMAIN
-                      </span>
-                      <h3 className="text-sm font-extrabold text-slate-900">College Domain Routing</h3>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 border border-emerald-200/80">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>SSL Active &amp; Connected</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Domain Name / Subdomain Address</label>
-                    <div className="flex flex-col sm:flex-row items-center gap-2.5">
-                      <input
-                        type="text"
-                        value={customDomain}
-                        onChange={(e) => setCustomDomain(e.target.value)}
-                        placeholder="e.g. yourcollege.edu.in"
-                        className="flex-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSaveDomain}
-                        className="w-full sm:w-auto rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-slate-800 transition cursor-pointer active:scale-95"
-                      >
-                        Save Domain
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card 2: Production Hero Banner */}
-                <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 text-white shadow-xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-0.5 text-[10px] font-extrabold text-emerald-400 border border-emerald-500/20">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>PRODUCTION LIVE</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-400">
-                      <Clock className="h-3 w-3" />
-                      <span>Last deployed {lastDeployedTime}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-base font-black tracking-tight text-white">
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    gap: "24px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <h3 style={{ fontSize: "22px", fontWeight: 900, color: "#ffffff", margin: 0 }}>
                       Publish Website to Production
                     </h3>
-                    <p className="text-xs font-medium text-slate-400 mt-0.5">
+                    <p style={{ fontSize: "13px", color: "#94a3b8", fontWeight: 500, margin: 0 }}>
                       Target URL:{" "}
                       <a
                         href={`https://${savedDomain}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="font-mono text-blue-400 hover:underline font-bold"
+                        style={{ color: "#60a5fa", fontWeight: 800, fontFamily: "monospace", textDecoration: "underline" }}
                       >
                         https://{savedDomain}
                       </a>
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                  <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "14px", flexShrink: 0 }}>
                     <button
-                      type="button"
                       onClick={handlePublish}
                       disabled={publishing}
-                      className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-black text-slate-950 shadow-md shadow-emerald-500/20 hover:bg-emerald-400 transition cursor-pointer active:scale-95 disabled:opacity-50"
+                      style={{
+                        display: "inline-flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: "10px",
+                        backgroundColor: "#10b981",
+                        color: "#ffffff",
+                        fontWeight: 900,
+                        fontSize: "13px",
+                        height: "48px",
+                        paddingLeft: "24px",
+                        paddingRight: "24px",
+                        borderRadius: "14px",
+                        border: "none",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                        boxShadow: "0 10px 20px -5px rgba(16,185,129,0.4)",
+                      }}
                     >
-                      {publishing ? (
-                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Rocket className="h-3.5 w-3.5" />
-                      )}
-                      <span>{publishing ? "Deploying..." : "Publish to Production"}</span>
+                      <Rocket style={{ width: "16px", height: "16px", flexShrink: 0 }} />
+                      <span>{publishing ? "Publishing..." : "Publish to Production"}</span>
                     </button>
 
                     <a
-                      href={`/site/${subdomain}`}
+                      href={`https://${savedDomain}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-slate-700 transition"
+                      style={{
+                        display: "inline-flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: "8px",
+                        backgroundColor: "#1e293b",
+                        color: "#f1f5f9",
+                        fontWeight: 800,
+                        fontSize: "13px",
+                        height: "48px",
+                        paddingLeft: "20px",
+                        paddingRight: "20px",
+                        borderRadius: "14px",
+                        border: "1px solid #334155",
+                        textDecoration: "none",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                      }}
                     >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      <span>Visit Live Site</span>
+                      <span>Visit Live Site ↗</span>
                     </a>
                   </div>
                 </div>
+              </div>
 
-                {/* Card 3: DNS Instructions Table */}
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 space-y-3.5">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      DNS CONFIGURATION INSTRUCTIONS
-                    </span>
-                    <h3 className="text-sm font-extrabold text-slate-900">
-                      Point your domain's DNS records to our servers
-                    </h3>
-                  </div>
+              {/* CARD 3: DNS Configuration Instructions Table */}
+              <div
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    DNS CONFIGURATION INSTRUCTIONS
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Point your domain&apos;s DNS records to our servers
+                  </h3>
+                </div>
 
-                  <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-100/90 text-slate-600 font-extrabold text-[10px] uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                          <th className="py-2.5 px-3.5">TYPE</th>
-                          <th className="py-2.5 px-3.5">HOST / NAME</th>
-                          <th className="py-2.5 px-3.5">TARGET VALUE</th>
-                          <th className="py-2.5 px-3.5">STATUS</th>
-                          <th className="py-2.5 px-3.5 text-right">ACTION</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
-                        <tr className="hover:bg-slate-50 transition">
-                          <td className="py-3 px-3.5 font-mono font-bold text-blue-600">A</td>
-                          <td className="py-3 px-3.5 font-mono">@</td>
-                          <td className="py-3 px-3.5 font-mono font-bold">76.76.21.21</td>
-                          <td className="py-3 px-3.5">
-                            <span className="inline-flex items-center gap-1 font-bold text-emerald-600">
-                              <Check className="h-3 w-3" /> Active
-                            </span>
-                          </td>
-                          <td className="py-3 px-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard("76.76.21.21", "a-record")}
-                              className="rounded-lg bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition cursor-pointer"
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-
-                        <tr className="hover:bg-slate-50 transition">
-                          <td className="py-3 px-3.5 font-mono font-bold text-blue-600">CNAME</td>
-                          <td className="py-3 px-3.5 font-mono">www</td>
-                          <td className="py-3 px-3.5 font-mono font-bold">cname.xite.co.in</td>
-                          <td className="py-3 px-3.5">
-                            <span className="inline-flex items-center gap-1 font-bold text-emerald-600">
-                              <Check className="h-3 w-3" /> Active
-                            </span>
-                          </td>
-                          <td className="py-3 px-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard("cname.xite.co.in", "cname-record")}
-                              className="rounded-lg bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition cursor-pointer"
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-
-                        <tr className="hover:bg-slate-50 transition">
-                          <td className="py-3 px-3.5 font-mono font-bold text-blue-600">TXT</td>
-                          <td className="py-3 px-3.5 font-mono">_xite-challenge</td>
-                          <td className="py-3 px-3.5 font-mono font-bold text-slate-500 truncate max-w-[180px]">
-                            xite-auth-verification-token-9884
-                          </td>
-                          <td className="py-3 px-3.5">
-                            <span className="inline-flex items-center gap-1 font-bold text-emerald-600">
-                              <Check className="h-3 w-3" /> Active
-                            </span>
-                          </td>
-                          <td className="py-3 px-3.5 text-right">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                copyToClipboard("xite-auth-verification-token-9884", "txt-record")
-                              }
-                              className="rounded-lg bg-slate-100 p-1.5 text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition cursor-pointer"
-                            >
-                              <Copy className="h-3.5 w-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                <div style={{ width: "100%", overflowX: "auto", borderRadius: "16px", border: "1px solid #e2e8f0" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px", fontFamily: "monospace" }}>
+                    <thead>
+                      <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 900 }}>
+                        <th style={{ padding: "16px 20px" }}>TYPE</th>
+                        <th style={{ padding: "16px 20px" }}>HOST/NAME</th>
+                        <th style={{ padding: "16px 20px" }}>TARGET VALUE</th>
+                        <th style={{ padding: "16px 20px" }}>STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody style={{ fontWeight: 700, color: "#0f172a" }}>
+                      <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "16px 20px", color: "#2563eb", fontWeight: 900 }}>A</td>
+                        <td style={{ padding: "16px 20px" }}>@</td>
+                        <td style={{ padding: "16px 20px" }}>76.76.21.21</td>
+                        <td style={{ padding: "16px 20px", color: "#059669", fontWeight: 900 }}>✓ Active</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: "16px 20px", color: "#2563eb", fontWeight: 900 }}>CNAME</td>
+                        <td style={{ padding: "16px 20px" }}>www</td>
+                        <td style={{ padding: "16px 20px" }}>cname.xite.co.in</td>
+                        <td style={{ padding: "16px 20px", color: "#059669", fontWeight: 900 }}>✓ Active</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            )}
+            </>
+          )}
 
-            {/* TAB 2: TEAM ACCESS */}
-            {activeTab === "team" && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-black tracking-tight text-slate-900">
-                    Team Access &amp; Roles
-                  </h2>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    Manage collaborators, administrators, and web content editors for your institution.
-                  </p>
-                </div>
-
-                {/* Invite Card */}
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 space-y-3.5">
-                  <h3 className="text-sm font-extrabold text-slate-900">Invite New Team Member</h3>
-                  <form onSubmit={handleInviteMember} className="flex flex-col sm:flex-row gap-2.5">
-                    <input
-                      type="email"
-                      required
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="colleague@institution.edu"
-                      className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                    />
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value)}
-                      className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                    >
-                      <option value="Administrator">Administrator</option>
-                      <option value="Content Editor">Content Editor</option>
-                      <option value="Viewer">Viewer</option>
-                    </select>
-                    <button
-                      type="submit"
-                      className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-slate-800 transition cursor-pointer"
-                    >
-                      Send Invitation
-                    </button>
-                  </form>
-                </div>
-
-                {/* Team Members List */}
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 space-y-3">
-                  <h3 className="text-sm font-extrabold text-slate-900">Active Collaborators</h3>
-                  <div className="divide-y divide-slate-100">
-                    {teamMembers.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-800 font-extrabold text-xs">
-                            {member.name[0]}
-                          </div>
-                          <div>
-                            <div className="text-xs font-extrabold text-slate-900">{member.name}</div>
-                            <div className="text-[10px] font-medium text-slate-400">{member.email}</div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2.5">
-                          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200">
-                            {member.role}
-                          </span>
-                          <span className="text-[10px] font-bold text-emerald-600">● {member.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          {/* TAB 2: TEAM ACCESS & ROLES */}
+          {activeTab === "team" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Team Access & Roles
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage team collaborators, editor permissions, and access levels
+                </p>
               </div>
-            )}
 
-            {/* TAB 3: PASSWORD & SECURITY */}
-            {activeTab === "security" && (
-              <div className="space-y-6">
+              {/* Invite Team Member Form Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  boxSizing: "border-box",
+                }}
+              >
                 <div>
-                  <h2 className="text-xl font-black tracking-tight text-slate-900">
-                    Password &amp; Security
-                  </h2>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    Manage authentication credentials and multi-factor security protections.
-                  </p>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    INVITE NEW TEAM MEMBER
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Grant Access to Collaborators
+                  </h3>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 space-y-3.5">
-                  <h3 className="text-sm font-extrabold text-slate-900">Change Account Password</h3>
-                  <form onSubmit={handleUpdatePassword} className="space-y-3 max-w-md">
-                    <div>
-                      <label className="text-xs font-bold text-slate-700">Current Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-700">New Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-slate-700">Confirm New Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-slate-800 transition cursor-pointer"
-                    >
-                      Update Password
-                    </button>
-                  </form>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-extrabold text-slate-900">Two-Factor Authentication (2FA)</h3>
-                    <p className="text-[11px] font-medium text-slate-500 mt-0.5">
-                      Secure your account with Google Authenticator or SMS OTP verification.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTwoFactorEnabled(!twoFactorEnabled);
-                      showToast(`2FA ${!twoFactorEnabled ? "enabled" : "disabled"}`);
+                <form onSubmit={handleInviteMember} style={{ display: "flex", flexDirection: "row", gap: "14px", alignItems: "center", width: "100%" }}>
+                  <input
+                    type="email"
+                    placeholder="colleague@greenfield.edu.in"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    style={{
+                      flex: "1 1 0%",
+                      height: "50px",
+                      paddingLeft: "20px",
+                      paddingRight: "20px",
+                      borderRadius: "14px",
+                      border: "1px solid #cbd5e1",
+                      backgroundColor: "#f8fafc",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#0f172a",
+                      outline: "none",
                     }}
-                    className={cn(
-                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out border-2 border-transparent",
-                      twoFactorEnabled ? "bg-emerald-600" : "bg-slate-200"
-                    )}
+                  />
+                  <select
+                    value={inviteRole}
+                    onChange={(e) => setInviteRole(e.target.value)}
+                    style={{
+                      height: "50px",
+                      paddingLeft: "16px",
+                      paddingRight: "16px",
+                      borderRadius: "14px",
+                      border: "1px solid #cbd5e1",
+                      backgroundColor: "#ffffff",
+                      fontSize: "13px",
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      cursor: "pointer",
+                    }}
                   >
-                    <span
-                      className={cn(
-                        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                        twoFactorEnabled ? "translate-x-5" : "translate-x-0"
-                      )}
-                    />
+                    <option value="Administrator">Administrator</option>
+                    <option value="Content Editor">Content Editor</option>
+                    <option value="Billing Manager">Billing Manager</option>
+                  </select>
+                  <button
+                    type="submit"
+                    style={{
+                      height: "50px",
+                      paddingLeft: "24px",
+                      paddingRight: "24px",
+                      backgroundColor: "#0f172a",
+                      color: "#ffffff",
+                      fontSize: "13px",
+                      fontWeight: 900,
+                      borderRadius: "14px",
+                      border: "none",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <UserPlus style={{ width: "16px", height: "16px" }} />
+                    <span>Send Invite</span>
                   </button>
-                </div>
+                </form>
               </div>
-            )}
 
-            {/* TAB 4: NOTIFICATIONS */}
-            {activeTab === "notifications" && (
-              <div className="space-y-6">
+              {/* Team Members List Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  boxSizing: "border-box",
+                }}
+              >
                 <div>
-                  <h2 className="text-xl font-black tracking-tight text-slate-900">
-                    Notifications &amp; Alerts
-                  </h2>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    Choose which alerts and email digests you want to receive.
-                  </p>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    ACTIVE COLLABORATORS ({teamMembers.length})
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    People with Access to this Project
+                  </h3>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 divide-y divide-slate-100">
-                  {[
-                    { key: "deployment", label: "Production Deployment Success", desc: "Get notified when a new version goes live." },
-                    { key: "ssl", label: "SSL Certificate Auto-Renewal", desc: "Receive advance notice when certificates refresh." },
-                    { key: "security", label: "Security & Login Alerts", desc: "Get alerts on new device logins or password changes." },
-                    { key: "analytics", label: "Weekly Traffic & Analytics Summary", desc: "Receive weekly visitor counts and pageview statistics." },
-                  ].map((item) => (
-                    <div key={item.key} className="flex items-center justify-between py-3.5 first:pt-0 last:pb-0">
-                      <div>
-                        <h4 className="text-xs font-extrabold text-slate-900">{item.label}</h4>
-                        <p className="text-[10px] font-medium text-slate-400 mt-0.5">{item.desc}</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%" }}>
+                  {teamMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "16px 20px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "16px",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "14px" }}>
+                        <div
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "12px",
+                            backgroundColor: member.role === "Owner Account" ? "#0f172a" : "#3b82f6",
+                            color: "#ffffff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 900,
+                            fontSize: "14px",
+                          }}
+                        >
+                          {member.name[0].toUpperCase()}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontSize: "14px", fontWeight: 800, color: "#0f172a" }}>{member.name}</span>
+                          <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500 }}>{member.email}</span>
+                        </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEmailAlerts((prev) => ({
-                            ...prev,
-                            [item.key as keyof typeof emailAlerts]: !prev[item.key as keyof typeof emailAlerts],
-                          }));
-                          showToast(`Notification preferences updated`);
-                        }}
-                        className={cn(
-                          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out border-2 border-transparent",
-                          emailAlerts[item.key as keyof typeof emailAlerts] ? "bg-slate-900" : "bg-slate-200"
-                        )}
-                      >
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
                         <span
-                          className={cn(
-                            "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                            emailAlerts[item.key as keyof typeof emailAlerts] ? "translate-x-5" : "translate-x-0"
-                          )}
-                        />
-                      </button>
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 800,
+                            padding: "6px 14px",
+                            borderRadius: "9999px",
+                            backgroundColor: member.role === "Owner Account" ? "#e0e7ff" : "#ecfdf5",
+                            color: member.role === "Owner Account" ? "#3730a3" : "#047857",
+                          }}
+                        >
+                          {member.role}
+                        </span>
+                        {member.role !== "Owner Account" && (
+                          <button
+                            onClick={() => {
+                              setTeamMembers((prev) => prev.filter((m) => m.id !== member.id));
+                              showToast(`Removed ${member.name}`);
+                            }}
+                            style={{
+                              backgroundColor: "transparent",
+                              border: "none",
+                              color: "#ef4444",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            </>
+          )}
 
-            {/* TAB 5: ADVANCED */}
-            {activeTab === "advanced" && (
-              <div className="space-y-6">
+          {/* TAB 3: PASSWORD & SECURITY */}
+          {activeTab === "security" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Password & Security
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage credentials, 2-Factor Authentication, and active login sessions
+                </p>
+              </div>
+
+              {/* Password Change Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                  boxSizing: "border-box",
+                }}
+              >
                 <div>
-                  <h2 className="text-xl font-black tracking-tight text-slate-900">
-                    Advanced Settings &amp; Custom Code
-                  </h2>
-                  <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                    Configure search engine indexing, maintenance mode, and custom header scripts.
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    CHANGE ACCOUNT PASSWORD
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Update Login Credentials
+                  </h3>
+                </div>
+
+                <form onSubmit={handleUpdatePassword} style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>Current Password</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      style={{
+                        height: "50px",
+                        paddingLeft: "20px",
+                        paddingRight: "20px",
+                        borderRadius: "14px",
+                        border: "1px solid #cbd5e1",
+                        backgroundColor: "#f8fafc",
+                        fontSize: "14px",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", flexDirection: "row", gap: "16px" }}>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>New Password</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••••••"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        style={{
+                          height: "50px",
+                          paddingLeft: "20px",
+                          paddingRight: "20px",
+                          borderRadius: "14px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#f8fafc",
+                          fontSize: "14px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <label style={{ fontSize: "13px", fontWeight: 800, color: "#334155" }}>Confirm New Password</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        style={{
+                          height: "50px",
+                          paddingLeft: "20px",
+                          paddingRight: "20px",
+                          borderRadius: "14px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#f8fafc",
+                          fontSize: "14px",
+                          outline: "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    style={{
+                      width: "200px",
+                      height: "50px",
+                      marginTop: "8px",
+                      backgroundColor: "#0f172a",
+                      color: "#ffffff",
+                      fontSize: "13px",
+                      fontWeight: 900,
+                      borderRadius: "14px",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Update Password
+                  </button>
+                </form>
+              </div>
+
+              {/* 2FA Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+                    Two-Factor Authentication (2FA)
+                  </h3>
+                  <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>
+                    Secure your account with an Authenticator App security code
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setTwoFactorEnabled(!twoFactorEnabled);
+                    showToast(`2FA ${!twoFactorEnabled ? "Enabled" : "Disabled"}`);
+                  }}
+                  style={{
+                    height: "44px",
+                    paddingLeft: "24px",
+                    paddingRight: "24px",
+                    borderRadius: "14px",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: twoFactorEnabled ? "#ecfdf5" : "#f1f5f9",
+                    color: twoFactorEnabled ? "#047857" : "#475569",
+                  }}
+                >
+                  {twoFactorEnabled ? "✓ 2FA Enabled" : "Enable 2FA"}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* TAB 4: NOTIFICATIONS */}
+          {activeTab === "notifications" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Notifications & Preferences
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage email alerts, deployment triggers, and security digests
+                </p>
+              </div>
+
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                  boxSizing: "border-box",
+                }}
+              >
+                {[
+                  { key: "deployment", title: "Deployment & Publishing Alerts", desc: "Get notified when website changes are published to production live" },
+                  { key: "ssl", title: "SSL & Custom Domain Health Alerts", desc: "Receive instant notifications for SSL certificate renewal or DNS issues" },
+                  { key: "security", title: "Security & Login Activity Alerts", desc: "Get email warnings for new device logins or password changes" },
+                  { key: "analytics", title: "Weekly Traffic & Analytics Summary", desc: "Receive weekly visitor counts and pageview reports in your inbox" },
+                ].map((item) => (
+                  <div
+                    key={item.key}
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingBottom: "16px",
+                      borderBottom: "1px solid #f1f5f9",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a" }}>{item.title}</span>
+                      <span style={{ fontSize: "13px", color: "#64748b" }}>{item.desc}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEmailAlerts((prev) => {
+                          const updated = { ...prev, [item.key]: !prev[item.key as keyof typeof prev] };
+                          showToast(`Notification setting updated`);
+                          return updated;
+                        });
+                      }}
+                      style={{
+                        width: "56px",
+                        height: "32px",
+                        borderRadius: "9999px",
+                        border: "none",
+                        backgroundColor: emailAlerts[item.key as keyof typeof emailAlerts] ? "#0f172a" : "#cbd5e1",
+                        cursor: "pointer",
+                        position: "relative",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          backgroundColor: "#ffffff",
+                          position: "absolute",
+                          top: "4px",
+                          left: emailAlerts[item.key as keyof typeof emailAlerts] ? "28px" : "4px",
+                          transition: "all 0.2s",
+                        }}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* TAB 5: ADVANCED SETTINGS */}
+          {activeTab === "advanced" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Advanced Developer Settings
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Inject custom scripts, configure SEO indexing, and manage project lifecycle
+                </p>
+              </div>
+
+              {/* Custom Header Scripts Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    CUSTOM HEADER SCRIPTS
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Inject Analytics & Meta Tags inside &lt;head&gt;
+                  </h3>
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={headerScript}
+                  onChange={(e) => setHeaderScript(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "16px",
+                    borderRadius: "16px",
+                    border: "1px solid #cbd5e1",
+                    backgroundColor: "#0f172a",
+                    color: "#38bdf8",
+                    fontFamily: "monospace",
+                    fontSize: "13px",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+
+                <button
+                  onClick={() => showToast("Custom header scripts saved!")}
+                  style={{
+                    width: "180px",
+                    height: "46px",
+                    backgroundColor: "#0f172a",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    borderRadius: "14px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Save Custom Scripts
+                </button>
+              </div>
+
+              {/* Danger Zone Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#fff1f2",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #fecdd3",
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: 900, color: "#9f1239", margin: 0 }}>
+                    Unpublish Website Project
+                  </h3>
+                  <p style={{ fontSize: "13px", color: "#be123c", margin: 0 }}>
+                    Take your website offline from production live domain
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 space-y-3.5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-extrabold text-slate-900">Search Engine Indexing (SEO)</h4>
-                      <p className="text-[10px] font-medium text-slate-400">Allow Google and Bing to crawl your website pages.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSeoIndexing(!seoIndexing);
-                        showToast(`SEO indexing ${!seoIndexing ? "enabled" : "disabled"}`);
+                <button
+                  onClick={() => showToast("Project unpublished from production")}
+                  style={{
+                    height: "46px",
+                    paddingLeft: "24px",
+                    paddingRight: "24px",
+                    backgroundColor: "#e11d48",
+                    color: "#ffffff",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    borderRadius: "14px",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Unpublish Project
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* TAB 6: ACCOUNT DETAILS, LOGIN & LOGOUT */}
+          {activeTab === "account" && (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <h1 style={{ fontSize: "30px", fontWeight: 900, color: "#0f172a", letterSpacing: "-0.03em", margin: 0 }}>
+                  Account Details & Session
+                </h1>
+                <p style={{ fontSize: "14px", color: "#64748b", fontWeight: 500, margin: 0 }}>
+                  Manage your personal owner profile, active session, and sign in / sign out controls
+                </p>
+              </div>
+
+              {/* Owner Profile Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                    <div
+                      style={{
+                        width: "72px",
+                        height: "72px",
+                        borderRadius: "24px",
+                        background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                        color: "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "28px",
+                        fontWeight: 900,
+                        boxShadow: "0 10px 25px -5px rgba(15,23,42,0.3)",
                       }}
-                      className={cn(
-                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200",
-                        seoIndexing ? "bg-emerald-600" : "bg-slate-200"
-                      )}
                     >
-                      <span
-                        className={cn(
-                          "inline-block h-5 w-5 rounded-full bg-white shadow transition",
-                          seoIndexing ? "translate-x-5" : "translate-x-0"
-                        )}
-                      />
-                    </button>
+                      K
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <h2 style={{ fontSize: "22px", fontWeight: 900, color: "#0f172a", margin: 0 }}>Kishore</h2>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "4px 12px",
+                            borderRadius: "9999px",
+                            backgroundColor: "#eff6ff",
+                            color: "#1d4ed8",
+                            border: "1px solid #bfdbfe",
+                            fontSize: "11px",
+                            fontWeight: 800,
+                          }}
+                        >
+                          👑 Owner Account
+                        </span>
+                      </div>
+                      <span style={{ fontSize: "14px", color: "#64748b", fontWeight: 600 }}>kishore@xite.co.in</span>
+                    </div>
                   </div>
 
-                  <div className="h-px bg-slate-100" />
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-extrabold text-slate-900">Maintenance Mode</h4>
-                      <p className="text-[10px] font-medium text-slate-400">Display a temporary maintenance banner to visitors.</p>
-                    </div>
+                  <div style={{ display: "flex", gap: "10px" }}>
                     <button
-                      type="button"
-                      onClick={() => {
-                        setMaintenanceMode(!maintenanceMode);
-                        showToast(`Maintenance mode ${!maintenanceMode ? "activated" : "deactivated"}`);
+                      onClick={() => setActiveTab("security")}
+                      style={{
+                        height: "44px",
+                        paddingLeft: "18px",
+                        paddingRight: "18px",
+                        borderRadius: "14px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px solid #cbd5e1",
+                        color: "#334155",
+                        fontSize: "13px",
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
                       }}
-                      className={cn(
-                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200",
-                        maintenanceMode ? "bg-amber-600" : "bg-slate-200"
-                      )}
                     >
-                      <span
-                        className={cn(
-                          "inline-block h-5 w-5 rounded-full bg-white shadow transition",
-                          maintenanceMode ? "translate-x-5" : "translate-x-0"
-                        )}
-                      />
+                      <Key style={{ width: "16px", height: "16px" }} />
+                      <span>Security</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-md shadow-slate-900/5 space-y-3">
-                  <h4 className="text-xs font-extrabold text-slate-900">Custom &lt;head&gt; Code Injection</h4>
-                  <p className="text-[10px] font-medium text-slate-400">Insert custom analytics tags, tracking pixels, or chat widgets.</p>
-                  <textarea
-                    rows={4}
-                    value={headerScript}
-                    onChange={(e) => setHeaderScript(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-950 p-3.5 font-mono text-xs font-semibold text-emerald-400 focus:outline-none"
-                  />
+                {/* Account Info Grid */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                    gap: "16px",
+                    marginTop: "8px",
+                  }}
+                >
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>ORGANIZATION</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", margin: "6px 0 0 0" }}>Greenfield University</p>
+                  </div>
+
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>SUBDOMAIN</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#2563eb", margin: "6px 0 0 0" }}>{subdomain}.xite.co.in</p>
+                  </div>
+
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>STATUS</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#047857", margin: "6px 0 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10b981" }}></span> Active & Verified
+                    </p>
+                  </div>
+
+                  <div style={{ padding: "20px", borderRadius: "18px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>ACCOUNT TYPE</span>
+                    <p style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", margin: "6px 0 0 0" }}>Super Administrator</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Session Control & Actions Card */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "24px",
+                  padding: "32px",
+                  border: "1px solid #e2e8f0",
+                  boxShadow: "0 4px 6px -1px rgba(0,0,0,0.03)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "20px",
+                  boxSizing: "border-box",
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#94a3b8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                    SESSION ACTIONS
+                  </span>
+                  <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", margin: "4px 0 0 0" }}>
+                    Login & Sign Out Options
+                  </h3>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {/* Sign Out Button */}
                   <button
-                    type="button"
-                    onClick={() => showToast("Custom header code saved")}
-                    className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-slate-800 transition cursor-pointer"
+                    onClick={async () => {
+                      try {
+                        await fetch("/api/auth/logout", { method: "POST" });
+                      } catch {}
+                      try {
+                        document.cookie = "xite_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                        document.cookie = "xite_user_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+                        localStorage.clear();
+                        sessionStorage.clear();
+                      } catch {}
+                      window.location.href = "/";
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "16px 24px",
+                      borderRadius: "16px",
+                      backgroundColor: "#fff1f2",
+                      border: "1px solid #fecdd3",
+                      color: "#e11d48",
+                      fontSize: "14px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "all 0.15s ease",
+                    }}
                   >
-                    Save Code
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <LogOut style={{ width: "20px", height: "20px" }} />
+                      <span>Log Out of Account</span>
+                    </div>
+                    <span style={{ fontSize: "12px", opacity: 0.8 }}>End current session ➔</span>
+                  </button>
+
+                  {/* Login / Switch Account Button */}
+                  <button
+                    onClick={() => {
+                      window.location.href = "/login";
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "16px 24px",
+                      borderRadius: "16px",
+                      backgroundColor: "#f8fafc",
+                      border: "1px solid #cbd5e1",
+                      color: "#0f172a",
+                      fontSize: "14px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <Users style={{ width: "20px", height: "20px", color: "#2563eb" }} />
+                      <span>Log In / Switch Account</span>
+                    </div>
+                    <span style={{ fontSize: "12px", color: "#64748b" }}>Sign into another account ➔</span>
                   </button>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      </motion.div>
+            </>
+          )}
+        </main>
+      </div>
     </div>,
     document.body
   );
