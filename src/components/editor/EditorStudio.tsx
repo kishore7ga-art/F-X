@@ -1400,8 +1400,8 @@ export function EditorStudio({
               const logoElem = clone.querySelector('img[data-logo="true"]') || clone.querySelector('img.logo') || clone.querySelector('img');
               if (logoElem) {
                 (logoElem as HTMLImageElement).src = finalImageUrl;
-                logoElem.style.objectFit = finalObjectFit;
-                logoElem.style.borderRadius = finalBorderRadius;
+                (logoElem as HTMLElement).style.objectFit = finalObjectFit;
+                (logoElem as HTMLElement).style.borderRadius = finalBorderRadius;
               }
             }
           }
