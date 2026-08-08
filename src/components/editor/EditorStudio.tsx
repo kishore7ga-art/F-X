@@ -812,14 +812,12 @@ export function EditorStudio({
     isNewTab: boolean;
   } | null>(null);
 
-  // Dynamic Toast Notification State
+  // Dynamic Toast Notification State (Disabled per user request)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const showToastNotification = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
+  const showToastNotification = (_msg: string) => {
+    // Popups completely disabled per user request
+    setToastMessage(null);
   };
 
   // Right-Click Image, Logo & Background Editor Modal State
@@ -1978,13 +1976,7 @@ export function EditorStudio({
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-x-hidden">
       
-      {/* Toast Notification Banner */}
-      {toastMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-[#0f172a] text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 animate-in fade-in duration-200">
-          <AlertCircle className="w-4 h-4 text-amber-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+
 
       {/* Main Studio Canvas Workspace */}
       <main
