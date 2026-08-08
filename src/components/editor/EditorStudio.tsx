@@ -2029,10 +2029,8 @@ export function EditorStudio({
     setLinkPopup(null);
   };
 
-  // Select section category in modal: Fetch latest Admin DB templates and insert exact Admin code!
-  const handleSelectSectionCategory = async (cat: typeof SECTION_CATEGORIES[0]) => {
-    setShowAddSectionModal(false);
-
+  // Add a section from predefined categories
+  const handleAddSectionFromCategory = async (cat: { id: string; name: string }) => {
     const apiBase = (() => {
       if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
       if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
@@ -2062,48 +2060,44 @@ export function EditorStudio({
       } catch {}
     }
 
-    // Filter admin-added templates matching selected category tag (e.g. [hero])
+    // Filter admin-added templates matching selected category tag ONLY
     const catIdLower = cat.id.toLowerCase();
     const catNameLower = cat.name.toLowerCase();
+    const normCat = normalizeCategory(cat.id);
+
     const matchingTemplates = templatesList.filter((tpl) => {
       const nameLower = (tpl.name || "").toLowerCase();
-      const codeLower = (tpl.code || "").toLowerCase();
-      return (
-        nameLower.includes(`[${catIdLower}]`) ||
-        nameLower.includes(catIdLower) ||
-        nameLower.includes(catNameLower) ||
-        (catIdLower === "header" && (nameLower.includes("header") || nameLower.includes("nav") || codeLower.includes("<header"))) ||
-        (catIdLower === "features" && (nameLower.includes("feature") || nameLower.includes("highlight"))) ||
-        (catIdLower === "stats" && (nameLower.includes("stat") || nameLower.includes("metric"))) ||
-        (catIdLower === "hero" && (nameLower.includes("hero") || nameLower.includes("banner"))) ||
-        (catIdLower === "courses" && (nameLower.includes("course") || nameLower.includes("academic"))) ||
-        (catIdLower === "about" && nameLower.includes("about")) ||
-        (catIdLower === "contact" && nameLower.includes("contact"))
-      );
+      const tplCatLower = (tpl.category || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
+      const normTplCat = normalizeCategory(tplCatLower);
+
+      if (normTplCat && normTplCat === normCat) return true;
+      if (tplCatLower === catIdLower) return true;
+      if (nameLower.includes(`[${catIdLower}]`) || nameLower.includes(catIdLower) || nameLower.includes(catNameLower)) return true;
+      return false;
     });
 
-    const targetTemplate = matchingTemplates.length > 0 ? matchingTemplates[0]! : (templatesList.length > 0 ? templatesList[0] : null);
+    let newCode = "";
+    let newTitle = cat.name;
 
-    if (targetTemplate && targetTemplate.code) {
-      const newSection: SectionItem = {
-        id: `sec-${Date.now()}`,
-        title: targetTemplate.name,
-        code: targetTemplate.code,
-        variantIndex: 0,
-      };
-      setSectionsWithHistory((prev) => [...prev, newSection]);
-      setActiveSectionIndex(sections.length);
+    if (matchingTemplates.length > 0) {
+      newCode = matchingTemplates[0]!.code;
+      newTitle = matchingTemplates[0]!.name || cat.name;
     } else {
-      const defaultCode = ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE;
-      const newSection: SectionItem = {
-        id: `sec-${Date.now()}`,
-        title: cat.name,
-        code: defaultCode,
-        variantIndex: 0,
-      };
-      setSectionsWithHistory((prev) => [...prev, newSection]);
-      setActiveSectionIndex(sections.length);
+      newCode = liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normCat] || ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE;
     }
+
+    const newSection: SectionItem = {
+      id: `sec-${Date.now()}`,
+      title: newTitle,
+      code: newCode,
+      category: cat.id,
+      variantIndex: 0,
+    };
+
+    setSectionsWithHistory((prev) => [...prev, newSection]);
+    setActiveSectionIndex(sections.length);
+    setShowAddSectionModal(false);
+    showToastNotification(`Added new ${cat.name} to page`);
   };
 
   // Swap / Cycle between section variants for the ACTIVE category ONLY
@@ -2140,38 +2134,9 @@ export function EditorStudio({
           }
         }
       } catch {}
-
-      if (templatesList.length === 0) {
-        try {
-          const defRes = await fetch(`${apiBase}/api/v1/default-website`);
-          if (defRes.ok) {
-            const defData = await defRes.json().catch(() => ({}));
-            if (defData && Array.isArray(defData.pages)) {
-              const allPageSecs: any[] = [];
-              defData.pages.forEach((p: any) => {
-                if (Array.isArray(p.sections)) {
-                  p.sections.forEach((s: any) => {
-                    if (s && (s.code || s.html || s.content)) {
-                      allPageSecs.push({
-                        id: s.id || s.title,
-                        name: s.title || s.name || "Section",
-                        code: s.code || s.html || s.content,
-                        category: s.sectionType || s.category || s.id || "",
-                      });
-                    }
-                  });
-                }
-              });
-              if (allPageSecs.length > 0) {
-                templatesList = allPageSecs;
-              }
-            }
-          }
-        } catch {}
-      }
     }
 
-    // 1. Accurately determine Category ID of the ACTIVE section ONLY across ALL 19 categories
+    // 1. Accurately determine Category ID of the ACTIVE section
     const titleLower = (activeSec.title || "").toLowerCase();
     const codeLower = (activeSec.code || "").toLowerCase();
     const idLower = (activeSec.id || "").toLowerCase();
@@ -2204,7 +2169,7 @@ export function EditorStudio({
         catId = "research";
       } else if (titleLower.includes("news") || titleLower.includes("circular") || titleLower.includes("announcement") || idLower.includes("news")) {
         catId = "news";
-      } else if (titleLower.includes("event") || titleLower.includes("calendar") || idLower.includes("event")) {
+      } else if (titleLower.includes("event") || titleLower.includes("calendar") || titleLower.includes("event")) {
         catId = "events";
       } else if (titleLower.includes("gallery") || titleLower.includes("campus life") || idLower.includes("gallery")) {
         catId = "gallery";
@@ -2224,13 +2189,15 @@ export function EditorStudio({
       }
     }
 
+    const normCatId = normalizeCategory(catId);
+
     // Clean up repeating "Default" suffixes from current title
     const cleanBaseTitle = (activeSec.title || "")
       .replace(/(\s*Default)+$/gi, "")
       .replace(/(\s*Variant\s*\d+)+$/gi, "")
       .trim() || catId.toUpperCase();
 
-    // 2. STRICT Category Filtering: Collect ONLY templates that belong to THIS SPECIFIC category (catId)
+    // 2. STRICT Category Filtering: Collect ONLY templates that belong to THIS SPECIFIC category
     const matchingTemplates: { name: string; code: string }[] = [];
 
     // Helper to add unique non-duplicate template variant
@@ -2245,27 +2212,29 @@ export function EditorStudio({
       }
     };
 
-    // Filter Admin DB templates
+    // Filter Admin DB templates strictly by category (DO NOT search arbitrary HTML body content!)
     templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
       const tplCatLower = (tpl.category || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
       const codeStr = (tpl.code || tpl.html || tpl.content || tpl.templateCode || "").trim();
-      const tplCodeLower = codeStr.toLowerCase();
+      const normTplCat = normalizeCategory(tplCatLower);
 
       if (!codeStr) return;
 
       let isMatch = false;
 
-      if (catId === "vision") {
-        isMatch = tplCatLower === "vision" || tplCatLower.includes("vision") || nameLower.includes("vision") || nameLower.includes("mission") || tplCodeLower.includes("vision & mission");
+      if (normTplCat && normTplCat === normCatId) {
+        isMatch = true;
+      } else if (catId === "vision") {
+        isMatch = tplCatLower === "vision" || tplCatLower.includes("vision") || nameLower.includes("vision") || nameLower.includes("mission");
       } else if (catId === "admissions" || catId === "admission") {
-        isMatch = tplCatLower.includes("admission") || nameLower.includes("admission") || tplCodeLower.includes("admission");
+        isMatch = tplCatLower === "admissions" || tplCatLower === "admission" || nameLower.includes("admission");
       } else if (catId === "hero") {
-        isMatch = tplCatLower === "hero" || tplCatLower.includes("hero") || nameLower.includes("hero") || nameLower.includes("banner");
+        isMatch = (tplCatLower === "hero" || nameLower.includes("hero") || nameLower.includes("banner")) && !nameLower.includes("header") && !nameLower.includes("nav");
       } else if (catId === "navbar" || catId === "header") {
-        isMatch = tplCatLower.includes("nav") || tplCatLower.includes("header") || nameLower.includes("nav") || nameLower.includes("header");
+        isMatch = tplCatLower === "navbar" || tplCatLower === "header" || nameLower.includes("header") || nameLower.includes("nav");
       } else {
-        isMatch = tplCatLower === catId || tplCatLower.includes(catId) || nameLower.includes(catId) || nameLower.includes(`[${catId}]`);
+        isMatch = tplCatLower === catId || nameLower.includes(catId);
       }
 
       if (isMatch) {
@@ -2274,7 +2243,7 @@ export function EditorStudio({
     });
 
     // Add default template for this category
-    const categoryDefaultCode = liveAdminTemplatesMap[catId] || ALL_19_SECTION_TEMPLATES[catId];
+    const categoryDefaultCode = liveAdminTemplatesMap[catId] || liveAdminTemplatesMap[normCatId] || ALL_19_SECTION_TEMPLATES[catId] || ALL_19_SECTION_TEMPLATES[normCatId];
     if (categoryDefaultCode) {
       addMatchingTemplate(`${cleanBaseTitle} (Layout 1)`, categoryDefaultCode);
     }
@@ -2722,7 +2691,7 @@ export function EditorStudio({
                     return (
                       <div
                         key={cat.id}
-                        onClick={() => handleSelectSectionCategory(cat)}
+                        onClick={() => handleAddSectionFromCategory(cat)}
                         className="p-4 rounded-2xl bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 hover:border-blue-500 transition-all duration-200 cursor-pointer select-none shadow-sm hover:shadow-md flex items-start gap-3.5 group"
                       >
                         <div className="p-3 rounded-2xl bg-slate-900 text-white group-hover:bg-blue-600 transition-colors shadow-sm shrink-0">
