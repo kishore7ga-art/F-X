@@ -74,12 +74,12 @@ const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
       </div>
 
       <nav class="desktop-nav-links" style="display: flex; align-items: center; gap: clamp(8px, 1.8vw, 24px); font-size: 14px; font-weight: 700; flex-wrap: nowrap;">
-        <a href="#home" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Home</a>
-        <a href="#about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About</a>
-        <a href="#courses" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics</a>
-        <a href="#admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
-        <a href="#placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements</a>
-        <a href="#contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact</a>
+        <a href="/home" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Home</a>
+        <a href="/about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About Us</a>
+        <a href="/academics" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics & Courses</a>
+        <a href="/admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
+        <a href="/placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements & Careers</a>
+        <a href="/contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact Helpdesk</a>
       </nav>
 
       <a href="#apply" class="desktop-apply-btn" style="background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; flex-shrink: 0;">Apply Now</a>
@@ -90,14 +90,13 @@ const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
     </div>
 
     <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
-        <a href="#home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
-        <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
-        <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
-        <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
-        <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
-        <a href="#contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
-        <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 12px; border-radius: 8px; text-align: center; margin-top: 8px; font-weight: 800; text-decoration: none;">Apply Now</a>
+      <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
+        <a href="/home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
+        <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About Us</a>
+        <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics & Courses</a>
+        <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
+        <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements & Careers</a>
+        <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact Helpdesk</a>
       </nav>
     </div>
 
@@ -576,11 +575,11 @@ const getFullPageSections = (slug: string, pageName: string = "Home", collegeNam
 
       <nav class="desktop-nav-links" style="display: flex; align-items: center; gap: clamp(8px, 1.8vw, 24px); font-size: 14px; font-weight: 700; flex-wrap: nowrap;">
         <a href="/home" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Home</a>
-        <a href="/about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About</a>
-        <a href="/academics" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics</a>
+        <a href="/about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About Us</a>
+        <a href="/academics" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics & Courses</a>
         <a href="/admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
-        <a href="/placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements</a>
-        <a href="/contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact</a>
+        <a href="/placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements & Careers</a>
+        <a href="/contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact Helpdesk</a>
       </nav>
 
       <a href="/admissions" class="desktop-apply-btn" style="background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; flex-shrink: 0;">Apply Now</a>
@@ -591,14 +590,13 @@ const getFullPageSections = (slug: string, pageName: string = "Home", collegeNam
     </div>
 
     <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
+      <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
         <a href="/home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
-        <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
-        <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
+        <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About Us</a>
+        <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics & Courses</a>
         <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
-        <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
-        <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
-        <a href="/admissions" style="background: #2563eb; color: #ffffff; padding: 12px; border-radius: 8px; text-align: center; margin-top: 8px; font-weight: 800; text-decoration: none;">Apply Now</a>
+        <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements & Careers</a>
+        <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact Helpdesk</a>
       </nav>
     </div>
 
@@ -959,6 +957,19 @@ export function EditorStudio({
           </div>
         ${match}`;
       });
+    } else if (corrected.includes("mobile-drawer-menu")) {
+      corrected = corrected.replace(/<div[^>]*class="[^"]*mobile-drawer-menu[^"]*"[^>]*>[\s\S]*?<\/div>/gi, `
+        <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;">
+          <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
+            <a href="/home" style="color: #ffffff; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Home</a>
+            <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">About Us</a>
+            <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Academics & Courses</a>
+            <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Admissions</a>
+            <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Placements & Careers</a>
+            <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Contact Helpdesk</a>
+          </nav>
+        </div>
+      `);
     }
 
     // Ensure all max-width containers have mx-auto / margin: 0 auto centering
@@ -1051,6 +1062,20 @@ export function EditorStudio({
         max-width: 100% !important;
         box-sizing: border-box !important;
         position: relative !important;
+        flex-wrap: wrap !important;
+      }
+
+      .section-canvas-box .mobile-drawer-menu,
+      header .mobile-drawer-menu {
+        width: 100% !important;
+        flex-basis: 100% !important;
+        clear: both !important;
+        margin-top: 12px !important;
+        position: relative !important;
+        left: 0 !important;
+        right: 0 !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+        z-index: 99 !important;
       }
 
       ${isResponsiveView ? `
@@ -1106,6 +1131,9 @@ export function EditorStudio({
         .section-canvas-box .mobile-drawer-menu.active,
         header .mobile-drawer-menu.active {
           display: block !important;
+          width: 100% !important;
+          flex-basis: 100% !important;
+          clear: both !important;
         }
       ` : `
         /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
@@ -1161,6 +1189,9 @@ export function EditorStudio({
           .section-canvas-box .mobile-drawer-menu.active,
           header .mobile-drawer-menu.active {
             display: block !important;
+            width: 100% !important;
+            flex-basis: 100% !important;
+            clear: both !important;
           }
         }
 
