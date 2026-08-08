@@ -1026,6 +1026,27 @@ export function EditorStudio({
         position: relative !important;
         top: auto !important;
       }
+      
+      /* Universal Header Containment & Non-wrapping Navigation Links */
+      header, .section-canvas-box header {
+        overflow: hidden !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      header nav, header .desktop-nav-links, header ul, header [class*="nav"] {
+        flex-wrap: nowrap !important;
+        gap: clamp(4px, 1.2vw, 16px) !important;
+        min-width: 0 !important;
+      }
+      header nav a, header .desktop-nav-links a, header ul a, header [class*="nav"] a {
+        white-space: nowrap !important;
+        font-size: clamp(11px, 1.05vw, 14px) !important;
+        line-height: 1.2 !important;
+      }
+      header a[style*="background"], header button[style*="background"], header .desktop-apply-btn, header [class*="apply"] {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+      }
     </style>`;
 
     return `${containmentStyles}<div class="section-canvas-box">${autoCorrectMobileCode(cleanCode, width)}</div>`;
