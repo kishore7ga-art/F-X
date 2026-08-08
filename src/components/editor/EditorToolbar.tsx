@@ -219,11 +219,11 @@ export function EditorToolbar({
       <div
         style={{
           height: "54px",
-          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          backgroundColor: "rgba(0, 0, 0, 0.95)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid #e2e8f0",
-          boxShadow: "0 20px 30px -10px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+          border: "1px solid #27272a",
+          boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.1)",
           borderRadius: "9999px",
           padding: "0 14px",
           display: "flex",
@@ -233,15 +233,15 @@ export function EditorToolbar({
           boxSizing: "border-box",
         }}
       >
-        {/* 1. Dark Navy Logo Button */}
+        {/* 1. Monochrome Logo / Settings Button */}
         <button
           onClick={onOpenSettings}
           style={{
             width: "36px",
             height: "36px",
             borderRadius: "14px",
-            backgroundColor: "#0d1527",
-            color: "#ffffff",
+            backgroundColor: "#ffffff",
+            color: "#000000",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -250,18 +250,18 @@ export function EditorToolbar({
             border: "none",
             cursor: "pointer",
             flexShrink: 0,
-            boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+            boxShadow: "0 2px 8px rgba(255,255,255,0.2)",
           }}
           title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
         >
           {isSettingsOpen ? (
-            <X style={{ width: "16px", height: "16px", color: "#ffffff" }} />
+            <X style={{ width: "16px", height: "16px", color: "#000000" }} />
           ) : (
-            <span style={{ fontWeight: 900, fontSize: "14px", color: "#ffffff", lineHeight: 1 }}>x</span>
+            <span style={{ fontWeight: 900, fontSize: "14px", color: "#000000", lineHeight: 1 }}>x</span>
           )}
         </button>
 
-        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
+        <div style={{ height: "20px", width: "1px", backgroundColor: "#27272a", margin: "0 2px", flexShrink: 0 }} />
 
         {/* 2. Primary System Tools Group */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
@@ -278,7 +278,7 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#e4e4e7",
               ...buttonHoverStyle,
             }}
             title="Pages, Colors & Fonts Drawer"
@@ -299,7 +299,7 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#e4e4e7",
               position: "relative",
               ...buttonHoverStyle,
             }}
@@ -314,8 +314,9 @@ export function EditorToolbar({
                 width: "7px",
                 height: "7px",
                 borderRadius: "50%",
-                backgroundColor: "#10b981",
-                border: "1.5px solid #ffffff",
+                backgroundColor: "#ffffff",
+                border: "1.5px solid #000000",
+                boxShadow: "0 0 6px rgba(255,255,255,0.8)",
               }}
             />
           </button>
@@ -333,13 +334,13 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#e4e4e7",
               ...buttonHoverStyle,
             }}
             title="Instant Share / Copy Live Website Link"
           >
             {copied ? (
-              <Check style={{ width: "18px", height: "18px", color: "#059669" }} />
+              <Check style={{ width: "18px", height: "18px", color: "#ffffff" }} />
             ) : (
               <LinkIcon style={{ width: "18px", height: "18px" }} />
             )}
@@ -358,7 +359,7 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#e4e4e7",
               ...buttonHoverStyle,
             }}
             title="Open Live Website Preview in New Tab"
@@ -367,7 +368,7 @@ export function EditorToolbar({
           </button>
         </div>
 
-        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
+        <div style={{ height: "20px", width: "1px", backgroundColor: "#27272a", margin: "0 2px", flexShrink: 0 }} />
 
         {/* 3. Section Editing Tools Group */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
@@ -377,11 +378,11 @@ export function EditorToolbar({
               height: "32px",
               padding: "0 14px",
               borderRadius: "12px",
-              backgroundColor: "#f1f5f9",
-              border: "1px solid #e2e8f0",
+              backgroundColor: "#18181b",
+              border: "1px solid #3f3f46",
               fontSize: "13px",
               fontWeight: 800,
-              color: "#0f172a",
+              color: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -405,7 +406,7 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#e4e4e7",
               ...buttonHoverStyle,
             }}
             title="Duplicate Section"
@@ -413,7 +414,7 @@ export function EditorToolbar({
             <Copy style={{ width: "18px", height: "18px" }} />
           </button>
 
-          {/* Swap Variant Refresh Blue Button */}
+          {/* Swap Variant Refresh Button */}
           <button
             onClick={handleRefreshSwap}
             style={{
@@ -426,15 +427,13 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#2563eb",
+              color: "#ffffff",
               ...buttonHoverStyle,
             }}
             title="Swap Variant Layout"
           >
             <RefreshCw style={{ width: "18px", height: "18px" }} />
           </button>
-
-
 
           {/* Move Up Button */}
           <button
@@ -449,7 +448,7 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#e4e4e7",
               ...buttonHoverStyle,
             }}
             title="Move Up"
@@ -470,7 +469,7 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#e4e4e7",
               ...buttonHoverStyle,
             }}
             title="Move Down"
@@ -478,7 +477,7 @@ export function EditorToolbar({
             <ArrowDown style={{ width: "18px", height: "18px" }} />
           </button>
 
-          {/* Red Delete Trash Icon Button */}
+          {/* Delete Trash Icon Button */}
           <button
             onClick={onDeleteSection}
             style={{
@@ -491,7 +490,7 @@ export function EditorToolbar({
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#f43f5e",
+              color: "#ffffff",
               ...buttonHoverStyle,
             }}
             title="Delete Section"
@@ -500,7 +499,7 @@ export function EditorToolbar({
           </button>
         </div>
 
-        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
+        <div style={{ height: "20px", width: "1px", backgroundColor: "#27272a", margin: "0 2px", flexShrink: 0 }} />
 
         {/* 4. Multi-Resolution Viewport Switcher Group */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
@@ -511,21 +510,21 @@ export function EditorToolbar({
               height: "34px",
               padding: activeDesktop ? "0 12px" : "0 8px",
               borderRadius: "12px",
-              border: activeDesktop ? "1px solid #cbd5e1" : "none",
+              border: activeDesktop ? "1px solid #ffffff" : "none",
               backgroundColor: activeDesktop ? "#ffffff" : "transparent",
-              boxShadow: activeDesktop ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+              boxShadow: activeDesktop ? "0 2px 8px rgba(255,255,255,0.2)" : "none",
               display: "flex",
               alignItems: "center",
               gap: "6px",
               cursor: "pointer",
-              color: "#0f172a",
+              color: activeDesktop ? "#000000" : "#a1a1aa",
               ...buttonHoverStyle,
             }}
-            title="Desktop Resolution (Click to Cycle 1200px / 1024px / 800px)"
+            title="Desktop Resolution"
           >
-            <Monitor style={{ width: "18px", height: "18px", color: "#334155" }} />
+            <Monitor style={{ width: "18px", height: "18px", color: activeDesktop ? "#000000" : "#a1a1aa" }} />
             {activeDesktop && (
-              <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "12px", color: "#0f172a" }}>
+              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "12px", color: "#000000" }}>
                 {activeDesktop.width}
               </span>
             )}
@@ -538,21 +537,21 @@ export function EditorToolbar({
               height: "34px",
               padding: activeTablet ? "0 12px" : "0 8px",
               borderRadius: "12px",
-              border: activeTablet ? "1px solid #cbd5e1" : "none",
+              border: activeTablet ? "1px solid #ffffff" : "none",
               backgroundColor: activeTablet ? "#ffffff" : "transparent",
-              boxShadow: activeTablet ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+              boxShadow: activeTablet ? "0 2px 8px rgba(255,255,255,0.2)" : "none",
               display: "flex",
               alignItems: "center",
               gap: "6px",
               cursor: "pointer",
-              color: "#0f172a",
+              color: activeTablet ? "#000000" : "#a1a1aa",
               ...buttonHoverStyle,
             }}
-            title="Tablet Resolution (Click to Cycle 768px / 640px / 1024px)"
+            title="Tablet Resolution"
           >
-            <Tablet style={{ width: "18px", height: "18px", color: "#334155" }} />
+            <Tablet style={{ width: "18px", height: "18px", color: activeTablet ? "#000000" : "#a1a1aa" }} />
             {activeTablet && (
-              <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "12px", color: "#0f172a" }}>
+              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "12px", color: "#000000" }}>
                 {activeTablet.width}
               </span>
             )}
@@ -565,21 +564,21 @@ export function EditorToolbar({
               height: "34px",
               padding: activeMobile ? "0 12px" : "0 8px",
               borderRadius: "12px",
-              border: activeMobile ? "1px solid #cbd5e1" : "none",
+              border: activeMobile ? "1px solid #ffffff" : "none",
               backgroundColor: activeMobile ? "#ffffff" : "transparent",
-              boxShadow: activeMobile ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+              boxShadow: activeMobile ? "0 2px 8px rgba(255,255,255,0.2)" : "none",
               display: "flex",
               alignItems: "center",
               gap: "6px",
               cursor: "pointer",
-              color: "#0f172a",
+              color: activeMobile ? "#000000" : "#a1a1aa",
               ...buttonHoverStyle,
             }}
-            title="Mobile Resolution (Click to Cycle 375px / 425px)"
+            title="Mobile Resolution"
           >
-            <Smartphone style={{ width: "18px", height: "18px", color: "#334155" }} />
+            <Smartphone style={{ width: "18px", height: "18px", color: activeMobile ? "#000000" : "#a1a1aa" }} />
             {activeMobile && (
-              <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "12px", color: "#0f172a" }}>
+              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "12px", color: "#000000" }}>
                 {activeMobile.width}
               </span>
             )}
@@ -596,21 +595,21 @@ export function EditorToolbar({
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 999999,
-            backgroundColor: "#0f172a",
+            backgroundColor: "#000000",
             color: "#ffffff",
             fontSize: "12px",
             fontWeight: 800,
             padding: "10px 20px",
             borderRadius: "16px",
-            boxShadow: "0 20px 30px -10px rgba(0,0,0,0.3)",
-            border: "1px solid #334155",
+            boxShadow: "0 20px 30px rgba(0,0,0,0.8)",
+            border: "1px solid #3f3f46",
             display: "flex",
             alignItems: "center",
             gap: "10px",
             pointerEvents: "none",
           }}
         >
-          <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#34d399" }} />
+          <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ffffff" }} />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -624,7 +623,7 @@ export function EditorToolbar({
             right: 0,
             bottom: 0,
             zIndex: 9999999,
-            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
             backdropFilter: "blur(6px)",
             WebkitBackdropFilter: "blur(6px)",
             display: "flex",
@@ -638,11 +637,11 @@ export function EditorToolbar({
             style={{
               width: "100%",
               maxWidth: "460px",
-              backgroundColor: "#0d1527",
-              border: "1px solid #2563eb",
+              backgroundColor: "#000000",
+              border: "1px solid #3f3f46",
               borderRadius: "24px",
               padding: "28px",
-              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(37, 99, 235, 0.3)",
+              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.95)",
               display: "flex",
               flexDirection: "column",
               gap: "20px",
@@ -654,17 +653,17 @@ export function EditorToolbar({
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "38px", height: "38px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>
+                <div style={{ width: "38px", height: "38px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: 900 }}>
                   🔗
                 </div>
                 <div>
                   <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>Share Live Website Link</h3>
-                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "2px 0 0 0" }}>Anyone with this link can view your live website</p>
+                  <p style={{ fontSize: "11px", color: "#a1a1aa", margin: "2px 0 0 0" }}>Anyone with this link can view your live website</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowShareModal(false)}
-                style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "18px" }}
+                style={{ background: "transparent", border: "none", color: "#a1a1aa", cursor: "pointer", fontSize: "18px" }}
               >
                 ✕
               </button>
@@ -672,7 +671,7 @@ export function EditorToolbar({
 
             {/* Input URL display */}
             <div>
-              <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "8px", letterSpacing: "0.05em" }}>
+              <label style={{ fontSize: "11px", fontWeight: 800, color: "#e4e4e7", textTransform: "uppercase", display: "block", marginBottom: "8px", letterSpacing: "0.05em" }}>
                 Public Live Website Link
               </label>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -683,11 +682,11 @@ export function EditorToolbar({
                   style={{
                     flex: 1,
                     height: "44px",
-                    backgroundColor: "#1e293b",
-                    border: "1px solid #334155",
+                    backgroundColor: "#09090b",
+                    border: "1px solid #3f3f46",
                     borderRadius: "12px",
                     padding: "0 14px",
-                    color: "#60a5fa",
+                    color: "#ffffff",
                     fontSize: "13px",
                     fontFamily: "monospace",
                     fontWeight: "bold",
@@ -704,14 +703,14 @@ export function EditorToolbar({
                     height: "44px",
                     padding: "0 18px",
                     borderRadius: "12px",
-                    backgroundColor: "#2563eb",
-                    color: "#ffffff",
-                    fontWeight: 800,
+                    backgroundColor: "#ffffff",
+                    color: "#000000",
+                    fontWeight: 900,
                     fontSize: "13px",
                     border: "none",
                     cursor: "pointer",
                     whiteSpace: "nowrap",
-                    boxShadow: "0 4px 12px rgba(37,99,235,0.4)",
+                    boxShadow: "0 4px 12px rgba(255,255,255,0.2)",
                   }}
                 >
                   📋 Copy
@@ -720,10 +719,10 @@ export function EditorToolbar({
             </div>
 
             {/* Actions */}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingTop: "12px", borderTop: "1px solid #1e293b" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingTop: "12px", borderTop: "1px solid #27272a" }}>
               <button
                 onClick={() => setShowShareModal(false)}
-                style={{ height: "40px", padding: "0 18px", borderRadius: "10px", border: "none", background: "transparent", color: "#94a3b8", fontWeight: 800, cursor: "pointer" }}
+                style={{ height: "40px", padding: "0 18px", borderRadius: "10px", border: "none", background: "transparent", color: "#a1a1aa", fontWeight: 800, cursor: "pointer" }}
               >
                 Close
               </button>
@@ -732,7 +731,7 @@ export function EditorToolbar({
                   window.open(shareUrl, "_blank");
                   setShowShareModal(false);
                 }}
-                style={{ height: "40px", padding: "0 22px", borderRadius: "10px", backgroundColor: "#059669", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+                style={{ height: "40px", padding: "0 22px", borderRadius: "10px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
               >
                 <span>Open Link in New Tab ↗️</span>
               </button>

@@ -2567,7 +2567,7 @@ export function EditorStudio({
                   onDoubleClick={(e) => handleSectionDoubleClick(e, idx)}
                   onContextMenu={(e) => handleSectionContextMenu(e, idx)}
                   className={`w-full cursor-pointer relative transition-all group section-wrapper-container overflow-hidden ${
-                    activeSectionIndex === idx ? "ring-2 ring-blue-600 ring-offset-2 z-10" : ""
+                    activeSectionIndex === idx ? "ring-2 ring-white ring-offset-2 ring-offset-black z-10" : ""
                   }`}
                 >
                   <div
@@ -2578,15 +2578,15 @@ export function EditorStudio({
               ))}
 
               {/* Empty Space + Add Section Button */}
-              <div className="w-full py-12 flex flex-col items-center justify-center bg-slate-50/70 border-t border-b border-dashed border-slate-300 my-6 rounded-2xl">
+              <div className="w-full py-12 flex flex-col items-center justify-center bg-zinc-950/80 border-t border-b border-dashed border-zinc-800 my-6 rounded-2xl">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowAddSectionModal(true);
                   }}
-                  className="group flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white font-black text-xs px-6 py-3 rounded-full shadow-lg transition-all border border-slate-700 hover:scale-105 cursor-pointer"
+                  className="group flex items-center gap-2 bg-black hover:bg-zinc-900 text-white font-black text-xs px-6 py-3 rounded-full shadow-xl transition-all border border-zinc-700 hover:border-white hover:scale-105 cursor-pointer"
                 >
-                  <Plus className="w-4 h-4 text-blue-400 group-hover:rotate-90 transition-transform duration-300" />
+                  <Plus className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-300" />
                   <span>Add Section</span>
                 </button>
               </div>
@@ -2602,21 +2602,21 @@ export function EditorStudio({
       {showAddSectionModal && (
         <div
           onClick={() => setShowAddSectionModal(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-slate-200 cursor-default relative animate-in zoom-in-95 duration-200"
+            className="w-full max-w-2xl bg-zinc-950 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-zinc-800 text-white cursor-default relative animate-in zoom-in-95 duration-200"
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-4 shrink-0">
               <div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900">What section do you want to add?</h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">Select a category or specific Admin section variant.</p>
+                <h3 className="text-xl font-black tracking-tight text-white">What section do you want to add?</h3>
+                <p className="text-xs text-zinc-400 font-medium mt-0.5">Select a category or specific Admin section variant.</p>
               </div>
               <button
                 onClick={() => setShowAddSectionModal(false)}
-                className="w-9 h-9 flex items-center justify-center rounded-2xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-sm cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-2xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all font-bold text-sm cursor-pointer"
               >
                 ✕
               </button>
@@ -2632,16 +2632,16 @@ export function EditorStudio({
                   setActiveSectionIndex(0);
                   setShowAddSectionModal(false);
                 }}
-                className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all cursor-pointer select-none"
+                className="w-full p-3.5 rounded-2xl bg-white hover:bg-zinc-200 text-black font-black text-xs flex items-center justify-center gap-2 shadow-lg border border-white transition-all cursor-pointer select-none"
               >
-                <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
+                <Sparkles className="w-4 h-4 text-black animate-pulse" />
                 <span>Load All 19 Default Sections (Full 19 Sections Website)</span>
               </button>
 
               {/* Admin DB Section Variants List */}
               {adminDbTemplates.length > 0 && (
                 <div className="space-y-2.5">
-                  <h4 className="text-[10px] font-black text-slate-400 tracking-wider uppercase">
+                  <h4 className="text-[10px] font-black text-zinc-500 tracking-wider uppercase">
                     Admin DB Section Variants ({adminDbTemplates.length})
                   </h4>
                   <div className="grid gap-2.5 sm:grid-cols-2">
@@ -2659,13 +2659,13 @@ export function EditorStudio({
                           setActiveSectionIndex(sections.length);
                           setShowAddSectionModal(false);
                         }}
-                        className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 hover:border-emerald-500 hover:bg-emerald-100/90 transition-all cursor-pointer flex items-center justify-between shadow-sm select-none"
+                        className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 hover:border-zinc-500 hover:bg-zinc-800/90 transition-all cursor-pointer flex items-center justify-between shadow-sm select-none"
                       >
                         <div className="truncate pr-2">
-                          <h5 className="text-xs font-black text-slate-900 truncate">{tpl.name}</h5>
-                          <p className="text-[10px] text-emerald-700 font-mono font-bold">Live DB Template</p>
+                          <h5 className="text-xs font-black text-white truncate">{tpl.name}</h5>
+                          <p className="text-[10px] text-zinc-400 font-mono font-bold">Live DB Template</p>
                         </div>
-                        <span className="text-[10px] font-black bg-emerald-600 text-white px-3 py-1 rounded-full shrink-0 shadow-sm">
+                        <span className="text-[10px] font-black bg-white text-black px-3 py-1 rounded-full shrink-0 shadow-sm">
                           + Add
                         </span>
                       </div>
@@ -2676,7 +2676,7 @@ export function EditorStudio({
 
               {/* Built-in Category Grid */}
               <div className="space-y-2.5">
-                <h4 className="text-[10px] font-black text-slate-400 tracking-wider uppercase">
+                <h4 className="text-[10px] font-black text-zinc-500 tracking-wider uppercase">
                   All Built-in Categories (19)
                 </h4>
                 <div className="grid gap-3.5 sm:grid-cols-2">
@@ -2691,21 +2691,21 @@ export function EditorStudio({
                       <div
                         key={cat.id}
                         onClick={() => handleAddSectionFromCategory(cat)}
-                        className="p-4 rounded-2xl bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 hover:border-blue-500 transition-all duration-200 cursor-pointer select-none shadow-sm hover:shadow-md flex items-start gap-3.5 group"
+                        className="p-4 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-500 transition-all duration-200 cursor-pointer select-none shadow-sm flex items-start gap-3.5 group"
                       >
-                        <div className="p-3 rounded-2xl bg-slate-900 text-white group-hover:bg-blue-600 transition-colors shadow-sm shrink-0">
+                        <div className="p-3 rounded-2xl bg-black text-white group-hover:bg-white group-hover:text-black border border-zinc-700 transition-colors shadow-sm shrink-0">
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-1">
-                            <h4 className="text-xs font-black text-slate-900 group-hover:text-blue-950 truncate">{cat.name}</h4>
+                            <h4 className="text-xs font-black text-white group-hover:text-white truncate">{cat.name}</h4>
                             {hasAdminTemplate && (
-                              <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
+                              <span className="text-[9px] font-mono font-bold text-zinc-300 bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700 shrink-0">
                                 Admin
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed line-clamp-2">{cat.description}</p>
+                          <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed line-clamp-2">{cat.description}</p>
                         </div>
                       </div>
                     );
@@ -2772,8 +2772,8 @@ export function EditorStudio({
             right: 0,
             bottom: 0,
             zIndex: 999999,
-            backgroundColor: "rgba(0, 0, 0, 0.65)",
-            backdropFilter: "blur(4px)",
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            backdropFilter: "blur(8px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -2787,11 +2787,11 @@ export function EditorStudio({
             style={{
               width: "440px",
               maxWidth: "92vw",
-              backgroundColor: "#0b1222",
-              border: "1px solid #2563eb",
+              backgroundColor: "#000000",
+              border: "1px solid #27272a",
               borderRadius: "24px",
               padding: "24px 28px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 25px rgba(37, 99, 235, 0.25)",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.95)",
               display: "flex",
               flexDirection: "column",
               gap: "20px",
@@ -2806,7 +2806,7 @@ export function EditorStudio({
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
-                borderBottom: "1px solid #1e293b",
+                borderBottom: "1px solid #27272a",
                 paddingBottom: "14px",
               }}
             >
@@ -2816,8 +2816,8 @@ export function EditorStudio({
                     width: "10px",
                     height: "10px",
                     borderRadius: "50%",
-                    backgroundColor: "#3b82f6",
-                    boxShadow: "0 0 10px #3b82f6",
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 0 10px rgba(255, 255, 255, 0.8)",
                   }}
                 />
                 <span style={{ fontSize: "16px", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.01em" }}>
@@ -2829,7 +2829,7 @@ export function EditorStudio({
                 style={{
                   backgroundColor: "transparent",
                   border: "none",
-                  color: "#94a3b8",
+                  color: "#a1a1aa",
                   fontSize: "14px",
                   fontWeight: 900,
                   cursor: "pointer",
@@ -2844,7 +2844,7 @@ export function EditorStudio({
             {/* Form Fields */}
             <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 800, color: "#cbd5e1" }}>
+                <label style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 800, color: "#e4e4e7" }}>
                   Target URL / Link Path
                 </label>
                 <input
@@ -2855,8 +2855,8 @@ export function EditorStudio({
                   style={{
                     width: "100%",
                     height: "46px",
-                    backgroundColor: "#162032",
-                    border: "1px solid #334155",
+                    backgroundColor: "#09090b",
+                    border: "1px solid #3f3f46",
                     borderRadius: "14px",
                     paddingLeft: "16px",
                     paddingRight: "16px",
@@ -2871,7 +2871,7 @@ export function EditorStudio({
 
               {/* Quick Page Preset Links */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 900, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <label style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 900, color: "#a1a1aa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   QUICK PAGE PRESETS
                 </label>
                 <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "8px" }}>
@@ -2882,12 +2882,12 @@ export function EditorStudio({
                       style={{
                         fontSize: "12px",
                         fontFamily: "monospace",
-                        fontWeight: 700,
+                        fontWeight: 800,
                         padding: "6px 14px",
                         borderRadius: "10px",
-                        backgroundColor: linkPopup.currentUrl === slug ? "#2563eb" : "#1e293b",
-                        color: linkPopup.currentUrl === slug ? "#ffffff" : "#cbd5e1",
-                        border: "1px solid #334155",
+                        backgroundColor: linkPopup.currentUrl === slug ? "#ffffff" : "#18181b",
+                        color: linkPopup.currentUrl === slug ? "#000000" : "#a1a1aa",
+                        border: linkPopup.currentUrl === slug ? "1px solid #ffffff" : "1px solid #27272a",
                         cursor: "pointer",
                       }}
                     >
@@ -2903,10 +2903,10 @@ export function EditorStudio({
                   type="checkbox"
                   checked={linkPopup.isNewTab}
                   onChange={(e) => setLinkPopup({ ...linkPopup, isNewTab: e.target.checked })}
-                  style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
+                  style={{ width: "16px", height: "16px", accentColor: "#ffffff", cursor: "pointer" }}
                 />
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#cbd5e1" }}>
-                  Open in New Tab (<code style={{ color: "#60a5fa", fontFamily: "monospace" }}>target="_blank"</code>)
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#e4e4e7" }}>
+                  Open in New Tab (<code style={{ color: "#ffffff", fontFamily: "monospace" }}>target="_blank"</code>)
                 </span>
               </label>
 
@@ -2914,7 +2914,7 @@ export function EditorStudio({
               <div
                 style={{
                   paddingTop: "16px",
-                  borderTop: "1px solid #1e293b",
+                  borderTop: "1px solid #27272a",
                   display: "flex",
                   flexDirection: "row",
                   alignItems: "center",
@@ -2933,7 +2933,7 @@ export function EditorStudio({
                     borderRadius: "12px",
                     border: "none",
                     backgroundColor: "transparent",
-                    color: "#94a3b8",
+                    color: "#a1a1aa",
                     fontSize: "13px",
                     fontWeight: 800,
                     cursor: "pointer",
@@ -2948,11 +2948,11 @@ export function EditorStudio({
                     paddingLeft: "22px",
                     paddingRight: "22px",
                     borderRadius: "12px",
-                    backgroundColor: "#2563eb",
-                    color: "#ffffff",
+                    border: "none",
+                    backgroundColor: "#ffffff",
+                    color: "#000000",
                     fontSize: "13px",
                     fontWeight: 900,
-                    border: "none",
                     cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
