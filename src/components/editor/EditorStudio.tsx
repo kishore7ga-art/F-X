@@ -2602,28 +2602,32 @@ export function EditorStudio({
       {showAddSectionModal && (
         <div
           onClick={() => setShowAddSectionModal(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-xl animate-in fade-in duration-200 cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-2xl bg-zinc-950 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-zinc-800 text-white cursor-default relative animate-in zoom-in-95 duration-200"
+            className="w-full max-w-4xl bg-zinc-950/95 rounded-3xl p-6 sm:p-8 shadow-[0_30px_90px_rgba(0,0,0,0.95)] flex flex-col max-h-[85vh] overflow-hidden border border-zinc-800 text-white cursor-default relative animate-in zoom-in-95 duration-200"
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4 shrink-0">
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4 shrink-0">
               <div>
-                <h3 className="text-xl font-black tracking-tight text-white">What section do you want to add?</h3>
-                <p className="text-xs text-zinc-400 font-medium mt-0.5">Select a category or specific Admin section variant.</p>
+                <h3 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+                  <span>What section do you want to add?</span>
+                </h3>
+                <p className="text-xs text-zinc-400 font-medium mt-0.5">
+                  Select a category or specific Admin section variant to append to your page layout.
+                </p>
               </div>
               <button
                 onClick={() => setShowAddSectionModal(false)}
-                className="w-9 h-9 flex items-center justify-center rounded-2xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-all font-bold text-sm cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all font-black text-sm cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             {/* Scrollable Modal Content Body */}
-            <div className="flex-1 overflow-y-auto pr-1.5 space-y-6 pt-4 pb-2">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-6 pt-2 pb-2 custom-scrollbar">
               {/* Quick Action: Load All 19 Default Sections */}
               <button
                 onClick={() => {
@@ -2632,19 +2636,22 @@ export function EditorStudio({
                   setActiveSectionIndex(0);
                   setShowAddSectionModal(false);
                 }}
-                className="w-full p-3.5 rounded-2xl bg-white hover:bg-zinc-200 text-black font-black text-xs flex items-center justify-center gap-2 shadow-lg border border-white transition-all cursor-pointer select-none"
+                className="w-full p-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-black text-xs flex items-center justify-center gap-2.5 shadow-xl border border-white transition-all hover:scale-[1.01] cursor-pointer select-none"
               >
                 <Sparkles className="w-4 h-4 text-black animate-pulse" />
-                <span>Load All 19 Default Sections (Full 19 Sections Website)</span>
+                <span>⚡ Load All 19 Default Sections (Full Website Layout)</span>
               </button>
 
               {/* Admin DB Section Variants List */}
               {adminDbTemplates.length > 0 && (
-                <div className="space-y-2.5">
-                  <h4 className="text-[10px] font-black text-zinc-500 tracking-wider uppercase">
-                    Admin DB Section Variants ({adminDbTemplates.length})
-                  </h4>
-                  <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-zinc-800/60 pb-1.5">
+                    <h4 className="text-[10px] font-black text-zinc-400 tracking-wider uppercase">
+                      Admin DB Section Variants ({adminDbTemplates.length})
+                    </h4>
+                    <span className="text-[10px] font-mono font-bold text-zinc-500">Live Backend Database</span>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {adminDbTemplates.map((tpl) => (
                       <div
                         key={tpl.id || tpl.name}
@@ -2659,13 +2666,13 @@ export function EditorStudio({
                           setActiveSectionIndex(sections.length);
                           setShowAddSectionModal(false);
                         }}
-                        className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 hover:border-zinc-500 hover:bg-zinc-800/90 transition-all cursor-pointer flex items-center justify-between shadow-sm select-none"
+                        className="group flex items-center justify-between p-3.5 rounded-2xl bg-black/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-500 transition-all duration-200 cursor-pointer shadow-sm select-none"
                       >
-                        <div className="truncate pr-2">
-                          <h5 className="text-xs font-black text-white truncate">{tpl.name}</h5>
-                          <p className="text-[10px] text-zinc-400 font-mono font-bold">Live DB Template</p>
+                        <div className="truncate pr-3">
+                          <h5 className="text-xs font-black text-white group-hover:text-white truncate tracking-tight">{tpl.name}</h5>
+                          <p className="text-[10px] text-zinc-400 font-mono font-bold mt-0.5">Live DB Template</p>
                         </div>
-                        <span className="text-[10px] font-black bg-white text-black px-3 py-1 rounded-full shrink-0 shadow-sm">
+                        <span className="text-[10px] font-black bg-white text-black px-3.5 py-1.5 rounded-full shrink-0 shadow-sm group-hover:scale-105 transition-transform">
                           + Add
                         </span>
                       </div>
@@ -2675,11 +2682,15 @@ export function EditorStudio({
               )}
 
               {/* Built-in Category Grid */}
-              <div className="space-y-2.5">
-                <h4 className="text-[10px] font-black text-zinc-500 tracking-wider uppercase">
-                  All Built-in Categories (19)
-                </h4>
-                <div className="grid gap-3.5 sm:grid-cols-2">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b border-zinc-800/60 pb-1.5">
+                  <h4 className="text-[10px] font-black text-zinc-400 tracking-wider uppercase">
+                    All Built-in Categories (19)
+                  </h4>
+                  <span className="text-[10px] font-mono font-bold text-zinc-500">Standard Templates</span>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
                   {SECTION_CATEGORIES.map((cat) => {
                     const Icon = cat.icon;
                     const hasAdminTemplate = adminDbTemplates.some((tpl) => {
@@ -2691,21 +2702,23 @@ export function EditorStudio({
                       <div
                         key={cat.id}
                         onClick={() => handleAddSectionFromCategory(cat)}
-                        className="p-4 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-500 transition-all duration-200 cursor-pointer select-none shadow-sm flex items-start gap-3.5 group"
+                        className="group relative flex items-center gap-3.5 p-3.5 rounded-2xl bg-black/90 hover:bg-zinc-900 border border-zinc-800/80 hover:border-zinc-500 transition-all duration-200 cursor-pointer select-none overflow-hidden shadow-sm hover:shadow-md"
                       >
-                        <div className="p-3 rounded-2xl bg-black text-white group-hover:bg-white group-hover:text-black border border-zinc-700 transition-colors shadow-sm shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-zinc-900 group-hover:bg-white text-white group-hover:text-black border border-zinc-800 group-hover:border-white transition-all flex items-center justify-center shrink-0 shadow-sm">
                           <Icon className="w-4 h-4" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1">
-                            <h4 className="text-xs font-black text-white group-hover:text-white truncate">{cat.name}</h4>
+                        <div className="flex-1 min-w-0 pr-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <h4 className="text-xs font-black text-white group-hover:text-white truncate tracking-tight">{cat.name}</h4>
                             {hasAdminTemplate && (
-                              <span className="text-[9px] font-mono font-bold text-zinc-300 bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700 shrink-0">
+                              <span className="text-[9px] font-mono font-extrabold text-zinc-300 bg-zinc-800/90 px-2.5 py-0.5 rounded-full border border-zinc-700 shrink-0">
                                 Admin
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed line-clamp-2">{cat.description}</p>
+                          <p className="text-[11px] text-zinc-400 group-hover:text-zinc-300 mt-0.5 font-medium truncate leading-normal">
+                            {cat.description}
+                          </p>
                         </div>
                       </div>
                     );
