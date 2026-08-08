@@ -347,6 +347,85 @@ export function DomainSettingsModal({
             })}
           </nav>
         </div>
+
+        {/* Bottom Left User Profile Avatar */}
+        <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+          <div
+            onClick={() => showToast("Logged in as Kishore (Owner Account)")}
+            onMouseEnter={() => setHoveredNav("user-profile")}
+            onMouseLeave={() => setHoveredNav(null)}
+            style={{
+              width: "38px",
+              height: "38px",
+              borderRadius: "50%",
+              backgroundColor: "#171717",
+              color: "#FFFFFF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "13px",
+              fontWeight: 700,
+              cursor: "pointer",
+              position: "relative",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+              transition: "all 150ms ease",
+            }}
+          >
+            <span>K</span>
+            <span
+              style={{
+                position: "absolute",
+                bottom: "1px",
+                right: "1px",
+                width: "9px",
+                height: "9px",
+                borderRadius: "50%",
+                backgroundColor: "#10B981",
+                border: "2px solid #FFFFFF",
+              }}
+            />
+          </div>
+
+          {/* Dark Speech Bubble Tooltip for User Profile */}
+          {hoveredNav === "user-profile" && (
+            <div
+              style={{
+                position: "absolute",
+                left: "56px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                backgroundColor: "#171717",
+                color: "#FFFFFF",
+                fontSize: "12.5px",
+                fontWeight: 600,
+                padding: "7px 14px",
+                borderRadius: "8px",
+                whiteSpace: "nowrap",
+                zIndex: 100,
+                boxShadow: "0 4px 14px rgba(0,0,0,0.22)",
+                pointerEvents: "none",
+                display: "flex",
+                alignItems: "center",
+                animation: "fadeIn 0.15s ease",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: "-5px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 0,
+                  height: 0,
+                  borderTop: "5px solid transparent",
+                  borderBottom: "5px solid transparent",
+                  borderRight: "6px solid #171717",
+                }}
+              />
+              <span>Kishore (Owner Account)</span>
+            </div>
+          )}
+        </div>
       </aside>
 
       {/* ========================================================= */}
