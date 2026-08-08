@@ -1397,8 +1397,21 @@ export function EditorStudio({
       textElem.style.outlineOffset = "";
       textElem.style.borderRadius = "";
 
-      // Extract the primary section root element (<section>, <header>, <footer>, <main>) inside canvas wrapper
-      const sectionRoot = (container.querySelector("section, header, footer, main") as HTMLElement) || container;
+      // Find the exact section root element inside .section-canvas-box
+      const canvasBox = container.querySelector(".section-canvas-box") as HTMLElement;
+      let sectionRoot: HTMLElement | null = null;
+
+      if (canvasBox) {
+        const children = Array.from(canvasBox.children).filter((child) => child.tagName !== "STYLE");
+        if (children.length > 0) {
+          sectionRoot = children[0] as HTMLElement;
+        }
+      }
+
+      if (!sectionRoot) {
+        sectionRoot = (container.querySelector("section, header, footer, main") as HTMLElement) || container;
+      }
+
       const clone = sectionRoot.cloneNode(true) as HTMLElement;
       
       const badges = clone.querySelectorAll('.pointer-events-none');
@@ -2196,6 +2209,11 @@ export function EditorStudio({
                   onClick={(e) => {
                     e.stopPropagation();
                     const target = e.target as HTMLElement;
+
+                    // Prevent link navigation when clicking <a> links on canvas
+                    if (target && (target.tagName === "A" || target.closest("a"))) {
+                      e.preventDefault();
+                    }
 
                     // If user is actively editing text in contenteditable, DO NOT trigger section re-render!
                     if (target && (target.isContentEditable || target.getAttribute("contenteditable") === "true" || target.closest("[contenteditable='true']"))) {
