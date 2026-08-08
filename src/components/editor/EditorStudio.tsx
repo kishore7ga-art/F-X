@@ -948,14 +948,13 @@ export function EditorStudio({
             ☰
           </button>
           <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;">
-            <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
-              <a href="#home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
-              <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
-              <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
-              <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
-              <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
-              <a href="#contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
-              <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 10px; border-radius: 8px; text-align: center; margin-top: 6px; font-weight: 800; text-decoration: none;">Apply Now</a>
+            <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
+              <a href="/home" style="color: #ffffff; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Home</a>
+              <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">About Us</a>
+              <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Academics & Courses</a>
+              <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Admissions</a>
+              <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Placements & Careers</a>
+              <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Contact Helpdesk</a>
             </nav>
           </div>
         ${match}`;
@@ -2386,9 +2385,46 @@ export function EditorStudio({
                     e.stopPropagation();
                     const target = e.target as HTMLElement;
 
-                    // Prevent link navigation when clicking <a> links on canvas
-                    if (target && (target.tagName === "A" || target.closest("a"))) {
+                    // Handle navigation link clicks inside header or mobile drawer menu
+                    const anchorElem = target ? (target.closest("a") as HTMLAnchorElement | null) : null;
+                    if (anchorElem) {
                       e.preventDefault();
+                      const href = (anchorElem.getAttribute("href") || "").toLowerCase().trim();
+                      const linkText = (anchorElem.textContent || "").toLowerCase().trim();
+
+                      let targetSlug = "";
+                      let targetName = "";
+
+                      if (href.includes("about") || linkText.includes("about")) {
+                        targetSlug = "/about";
+                        targetName = "About";
+                      } else if (href.includes("course") || href.includes("academic") || linkText.includes("academic") || linkText.includes("course")) {
+                        targetSlug = "/academics";
+                        targetName = "Academics";
+                      } else if (href.includes("admission") || href.includes("apply") || linkText.includes("admission") || linkText.includes("apply")) {
+                        targetSlug = "/admissions";
+                        targetName = "Admissions";
+                      } else if (href.includes("placement") || href.includes("career") || linkText.includes("placement") || linkText.includes("career")) {
+                        targetSlug = "/placements";
+                        targetName = "Placements";
+                      } else if (href.includes("contact") || linkText.includes("contact")) {
+                        targetSlug = "/contact";
+                        targetName = "Contact";
+                      } else if (href.includes("home") || linkText.includes("home")) {
+                        targetSlug = "/home";
+                        targetName = "Home";
+                      }
+
+                      if (targetSlug && targetSlug !== currentPage.slug) {
+                        handlePageChange(targetName, targetSlug);
+                      }
+
+                      // Close mobile drawer menu if link was clicked inside drawer
+                      const parentDrawer = anchorElem.closest(".mobile-drawer-menu") as HTMLElement | null;
+                      if (parentDrawer) {
+                        parentDrawer.classList.remove("active");
+                        parentDrawer.style.setProperty("display", "none", "important");
+                      }
                     }
 
                     // If user is actively editing text in contenteditable, DO NOT trigger section re-render!
@@ -2411,14 +2447,13 @@ export function EditorStudio({
                             drawer.className = "mobile-drawer-menu active";
                             drawer.style.cssText = "display: block !important; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;";
                             drawer.innerHTML = `
-                              <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
-                                <a href="#home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
-                                <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
-                                <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
-                                <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
-                                <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
-                                <a href="#contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
-                                <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 10px; border-radius: 8px; text-align: center; margin-top: 6px; font-weight: 800; text-decoration: none;">Apply Now</a>
+                              <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
+                                <a href="/home" style="color: #ffffff; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Home</a>
+                                <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">About Us</a>
+                                <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Academics & Courses</a>
+                                <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Admissions</a>
+                                <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Placements & Careers</a>
+                                <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Contact Helpdesk</a>
                               </nav>
                             `;
                             headerElem.appendChild(drawer);
