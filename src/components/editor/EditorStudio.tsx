@@ -561,10 +561,7 @@ const DEFAULT_FULL_HOME_SECTIONS: SectionItem[] = [
   },
 ];
 
-const getFullPageSections = (slug: string, pageName: string = "Home", collegeName: string = "MEC ENGINEERING COLLEGE"): SectionItem[] => {
-  const cleanSlug = slug.replace(/^\//, "").toLowerCase();
-
-  const sharedHeader = `<header style="background: #0d1527; color: #ffffff; padding: 16px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 100;">
+const getSharedHeader = (collegeName: string = "MEC ENGINEERING COLLEGE") => `<header style="background: #0d1527; color: #ffffff; padding: 16px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 100;">
     <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
       <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
         <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
@@ -616,7 +613,7 @@ const getFullPageSections = (slug: string, pageName: string = "Home", collegeNam
     </style>
   </header>`;
 
-  const sharedFooter = `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
+const getSharedFooter = (collegeName: string = "MEC ENGINEERING COLLEGE") => `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
   <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px;">
     <div>
       <h3 style="font-size: 20px; font-weight: 900; color: #ffffff; margin: 0;">${collegeName}</h3>
@@ -644,6 +641,11 @@ const getFullPageSections = (slug: string, pageName: string = "Home", collegeNam
     © 2026 ${collegeName}. All Rights Reserved.
   </div>
 </footer>`;
+
+const getFullPageSections = (slug: string, pageName: string = "Home", collegeName: string = "MEC ENGINEERING COLLEGE"): SectionItem[] => {
+  const cleanSlug = slug.replace(/^\//, "").toLowerCase();
+  const sharedHeader = getSharedHeader(collegeName);
+  const sharedFooter = getSharedFooter(collegeName);
 
   if (cleanSlug === "about") {
     return [
@@ -1358,65 +1360,20 @@ export function EditorStudio({
         return "http://localhost:4000";
       })();
 
-      // 2. Fetch Admin-configured Default Website Structure for new pages (All 19 Admin Sections)
-      try {
-        const defRes = await fetch(`${apiBase}/api/v1/default-website`);
-        if (defRes.ok) {
-          const defData = await defRes.json().catch(() => ({}));
-          if (defData && Array.isArray(defData.pages)) {
-            const cleanTargetSlug = slug.toLowerCase().replace(/^\//, "");
-            const matchedPage = defData.pages.find((p: any) => {
-              const pSlug = (p.slug || "").toLowerCase().replace(/^\//, "");
-              const pName = (p.title || p.name || "").toLowerCase();
-              return (
-                pSlug === cleanTargetSlug ||
-                pName === cleanTargetSlug ||
-                (cleanTargetSlug === "home" && (pSlug === "" || pSlug === "home" || pName.includes("home")))
-              );
-            });
+      // 2. Initialize new/unsaved page with Header & Footer ONLY so ONLY user-added sections exist
+      const headerCode = sections.find((s) => s.id?.includes("header") || s.title?.toLowerCase().includes("header") || s.code?.includes("<header"))?.code || getSharedHeader(collegeName);
+      const footerCode = sections.find((s) => s.id?.includes("footer") || s.title?.toLowerCase().includes("footer") || s.code?.includes("<footer"))?.code || getSharedFooter(collegeName);
 
-            if (matchedPage && matchedPage.sections && matchedPage.sections.length > 0) {
-              const loadedSections: SectionItem[] = matchedPage.sections.map((sec: any, idx: number) => ({
-                id: sec.id || `def-${idx}`,
-                title: sec.title || `Section #${idx + 1}`,
-                code: sec.code,
-                variantIndex: 0,
-              }));
+      const cleanSlug = slug.replace(/^\//, "").toLowerCase();
+      const cleanPageSecs: SectionItem[] = [
+        { id: `${cleanSlug}-header`, title: "Navbar / Header", code: headerCode, variantIndex: 0 },
+        { id: `${cleanSlug}-footer`, title: "Footer", code: footerCode, variantIndex: 0 },
+      ];
 
-              setSections(loadedSections);
-              setActiveSectionIndex(0);
-              setPageStore((prev) => ({ ...prev, [slug]: loadedSections }));
-              if (typeof window !== "undefined") {
-                try {
-                  localStorage.setItem("xite_saved_pages", JSON.stringify({ ...pageStore, [slug]: loadedSections }));
-                } catch {}
-              }
-              setLoadingDb(false);
-              return;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Could not load default website config:", err);
-      }
-
-      let fetchedTemplates: any[] = [];
-      try {
-        const res = await fetch(`${apiBase}/api/v1/admin/templates`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data && data.templates && data.templates.length > 0) {
-            fetchedTemplates = data.templates;
-            setAdminDbTemplates(data.templates);
-          }
-        }
-      } catch {}
-
-      // 3. Fallback to complete full-page sections if no saved page or Admin config match
-      const fullPageSecs = getFullPageSections(slug, currentPage.name, collegeName);
-      setSections(fullPageSecs);
+      setSections(cleanPageSecs);
+      setActiveSectionIndex(0);
+      setPageStore((prev) => ({ ...prev, [slug]: cleanPageSecs }));
+      setLoadingDb(false);
     } finally {
       setLoadingDb(false);
     }
@@ -1508,9 +1465,23 @@ export function EditorStudio({
       return;
     }
 
-    // Load complete multi-section full-page website for target page
-    const fullPageSecs = getFullPageSections(pageSlug, pageName, collegeName);
-    setSections(fullPageSecs);
+    // 4. Initialize clean page with Header & Footer ONLY so ONLY user-added sections exist
+    const headerCode = sections.find((s) => s.id?.includes("header") || s.title?.toLowerCase().includes("header") || s.code?.includes("<header"))?.code || getSharedHeader(collegeName);
+    const footerCode = sections.find((s) => s.id?.includes("footer") || s.title?.toLowerCase().includes("footer") || s.code?.includes("<footer"))?.code || getSharedFooter(collegeName);
+
+    const cleanSlug = pageSlug.replace(/^\//, "").toLowerCase();
+    const cleanPageSecs: SectionItem[] = [
+      { id: `${cleanSlug}-header`, title: "Navbar / Header", code: headerCode, variantIndex: 0 },
+      { id: `${cleanSlug}-footer`, title: "Footer", code: footerCode, variantIndex: 0 },
+    ];
+
+    setSections(cleanPageSecs);
+    setPageStore((prev) => ({ ...prev, [pageSlug]: cleanPageSecs }));
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("xite_saved_pages", JSON.stringify({ ...pageStore, [pageSlug]: cleanPageSecs }));
+      } catch {}
+    }
     setActiveSectionIndex(0);
   };
 
