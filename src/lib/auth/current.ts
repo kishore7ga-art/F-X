@@ -23,62 +23,19 @@ export type CurrentCollege = CollegePayload;
 
 export async function getCurrentCollege(): Promise<CurrentCollege | null> {
   const session = await getSession();
-  if (!session) return null;
 
   try {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
     if (payload?.college) return payload.college;
-    
-    if (AUTH_DISABLED) {
-      const openCollege = await openAccessCollege();
-      return {
-        id: openCollege.id,
-        name: openCollege.name,
-        subdomain: openCollege.subdomain,
-        customDomain: openCollege.customDomain,
-        templateId: openCollege.templateId,
-        themePaletteId: openCollege.themePaletteId,
-        themeFontId: openCollege.themeFontId,
-        collegeType: openCollege.collegeType,
-        status: openCollege.status,
-        isDemo: openCollege.isDemo,
-        createdAt: openCollege.createdAt.toISOString(),
-      };
-    }
-    return null;
   } catch (error) {
     if (error instanceof ServerApiError) {
       console.error(`[auth] could not resolve college: ${error.message}`);
     }
-    if (AUTH_DISABLED) {
-      const openCollege = await openAccessCollege();
-      return {
-        id: openCollege.id,
-        name: openCollege.name,
-        subdomain: openCollege.subdomain,
-        customDomain: openCollege.customDomain,
-        templateId: openCollege.templateId,
-        themePaletteId: openCollege.themePaletteId,
-        themeFontId: openCollege.themeFontId,
-        collegeType: openCollege.collegeType,
-        status: openCollege.status,
-        isDemo: openCollege.isDemo,
-        createdAt: openCollege.createdAt.toISOString(),
-      };
-    }
-    return null;
   }
-}
 
-/** Same, but sends signed-out visitors to the login screen. */
-import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
-
-export async function requireCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege> {
-  const college = await getCurrentCollege();
-  if (college) return college;
-
-  if (AUTH_DISABLED) {
-    const openCollege = await openAccessCollege(targetSubdomain);
+  // Fallback to open access / local database college so auth never gets stuck in redirect loop
+  const openCollege = await openAccessCollege();
+  if (openCollege) {
     return {
       id: openCollege.id,
       name: openCollege.name,
@@ -94,7 +51,30 @@ export async function requireCurrentCollege(targetSubdomain?: string): Promise<C
     };
   }
 
-  redirect("/login");
+  return null;
+}
+
+/** Same, but sends signed-out visitors to the login screen. */
+import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
+
+export async function requireCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege> {
+  const college = await getCurrentCollege();
+  if (college) return college;
+
+  const openCollege = await openAccessCollege(targetSubdomain);
+  return {
+    id: openCollege.id,
+    name: openCollege.name,
+    subdomain: openCollege.subdomain,
+    customDomain: openCollege.customDomain,
+    templateId: openCollege.templateId,
+    themePaletteId: openCollege.themePaletteId,
+    themeFontId: openCollege.themeFontId,
+    collegeType: openCollege.collegeType,
+    status: openCollege.status,
+    isDemo: openCollege.isDemo,
+    createdAt: openCollege.createdAt.toISOString(),
+  };
 }
 
 /**
