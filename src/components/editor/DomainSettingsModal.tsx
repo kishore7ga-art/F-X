@@ -330,71 +330,62 @@ export function DomainSettingsModal({
             <span>Back to Editor</span>
           </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#047857",
-                backgroundColor: "#ECFDF5",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                border: "1px solid #A7F3D0",
-              }}
-            >
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10B981" }} />
-              <span>Production Live</span>
+          {/* User Profile & Details Card in Top Right */}
+          <div
+            onClick={() => showToast("Logged in as Kishore (Owner Account)")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "6px 14px",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E5E5E5",
+              borderRadius: "14px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+              cursor: "pointer",
+              transition: "all 150ms ease",
+            }}
+          >
+            <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "50%",
+                  backgroundColor: "#171717",
+                  color: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                }}
+              >
+                K
+              </div>
+              <span
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  right: 0,
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: "#10B981",
+                  border: "2px solid #FFFFFF",
+                }}
+              />
             </div>
-
-            <span style={{ fontSize: "12px", color: "#A3A3A3", fontWeight: 400 }} className="hidden sm:inline">
-              Last deployed {lastDeployedTime}
-            </span>
-
-            <button
-              type="button"
-              onClick={() => showToast("DNS routing verified active on edge nodes 🟢")}
-              style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "8px",
-                border: "1px solid #E5E5E5",
-                backgroundColor: "#FFFFFF",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#171717",
-                cursor: "pointer",
-              }}
-              title="Verification Info"
-            >
-              <MessageSquare style={{ width: "14px", height: "14px" }} />
-            </button>
-
-            <a
-              href={`/site/${subdomain}`}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                borderRadius: "8px",
-                backgroundColor: "#171717",
-                color: "#FFFFFF",
-                padding: "8px 16px",
-                fontSize: "13px",
-                fontWeight: 600,
-                textDecoration: "none",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                cursor: "pointer",
-              }}
-            >
-              <span>Open Live Site</span>
-              <ArrowUpRight style={{ width: "14px", height: "14px" }} />
-            </a>
+            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "#171717", lineHeight: 1.2 }}>
+                Kishore
+              </span>
+              <span style={{ fontSize: "11px", fontWeight: 500, color: "#737373", display: "flex", alignItems: "center", gap: "4px" }}>
+                <span>Owner Account</span>
+                <span style={{ color: "#A3A3A3" }}>•</span>
+                <span style={{ color: "#2563EB", fontWeight: 600 }}>Details ↗</span>
+              </span>
+            </div>
           </div>
         </div>
 
