@@ -1056,82 +1056,52 @@ export function EditorStudio({
 
       ${isResponsiveView ? `
         /* Forced Tablet & Mobile Rules when responsive viewport selected in Editor */
-        .section-canvas-box header nav:not(.mobile-drawer-menu nav),
-        .section-canvas-box header .desktop-nav-links,
-        .section-canvas-box header ul:not(.mobile-drawer-menu ul),
-        .section-canvas-box header .desktop-apply-btn,
-        .section-canvas-box header a.desktop-apply-btn,
-        .section-canvas-box header button.desktop-apply-btn,
-        .section-canvas-box header a[href*="admissions"]:not(.mobile-drawer-menu a),
-        .section-canvas-box header a[href*="apply"]:not(.mobile-drawer-menu a),
-        .section-canvas-box header a[href*="contact"]:not(.mobile-drawer-menu a),
-        .section-canvas-box header a[style*="background"]:not(.mobile-drawer-menu a),
-        .section-canvas-box header a[style*="background-color"]:not(.mobile-drawer-menu a),
-        .section-canvas-box header button[style*="background"]:not(.mobile-drawer-menu button),
-        .section-canvas-box header button[style*="background-color"]:not(.mobile-drawer-menu button),
+        .section-canvas-box nav.desktop-nav-links,
+        .section-canvas-box .desktop-nav-links,
+        .section-canvas-box .desktop-apply-btn,
+        .section-canvas-box a.desktop-apply-btn,
+        .section-canvas-box button.desktop-apply-btn,
         header nav:not(.mobile-drawer-menu nav),
         header .desktop-nav-links,
         header ul:not(.mobile-drawer-menu ul),
         header .desktop-apply-btn,
         header a.desktop-apply-btn,
-        header button.desktop-apply-btn,
-        header a[href*="admissions"]:not(.mobile-drawer-menu a),
-        header a[href*="apply"]:not(.mobile-drawer-menu a),
-        header a[href*="contact"]:not(.mobile-drawer-menu a),
-        header a[style*="background"]:not(.mobile-drawer-menu a),
-        header a[style*="background-color"]:not(.mobile-drawer-menu a),
-        header button[style*="background"]:not(.mobile-drawer-menu button),
-        header button[style*="background-color"]:not(.mobile-drawer-menu button) {
+        header button.desktop-apply-btn {
           display: none !important;
         }
-        .section-canvas-box header .hamburger-toggle-btn,
+        .section-canvas-box .hamburger-toggle-btn,
         header .hamburger-toggle-btn {
           display: flex !important;
           margin-left: auto !important;
           flex-shrink: 0 !important;
         }
-        .section-canvas-box header .mobile-drawer-menu.active,
+        .section-canvas-box .mobile-drawer-menu.active,
         header .mobile-drawer-menu.active {
           display: block !important;
         }
       ` : `
         /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
         @media (max-width: 900px) {
-          .section-canvas-box header nav:not(.mobile-drawer-menu nav),
-          .section-canvas-box header .desktop-nav-links,
-          .section-canvas-box header ul:not(.mobile-drawer-menu ul),
-          .section-canvas-box header .desktop-apply-btn,
-          .section-canvas-box header a.desktop-apply-btn,
-          .section-canvas-box header button.desktop-apply-btn,
-          .section-canvas-box header a[href*="admissions"]:not(.mobile-drawer-menu a),
-          .section-canvas-box header a[href*="apply"]:not(.mobile-drawer-menu a),
-          .section-canvas-box header a[href*="contact"]:not(.mobile-drawer-menu a),
-          .section-canvas-box header a[style*="background"]:not(.mobile-drawer-menu a),
-          .section-canvas-box header a[style*="background-color"]:not(.mobile-drawer-menu a),
-          .section-canvas-box header button[style*="background"]:not(.mobile-drawer-menu button),
-          .section-canvas-box header button[style*="background-color"]:not(.mobile-drawer-menu button),
+          .section-canvas-box nav.desktop-nav-links,
+          .section-canvas-box .desktop-nav-links,
+          .section-canvas-box .desktop-apply-btn,
+          .section-canvas-box a.desktop-apply-btn,
+          .section-canvas-box button.desktop-apply-btn,
           header nav:not(.mobile-drawer-menu nav),
           header .desktop-nav-links,
           header ul:not(.mobile-drawer-menu ul),
           header .desktop-apply-btn,
           header a.desktop-apply-btn,
-          header button.desktop-apply-btn,
-          header a[href*="admissions"]:not(.mobile-drawer-menu a),
-          header a[href*="apply"]:not(.mobile-drawer-menu a),
-          header a[href*="contact"]:not(.mobile-drawer-menu a),
-          header a[style*="background"]:not(.mobile-drawer-menu a),
-          header a[style*="background-color"]:not(.mobile-drawer-menu a),
-          header button[style*="background"]:not(.mobile-drawer-menu button),
-          header button[style*="background-color"]:not(.mobile-drawer-menu button) {
+          header button.desktop-apply-btn {
             display: none !important;
           }
-          .section-canvas-box header .hamburger-toggle-btn,
+          .section-canvas-box .hamburger-toggle-btn,
           header .hamburger-toggle-btn {
             display: flex !important;
             margin-left: auto !important;
             flex-shrink: 0 !important;
           }
-          .section-canvas-box header .mobile-drawer-menu.active,
+          .section-canvas-box .mobile-drawer-menu.active,
           header .mobile-drawer-menu.active {
             display: block !important;
           }
@@ -1139,23 +1109,26 @@ export function EditorStudio({
 
         /* Desktop Viewport Rules (> 900px) */
         @media (min-width: 901px) {
-          .section-canvas-box header .hamburger-toggle-btn,
-          .section-canvas-box header .mobile-drawer-menu,
+          .section-canvas-box .hamburger-toggle-btn,
+          .section-canvas-box .mobile-drawer-menu,
           header .hamburger-toggle-btn,
           header .mobile-drawer-menu {
             display: none !important;
           }
+          .section-canvas-box .desktop-nav-links,
           header nav, header .desktop-nav-links, header ul {
             display: flex !important;
             flex-wrap: nowrap !important;
             gap: clamp(4px, 1.2vw, 16px) !important;
             min-width: 0 !important;
           }
+          .section-canvas-box .desktop-nav-links a,
           header nav a, header .desktop-nav-links a, header ul a {
             white-space: nowrap !important;
             font-size: clamp(11px, 1.05vw, 14px) !important;
             line-height: 1.2 !important;
           }
+          .section-canvas-box .desktop-apply-btn,
           header a[style*="background"], header button[style*="background"], header .desktop-apply-btn {
             display: inline-block !important;
             flex-shrink: 0 !important;
