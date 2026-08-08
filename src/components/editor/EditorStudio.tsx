@@ -2078,6 +2078,74 @@ export function EditorStudio({
     setActiveSectionIndex((prev) => (prev !== null ? prev + 1 : null));
   };
 
+  const handleEnableTextEditingForActiveSection = () => {
+    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
+    if (sections.length === 0) return;
+
+    setActiveSectionIndex(targetIndex);
+
+    const sectionContainers = document.querySelectorAll(".section-wrapper-container");
+    const container = sectionContainers[targetIndex] as HTMLElement;
+    if (!container) return;
+
+    const textElems = container.querySelectorAll("h1, h2, h3, h4, h5, h6, p, span, a, button:not(.hamburger-toggle-btn), li, strong, em, b, i, td, th");
+
+    textElems.forEach((textElem) => {
+      const elem = textElem as HTMLElement;
+      if (elem.children.length > 2 && elem.tagName === "DIV") return;
+
+      elem.contentEditable = "true";
+      elem.style.userSelect = "text";
+      (elem.style as any).webkitUserSelect = "text";
+      elem.style.outline = "2px dashed #2563eb";
+      elem.style.outlineOffset = "4px";
+      elem.style.borderRadius = "4px";
+
+      const saveUpdatedContent = () => {
+        elem.contentEditable = "false";
+        elem.style.outline = "";
+        elem.style.outlineOffset = "";
+        elem.style.borderRadius = "";
+
+        const sectionRoot = (container.querySelector("section, header, footer, main") as HTMLElement) || container;
+        const clone = sectionRoot.cloneNode(true) as HTMLElement;
+
+        const badges = clone.querySelectorAll('.pointer-events-none');
+        badges.forEach((b) => b.remove());
+
+        const editables = clone.querySelectorAll('[contenteditable]');
+        editables.forEach((el) => {
+          el.removeAttribute('contenteditable');
+          (el as HTMLElement).style.outline = '';
+          (el as HTMLElement).style.outlineOffset = '';
+          (el as HTMLElement).style.borderRadius = '';
+        });
+
+        const newCode = cleanCanvasWrapperFromCode(clone.outerHTML || clone.innerHTML);
+        if (newCode) {
+          setSectionsWithHistory((prev) =>
+            prev.map((sec, i) => (i === targetIndex ? { ...sec, code: newCode } : sec))
+          );
+        }
+      };
+
+      elem.onblur = () => {
+        saveUpdatedContent();
+      };
+
+      elem.onkeydown = (keyEvent) => {
+        if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
+          keyEvent.preventDefault();
+          elem.blur();
+        }
+      };
+    });
+
+    if (textElems.length > 0) {
+      (textElems[0] as HTMLElement).focus();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-x-hidden">
       
@@ -2345,6 +2413,7 @@ export function EditorStudio({
           onAddSection={() => setShowAddSectionModal(true)}
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={handleSwapVariant}
+          onEditText={handleEnableTextEditingForActiveSection}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={historyStack.length > 0}

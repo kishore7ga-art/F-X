@@ -18,6 +18,7 @@ import {
   Smartphone,
   Check,
   Layers,
+  Type,
 } from "lucide-react";
 
 interface EditorToolbarProps {
@@ -33,6 +34,7 @@ interface EditorToolbarProps {
   onAddSection?: () => void;
   onDuplicateSection?: () => void;
   onSwapVariant?: () => void;
+  onEditText?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -56,6 +58,7 @@ export function EditorToolbar({
   isSectionSelected = true,
   onDuplicateSection,
   onSwapVariant,
+  onEditText,
   onUndo,
   onRedo,
   canUndo = false,
@@ -427,6 +430,27 @@ export function EditorToolbar({
             title="Swap Variant Layout"
           >
             <RefreshCw style={{ width: "18px", height: "18px" }} />
+          </button>
+
+          {/* Edit Text Content Button */}
+          <button
+            onClick={onEditText}
+            style={{
+              width: "34px",
+              height: "34px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "#eff6ff",
+              cursor: "pointer",
+              color: "#2563eb",
+              ...buttonHoverStyle,
+            }}
+            title="Edit Text & Content Inline"
+          >
+            <Type style={{ width: "18px", height: "18px" }} />
           </button>
 
           {/* Move Up Button */}
