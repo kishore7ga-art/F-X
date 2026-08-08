@@ -448,7 +448,7 @@ export function DomainSettingsModal({
         </div>
 
         {/* Top Header Row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start" }}>
           <button
             type="button"
             onClick={onClose}
@@ -467,73 +467,6 @@ export function DomainSettingsModal({
             <ArrowLeft style={{ width: "14px", height: "14px" }} />
             <span>Back to Editor</span>
           </button>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#047857",
-                backgroundColor: "#ECFDF5",
-                padding: "4px 10px",
-                borderRadius: "20px",
-                border: "1px solid #A7F3D0",
-              }}
-            >
-              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10B981" }} />
-              <span>Production Live</span>
-            </div>
-
-            <span style={{ fontSize: "12px", color: "#A3A3A3", fontWeight: 400 }} className="hidden sm:inline">
-              Last deployed {lastDeployedTime}
-            </span>
-
-            <button
-              type="button"
-              onClick={() => showToast("DNS routing active across all edge nodes 🟢")}
-              style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "8px",
-                border: "1px solid #E5E5E5",
-                backgroundColor: "#FFFFFF",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#171717",
-                cursor: "pointer",
-              }}
-              title="DNS Verification Info"
-            >
-              <MessageSquare style={{ width: "14px", height: "14px" }} />
-            </button>
-
-            <a
-              href={`/site/${subdomain}`}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                borderRadius: "8px",
-                backgroundColor: "#171717",
-                color: "#FFFFFF",
-                padding: "8px 16px",
-                fontSize: "13px",
-                fontWeight: 600,
-                textDecoration: "none",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                cursor: "pointer",
-              }}
-            >
-              <span>Open Live Site</span>
-              <ArrowUpRight style={{ width: "14px", height: "14px" }} />
-            </a>
-          </div>
         </div>
 
         {/* ========================================================= */}
