@@ -156,11 +156,11 @@ export function DomainSettingsModal({
   const NAV_ITEMS = [
     { id: "domain", label: "Custom Domain & SSL", icon: Globe },
     { id: "deploy", label: "Production Deploy", icon: Rocket },
-    { id: "security", label: "Password & Security", icon: Key },
-    { id: "advanced", label: "Advanced Settings", icon: Sliders },
+    { id: "security", label: "Password & Passkey Security", icon: Key },
     { id: "subscriptions", label: "Premium Subscriptions", icon: Crown },
-    { id: "billing", label: "Billing History", icon: Receipt },
     { id: "payments", label: "Payment Methods", icon: CreditCard },
+    { id: "billing", label: "Billing History", icon: Receipt },
+    { id: "advanced", label: "Advanced Settings", icon: Sliders },
   ];
 
   return createPortal(
@@ -259,109 +259,20 @@ export function DomainSettingsModal({
             <div style={{ width: "14px", height: "14px", borderTopLeftRadius: "14px", borderBottomLeftRadius: "14px", backgroundColor: "#FFFFFF", marginRight: "auto", marginLeft: "5px" }} />
           </div>
 
-          {/* Navigation Icons Group with Tooltips */}
+          {/* Navigation Icons Group Strictly Ordered: 1.Domain 2.Deploy 3.Passkey 4.Subscription 5.Payment 6.Billing 7.Setting */}
           <nav style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", width: "100%" }}>
-            {/* Primary Core Tools */}
-            {[
-              { id: "domain", label: "Custom Domain & SSL", icon: Globe },
-              { id: "deploy", label: "Production Deploy", icon: Rocket },
-              { id: "security", label: "Password & Security", icon: Key },
-              { id: "advanced", label: "Advanced Settings", icon: Sliders },
-            ].map((item) => {
+            {NAV_ITEMS.map((item, index) => {
               const Icon = item.icon;
               const isActive = activeNav === item.id;
               const isHovered = hoveredNav === item.id;
 
               return (
-                <div key={item.id} style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveNav(item.id);
-                      setHoveredNav(item.id);
-                      setTimeout(() => setHoveredNav((prev) => (prev === item.id ? null : prev)), 500);
-                    }}
-                    onMouseEnter={() => {
-                      setHoveredNav(item.id);
-                      setTimeout(() => setHoveredNav((prev) => (prev === item.id ? null : prev)), 500);
-                    }}
-                    onMouseLeave={() => setHoveredNav(null)}
-                    style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "none",
-                      backgroundColor: isActive ? "#F5F5F3" : "transparent",
-                      color: isActive ? "#171717" : "#737373",
-                      cursor: "pointer",
-                      transition: "all 150ms ease",
-                    }}
-                  >
-                    <Icon style={{ width: "20px", height: "20px", strokeWidth: isActive ? 2.2 : 1.8 }} />
-                  </button>
-
-                  {/* Dark Speech Bubble Tooltip with Left Arrow Caret (0.5s auto-hide) */}
-                  {isHovered && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        left: "56px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        backgroundColor: "#171717",
-                        color: "#FFFFFF",
-                        fontSize: "12.5px",
-                        fontWeight: 600,
-                        padding: "7px 14px",
-                        borderRadius: "8px",
-                        whiteSpace: "nowrap",
-                        zIndex: 100,
-                        boxShadow: "0 4px 14px rgba(0,0,0,0.22)",
-                        pointerEvents: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        animation: "fadeIn 0.15s ease",
-                      }}
-                    >
-                      {/* Left Triangle Arrow Caret */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: "-5px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          width: 0,
-                          height: 0,
-                          borderTop: "5px solid transparent",
-                          borderBottom: "5px solid transparent",
-                          borderRight: "6px solid #171717",
-                        }}
-                      />
-                      <span>{item.label}</span>
-                    </div>
+                <div key={item.id} style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+                  {/* Divider line before item 4 (Subscription) */}
+                  {index === 3 && (
+                    <div style={{ width: "32px", height: "1px", backgroundColor: "#E5E5E5", margin: "6px 0 8px" }} />
                   )}
-                </div>
-              );
-            })}
 
-            {/* Horizontal Divider Line */}
-            <div style={{ width: "32px", height: "1px", backgroundColor: "#E5E5E5", margin: "6px 0" }} />
-
-            {/* Subscriptions, Billing & Payment Methods */}
-            {[
-              { id: "subscriptions", label: "Premium Subscriptions", icon: Crown },
-              { id: "billing", label: "Billing History", icon: Receipt },
-              { id: "payments", label: "Payment Methods", icon: CreditCard },
-            ].map((item) => {
-              const Icon = item.icon;
-              const isActive = activeNav === item.id;
-              const isHovered = hoveredNav === item.id;
-
-              return (
-                <div key={item.id} style={{ position: "relative", display: "flex", alignItems: "center" }}>
                   <button
                     type="button"
                     onClick={() => {
