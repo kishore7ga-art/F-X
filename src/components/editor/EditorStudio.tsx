@@ -942,7 +942,7 @@ export function EditorStudio({
     if (isResponsiveView && corrected.includes("<header") && !corrected.includes("hamburger-toggle-btn")) {
       corrected = corrected.replace(/<\/header>/gi, (match) => {
         return `
-          <button class="hamburger-toggle-btn" style="display: flex !important; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); z-index: 10;" aria-label="Toggle Menu">
+          <button class="hamburger-toggle-btn" style="display: inline-flex !important; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center; position: relative !important; margin-left: 6px !important; flex-shrink: 0 !important; z-index: 10;" aria-label="Toggle Menu">
             ☰
           </button>
           <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;">
@@ -1097,15 +1097,14 @@ export function EditorStudio({
           display: none !important;
         }
 
-        .section-canvas-box header div[style*="display: flex"],
-        .section-canvas-box header div[style*="justify-content"],
-        header div[style*="display: flex"],
-        header div[style*="justify-content"],
+        .section-canvas-box header > div,
         header > div {
           display: flex !important;
+          flex-direction: row !important;
+          flex-wrap: nowrap !important;
           align-items: center !important;
           justify-content: space-between !important;
-          gap: 10px !important;
+          gap: 8px !important;
           width: 100% !important;
           box-sizing: border-box !important;
         }
@@ -1115,7 +1114,9 @@ export function EditorStudio({
         .section-canvas-box header button.desktop-apply-btn,
         header .desktop-apply-btn,
         header a.desktop-apply-btn,
-        header button.desktop-apply-btn {
+        header button.desktop-apply-btn,
+        header a[href*="apply"],
+        header a[href*="admissions"] {
           display: inline-flex !important;
           align-items: center !important;
           justify-content: center !important;
@@ -1128,6 +1129,7 @@ export function EditorStudio({
           top: auto !important;
           transform: none !important;
           margin-left: auto !important;
+          margin-right: 4px !important;
         }
 
         .section-canvas-box .hamburger-toggle-btn,
@@ -1143,6 +1145,7 @@ export function EditorStudio({
           position: relative !important;
           top: auto !important;
           transform: none !important;
+          margin-left: 0 !important;
         }
 
         .section-canvas-box .mobile-drawer-menu.active,
@@ -1164,15 +1167,14 @@ export function EditorStudio({
             display: none !important;
           }
 
-          .section-canvas-box header div[style*="display: flex"],
-          .section-canvas-box header div[style*="justify-content"],
-          header div[style*="display: flex"],
-          header div[style*="justify-content"],
+          .section-canvas-box header > div,
           header > div {
             display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
             align-items: center !important;
             justify-content: space-between !important;
-            gap: 10px !important;
+            gap: 8px !important;
             width: 100% !important;
             box-sizing: border-box !important;
           }
@@ -1182,7 +1184,9 @@ export function EditorStudio({
           .section-canvas-box header button.desktop-apply-btn,
           header .desktop-apply-btn,
           header a.desktop-apply-btn,
-          header button.desktop-apply-btn {
+          header button.desktop-apply-btn,
+          header a[href*="apply"],
+          header a[href*="admissions"] {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1195,6 +1199,7 @@ export function EditorStudio({
             top: auto !important;
             transform: none !important;
             margin-left: auto !important;
+            margin-right: 4px !important;
           }
 
           .section-canvas-box .hamburger-toggle-btn,
@@ -1210,6 +1215,7 @@ export function EditorStudio({
             position: relative !important;
             top: auto !important;
             transform: none !important;
+            margin-left: 0 !important;
           }
 
           .section-canvas-box .mobile-drawer-menu.active,
