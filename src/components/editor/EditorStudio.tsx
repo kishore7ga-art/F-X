@@ -1290,7 +1290,7 @@ export function EditorStudio({
     const finalObjectFit = updatedPopup.objectFit || "cover";
     const finalBorderRadius = updatedPopup.borderRadius || "10px";
 
-    // 1. Live DOM manipulation for immediate visual response on screen
+    // 1. Live DOM manipulation for immediate visual feedback on screen
     if (targetType === "logo") {
       if (finalImageUrl) {
         if (targetElement.tagName === "IMG") {
@@ -1339,54 +1339,86 @@ export function EditorStudio({
       }
     }
 
-    // 2. Direct string update in section HTML code & auto-save across state & localStorage
+    // 2. Clone section container DOM to extract exact updated section HTML code with 100% precision
+    const container = targetElement.closest(".section-wrapper-container") as HTMLElement;
+
     setSectionsWithHistory((prevSections) => {
       return prevSections.map((sec, idx) => {
         let newCode = sec.code;
 
-        if (targetType === "logo") {
-          if (finalImageUrl) {
-            if (updatedPopup.applyAllLogos) {
-              newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-              newCode = newCode.replace(/(<img[^>]*alt="[^"]*Emblem[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-              newCode = newCode.replace(/(<img[^>]*class="[^"]*logo[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-            } else if (idx === sectionIndex) {
-              if (originalUrl && newCode.includes(originalUrl)) {
-                newCode = newCode.replaceAll(originalUrl, finalImageUrl);
-              } else {
-                newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-                newCode = newCode.replace(/(<img[^>]*class="[^"]*logo[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-              }
-            }
-          }
-          if (finalLinkUrl && idx === sectionIndex) {
-            newCode = newCode.replace(/(<a[^>]*class="[^"]*logo[^"]*"[^>]*href=")[^"]*(")/gi, `$1${finalLinkUrl}$2`);
-          }
+        // Bulk apply all logos across page
+        if (targetType === "logo" && updatedPopup.applyAllLogos && finalImageUrl) {
+          newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+          newCode = newCode.replace(/(<img[^>]*alt="[^"]*Emblem[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+          newCode = newCode.replace(/(<img[^>]*class="[^"]*logo[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
           return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
-        if (targetType === "background") {
-          if (finalImageUrl) {
-            if (updatedPopup.applyAllBackgrounds) {
-              newCode = newCode.replace(/background-image:\s*url\([^)]+\)/gi, `background-image: url("${finalImageUrl}")`);
-            } else if (idx === sectionIndex) {
-              if (originalUrl && newCode.includes(originalUrl)) {
-                newCode = newCode.replaceAll(originalUrl, finalImageUrl);
-              }
-              newCode = newCode.replace(/(background(?:-image)?:\s*url\(["']?)[^"')]+(["']?\))/gi, `$1${finalImageUrl}$2`);
-            }
-          }
+        // Bulk apply all section background images across page
+        if (targetType === "background" && updatedPopup.applyAllBackgrounds && finalImageUrl) {
+          newCode = newCode.replace(/background-image:\s*url\([^)]+\)/gi, `background-image: url("${finalImageUrl}")`);
           return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
-        if (targetType === "image" && idx === sectionIndex) {
-          if (finalImageUrl) {
-            if (originalUrl && newCode.includes(originalUrl)) {
-              newCode = newCode.replaceAll(originalUrl, finalImageUrl);
-            } else {
-              newCode = newCode.replace(/(<img[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
+        // Update target section HTML
+        if (idx === sectionIndex && container) {
+          const clone = container.cloneNode(true) as HTMLElement;
+
+          // Remove editor badges or outline artifacts
+          const badges = clone.querySelectorAll(".pointer-events-none");
+          badges.forEach((b) => b.remove());
+
+          const editables = clone.querySelectorAll("[contenteditable]");
+          editables.forEach((el) => {
+            el.removeAttribute("contenteditable");
+            (el as HTMLElement).style.outline = "";
+            (el as HTMLElement).style.outlineOffset = "";
+            (el as HTMLElement).style.borderRadius = "";
+          });
+
+          // Match exact target element by tag and index position
+          if (targetElement.tagName === "IMG") {
+            const containerImgs = Array.from(container.querySelectorAll("img"));
+            const targetImgIndex = containerImgs.indexOf(targetElement as HTMLImageElement);
+            const cloneImgs = clone.querySelectorAll("img");
+
+            if (targetImgIndex >= 0 && cloneImgs[targetImgIndex]) {
+              const targetCloneImg = cloneImgs[targetImgIndex]!;
+              if (finalImageUrl) targetCloneImg.src = finalImageUrl;
+              targetCloneImg.style.objectFit = finalObjectFit;
+              targetCloneImg.style.borderRadius = finalBorderRadius;
+            } else if (originalUrl && clone.innerHTML.includes(originalUrl)) {
+              clone.innerHTML = clone.innerHTML.replaceAll(originalUrl, finalImageUrl);
+            }
+          } else if (targetType === "background" && finalImageUrl) {
+            const bgElem = clone.querySelector('[style*="background-image"]') || clone.firstElementChild || clone;
+            (bgElem as HTMLElement).style.backgroundImage = `url("${finalImageUrl}")`;
+            (bgElem as HTMLElement).style.backgroundSize = "cover";
+            (bgElem as HTMLElement).style.backgroundPosition = "center";
+          } else if (targetType === "logo") {
+            if (finalImageUrl) {
+              const logoElem = clone.querySelector('img[data-logo="true"]') || clone.querySelector('img.logo') || clone.querySelector('img');
+              if (logoElem) {
+                (logoElem as HTMLImageElement).src = finalImageUrl;
+                logoElem.style.objectFit = finalObjectFit;
+                logoElem.style.borderRadius = finalBorderRadius;
+              }
             }
           }
+
+          // Update logo link URL on container clone if set
+          if (finalLinkUrl) {
+            const logoLink = clone.querySelector('a[href]') || clone.querySelector('a');
+            if (logoLink) logoLink.setAttribute("href", finalLinkUrl);
+          }
+
+          const extractedCode = cleanCanvasWrapperFromCode(clone.innerHTML);
+          if (extractedCode) return { ...sec, code: extractedCode };
+        }
+
+        // Direct string replacement fallback if container element not found
+        if (idx === sectionIndex && originalUrl && finalImageUrl && newCode.includes(originalUrl)) {
+          newCode = newCode.replaceAll(originalUrl, finalImageUrl);
           return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
