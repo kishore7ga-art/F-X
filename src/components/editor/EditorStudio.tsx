@@ -1002,6 +1002,8 @@ export function EditorStudio({
   const cleanFullWebCodeForCanvas = (code: string, width: string): string => {
     if (!code) return "";
 
+    const isResponsiveView = width === "768px" || width === "375px" || width === "425px";
+
     let cleanCode = code;
 
     const bodyMatch = code.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
@@ -1057,8 +1059,8 @@ export function EditorStudio({
         position: relative !important;
       }
 
-      /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
-      @media (max-width: 900px) {
+      ${isResponsiveView ? `
+        /* Forced Tablet & Mobile Rules when responsive viewport selected in Editor */
         header nav:not(.mobile-drawer-menu nav),
         header .desktop-nav-links,
         header ul:not(.mobile-drawer-menu ul),
@@ -1072,31 +1074,48 @@ export function EditorStudio({
         header .mobile-drawer-menu.active {
           display: block !important;
         }
-      }
+      ` : `
+        /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
+        @media (max-width: 900px) {
+          header nav:not(.mobile-drawer-menu nav),
+          header .desktop-nav-links,
+          header ul:not(.mobile-drawer-menu ul),
+          header a[style*="background"]:not(.mobile-drawer-menu a),
+          header .desktop-apply-btn {
+            display: none !important;
+          }
+          header .hamburger-toggle-btn {
+            display: flex !important;
+          }
+          header .mobile-drawer-menu.active {
+            display: block !important;
+          }
+        }
 
-      /* Desktop Viewport Rules (> 900px) */
-      @media (min-width: 901px) {
-        header .hamburger-toggle-btn,
-        header .mobile-drawer-menu {
-          display: none !important;
+        /* Desktop Viewport Rules (> 900px) */
+        @media (min-width: 901px) {
+          header .hamburger-toggle-btn,
+          header .mobile-drawer-menu {
+            display: none !important;
+          }
+          header nav, header .desktop-nav-links, header ul {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: clamp(4px, 1.2vw, 16px) !important;
+            min-width: 0 !important;
+          }
+          header nav a, header .desktop-nav-links a, header ul a {
+            white-space: nowrap !important;
+            font-size: clamp(11px, 1.05vw, 14px) !important;
+            line-height: 1.2 !important;
+          }
+          header a[style*="background"], header button[style*="background"], header .desktop-apply-btn {
+            display: inline-block !important;
+            flex-shrink: 0 !important;
+            white-space: nowrap !important;
+          }
         }
-        header nav, header .desktop-nav-links, header ul {
-          display: flex !important;
-          flex-wrap: nowrap !important;
-          gap: clamp(4px, 1.2vw, 16px) !important;
-          min-width: 0 !important;
-        }
-        header nav a, header .desktop-nav-links a, header ul a {
-          white-space: nowrap !important;
-          font-size: clamp(11px, 1.05vw, 14px) !important;
-          line-height: 1.2 !important;
-        }
-        header a[style*="background"], header button[style*="background"], header .desktop-apply-btn {
-          display: inline-block !important;
-          flex-shrink: 0 !important;
-          white-space: nowrap !important;
-        }
-      }
+      `}
     </style>`;
 
     return `${containmentStyles}<div class="section-canvas-box">${autoCorrectMobileCode(cleanCode, width)}</div>`;
@@ -2097,17 +2116,33 @@ export function EditorStudio({
                     const target = e.target as HTMLElement;
 
                     if (target) {
-                      const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger") as HTMLElement;
+                      const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger, header button, header svg") as HTMLElement;
                       if (hamburgerBtn) {
                         const headerElem = hamburgerBtn.closest("header") || hamburgerBtn.closest(".section-wrapper-container") || target.closest("header");
                         if (headerElem) {
-                          const drawer = headerElem.querySelector(".mobile-drawer-menu, nav.mobile-menu, nav:not(.desktop-nav-links)") as HTMLElement;
-                          if (drawer) {
+                          let drawer = headerElem.querySelector(".mobile-drawer-menu, nav.mobile-menu, nav:not(.desktop-nav-links)") as HTMLElement;
+                          if (!drawer) {
+                            drawer = document.createElement("div");
+                            drawer.className = "mobile-drawer-menu active";
+                            drawer.style.cssText = "display: block !important; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;";
+                            drawer.innerHTML = `
+                              <nav style="display: flex; flex-direction: column; gap: 12px; font-size: 15px; font-weight: 700;">
+                                <a href="#home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
+                                <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About</a>
+                                <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics</a>
+                                <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
+                                <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements</a>
+                                <a href="#contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact</a>
+                                <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 10px; border-radius: 8px; text-align: center; margin-top: 6px; font-weight: 800; text-decoration: none;">Apply Now</a>
+                              </nav>
+                            `;
+                            headerElem.appendChild(drawer);
+                          } else {
                             drawer.classList.toggle("active");
-                            if (drawer.style.display === "block" || drawer.classList.contains("active")) {
-                              drawer.style.display = "block";
-                            } else {
+                            if (drawer.style.display === "none" || !drawer.classList.contains("active")) {
                               drawer.style.display = "none";
+                            } else {
+                              drawer.style.display = "block";
                             }
                           }
                         }
