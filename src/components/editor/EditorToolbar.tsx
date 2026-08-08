@@ -128,7 +128,8 @@ export function EditorToolbar({
     }, 500);
   };
 
-  const handleRefreshSwap = () => {
+  const handleRefreshSwap = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (onSwapVariant) {
       onSwapVariant();
       showToast("Section variant updated!");
@@ -197,6 +198,7 @@ export function EditorToolbar({
 
   return (
     <div
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
         bottom: "24px",

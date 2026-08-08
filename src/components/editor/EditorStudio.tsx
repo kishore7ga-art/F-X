@@ -1994,20 +1994,28 @@ export function EditorStudio({
     // 1. Accurately determine Category ID of the ACTIVE section ONLY
     const titleLower = (activeSec.title || "").toLowerCase();
     const codeLower = (activeSec.code || "").toLowerCase();
+    const idLower = (activeSec.id || "").toLowerCase();
 
     let catId = "hero";
     if (
       titleLower.includes("header") ||
       titleLower.includes("nav") ||
+      idLower.includes("header") ||
       codeLower.includes("<header") ||
       codeLower.includes("navbar")
     ) {
       catId = "header";
     } else if (
+      titleLower.includes("hero") ||
+      titleLower.includes("banner") ||
+      idLower.includes("hero") ||
+      idLower.includes("banner")
+    ) {
+      catId = "hero";
+    } else if (
       titleLower.includes("stat") ||
       titleLower.includes("metric") ||
-      codeLower.includes("student-faculty ratio") ||
-      codeLower.includes("global university")
+      idLower.includes("stat")
     ) {
       catId = "stats";
     } else if (titleLower.includes("feature") || titleLower.includes("highlight")) {
@@ -2020,12 +2028,12 @@ export function EditorStudio({
       catId = "placements";
     } else if (titleLower.includes("faculty") || titleLower.includes("staff") || titleLower.includes("team")) {
       catId = "faculty";
-    } else if (titleLower.includes("footer") || codeLower.includes("<footer")) {
+    } else if (titleLower.includes("footer") || idLower.includes("footer") || codeLower.includes("<footer")) {
       catId = "footer";
     } else if (titleLower.includes("contact")) {
       catId = "contact";
-    } else if (titleLower.includes("hero") || titleLower.includes("banner")) {
-      catId = "hero";
+    } else if (codeLower.includes("student-faculty ratio") || codeLower.includes("global university")) {
+      catId = "stats";
     }
 
     // 2. Comprehensive Category Filtering: Collect ALL templates that belong to this active category
