@@ -108,9 +108,10 @@ const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
 
     <style>
       @media (max-width: 900px) {
-        .desktop-nav-links, .desktop-apply-btn { display: none !important; }
-        .hamburger-toggle-btn { display: flex !important; }
-        .mobile-drawer-menu.active { display: block !important; }
+        .desktop-nav-links { display: none !important; }
+        .desktop-apply-btn { display: inline-flex !important; font-size: 12px !important; padding: 6px 12px !important; margin-left: auto !important; }
+        .hamburger-toggle-btn { display: inline-flex !important; font-size: 18px !important; padding: 6px 10px !important; margin-left: 4px !important; }
+        .mobile-drawer-menu.active { display: block !important; width: 100% !important; }
       }
       @media (min-width: 901px) {
         .hamburger-toggle-btn, .mobile-drawer-menu { display: none !important; }
@@ -602,9 +603,10 @@ const getFullPageSections = (slug: string, pageName: string = "Home", collegeNam
 
     <style>
       @media (max-width: 900px) {
-        .desktop-nav-links, .desktop-apply-btn { display: none !important; }
-        .hamburger-toggle-btn { display: flex !important; }
-        .mobile-drawer-menu.active { display: block !important; }
+        .desktop-nav-links { display: none !important; }
+        .desktop-apply-btn { display: inline-flex !important; font-size: 12px !important; padding: 6px 12px !important; margin-left: auto !important; }
+        .hamburger-toggle-btn { display: inline-flex !important; font-size: 18px !important; padding: 6px 10px !important; margin-left: 4px !important; }
+        .mobile-drawer-menu.active { display: block !important; width: 100% !important; }
       }
       @media (min-width: 901px) {
         .hamburger-toggle-btn, .mobile-drawer-menu { display: none !important; }
@@ -1072,6 +1074,14 @@ export function EditorStudio({
         font-size: clamp(10px, 1.1vw, 13px) !important;
         white-space: nowrap !important;
       }
+
+      /* Hide crowded utility links on mobile phone viewports so top bar stays 1 line */
+      ${width === "375px" ? `
+        .section-canvas-box header div:first-child:not(:only-child) > div:last-child,
+        header div:first-child:not(:only-child) > div:last-child {
+          display: none !important;
+        }
+      ` : ''}
 
       .section-canvas-box .mobile-drawer-menu,
       header .mobile-drawer-menu {
