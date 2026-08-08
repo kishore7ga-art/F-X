@@ -436,28 +436,6 @@ export function DomainSettingsModal({
             })}
           </nav>
         </div>
-
-        {/* Bottom Exit / Back to Editor */}
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            border: "1px solid #E5E5E5",
-            backgroundColor: "#FAFAFA",
-            color: "#171717",
-            cursor: "pointer",
-            transition: "all 150ms ease",
-          }}
-          title="Back to Editor"
-        >
-          <LogOut style={{ width: "18px", height: "18px", transform: "rotate(180deg)" }} />
-        </button>
       </aside>
 
       {/* ========================================================= */}
@@ -469,7 +447,7 @@ export function DomainSettingsModal({
           width: "100%",
           height: "100vh",
           overflowY: "auto",
-          padding: "32px 48px 48px",
+          padding: "36px 48px 48px",
           display: "flex",
           flexDirection: "column",
           gap: "28px",
@@ -477,85 +455,6 @@ export function DomainSettingsModal({
         }}
         className="max-md:!p-4 max-md:!h-auto"
       >
-        {/* Top Header Row with Breadcrumb & User Details */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "13px",
-              fontWeight: 500,
-              color: "#737373",
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            <ArrowLeft style={{ width: "14px", height: "14px" }} />
-            <span>Back to Editor</span>
-          </button>
-
-          {/* User Profile & Details Card in Top Right */}
-          <div
-            onClick={() => showToast("Logged in as Kishore (Owner Account)")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: "6px 14px",
-              backgroundColor: "#FFFFFF",
-              border: "1px solid #E5E5E5",
-              borderRadius: "14px",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
-              cursor: "pointer",
-              transition: "all 150ms ease",
-            }}
-          >
-            <div style={{ position: "relative" }}>
-              <div
-                style={{
-                  width: "34px",
-                  height: "34px",
-                  borderRadius: "50%",
-                  backgroundColor: "#171717",
-                  color: "#FFFFFF",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                }}
-              >
-                K
-              </div>
-              <span
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  right: 0,
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  backgroundColor: "#10B981",
-                  border: "2px solid #FFFFFF",
-                }}
-              />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#171717", lineHeight: 1.2 }}>
-                Kishore
-              </span>
-              <span style={{ fontSize: "11px", fontWeight: 500, color: "#737373", display: "flex", alignItems: "center", gap: "4px" }}>
-                <span>Owner Account</span>
-                <span style={{ color: "#A3A3A3" }}>•</span>
-                <span style={{ color: "#2563EB", fontWeight: 600 }}>Details ↗</span>
-              </span>
-            </div>
-          </div>
-        </div>
 
         {/* ========================================================= */}
         {/* TAB 4: ADVANCED SETTINGS & CUSTOM CODE */}
