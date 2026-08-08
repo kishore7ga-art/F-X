@@ -38,7 +38,6 @@ import {
   FileText,
   Server,
   Activity,
-  Share2,
   Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -68,10 +67,8 @@ export function DomainSettingsModal({
   const [savedDomain, setSavedDomain] = useState(`${subdomain}.edu.in`);
   const [publishing, setPublishing] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [isTracking, setIsTracking] = useState(false);
-  const [trackedSeconds, setTrackedSeconds] = useState(19800); // 5.5 hours
-  const [dnsStatus, setDnsStatus] = useState("All 3 DNS Records Connected");
   const [isVerifyingDNS, setIsVerifyingDNS] = useState(false);
+  const [dnsStatus, setDnsStatus] = useState("All 3 DNS Records Connected");
 
   const [lastDeployedTime, setLastDeployedTime] = useState(() => {
     if (typeof window !== "undefined") {
@@ -80,12 +77,12 @@ export function DomainSettingsModal({
         if (saved) return saved;
       } catch {}
     }
-    return "Aug 8, 2026 at 11:20 PM";
+    return "Aug 8, 2026 at 11:26 PM";
   });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 2500);
   };
 
   const copyToClipboard = (text: string, key: string) => {
@@ -137,25 +134,28 @@ export function DomainSettingsModal({
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTracking) {
-      interval = setInterval(() => {
-        setTrackedSeconds((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTracking]);
-
   if (!isOpen || !mounted) return null;
 
-  const formatTrackedHours = () => {
-    const hours = (trackedSeconds / 3600).toFixed(1).replace(".", ",");
-    return hours;
-  };
-
   return createPortal(
-    <div className="fixed inset-0 z-[999999] w-screen h-screen bg-[#F7F7F5] text-[#171717] font-sans antialiased select-none flex flex-col md:flex-row overflow-hidden">
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 999999,
+        width: "100vw",
+        height: "100vh",
+        minHeight: "100vh",
+        backgroundColor: "#F7F7F5",
+        color: "#171717",
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        display: "grid",
+        gridTemplateColumns: "250px minmax(0, 1fr)",
+        boxSizing: "border-box",
+        overflow: "hidden",
+        userSelect: "none",
+      }}
+      className="max-md:!flex max-md:!flex-col"
+    >
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
@@ -163,90 +163,180 @@ export function DomainSettingsModal({
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-[1000000] flex items-center gap-2.5 rounded-2xl bg-[#171717] px-6 py-3 text-xs font-bold text-white shadow-2xl border border-white/10"
+            style={{
+              position: "fixed",
+              top: "20px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 1000000,
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              borderRadius: "14px",
+              backgroundColor: "#171717",
+              padding: "12px 24px",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#FFFFFF",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
           >
-            <span className="h-2 w-2 rounded-full bg-[#34D399] animate-ping" />
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10B981" }} />
             <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ========================================================= */}
-      {/* 1. LEFT FIXED SIDEBAR (240px - 260px Full Height) */}
+      {/* 1. LEFT SIDEBAR (250px Full Height, Sticky) */}
       {/* ========================================================= */}
       <aside
+        style={{
+          width: "250px",
+          height: "100vh",
+          position: "sticky",
+          top: 0,
+          backgroundColor: "#FFFFFF",
+          borderRight: "1px solid #E5E5E5",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          boxSizing: "border-box",
+          zIndex: 40,
+        }}
         className={cn(
-          "w-full md:w-[250px] lg:w-[260px] shrink-0 bg-white border-r border-[#E5E5E5] flex flex-col justify-between h-full p-5 md:p-6 overflow-y-auto transition-transform duration-200 z-40",
-          mobileMenuOpen ? "fixed inset-0 z-50 flex" : "hidden md:flex"
+          "max-md:w-full max-md:h-auto max-md:static",
+          mobileMenuOpen ? "max-md:fixed max-md:inset-0 max-md:z-50 max-md:flex" : "max-md:hidden"
         )}
       >
-        <div className="space-y-6">
-          {/* Top Brand Logo & Mobile Close */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-[#171717] flex items-center justify-center text-white text-xs font-black shadow-xs">
-                <div className="h-3.5 w-3.5 rounded-l-full bg-white mr-auto ml-1.5" />
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {/* Top Logo & Workspace Name */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "50%",
+                  backgroundColor: "#171717",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#FFFFFF",
+                  fontWeight: 900,
+                  fontSize: "12px",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                }}
+              >
+                <div style={{ width: "12px", height: "12px", borderTopLeftRadius: "12px", borderBottomLeftRadius: "12px", backgroundColor: "#FFFFFF", marginRight: "auto", marginLeft: "4px" }} />
               </div>
-              <div className="flex flex-col">
-                <span className="text-[17px] font-bold tracking-tight text-[#171717] leading-none">
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "16px", fontWeight: 700, color: "#171717", lineHeight: 1.1 }}>
                   XITE Studio
                 </span>
-                <span className="text-[11px] font-mono font-medium text-[#737373] mt-1 truncate max-w-[150px]">
+                <span style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 500, color: "#737373", marginTop: "2px" }}>
                   {subdomain}.edu.in
                 </span>
               </div>
             </div>
 
-            {/* Mobile Close Button */}
+            {/* Mobile close */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="md:hidden h-8 w-8 rounded-lg flex items-center justify-center text-[#737373] hover:bg-[#F5F5F5]"
+              className="md:hidden"
+              style={{ background: "transparent", border: "none", cursor: "pointer", color: "#737373" }}
             >
-              <X className="h-4 w-4" />
+              <X style={{ width: "18px", height: "18px" }} />
             </button>
           </div>
 
-          {/* User Profile Section */}
-          <div className="flex items-center gap-3 p-2 rounded-2xl bg-[#FAFAFA] border border-[#EBEBEB]">
-            <div className="relative">
-              <div className="h-10 w-10 rounded-full bg-[#171717] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+          {/* User Profile Pill Section */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              padding: "10px 12px",
+              borderRadius: "12px",
+              backgroundColor: "#FAFAFA",
+              border: "1px solid #EBEBEB",
+            }}
+          >
+            <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  backgroundColor: "#171717",
+                  color: "#FFFFFF",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                }}
+              >
                 K
               </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-[#10B981] border-2 border-white" />
+              <span
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  right: 0,
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  backgroundColor: "#10B981",
+                  border: "2px solid #FFFFFF",
+                }}
+              />
             </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-[13px] font-bold text-[#171717] tracking-tight truncate">
+            <div style={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#171717", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 Kishore
               </span>
-              <span className="text-[11px] font-medium text-[#737373] truncate">
+              <span style={{ fontSize: "11px", fontWeight: 500, color: "#737373", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 Owner Account
               </span>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="space-y-1">
-            <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3]">
+          {/* Navigation Items */}
+          <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div style={{ padding: "4px 8px", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#A3A3A3" }}>
               Navigation
             </div>
 
-            {/* Custom Domain & Plan */}
+            {/* Custom Domain & SSL */}
             <button
               type="button"
               onClick={() => {
                 setActiveNav("domain");
                 setMobileMenuOpen(false);
               }}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-all duration-150 text-left cursor-pointer",
-                activeNav === "domain"
-                  ? "bg-[#F5F5F3] text-[#171717] font-bold"
-                  : "text-[#525252] hover:bg-[#FAFAFA] hover:text-[#171717]"
-              )}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                fontWeight: activeNav === "domain" ? 600 : 500,
+                backgroundColor: activeNav === "domain" ? "#F5F5F3" : "transparent",
+                color: activeNav === "domain" ? "#171717" : "#525252",
+                border: "none",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 150ms ease",
+              }}
             >
-              <Globe className="h-4 w-4 shrink-0 text-[#737373]" />
-              <span className="truncate">Custom Domain &amp; SSL</span>
+              <Globe style={{ width: "16px", height: "16px", color: "#737373" }} />
+              <span>Custom Domain &amp; SSL</span>
             </button>
 
             {/* Production Deploy */}
@@ -257,43 +347,62 @@ export function DomainSettingsModal({
                 handlePublish();
                 setMobileMenuOpen(false);
               }}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-all duration-150 text-left cursor-pointer",
-                activeNav === "deploy"
-                  ? "bg-[#F5F5F3] text-[#171717] font-bold"
-                  : "text-[#525252] hover:bg-[#FAFAFA] hover:text-[#171717]"
-              )}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                fontWeight: activeNav === "deploy" ? 600 : 500,
+                backgroundColor: activeNav === "deploy" ? "#F5F5F3" : "transparent",
+                color: activeNav === "deploy" ? "#171717" : "#525252",
+                border: "none",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 150ms ease",
+              }}
             >
-              <Rocket className="h-4 w-4 shrink-0 text-[#737373]" />
-              <span className="truncate">Production Deploy</span>
+              <Rocket style={{ width: "16px", height: "16px", color: "#737373" }} />
+              <span>Production Deploy</span>
             </button>
 
-            {/* Website Pages Accordion */}
-            <div className="pt-1">
+            {/* Website Pages */}
+            <div>
               <button
                 type="button"
                 onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-                className="flex w-full items-center justify-between rounded-xl px-3.5 py-2 text-[13px] font-semibold text-[#525252] hover:text-[#171717] cursor-pointer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  backgroundColor: "transparent",
+                  color: "#525252",
+                  border: "none",
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <Folder className="h-4 w-4 shrink-0 text-[#737373]" />
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <Folder style={{ width: "16px", height: "16px", color: "#737373" }} />
                   <span>Website Pages</span>
                 </div>
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 transition-transform duration-200 text-[#A3A3A3]",
-                    isProjectsOpen ? "rotate-0" : "-rotate-90"
-                  )}
-                />
+                <ChevronDown style={{ width: "14px", height: "14px", color: "#A3A3A3", transform: isProjectsOpen ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 200ms ease" }} />
               </button>
 
               {isProjectsOpen && (
-                <div className="pl-6 pr-1 py-1 space-y-1">
+                <div style={{ paddingLeft: "26px", paddingTop: "4px", paddingBottom: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
                   {[
-                    { name: "Home & Hero", color: "bg-[#F48FB1]" },
-                    { name: "Academics", color: "bg-[#FFB74D]" },
-                    { name: "Admissions", color: "bg-[#64B5F6]" },
-                    { name: "Placements", color: "bg-[#81C784]" },
+                    { name: "Home & Hero", color: "#F48FB1" },
+                    { name: "Academics", color: "#FFB74D" },
+                    { name: "Admissions", color: "#64B5F6" },
+                    { name: "Placements", color: "#81C784" },
                   ].map((p) => (
                     <button
                       key={p.name}
@@ -302,27 +411,46 @@ export function DomainSettingsModal({
                         setActiveProject(p.name);
                         showToast(`Viewing page: ${p.name}`);
                       }}
-                      className={cn(
-                        "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[12px] transition-all text-left cursor-pointer",
-                        activeProject === p.name
-                          ? "text-[#171717] font-bold bg-[#F5F5F3]"
-                          : "text-[#737373] hover:text-[#171717]"
-                      )}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        width: "100%",
+                        padding: "6px 8px",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        fontWeight: activeProject === p.name ? 600 : 400,
+                        backgroundColor: activeProject === p.name ? "#F5F5F3" : "transparent",
+                        color: activeProject === p.name ? "#171717" : "#737373",
+                        border: "none",
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
                     >
-                      <span className={cn("h-2 w-2 rounded-xs shrink-0", p.color)} />
-                      <span className="truncate">{p.name}</span>
+                      <span style={{ width: "6px", height: "6px", borderRadius: "2px", backgroundColor: p.color, flexShrink: 0 }} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
                     </button>
                   ))}
-
                   <button
                     type="button"
                     onClick={() => {
                       const name = prompt("Enter new college page title:");
                       if (name) showToast(`Added page "${name}"`);
                     }}
-                    className="flex items-center gap-1.5 text-[11px] font-semibold text-[#737373] hover:text-[#171717] pl-2.5 pt-1 cursor-pointer transition-colors"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "6px 8px",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      color: "#737373",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus style={{ width: "12px", height: "12px" }} />
                     <span>Add New Page</span>
                   </button>
                 </div>
@@ -336,15 +464,25 @@ export function DomainSettingsModal({
                 setActiveNav("security");
                 setMobileMenuOpen(false);
               }}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-all duration-150 text-left cursor-pointer",
-                activeNav === "security"
-                  ? "bg-[#F5F5F3] text-[#171717] font-bold"
-                  : "text-[#525252] hover:bg-[#FAFAFA] hover:text-[#171717]"
-              )}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                fontWeight: activeNav === "security" ? 600 : 500,
+                backgroundColor: activeNav === "security" ? "#F5F5F3" : "transparent",
+                color: activeNav === "security" ? "#171717" : "#525252",
+                border: "none",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 150ms ease",
+              }}
             >
-              <Key className="h-4 w-4 shrink-0 text-[#737373]" />
-              <span className="truncate">Password &amp; Security</span>
+              <Key style={{ width: "16px", height: "16px", color: "#737373" }} />
+              <span>Password &amp; Security</span>
             </button>
 
             {/* Advanced Settings */}
@@ -354,334 +492,532 @@ export function DomainSettingsModal({
                 setActiveNav("advanced");
                 setMobileMenuOpen(false);
               }}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition-all duration-150 text-left cursor-pointer",
-                activeNav === "advanced"
-                  ? "bg-[#F5F5F3] text-[#171717] font-bold"
-                  : "text-[#525252] hover:bg-[#FAFAFA] hover:text-[#171717]"
-              )}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                fontWeight: activeNav === "advanced" ? 600 : 500,
+                backgroundColor: activeNav === "advanced" ? "#F5F5F3" : "transparent",
+                color: activeNav === "advanced" ? "#171717" : "#525252",
+                border: "none",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "all 150ms ease",
+              }}
             >
-              <Sliders className="h-4 w-4 shrink-0 text-[#737373]" />
-              <span className="truncate">Advanced Settings</span>
+              <Sliders style={{ width: "16px", height: "16px", color: "#737373" }} />
+              <span>Advanced Settings</span>
             </button>
           </nav>
         </div>
 
         {/* Bottom Back to Editor Action */}
-        <div className="pt-4 border-t border-[#E5E5E5]">
+        <div style={{ paddingTop: "16px", borderTop: "1px solid #E5E5E5" }}>
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-[13px] font-bold text-[#171717] bg-[#FAFAFA] hover:bg-[#F5F5F3] border border-[#E5E5E5] transition-all cursor-pointer w-full justify-center shadow-2xs active:scale-[0.99]"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#171717",
+              backgroundColor: "#FAFAFA",
+              border: "1px solid #E5E5E5",
+              cursor: "pointer",
+              transition: "all 150ms ease",
+            }}
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft style={{ width: "14px", height: "14px" }} />
             <span>Back to Editor</span>
           </button>
         </div>
       </aside>
 
       {/* ========================================================= */}
-      {/* 2. MAIN VIEWPORT CONTENT (Fills 100% Remaining Width & Height) */}
+      {/* 2. MAIN CONTENT AREA (Fills Remaining Viewport Width) */}
       {/* ========================================================= */}
-      <main className="flex-1 min-w-0 h-full overflow-y-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">
-        
-        {/* Mobile Header Bar */}
-        <div className="md:hidden flex items-center justify-between pb-2 border-b border-[#E5E5E5]">
+      <main
+        style={{
+          minWidth: 0,
+          width: "100%",
+          height: "100vh",
+          overflowY: "auto",
+          padding: "24px 32px 40px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+          boxSizing: "border-box",
+        }}
+        className="max-md:!p-4 max-md:!h-auto"
+      >
+        {/* Mobile Header Toggle */}
+        <div className="md:hidden flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex items-center gap-2 text-xs font-bold p-2 rounded-lg bg-white border border-[#E5E5E5]"
+            style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", fontWeight: 600, padding: "8px 12px", borderRadius: "8px", backgroundColor: "#FFFFFF", border: "1px solid #E5E5E5" }}
           >
-            <Menu className="h-4 w-4" />
+            <Menu style={{ width: "14px", height: "14px" }} />
             <span>Menu</span>
           </button>
-
-          <div className="text-sm font-bold truncate">{subdomain}.edu.in</div>
-
+          <span style={{ fontSize: "13px", fontWeight: 600 }}>{subdomain}.edu.in</span>
           <button
             type="button"
             onClick={onClose}
-            className="text-xs font-bold p-2 rounded-lg bg-white border border-[#E5E5E5]"
+            style={{ fontSize: "12px", fontWeight: 600, padding: "8px 12px", borderRadius: "8px", backgroundColor: "#FFFFFF", border: "1px solid #E5E5E5" }}
           >
             Exit
           </button>
         </div>
 
-        {/* Top Header Row with Breadcrumbs, Title & Live Actions */}
-        <div className="flex flex-col gap-4 bg-white rounded-2xl p-5 md:p-6 border border-[#E5E5E5] shadow-[0_2px_8px_rgba(0,0,0,0.03)]">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#F0F0F0]">
+        {/* Top Header Row (Back breadcrumb + Production Live status + Open Live Site) */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "13px",
+              fontWeight: 500,
+              color: "#737373",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            <ArrowLeft style={{ width: "14px", height: "14px" }} />
+            <span>Back to Editor</span>
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#047857",
+                backgroundColor: "#ECFDF5",
+                padding: "4px 10px",
+                borderRadius: "20px",
+                border: "1px solid #A7F3D0",
+              }}
+            >
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10B981" }} />
+              <span>Production Live</span>
+            </div>
+
+            <span style={{ fontSize: "12px", color: "#A3A3A3", fontWeight: 400 }} className="hidden sm:inline">
+              Last deployed {lastDeployedTime}
+            </span>
+
             <button
               type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#737373] hover:text-[#171717] transition-colors cursor-pointer"
+              onClick={() => showToast("DNS routing active across all edge nodes 🟢")}
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "8px",
+                border: "1px solid #E5E5E5",
+                backgroundColor: "#FFFFFF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#171717",
+                cursor: "pointer",
+              }}
+              title="DNS Verification Info"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back to Editor</span>
+              <MessageSquare style={{ width: "14px", height: "14px" }} />
             </button>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#047857] bg-[#ECFDF5] px-3 py-1 rounded-full border border-[#A7F3D0]">
-                <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
-                <span>Production Live</span>
-              </div>
-              <span className="text-xs text-[#A3A3A3] font-medium hidden sm:inline">
-                Last deployed {lastDeployedTime}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#A3A3A3]">
-                Domain Configuration &amp; Hosting
-              </span>
-              <h1 className="text-2xl md:text-[30px] font-bold tracking-tight text-[#171717] leading-[1.2]">
-                Publishing &amp; Custom Domain Settings for your College Website
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => showToast("DNS routing active across all edge nodes 🟢")}
-                className="h-10 w-10 rounded-xl border border-[#E5E5E5] bg-[#FAFAFA] hover:bg-[#F5F5F3] flex items-center justify-center text-[#171717] transition cursor-pointer"
-                title="DNS Verification Info"
-              >
-                <MessageSquare className="h-4 w-4" />
-              </button>
-
-              <a
-                href={`/site/${subdomain}`}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl bg-[#171717] hover:bg-black text-white px-5 py-2.5 text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
-              >
-                <span>Open Live Site</span>
-                <ArrowUpRight className="h-4 w-4" />
-              </a>
-            </div>
+            <a
+              href={`/site/${subdomain}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                borderRadius: "8px",
+                backgroundColor: "#171717",
+                color: "#FFFFFF",
+                padding: "8px 16px",
+                fontSize: "13px",
+                fontWeight: 600,
+                textDecoration: "none",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                cursor: "pointer",
+              }}
+            >
+              <span>Open Live Site</span>
+              <ArrowUpRight style={{ width: "14px", height: "14px" }} />
+            </a>
           </div>
         </div>
 
+        {/* Page Eyebrow & Title */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
+            Domain Configuration &amp; Hosting
+          </span>
+          <h1
+            style={{
+              fontSize: "clamp(24px, 2vw, 30px)",
+              fontWeight: 700,
+              color: "#171717",
+              lineHeight: 1.15,
+              margin: 0,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Publishing &amp; Custom Domain Settings for your College Website
+          </h1>
+        </div>
+
         {/* ========================================================= */}
-        {/* DASHBOARD 2-COLUMN GRID (60/40 Split across full viewport) */}
+        {/* 3. MAIN DASHBOARD GRID (Balanced 60/40 Columns) */}
         {/* ========================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* LEFT 7 COLS: Overview, Stats & Greeting Banner */}
-          <div className="lg:col-span-7 space-y-6">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1.45fr) minmax(360px, 0.85fr)",
+            gap: "20px",
+            alignItems: "start",
+          }}
+          className="max-lg:!grid-cols-1"
+        >
+          {/* LEFT COLUMN: Overview, Greeting, Stats, Daily Plan */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             
-            {/* Greeting Banner ("Good day, Kishore!") */}
-            <div className="rounded-2xl bg-[#D8EEDF] p-6 md:p-7 border border-[#C2E3CB] shadow-[0_2px_8px_rgba(0,0,0,0.03)] relative overflow-hidden flex flex-col justify-between min-h-[170px]">
-              <div className="relative z-10 space-y-3 max-w-[240px]">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#2E7D32]">
+            {/* A. Welcome Card */}
+            <div
+              style={{
+                borderRadius: "14px",
+                backgroundColor: "#D8EEDF",
+                border: "1px solid #C2E3CB",
+                padding: "20px 24px",
+                minHeight: "130px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                position: "relative",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                boxSizing: "border-box",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", position: "relative", zIndex: 10, maxWidth: "240px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#2E7D32" }}>
                   Welcome back
                 </span>
-                <h3 className="text-2xl md:text-[26px] font-bold text-[#171717] leading-tight tracking-tight">
+                <h3 style={{ fontSize: "22px", fontWeight: 700, color: "#171717", lineHeight: 1.2, margin: 0, letterSpacing: "-0.01em" }}>
                   Good day,<br />Kishore!
                 </h3>
-                <button
-                  type="button"
-                  onClick={handleVerifyDNS}
-                  disabled={isVerifyingDNS}
-                  className="rounded-xl bg-white px-4 py-2 text-xs font-bold text-[#171717] shadow-xs hover:bg-[#F9F5F1] transition active:scale-95 cursor-pointer inline-flex items-center gap-2"
-                >
-                  {isVerifyingDNS ? (
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                  )}
-                  <span>{isVerifyingDNS ? "Verifying..." : "Start tracking"}</span>
-                </button>
+                <div style={{ paddingTop: "4px" }}>
+                  <button
+                    type="button"
+                    onClick={handleVerifyDNS}
+                    disabled={isVerifyingDNS}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      borderRadius: "8px",
+                      backgroundColor: "#FFFFFF",
+                      padding: "6px 14px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "#171717",
+                      border: "none",
+                      cursor: "pointer",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                    }}
+                  >
+                    {isVerifyingDNS ? (
+                      <RefreshCw style={{ width: "12px", height: "12px" }} className="animate-spin" />
+                    ) : (
+                      <Check style={{ width: "12px", height: "12px", strokeWidth: 3 }} />
+                    )}
+                    <span>{isVerifyingDNS ? "Verifying..." : "Start tracking"}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Contained Abstract Art Illustration */}
-              <div className="absolute right-4 top-4 bottom-4 w-[160px] pointer-events-none flex items-center justify-center">
-                <div className="relative w-full h-full">
-                  <div className="absolute top-2 right-8 h-10 w-10 rounded-full bg-[#171717]" />
-                  <div className="absolute top-5 right-2 text-white text-lg font-black">✦</div>
-                  <div className="absolute bottom-2 right-6 w-20 h-24 bg-[repeating-linear-gradient(45deg,#171717,#171717_3px,#D8EEDF_3px,#D8EEDF_7px)] opacity-90 transform -rotate-12 rounded-sm" />
-                  <div className="absolute bottom-0 right-0 h-14 w-14 rounded-tl-full bg-[#FCE7AF]" />
-                  <div className="absolute bottom-0 right-14 w-6 h-6 bg-[repeating-linear-gradient(90deg,#171717,#171717_2px,transparent_2px,transparent_4px)]" />
-                </div>
+              <div style={{ width: "140px", height: "100px", position: "relative", pointerEvents: "none", flexShrink: 0 }}>
+                <div style={{ position: "absolute", top: "4px", right: "24px", width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "#171717" }} />
+                <div style={{ position: "absolute", top: "14px", right: "4px", color: "#FFFFFF", fontSize: "14px", fontWeight: 900 }}>✦</div>
+                <div style={{ position: "absolute", bottom: "4px", right: "16px", width: "64px", height: "72px", backgroundImage: "repeating-linear-gradient(45deg,#171717,#171717 3px,#D8EEDF 3px,#D8EEDF 7px)", opacity: 0.9, transform: "rotate(-12deg)", borderRadius: "2px" }} />
+                <div style={{ position: "absolute", bottom: 0, right: 0, width: "48px", height: "48px", borderTopLeftRadius: "48px", backgroundColor: "#FCE7AF" }} />
+                <div style={{ position: "absolute", bottom: 0, right: "40px", width: "20px", height: "20px", backgroundImage: "repeating-linear-gradient(90deg,#171717,#171717 2px,transparent 2px,transparent 4px)" }} />
               </div>
             </div>
 
-            {/* Dual Metric Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Pages Live */}
-              <div className="rounded-2xl bg-white p-5 border border-[#E5E5E5] shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col justify-between min-h-[110px]">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#737373]">
+            {/* B. Statistics Row (2 Equal Cards) */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              {/* Published Pages */}
+              <div
+                style={{
+                  border: "1px solid #E7E7E7",
+                  borderRadius: "14px",
+                  backgroundColor: "#FFFFFF",
+                  padding: "18px 20px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxSizing: "border-box",
+                }}
+              >
+                <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
                   Published Pages
                 </span>
-                <div className="flex items-baseline justify-between mt-2">
-                  <span className="text-3xl font-bold text-[#171717]">23</span>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#10B981]">
-                    <CheckCircle2 className="h-4 w-4" />
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "8px" }}>
+                  <span style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1 }}>
+                    23
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: 600, color: "#10B981" }}>
+                    <CheckCircle2 style={{ width: "14px", height: "14px" }} />
                     <span>Pages live</span>
                   </div>
                 </div>
               </div>
 
-              {/* Optimize Score */}
-              <div className="rounded-2xl bg-white p-5 border border-[#E5E5E5] shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex flex-col justify-between min-h-[110px]">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#737373]">
+              {/* CDN Speed & Uptime */}
+              <div
+                style={{
+                  border: "1px solid #E7E7E7",
+                  borderRadius: "14px",
+                  backgroundColor: "#FFFFFF",
+                  padding: "18px 20px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxSizing: "border-box",
+                }}
+              >
+                <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
                   CDN Speed &amp; Uptime
                 </span>
-                <div className="flex items-baseline justify-between mt-2">
-                  <span className="text-3xl font-bold text-[#171717]">99.9%</span>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#10B981]">
-                    <Zap className="h-4 w-4 fill-[#10B981]" />
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginTop: "8px" }}>
+                  <span style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1 }}>
+                    99.9%
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: 600, color: "#10B981" }}>
+                    <Zap style={{ width: "14px", height: "14px", fill: "#10B981" }} />
                     <span>Tracked uptime</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Site Health & Daily Plan Card */}
-            <div className="rounded-2xl bg-[#FDF0D0] p-6 border border-[#F5E2B3] shadow-[0_2px_8px_rgba(0,0,0,0.03)] flex items-center justify-between">
-              <div className="space-y-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#92400E]">
+            {/* C. Daily Plan & Readiness Card */}
+            <div
+              style={{
+                border: "1px solid #F5E2B3",
+                borderRadius: "14px",
+                backgroundColor: "#FDF0D0",
+                padding: "16px 20px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxSizing: "border-box",
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#92400E" }}>
                   Readiness Score
                 </span>
-                <h4 className="text-lg font-bold text-[#171717] tracking-tight">
+                <h4 style={{ fontSize: "15px", fontWeight: 600, color: "#171717", margin: 0 }}>
                   Your daily plan &amp; SEO Health
                 </h4>
-                <p className="text-xs font-medium text-[#78350F]">
+                <p style={{ fontSize: "12px", fontWeight: 500, color: "#78350F", margin: 0 }}>
                   4 of 6 completed • {dnsStatus}
                 </p>
               </div>
 
-              {/* 70% Circular Progress Indicator */}
-              <div className="relative h-16 w-16 rounded-full bg-white flex items-center justify-center shadow-xs shrink-0">
-                <svg className="h-16 w-16 -rotate-90">
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="25"
-                    stroke="#FDE68A"
-                    strokeWidth="5"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="32"
-                    cy="32"
-                    r="25"
-                    stroke="#171717"
-                    strokeWidth="5"
-                    fill="transparent"
-                    strokeDasharray="157"
-                    strokeDashoffset="47"
-                    strokeLinecap="round"
-                  />
+              {/* 70% Progress Ring Circle */}
+              <div style={{ position: "relative", width: "56px", height: "56px", borderRadius: "50%", backgroundColor: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 1px 3px rgba(0,0,0,0.08)", flexShrink: 0 }}>
+                <svg style={{ width: "56px", height: "56px", transform: "rotate(-90deg)" }}>
+                  <circle cx="28" cy="28" r="22" stroke="#FDE68A" strokeWidth="4" fill="transparent" />
+                  <circle cx="28" cy="28" r="22" stroke="#171717" strokeWidth="4" fill="transparent" strokeDasharray="138" strokeDashoffset="41" strokeLinecap="round" />
                 </svg>
-                <span className="absolute text-xs font-bold text-[#171717]">
+                <span style={{ position: "absolute", fontSize: "11px", fontWeight: 700, color: "#171717" }}>
                   70%
                 </span>
               </div>
             </div>
           </div>
 
-          {/* RIGHT 5 COLS: "Your tasks today" & DNS Records */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <h3 className="text-lg font-bold text-[#171717] tracking-tight">
+          {/* RIGHT COLUMN: "Your tasks today" & DNS Records Panel */}
+          <div
+            style={{
+              border: "1px solid #E7E7E7",
+              borderRadius: "14px",
+              backgroundColor: "#FFFFFF",
+              padding: "20px 24px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              boxSizing: "border-box",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#171717", margin: 0 }}>
                 Your tasks today
               </h3>
-              <span className="text-xs font-bold text-[#10B981] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full border border-[#A7F3D0]">
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "#047857", backgroundColor: "#ECFDF5", padding: "2px 8px", borderRadius: "12px", border: "1px solid #A7F3D0" }}>
                 ● Auto SSL Active
               </span>
             </div>
 
-            <div className="space-y-3">
-              {/* Task 1: Primary Domain Record */}
-              <div
-                onClick={() => copyToClipboard("76.76.21.21", "a-rec")}
-                className="rounded-2xl bg-white p-5 border border-[#E5E5E5] hover:border-[#D4D4D4] transition-all shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2 cursor-pointer group"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#737373]">Primary Domain Routing</span>
-                  <span className="font-bold text-[#A3A3A3]">4h</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-[#171717] group-hover:text-black">
-                    Domain routing: {savedDomain}
-                  </h4>
-                  <Copy className="h-3.5 w-3.5 text-[#A3A3A3] group-hover:text-[#171717]" />
-                </div>
-                <div className="flex items-center gap-2 pt-1 text-xs text-[#525252] font-medium">
-                  <span className="h-4 w-4 rounded-full bg-[#FAFAFA] border border-[#E5E5E5] flex items-center justify-center text-[10px] font-bold text-[#171717]">
-                    !
-                  </span>
-                  <span>A-Record: <code className="font-mono font-bold text-[#171717]">76.76.21.21</code> Active</span>
-                </div>
+            {/* Task Row 1: Primary Domain */}
+            <div
+              onClick={() => copyToClipboard("76.76.21.21", "a-rec")}
+              style={{
+                paddingBottom: "12px",
+                borderBottom: "1px solid #EEEEEE",
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px" }}>
+                <span style={{ fontWeight: 600, color: "#737373" }}>Primary Domain Routing</span>
+                <span style={{ fontWeight: 600, color: "#A3A3A3" }}>4h</span>
               </div>
-
-              {/* Task 2: Production Hosting */}
-              <div
-                onClick={() => copyToClipboard("cname.xite.co.in", "cname-rec")}
-                className="rounded-2xl bg-white p-5 border border-[#E5E5E5] hover:border-[#D4D4D4] transition-all shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2 cursor-pointer group"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#737373]">Production Hosting</span>
-                  <span className="font-bold text-[#A3A3A3]">7d</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-[#171717] group-hover:text-black">
-                    Global CDN Edge &amp; SSL Certificate
-                  </h4>
-                  <Copy className="h-3.5 w-3.5 text-[#A3A3A3] group-hover:text-[#171717]" />
-                </div>
-                <div className="flex items-center gap-2 pt-1 text-xs text-[#525252] font-medium">
-                  <span className="h-4 w-4 rounded-full bg-[#171717] text-white flex items-center justify-center text-[10px] font-bold">
-                    1
-                  </span>
-                  <span>CNAME: <code className="font-mono font-bold text-[#171717]">cname.xite.co.in</code></span>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
+                  Domain routing: {savedDomain}
+                </h4>
+                <Copy style={{ width: "13px", height: "13px", color: "#A3A3A3" }} />
               </div>
-
-              {/* Task 3: DNS Security QA */}
-              <div
-                onClick={() => copyToClipboard("xite-auth-token-9884", "txt-rec")}
-                className="rounded-2xl bg-white p-5 border border-[#E5E5E5] hover:border-[#D4D4D4] transition-all shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2 cursor-pointer group"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#737373]">DNS Security QA</span>
-                  <span className="font-bold text-[#A3A3A3]">2h</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-[#171717] group-hover:text-black">
-                    Cross-platform and browser QA
-                  </h4>
-                  <Copy className="h-3.5 w-3.5 text-[#A3A3A3] group-hover:text-[#171717]" />
-                </div>
-                <div className="flex items-center gap-2 pt-1 text-xs text-[#047857] font-semibold">
-                  <span className="h-2 w-2 rounded-full bg-[#10B981]" />
-                  <span>Let's Encrypt TLS 1.3 Active</span>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#525252" }}>
+                <span style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 700, color: "#171717" }}>
+                  !
+                </span>
+                <span>A-Record: <code style={{ fontFamily: "monospace", fontWeight: 600, color: "#171717" }}>76.76.21.21</code> Active</span>
               </div>
+            </div>
 
-              {/* Inline Domain Configuration Input Card */}
-              <div className="rounded-2xl bg-white p-4 border border-[#E5E5E5] shadow-[0_2px_8px_rgba(0,0,0,0.03)] space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#737373] block">
-                  Update Domain Name
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="e.g. kishore7ga-college.edu.in"
-                    className="flex-1 bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-[#171717] focus:bg-white focus:border-[#171717] focus:outline-none transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveDomain}
-                    className="rounded-xl bg-[#171717] hover:bg-black px-4 py-2.5 text-xs font-bold text-white shadow-xs transition active:scale-95 cursor-pointer shrink-0"
-                  >
-                    Save Domain
-                  </button>
-                </div>
+            {/* Task Row 2: Production Hosting */}
+            <div
+              onClick={() => copyToClipboard("cname.xite.co.in", "cname-rec")}
+              style={{
+                paddingBottom: "12px",
+                borderBottom: "1px solid #EEEEEE",
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px" }}>
+                <span style={{ fontWeight: 600, color: "#737373" }}>Production Hosting</span>
+                <span style={{ fontWeight: 600, color: "#A3A3A3" }}>7d</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
+                  Global CDN Edge &amp; SSL Certificate
+                </h4>
+                <Copy style={{ width: "13px", height: "13px", color: "#A3A3A3" }} />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#525252" }}>
+                <span style={{ width: "14px", height: "14px", borderRadius: "50%", backgroundColor: "#171717", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 700 }}>
+                  1
+                </span>
+                <span>CNAME: <code style={{ fontFamily: "monospace", fontWeight: 600, color: "#171717" }}>cname.xite.co.in</code></span>
+              </div>
+            </div>
+
+            {/* Task Row 3: DNS Security QA */}
+            <div
+              onClick={() => copyToClipboard("xite-auth-token-9884", "txt-rec")}
+              style={{
+                paddingBottom: "12px",
+                borderBottom: "1px solid #EEEEEE",
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+                cursor: "pointer",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px" }}>
+                <span style={{ fontWeight: 600, color: "#737373" }}>DNS Security QA</span>
+                <span style={{ fontWeight: 600, color: "#A3A3A3" }}>2h</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>
+                  Cross-platform and browser QA
+                </h4>
+                <Copy style={{ width: "13px", height: "13px", color: "#A3A3A3" }} />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#047857", fontWeight: 500 }}>
+                <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10B981" }} />
+                <span>Let's Encrypt TLS 1.3 Active</span>
+              </div>
+            </div>
+
+            {/* Inline Domain Configuration Input Card */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", paddingTop: "2px" }}>
+              <label style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
+                Update Domain Name
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="text"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value)}
+                  placeholder="e.g. kishore7ga-college.edu.in"
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#FAFAFA",
+                    border: "1px solid #E5E5E5",
+                    borderRadius: "8px",
+                    padding: "8px 12px",
+                    fontSize: "12px",
+                    fontFamily: "monospace",
+                    fontWeight: 600,
+                    color: "#171717",
+                    outline: "none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveDomain}
+                  style={{
+                    borderRadius: "8px",
+                    backgroundColor: "#171717",
+                    color: "#FFFFFF",
+                    padding: "8px 14px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    border: "none",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                    transition: "all 150ms ease",
+                  }}
+                >
+                  Save Domain
+                </button>
               </div>
             </div>
           </div>
@@ -689,109 +1025,109 @@ export function DomainSettingsModal({
       </main>
 
       {/* ========================================================= */}
-      {/* 3. RIGHT FLOATING ACTION TOOLBAR (Refined Compact Rail) */}
+      {/* 4. REFINED FLOATING RIGHT ACTION TOOLBAR */}
       {/* ========================================================= */}
-      <aside className="hidden xl:flex w-[68px] shrink-0 bg-white border-l border-[#E5E5E5] flex-col items-center justify-between py-6 px-2 h-full z-40">
-        {/* Top Tools */}
-        <div className="flex flex-col items-center gap-5 w-full">
-          {/* Lightning Fast Deploy */}
-          <button
-            type="button"
-            onClick={handlePublish}
-            disabled={publishing}
-            className="h-10 w-10 rounded-xl bg-[#FAFAFA] hover:bg-[#F5F5F3] border border-[#E5E5E5] flex items-center justify-center text-[#171717] hover:scale-105 transition cursor-pointer shadow-2xs"
-            title="Instant Fast Deploy ⚡"
-          >
-            <Zap className="h-4 w-4 fill-[#171717]" />
-          </button>
+      <aside
+        style={{
+          position: "fixed",
+          right: "16px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "48px",
+          backgroundColor: "#FFFFFF",
+          border: "1px solid #E5E5E5",
+          borderRadius: "14px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          padding: "8px 4px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "12px",
+          zIndex: 50,
+          boxSizing: "border-box",
+        }}
+        className="hidden xl:flex"
+      >
+        {/* ⚡ Fast Deploy */}
+        <button
+          type="button"
+          onClick={handlePublish}
+          disabled={publishing}
+          style={{ width: "36px", height: "36px", borderRadius: "8px", border: "none", backgroundColor: "#FAFAFA", display: "flex", alignItems: "center", justifyContent: "center", color: "#171717", cursor: "pointer" }}
+          title="Instant Fast Deploy ⚡"
+        >
+          <Zap style={{ width: "16px", height: "16px", fill: "#171717" }} />
+        </button>
 
-          {/* New project */}
-          <button
-            type="button"
-            onClick={() => {
-              const p = prompt("Enter new project/page name:");
-              if (p) showToast(`Created project "${p}"`);
-            }}
-            className="flex flex-col items-center gap-1 text-center text-[#737373] hover:text-[#171717] transition cursor-pointer group"
-            title="New project"
-          >
-            <div className="h-9 w-9 rounded-xl bg-[#FAFAFA] group-hover:bg-[#F5F5F3] border border-[#E5E5E5] flex items-center justify-center transition">
-              <FolderPlus className="h-4 w-4 text-[#171717]" />
-            </div>
-            <span className="text-[9px] font-bold leading-tight">
-              New<br />project
-            </span>
-          </button>
+        {/* New project */}
+        <button
+          type="button"
+          onClick={() => {
+            const p = prompt("Enter new project/page name:");
+            if (p) showToast(`Created project "${p}"`);
+          }}
+          style={{ width: "36px", height: "36px", borderRadius: "8px", border: "none", backgroundColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#737373", cursor: "pointer" }}
+          title="New Project"
+        >
+          <FolderPlus style={{ width: "16px", height: "16px" }} />
+        </button>
 
-          {/* Add task */}
-          <button
-            type="button"
-            onClick={() => {
-              const t = prompt("Enter new task title:");
-              if (t) showToast(`Added task "${t}"`);
-            }}
-            className="flex flex-col items-center gap-1 text-center text-[#737373] hover:text-[#171717] transition cursor-pointer group"
-            title="Add new task"
-          >
-            <div className="h-9 w-9 rounded-xl bg-[#FAFAFA] group-hover:bg-[#F5F5F3] border border-[#E5E5E5] flex items-center justify-center transition">
-              <CheckSquare className="h-4 w-4 text-[#171717]" />
-            </div>
-            <span className="text-[9px] font-bold leading-tight">
-              Add new<br />task
-            </span>
-          </button>
+        {/* Add task */}
+        <button
+          type="button"
+          onClick={() => {
+            const t = prompt("Enter new task title:");
+            if (t) showToast(`Added task "${t}"`);
+          }}
+          style={{ width: "36px", height: "36px", borderRadius: "8px", border: "none", backgroundColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#737373", cursor: "pointer" }}
+          title="Add Task"
+        >
+          <CheckSquare style={{ width: "16px", height: "16px" }} />
+        </button>
 
-          {/* Project chat */}
-          <button
-            type="button"
-            onClick={() => showToast("Opening XITE Support Team Chat")}
-            className="flex flex-col items-center gap-1 text-center text-[#737373] hover:text-[#171717] transition cursor-pointer group"
-            title="Project chat"
-          >
-            <div className="h-9 w-9 rounded-xl bg-[#FAFAFA] group-hover:bg-[#F5F5F3] border border-[#E5E5E5] flex items-center justify-center transition">
-              <MessageSquare className="h-4 w-4 text-[#171717]" />
-            </div>
-            <span className="text-[9px] font-bold leading-tight">
-              Project<br />chat
-            </span>
-          </button>
-        </div>
+        {/* Project chat */}
+        <button
+          type="button"
+          onClick={() => showToast("Opening XITE Support Team Chat")}
+          style={{ width: "36px", height: "36px", borderRadius: "8px", border: "none", backgroundColor: "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#737373", cursor: "pointer" }}
+          title="Project Chat"
+        >
+          <MessageSquare style={{ width: "16px", height: "16px" }} />
+        </button>
 
-        {/* Bottom Collaborator Stack */}
-        <div className="flex flex-col items-center gap-2">
-          {/* Avatar 1 */}
-          <div className="relative">
-            <div className="h-8 w-8 rounded-full bg-[#171717] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
+        <div style={{ width: "24px", height: "1px", backgroundColor: "#E5E5E5" }} />
+
+        {/* Collaborators Avatar Stack */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+          <div style={{ position: "relative" }}>
+            <div style={{ width: "28px", height: "28px", borderRadius: "50%", backgroundColor: "#171717", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700 }}>
               K
             </div>
-            <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[#10B981] border-2 border-white" />
+            <span style={{ position: "absolute", top: 0, right: 0, width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10B981", border: "1px solid #FFFFFF" }} />
           </div>
 
-          {/* Avatar 2 */}
           <img
             src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80"
-            alt="Colleague"
-            className="h-8 w-8 rounded-full object-cover shadow-xs border border-white"
+            alt="Admin"
+            style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }}
           />
 
-          {/* Avatar 3 */}
           <img
             src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80"
             alt="Editor"
-            className="h-8 w-8 rounded-full object-cover shadow-xs border border-white"
+            style={{ width: "28px", height: "28px", borderRadius: "50%", objectFit: "cover" }}
           />
 
-          {/* Plus invite button */}
           <button
             type="button"
             onClick={() => {
               const em = prompt("Invite team member email:");
               if (em) showToast(`Invitation sent to ${em}`);
             }}
-            className="h-8 w-8 rounded-full border border-[#E5E5E5] bg-[#FAFAFA] hover:bg-[#F5F5F3] flex items-center justify-center text-[#171717] transition cursor-pointer"
-            title="Invite member"
+            style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid #E5E5E5", backgroundColor: "#FAFAFA", display: "flex", alignItems: "center", justifyContent: "center", color: "#171717", cursor: "pointer" }}
+            title="Invite Member"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus style={{ width: "12px", height: "12px" }} />
           </button>
         </div>
       </aside>
