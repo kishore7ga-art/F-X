@@ -1361,17 +1361,30 @@ export function EditorStudio({
     const seenCategories = new Set<string>();
     const seenCodes = new Set<string>();
 
-    return secs.filter((sec) => {
-      const normCat = normalizeCategory(sec.category || "") || (sec.category || "").toLowerCase();
-      const codeTrimmed = sec.code.trim();
+    return secs
+      .filter((sec) => {
+        // Filter out default starter banners & Greenfield dummy templates
+        if (
+          sec.code.includes("Excellence in Higher Education") ||
+          sec.code.includes("OFFICIAL CAMPUS PORTAL") ||
+          sec.code.includes("GREENFIELD UNIVERSITY") ||
+          sec.code.includes("Building Tomorrow")
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .filter((sec) => {
+        const normCat = normalizeCategory(sec.category || "") || (sec.category || "").toLowerCase();
+        const codeTrimmed = sec.code.trim();
 
-      if (seenCategories.has(normCat) || seenCodes.has(codeTrimmed)) {
-        return false;
-      }
-      seenCategories.add(normCat);
-      seenCodes.add(codeTrimmed);
-      return true;
-    });
+        if (seenCategories.has(normCat) || seenCodes.has(codeTrimmed)) {
+          return false;
+        }
+        seenCategories.add(normCat);
+        seenCodes.add(codeTrimmed);
+        return true;
+      });
   };
 
   // Fetch sections & admin DB templates
@@ -1511,22 +1524,13 @@ export function EditorStudio({
       const cleanAdminSecs = deduplicateSections(formattedAdminSecs);
 
       setSections((prevSecs) => {
-        const hasDummy = prevSecs.some(
-          (s) =>
-            s.code.includes("GREENFIELD UNIVERSITY") ||
-            s.code.includes("Greenfield") ||
-            s.code.includes("Building Tomorrow")
-        );
-
-        if (prevSecs.length === 0 || hasDummy) {
-          try {
-            if (typeof window !== "undefined") {
-              localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanAdminSecs));
-            }
-          } catch {}
-          return cleanAdminSecs;
-        }
-        return deduplicateSections(prevSecs);
+        const clean = deduplicateSections(prevSecs);
+        try {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(clean));
+          }
+        } catch {}
+        return clean;
       });
     }
   };
