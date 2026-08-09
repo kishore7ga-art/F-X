@@ -1437,21 +1437,13 @@ export function EditorStudio({
   }, []);
 
   const getApiBases = (): string[] => {
-    const bases: string[] = [];
+    const bases: string[] = ["https://admin.meetkishore.in"];
     if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
     if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
 
     if (typeof window !== "undefined") {
-      const host = window.location.hostname;
-      if (host.includes("meetkishore.in")) {
-        bases.push("https://api.meetkishore.in");
-        bases.push("https://admin.meetkishore.in");
-        bases.push("https://api.xite.co.in");
-      } else if (host !== "localhost" && host !== "127.0.0.1") {
-        bases.push("https://api.xite.co.in");
-        bases.push("https://api.meetkishore.in");
-        bases.push("https://admin.meetkishore.in");
-      }
+      bases.push("https://api.meetkishore.in");
+      bases.push("https://api.xite.co.in");
       bases.push(`${window.location.protocol}//${window.location.host}`);
     }
     bases.push("http://localhost:4000");
