@@ -2521,39 +2521,11 @@ export function EditorStudio({
                     e.stopPropagation();
                     const target = e.target as HTMLElement;
 
-                    // Handle navigation link clicks inside header or mobile drawer menu
+                    // Handle link clicks inside header or section: select section without navigating away
                     const anchorElem = target ? (target.closest("a") as HTMLAnchorElement | null) : null;
                     if (anchorElem) {
                       e.preventDefault();
-                      const href = (anchorElem.getAttribute("href") || "").toLowerCase().trim();
-                      const linkText = (anchorElem.textContent || "").toLowerCase().trim();
-
-                      let targetSlug = "";
-                      let targetName = "";
-
-                      if (href.includes("about") || linkText.includes("about")) {
-                        targetSlug = "/about";
-                        targetName = "About";
-                      } else if (href.includes("course") || href.includes("academic") || linkText.includes("academic") || linkText.includes("course")) {
-                        targetSlug = "/academics";
-                        targetName = "Academics";
-                      } else if (href.includes("admission") || href.includes("apply") || linkText.includes("admission") || linkText.includes("apply")) {
-                        targetSlug = "/admissions";
-                        targetName = "Admissions";
-                      } else if (href.includes("placement") || href.includes("career") || linkText.includes("placement") || linkText.includes("career")) {
-                        targetSlug = "/placements";
-                        targetName = "Placements";
-                      } else if (href.includes("contact") || linkText.includes("contact")) {
-                        targetSlug = "/contact";
-                        targetName = "Contact";
-                      } else if (href.includes("home") || linkText.includes("home")) {
-                        targetSlug = "/home";
-                        targetName = "Home";
-                      }
-
-                      if (targetSlug && targetSlug !== currentPage.slug) {
-                        handlePageChange(targetName, targetSlug);
-                      }
+                      e.stopPropagation();
 
                       // Close mobile drawer menu if link was clicked inside drawer
                       const parentDrawer = anchorElem.closest(".mobile-drawer-menu") as HTMLElement | null;
