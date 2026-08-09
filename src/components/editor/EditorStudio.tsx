@@ -1308,14 +1308,29 @@ export function EditorStudio({
     }
   }, [sections, currentPage.slug]);
 
-  // Helper to normalize category key aliases (e.g. admission <-> admissions, header <-> navbar)
+  // Helper to normalize category key aliases across Admin DB templates & Editor categories
   const normalizeCategory = (cat?: string): string => {
     if (!cat) return "";
     const c = cat.toLowerCase().trim();
-    if (c === "admission" || c === "admissions") return "admissions";
-    if (c === "header" || c === "navbar" || c === "nav") return "navbar";
-    if (c === "awards" || c === "achievements") return "achievements";
-    if (c === "stats" || c === "highlights") return "highlights";
+    if (c.includes("header") || c.includes("navbar") || c === "nav") return "navbar";
+    if (c.includes("hero") || c.includes("banner") || c.includes("masthead")) return "hero";
+    if (c.includes("highlight") || c.includes("stat") || c.includes("metric")) return "highlights";
+    if (c.includes("about")) return "about";
+    if (c.includes("vision") || c.includes("mission") || c.includes("principle")) return "vision";
+    if (c.includes("course") || c.includes("program") || c.includes("degree")) return "courses";
+    if (c.includes("department") || c.includes("faculty") || c.includes("school")) return "departments";
+    if (c.includes("admission") || c.includes("apply") || c.includes("eligibility")) return "admissions";
+    if (c.includes("placement") || c.includes("recruiter") || c.includes("career")) return "placements";
+    if (c.includes("facilit") || c.includes("infrastruct") || c.includes("hostel") || c.includes("library")) return "facilities";
+    if (c.includes("research") || c.includes("patent") || c.includes("r&d") || c.includes("lab")) return "research";
+    if (c.includes("news") || c.includes("circular") || c.includes("announc") || c.includes("notice")) return "news";
+    if (c.includes("event") || c.includes("calendar") || c.includes("fest")) return "events";
+    if (c.includes("gallery") || c.includes("campus life") || c.includes("photo")) return "gallery";
+    if (c.includes("testimonial") || c.includes("alumni") || c.includes("review")) return "testimonials";
+    if (c.includes("award") || c.includes("achievement") || c.includes("rank") || c.includes("trophy")) return "achievements";
+    if (c.includes("contact") || c.includes("enquir") || c.includes("inquir") || c.includes("helpdesk")) return "contact";
+    if (c.includes("map") || c.includes("location") || c.includes("direction")) return "map";
+    if (c.includes("footer") || c.includes("copyright")) return "footer";
     return c;
   };
 
