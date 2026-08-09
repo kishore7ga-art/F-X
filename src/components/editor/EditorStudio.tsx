@@ -2222,24 +2222,13 @@ export function EditorStudio({
     // 2. STRICT Category Filtering: Collect ONLY templates that belong to THIS SPECIFIC category
     const matchingTemplates: { name: string; code: string }[] = [];
 
-    // Helper to add unique non-duplicate template variant
-    const addMatchingTemplate = (tplName: string, tplCode: string) => {
-      const trimmedCode = tplCode.trim();
-      if (!trimmedCode) return;
-      if (!matchingTemplates.some((m) => m.code.trim() === trimmedCode)) {
-        matchingTemplates.push({
-          name: tplName.replace(/(\s*Default)+$/gi, "").trim(),
-          code: trimmedCode,
-        });
-      }
-    };
-
-    // Filter Admin DB templates strictly by category (DO NOT search arbitrary HTML body content!)
+    // Filter Admin DB templates strictly by category
+    const adminDbMatches: { name: string; code: string }[] = [];
     templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
       const tplCatLower = (tpl.category || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
       const codeStr = (tpl.code || tpl.html || tpl.content || tpl.templateCode || "").trim();
-      const normTplCat = normalizeCategory(tplCatLower);
+      const normTplCat = normalizeCategory(tplCatLower) || normalizeCategory(nameLower);
 
       if (!codeStr) return;
 
@@ -2252,63 +2241,36 @@ export function EditorStudio({
       } else if (catId === "admissions" || catId === "admission") {
         isMatch = tplCatLower === "admissions" || tplCatLower === "admission" || nameLower.includes("admission");
       } else if (catId === "hero") {
-        isMatch = (tplCatLower === "hero" || nameLower.includes("hero") || nameLower.includes("banner")) && !nameLower.includes("header") && !nameLower.includes("nav");
+        isMatch = (normTplCat === "hero" || tplCatLower.includes("hero") || nameLower.includes("hero") || nameLower.includes("banner")) && !nameLower.includes("header") && !nameLower.includes("nav");
       } else if (catId === "navbar" || catId === "header") {
-        isMatch = tplCatLower === "navbar" || tplCatLower === "header" || nameLower.includes("header") || nameLower.includes("nav");
+        isMatch = normTplCat === "navbar" || tplCatLower.includes("header") || tplCatLower.includes("nav") || nameLower.includes("header") || nameLower.includes("nav");
       } else {
         isMatch = tplCatLower === catId || nameLower.includes(catId);
       }
 
       if (isMatch) {
-        addMatchingTemplate(tpl.name || tpl.title || `${cleanBaseTitle} Variant`, codeStr);
+        const trimmedCode = codeStr.trim();
+        if (!adminDbMatches.some((m) => m.code.trim() === trimmedCode)) {
+          adminDbMatches.push({
+            name: (tpl.name || tpl.title || `${cleanBaseTitle} Variant`).replace(/(\s*Default)+$/gi, "").trim(),
+            code: trimmedCode,
+          });
+        }
       }
     });
 
-    // Add default template for this category
-    const categoryDefaultCode = liveAdminTemplatesMap[catId] || liveAdminTemplatesMap[normCatId] || ALL_19_SECTION_TEMPLATES[catId] || ALL_19_SECTION_TEMPLATES[normCatId];
-    if (categoryDefaultCode) {
-      addMatchingTemplate(`${cleanBaseTitle} (Layout 1)`, categoryDefaultCode);
-    }
-
-    // Built-in alternative variant layouts for instant swapping across all 19 categories
-    if (catId === "hero") {
-      addMatchingTemplate(
-        "Hero Variant 2 (Split Dark Glassmorphic)",
-        `<section style="background: #0b1120; color: #ffffff; padding: 90px 24px; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.08);"><div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;"><div><span style="background: rgba(37,99,235,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.4); padding: 6px 18px; border-radius: 9999px; font-size: 11px; font-weight: 900; text-transform: uppercase;">ADMISSIONS OPEN 2026</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px; line-height: 1.15; color: #ffffff;">ENGINEERING THE FUTURE</h1><p style="font-size: 16px; color: #94a3b8; margin-top: 16px; line-height: 1.6;">Empowering minds with world-class labs, NAAC A++ faculty, and guaranteed placements.</p><div style="margin-top: 32px; display: flex; gap: 16px;"><a href="#apply" style="background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Apply Now</a></div></div><div style="background: #1e293b; padding: 36px; border-radius: 24px; border: 1px solid #334155;"><h3 style="font-size: 24px; font-weight: 900; color: #38bdf8;">Why MEC?</h3><ul style="margin-top: 16px; padding-left: 20px; color: #cbd5e1; font-size: 14px; line-height: 1.8;"><li>NIRF Top 15 National University</li><li>500+ Top MNC Recruiters</li></ul></div></div></section>`
-      );
-      addMatchingTemplate(
-        "Hero Variant 3 (Minimal Bold Headline)",
-        `<section style="background: #090d16; color: #ffffff; padding: 100px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.08);"><div style="max-width: 900px; margin: 0 auto;"><h1 style="font-size: 58px; font-weight: 900; color: #ffffff; letter-spacing: -0.03em;">BUILD YOUR FUTURE WITH MEC</h1><p style="font-size: 20px; color: #94a3b8; margin-top: 20px; line-height: 1.6;">60+ Years of Academic Leadership & Innovation</p><div style="margin-top: 36px;"><a href="#apply" style="background: #3b82f6; color: #ffffff; padding: 16px 40px; border-radius: 14px; font-size: 16px; font-weight: 900; text-decoration: none; display: inline-block;">Start Application</a></div></div></section>`
-      );
-    } else if (catId === "navbar" || catId === "header") {
-      addMatchingTemplate(
-        "Navbar Variant 2 (Light Minimal)",
-        `<header style="background: #ffffff; color: #0f172a; padding: 16px 24px; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid #e2e8f0; position: relative; z-index: 100;"><div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;"><div style="display: flex; align-items: center; gap: 12px;"><img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="Emblem" data-logo="true" style="width: 38px; height: 38px; border-radius: 8px;" /><span style="font-size: 18px; font-weight: 900; color: #0f172a;">GREENFIELD UNIVERSITY</span></div><nav class="desktop-nav-links" style="display: flex; gap: 20px; font-size: 14px; font-weight: 700;"><a href="/home" style="color: #475569; text-decoration: none;">Home</a><a href="/about" style="color: #475569; text-decoration: none;">About Us</a><a href="/academics" style="color: #475569; text-decoration: none;">Academics</a><a href="/admissions" style="color: #475569; text-decoration: none;">Admissions</a><a href="/placements" style="color: #475569; text-decoration: none;">Placements</a><a href="/contact" style="color: #475569; text-decoration: none;">Contact</a></nav><a href="#apply" class="desktop-apply-btn" style="background: #0f172a; color: #ffffff; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none;">Apply Now</a></div></header>`
-      );
-      addMatchingTemplate(
-        "Navbar Variant 3 (Centered Brand & Navigation)",
-        `<header style="background: #090d16; color: #ffffff; padding: 20px 24px; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.08);"><div style="max-width: 1100px; margin: 0 auto; text-align: center;"><div style="display: inline-flex; align-items: center; gap: 10px;"><img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="Emblem" data-logo="true" style="width: 44px; height: 44px; border-radius: 10px;" /><span style="font-size: 20px; font-weight: 900; color: #ffffff;">GREENFIELD ACADEMY</span></div><nav class="desktop-nav-links" style="display: flex; justify-content: center; gap: 24px; margin-top: 14px; font-size: 13px; font-weight: 800; text-transform: uppercase;"><a href="/home" style="color: #94a3b8; text-decoration: none;">Home</a><a href="/about" style="color: #94a3b8; text-decoration: none;">About</a><a href="/academics" style="color: #94a3b8; text-decoration: none;">Academics</a><a href="/admissions" style="color: #94a3b8; text-decoration: none;">Admissions</a><a href="/placements" style="color: #94a3b8; text-decoration: none;">Placements</a><a href="/contact" style="color: #94a3b8; text-decoration: none;">Contact</a></nav></div></header>`
-      );
-      addMatchingTemplate(
-        "Navbar Variant 4 (Gradient Crimson Accent)",
-        `<header style="background: linear-gradient(135deg, #4c0519 0%, #881337 100%); color: #ffffff; padding: 16px 24px; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.15);"><div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;"><div style="display: flex; align-items: center; gap: 12px;"><img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="Emblem" data-logo="true" style="width: 40px; height: 40px; border-radius: 8px;" /><span style="font-size: 18px; font-weight: 900; color: #ffffff;">GREENFIELD COLLEGE</span></div><nav class="desktop-nav-links" style="display: flex; gap: 20px; font-size: 14px; font-weight: 700;"><a href="/home" style="color: #fecdd3; text-decoration: none;">Home</a><a href="/about" style="color: #fecdd3; text-decoration: none;">About</a><a href="/academics" style="color: #fecdd3; text-decoration: none;">Academics</a><a href="/admissions" style="color: #fecdd3; text-decoration: none;">Admissions</a><a href="/placements" style="color: #fecdd3; text-decoration: none;">Placements</a><a href="/contact" style="color: #fecdd3; text-decoration: none;">Contact</a></nav><a href="#apply" class="desktop-apply-btn" style="background: #f59e0b; color: #0f172a; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 900; text-decoration: none;">Apply Now</a></div></header>`
-      );
-    } else if (catId === "admissions" || catId === "admission") {
-      addMatchingTemplate(
-        "Admission Variant 2 (3-Step Application Process)",
-        `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1050px; margin: 0 auto;"><div style="text-align: center; max-width: 700px; margin: 0 auto;"><span style="color: #60a5fa; font-size: 12px; font-weight: 900; text-transform: uppercase;">SIMPLE 3-STEP ADMISSION</span><h2 style="font-size: 36px; font-weight: 900; margin-top: 10px;">How To Apply For Admission</h2></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-top: 44px; text-align: center;"><div style="background: #1e293b; padding: 32px 24px; border-radius: 20px; border: 1px solid #334155;"><div style="width: 48px; height: 48px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; margin: 0 auto 16px auto;">1</div><h4 style="font-size: 18px; font-weight: 900; color: #ffffff;">Fill Application Online</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Register on our portal and upload your academic credentials & ID proof.</p></div><div style="background: #1e293b; padding: 32px 24px; border-radius: 20px; border: 1px solid #334155;"><div style="width: 48px; height: 48px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; margin: 0 auto 16px auto;">2</div><h4 style="font-size: 18px; font-weight: 900; color: #ffffff;">Entrance & Interview</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Appear for university entrance assessment or national rank verification.</p></div><div style="background: #1e293b; padding: 32px 24px; border-radius: 20px; border: 1px solid #334155;"><div style="width: 48px; height: 48px; border-radius: 50%; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; margin: 0 auto 16px auto;">3</div><h4 style="font-size: 18px; font-weight: 900; color: #ffffff;">Seat Allocation</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Receive offer letter, complete fee payment, and join orientation day.</p></div></div></div></section>`
-      );
-    } else if (catId === "vision") {
-      addMatchingTemplate(
-        "Vision Variant 2 (Dark Minimal Banner)",
-        `<section style="background: #0f172a; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto; text-align: center;"><span style="color: #38bdf8; font-size: 12px; font-weight: 900; text-transform: uppercase;">PURPOSE & PHILOSOPHY</span><h2 style="font-size: 38px; font-weight: 900; margin-top: 12px; color: #ffffff;">Our Guiding Principles</h2><p style="font-size: 16px; color: #cbd5e1; margin-top: 20px; line-height: 1.8;">"To inspire intellectual curiosity, drive technological innovation for social good, and cultivate resilient leaders equipped for the global economy."</p></div></section>`
-      );
+    if (adminDbMatches.length > 0) {
+      // User has custom Admin DB templates! Use ONLY Admin DB templates!
+      matchingTemplates.push(...adminDbMatches);
     } else {
-      // Fallback alternative layout for any other category
-      addMatchingTemplate(
-        `${cleanBaseTitle} (Layout Variant 2)`,
-        `<section style="background: #0b1120; color: #ffffff; padding: 75px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.08);"><div style="max-width: 1000px; margin: 0 auto; text-align: center;"><span style="color: #60a5fa; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em;">${catId.toUpperCase()} OVERVIEW</span><h2 style="font-size: 36px; font-weight: 900; margin-top: 12px; color: #ffffff;">${cleanBaseTitle}</h2><p style="font-size: 15px; color: #94a3b8; margin-top: 16px; line-height: 1.7; max-width: 800px; margin-left: auto; margin-right: auto;">Explore section details, institutional updates, and student services.</p></div></section>`
-      );
+      // Offline fallback: Use default template ONLY when Admin DB is empty
+      const categoryDefaultCode = liveAdminTemplatesMap[catId] || liveAdminTemplatesMap[normCatId] || ALL_19_SECTION_TEMPLATES[catId] || ALL_19_SECTION_TEMPLATES[normCatId];
+      if (categoryDefaultCode) {
+        matchingTemplates.push({
+          name: `${cleanBaseTitle} (Layout 1)`,
+          code: categoryDefaultCode.trim(),
+        });
+      }
     }
 
     if (matchingTemplates.length > 1) {
