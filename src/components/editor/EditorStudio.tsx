@@ -1488,6 +1488,36 @@ export function EditorStudio({
 
           setAdminDbTemplates(combined);
           setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
+
+          // Replace dummy Greenfield starter sections with actual Admin DB default website sections
+          if (defaultSecs.length > 0) {
+            setSections((prevSecs) => {
+              const isDummy =
+                prevSecs.length === 0 ||
+                prevSecs.some(
+                  (s) =>
+                    s.code.includes("GREENFIELD UNIVERSITY") ||
+                    s.code.includes("Greenfield") ||
+                    s.code.includes("Building Tomorrow")
+                );
+              if (isDummy) {
+                const formatted = defaultSecs.map((ds, idx) => ({
+                  id: `sec-${idx}`,
+                  title: ds.title || ds.name || "Section",
+                  code: ds.code,
+                  category: ds.category,
+                  variantIndex: 0,
+                }));
+                try {
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(formatted));
+                  }
+                } catch {}
+                return formatted;
+              }
+              return prevSecs;
+            });
+          }
           return;
         }
       }
