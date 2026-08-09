@@ -2600,7 +2600,7 @@ export function EditorStudio({
               ))}
 
               {/* Empty Space + Add Section Button */}
-              <div className="w-full py-12 flex flex-col items-center justify-center bg-zinc-950/80 border-t border-b border-dashed border-zinc-800 my-6 rounded-2xl">
+              <div className="w-full max-w-full py-10 px-4 flex items-center justify-center text-center bg-zinc-950/80 border-t border-b border-dashed border-zinc-800 my-6 rounded-2xl">
                 <AddSectionButton
                   onClick={(e) => {
                     e.stopPropagation();
