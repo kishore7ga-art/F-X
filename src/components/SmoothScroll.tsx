@@ -14,9 +14,9 @@ export default function SmoothScroll({
     gsap.registerPlugin(ScrollTrigger);
 
     const lenis = new Lenis({
-      lerp: 0.06,
-      wheelMultiplier: 0.85,
-      touchMultiplier: 1.5,
+      lerp: 0.045,
+      wheelMultiplier: 0.75,
+      touchMultiplier: 1.2,
       smoothWheel: true,
       syncTouch: true,
     });
@@ -28,7 +28,7 @@ export default function SmoothScroll({
     };
 
     gsap.ticker.add(updateGSAP);
-    gsap.ticker.lagSmoothing(1000, 16);
+    gsap.ticker.lagSmoothing(500, 33);
 
     return () => {
       gsap.ticker.remove(updateGSAP);
