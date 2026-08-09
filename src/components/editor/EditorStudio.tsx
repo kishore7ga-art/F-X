@@ -1508,31 +1508,106 @@ export function EditorStudio({
       });
     }
 
+    // Fetch live Admin DB default website sections (/api/v1/default-website) configured by Super Admin
+    let defaultSecsFromAdminDb: SectionItem[] = [];
+    for (const baseUrl of getApiBases()) {
+      try {
+        const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
+        if (defRes.ok) {
+          const defData = await defRes.json().catch(() => ({}));
+          if (defData && Array.isArray(defData.pages)) {
+            defData.pages.forEach((p: any) => {
+              if (Array.isArray(p.sections)) {
+                p.sections.forEach((s: any, idx: number) => {
+                  const code = s.code || s.html || s.content;
+                  if (s && code) {
+                    const rawType = s.sectionType || s.category || s.type || s.id || "";
+                    const normType = normalizeCategory(rawType);
+                    defaultSecsFromAdminDb.push({
+                      id: `admin-def-sec-${idx}`,
+                      title: s.title || s.name || "Section",
+                      code: code,
+                      category: normType || rawType,
+                      variantIndex: 0,
+                    });
+                    if (rawType && !freshMap[rawType.toLowerCase()]) freshMap[rawType.toLowerCase()] = code;
+                    if (normType && !freshMap[normType]) freshMap[normType] = code;
+                  }
+                });
+              }
+            });
+            if (defaultSecsFromAdminDb.length > 0) break;
+          }
+        }
+      } catch (e) {}
+    }
+
     setAdminDbTemplates(dbTemplates);
     setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
 
-    // Populate active page sections EXCLUSIVELY with Admin DB published sections
-    if (dbTemplates.length > 0) {
-      const formattedAdminSecs: SectionItem[] = dbTemplates.map((t, idx) => ({
-        id: `admin-sec-${idx}`,
-        title: (t.name || t.title || "Section").replace(/\[.*?\]/g, "").trim(),
-        code: t.code || t.html || t.content || "",
-        category: t.category || "custom",
-        variantIndex: 0,
-      }));
-
-      const cleanAdminSecs = deduplicateSections(formattedAdminSecs);
-
-      setSections((prevSecs) => {
-        const clean = deduplicateSections(prevSecs);
+    // If canvas is empty, populate page sections EXCLUSIVELY with live Admin DB default website sections!
+    setSections((prevSecs) => {
+      if (prevSecs.length === 0 && defaultSecsFromAdminDb.length > 0) {
+        const clean = deduplicateSections(defaultSecsFromAdminDb);
         try {
           if (typeof window !== "undefined") {
             localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(clean));
           }
         } catch {}
         return clean;
-      });
+      }
+      return deduplicateSections(prevSecs);
+    });
+  };
+
+  const fetchAllDefaultSectionsFromAdminDb = async () => {
+    setLoadingDb(true);
+    let defaultSecs: SectionItem[] = [];
+
+    for (const baseUrl of getApiBases()) {
+      try {
+        const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
+        if (defRes.ok) {
+          const defData = await defRes.json().catch(() => ({}));
+          if (defData && Array.isArray(defData.pages)) {
+            defData.pages.forEach((p: any) => {
+              if (Array.isArray(p.sections)) {
+                p.sections.forEach((s: any, idx: number) => {
+                  const code = s.code || s.html || s.content;
+                  if (s && code) {
+                    const rawType = s.sectionType || s.category || s.type || s.id || "";
+                    const normType = normalizeCategory(rawType);
+                    defaultSecs.push({
+                      id: `admin-def-sec-${idx}`,
+                      title: s.title || s.name || "Section",
+                      code: code,
+                      category: normType || rawType,
+                      variantIndex: 0,
+                    });
+                  }
+                });
+              }
+            });
+            if (defaultSecs.length > 0) break;
+          }
+        }
+      } catch (e) {}
     }
+
+    if (defaultSecs.length > 0) {
+      const cleanSecs = deduplicateSections(defaultSecs);
+      setSections(cleanSecs);
+      setActiveSectionIndex(0);
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanSecs));
+        }
+      } catch {}
+      showToastNotification(`Loaded ${cleanSecs.length} Default Sections from Live Admin DB!`);
+    } else {
+      setShowAddSectionModal(true);
+    }
+    setLoadingDb(false);
   };
 
   // ALWAYS fetch Admin DB templates on mount & poll every 4s for live Admin section updates!
@@ -2509,14 +2584,16 @@ export function EditorStudio({
               <p className="text-xs text-slate-500 font-medium leading-relaxed">
                 No sections have been added for page {currentPage.name}. Click below to add sections to this page.
               </p>
-              <AddSectionButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowAddSectionModal(true);
-                }}
-                label="Add Section"
-                size="md"
-              />
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <AddSectionButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchAllDefaultSectionsFromAdminDb();
+                  }}
+                  label="Add Section"
+                  size="md"
+                />
+              </div>
             </div>
           ) : (
             /* Pure Section Rendering for Current Page */
