@@ -22,6 +22,7 @@
     "audit:responsive": "node scripts/audit-responsive.mjs"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@prisma/adapter-pg": "^7.9.0",
     "@prisma/client": "^7.9.0",
     "@radix-ui/react-slot": "^1.3.3",
