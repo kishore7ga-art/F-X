@@ -1378,7 +1378,6 @@ export function EditorStudio({
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
     try {
-      // 1. First check localStorage and pageStore for user's saved sections before calling default-website API
       if (!forceSync && typeof window !== "undefined") {
         try {
           const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}`);
@@ -1387,18 +1386,18 @@ export function EditorStudio({
 
           if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
             const parsedActive = JSON.parse(rawActive);
-            if (Array.isArray(parsedActive) && parsedActive.length > 2) {
+            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
               savedSecs = parsedActive;
             }
           }
 
-          if (!savedSecs && pageStore[slug] && pageStore[slug].length > 2) {
+          if (!savedSecs && pageStore[slug] && pageStore[slug].length > 0) {
             savedSecs = pageStore[slug];
           }
 
           if (!savedSecs && rawSaved && rawSaved !== "undefined" && rawSaved !== "null") {
             const parsedSaved = JSON.parse(rawSaved);
-            if (parsedSaved && Array.isArray(parsedSaved[slug]) && parsedSaved[slug].length > 2) {
+            if (parsedSaved && Array.isArray(parsedSaved[slug]) && parsedSaved[slug].length > 0) {
               savedSecs = parsedSaved[slug];
             }
           }
@@ -1413,22 +1412,6 @@ export function EditorStudio({
         } catch (err) {
           console.warn("Could not load saved sections from localStorage:", err);
         }
-      }
-
-      // 2. If no custom sections saved (>2), initialize page with ALL 19 DEFAULT SECTIONS!
-      const default19Secs = deduplicateSections(getAll19DefaultSections(slug));
-
-      setSections(default19Secs);
-      setActiveSectionIndex(0);
-      setPageStore((prev) => ({ ...prev, [slug]: default19Secs }));
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(default19Secs));
-          const rawSaved = localStorage.getItem("xite_saved_pages");
-          const parsedSaved = rawSaved ? JSON.parse(rawSaved) : {};
-          parsedSaved[slug] = default19Secs;
-          localStorage.setItem("xite_saved_pages", JSON.stringify(parsedSaved));
-        } catch {}
       }
       setLoadingDb(false);
     } finally {
@@ -1512,98 +1495,40 @@ export function EditorStudio({
       });
     }
 
-    let defaultSecs: any[] = [];
-    for (const baseUrl of getApiBases()) {
-      try {
-        const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
-        if (defRes.ok) {
-          const defData = await defRes.json().catch(() => ({}));
-          if (defData && Array.isArray(defData.pages)) {
-            defData.pages.forEach((p: any) => {
-              if (Array.isArray(p.sections)) {
-                p.sections.forEach((s: any) => {
-                  const code = s.code || s.html || s.content;
-                  if (s && code) {
-                    const rawType = s.sectionType || s.category || s.type || s.id || "";
-                    const normType = normalizeCategory(rawType);
-                    defaultSecs.push({
-                      id: s.id || s.title,
-                      name: s.title || s.name || "Section",
-                      code: code,
-                      category: normType || rawType,
-                    });
-                    if (rawType && !freshMap[rawType.toLowerCase()]) freshMap[rawType.toLowerCase()] = code;
-                    if (normType && !freshMap[normType]) freshMap[normType] = code;
-                  }
-                });
-              }
-            });
-            break;
-          }
-        }
-      } catch (e) {}
-    }
-
-    // Combine Admin DB templates with default website templates without overwriting
-    const combined = [...dbTemplates];
-    defaultSecs.forEach((defSec) => {
-      if (!combined.some((t) => ((t.code || t.html || "") as string).trim() === defSec.code.trim())) {
-        combined.push(defSec);
-      }
-    });
-
-    setAdminDbTemplates(combined);
+    setAdminDbTemplates(dbTemplates);
     setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
 
-    // Update active page sections with live Admin DB templates
-    setSections((prevSecs) => {
-      const isDummyOrOldHeader =
-        prevSecs.length === 0 ||
-        prevSecs.some(
+    // Populate active page sections EXCLUSIVELY with Admin DB published sections
+    if (dbTemplates.length > 0) {
+      const formattedAdminSecs: SectionItem[] = dbTemplates.map((t, idx) => ({
+        id: `admin-sec-${idx}`,
+        title: (t.name || t.title || "Section").replace(/\[.*?\]/g, "").trim(),
+        code: t.code || t.html || t.content || "",
+        category: t.category || "custom",
+        variantIndex: 0,
+      }));
+
+      const cleanAdminSecs = deduplicateSections(formattedAdminSecs);
+
+      setSections((prevSecs) => {
+        const hasDummy = prevSecs.some(
           (s) =>
             s.code.includes("GREENFIELD UNIVERSITY") ||
             s.code.includes("Greenfield") ||
             s.code.includes("Building Tomorrow")
         );
 
-      if (isDummyOrOldHeader && defaultSecs.length > 0) {
-        const formatted = deduplicateSections(
-          defaultSecs.map((ds, idx) => {
-            const norm = normalizeCategory(ds.category);
-            const liveAdminCode = freshMap[norm] || freshMap[ds.category.toLowerCase()] || ds.code;
-            return {
-              id: `sec-${idx}`,
-              title: ds.title || ds.name || "Section",
-              code: liveAdminCode,
-              category: ds.category,
-              variantIndex: 0,
-            };
-          })
-        );
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(formatted));
-          }
-        } catch {}
-        return formatted;
-      }
-
-      // Sync live Admin Header/Navbar if Admin added a new header
-      if (freshMap["header"] || freshMap["navbar"]) {
-        const liveHeaderCode = freshMap["header"] || freshMap["navbar"];
-        return deduplicateSections(
-          prevSecs.map((sec) => {
-            const normCat = normalizeCategory(sec.category);
-            if ((normCat === "navbar" || normCat === "header" || sec.title.toLowerCase().includes("header") || sec.title.toLowerCase().includes("navbar")) && liveHeaderCode) {
-              return { ...sec, code: liveHeaderCode };
+        if (prevSecs.length === 0 || hasDummy) {
+          try {
+            if (typeof window !== "undefined") {
+              localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanAdminSecs));
             }
-            return sec;
-          })
-        );
-      }
-
-      return deduplicateSections(prevSecs);
-    });
+          } catch {}
+          return cleanAdminSecs;
+        }
+        return deduplicateSections(prevSecs);
+      });
+    }
   };
 
   // ALWAYS fetch Admin DB templates on mount & poll every 4s for live Admin section updates!
