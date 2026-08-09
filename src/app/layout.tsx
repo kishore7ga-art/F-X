@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import SmoothScroll from "@/components/SmoothScroll";
-import Preloader from "@/components/Preloader";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,7 +37,6 @@ export default function RootLayout({
       className={`${inter.variable} ${jakarta.variable} h-full antialiased dark scroll-smooth bg-black text-white overflow-x-hidden w-full max-w-full font-sans`}
     >
       <body className={`${inter.className} min-h-full flex flex-col overflow-x-hidden w-full max-w-full font-sans`}>
-        <Preloader />
         <Script
           id="scroll-restoration"
           strategy="beforeInteractive"
