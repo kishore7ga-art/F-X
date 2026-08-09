@@ -1357,6 +1357,23 @@ export function EditorStudio({
     });
   };
 
+  const deduplicateSections = (secs: SectionItem[]): SectionItem[] => {
+    const seenCategories = new Set<string>();
+    const seenCodes = new Set<string>();
+
+    return secs.filter((sec) => {
+      const normCat = normalizeCategory(sec.category || "") || (sec.category || "").toLowerCase();
+      const codeTrimmed = sec.code.trim();
+
+      if (seenCategories.has(normCat) || seenCodes.has(codeTrimmed)) {
+        return false;
+      }
+      seenCategories.add(normCat);
+      seenCodes.add(codeTrimmed);
+      return true;
+    });
+  };
+
   // Fetch sections & admin DB templates
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
@@ -1387,7 +1404,8 @@ export function EditorStudio({
           }
 
           if (savedSecs && savedSecs.length > 0) {
-            setSections(savedSecs);
+            const cleanSecs = deduplicateSections(savedSecs);
+            setSections(cleanSecs);
             setActiveSectionIndex(0);
             setLoadingDb(false);
             return;
@@ -1398,7 +1416,7 @@ export function EditorStudio({
       }
 
       // 2. If no custom sections saved (>2), initialize page with ALL 19 DEFAULT SECTIONS!
-      const default19Secs = getAll19DefaultSections(slug);
+      const default19Secs = deduplicateSections(getAll19DefaultSections(slug));
 
       setSections(default19Secs);
       setActiveSectionIndex(0);
@@ -1549,17 +1567,19 @@ export function EditorStudio({
         );
 
       if (isDummyOrOldHeader && defaultSecs.length > 0) {
-        const formatted = defaultSecs.map((ds, idx) => {
-          const norm = normalizeCategory(ds.category);
-          const liveAdminCode = freshMap[norm] || freshMap[ds.category.toLowerCase()] || ds.code;
-          return {
-            id: `sec-${idx}`,
-            title: ds.title || ds.name || "Section",
-            code: liveAdminCode,
-            category: ds.category,
-            variantIndex: 0,
-          };
-        });
+        const formatted = deduplicateSections(
+          defaultSecs.map((ds, idx) => {
+            const norm = normalizeCategory(ds.category);
+            const liveAdminCode = freshMap[norm] || freshMap[ds.category.toLowerCase()] || ds.code;
+            return {
+              id: `sec-${idx}`,
+              title: ds.title || ds.name || "Section",
+              code: liveAdminCode,
+              category: ds.category,
+              variantIndex: 0,
+            };
+          })
+        );
         try {
           if (typeof window !== "undefined") {
             localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(formatted));
@@ -1571,16 +1591,18 @@ export function EditorStudio({
       // Sync live Admin Header/Navbar if Admin added a new header
       if (freshMap["header"] || freshMap["navbar"]) {
         const liveHeaderCode = freshMap["header"] || freshMap["navbar"];
-        return prevSecs.map((sec) => {
-          const normCat = normalizeCategory(sec.category);
-          if ((normCat === "navbar" || normCat === "header" || sec.title.toLowerCase().includes("header") || sec.title.toLowerCase().includes("navbar")) && liveHeaderCode) {
-            return { ...sec, code: liveHeaderCode };
-          }
-          return sec;
-        });
+        return deduplicateSections(
+          prevSecs.map((sec) => {
+            const normCat = normalizeCategory(sec.category);
+            if ((normCat === "navbar" || normCat === "header" || sec.title.toLowerCase().includes("header") || sec.title.toLowerCase().includes("navbar")) && liveHeaderCode) {
+              return { ...sec, code: liveHeaderCode };
+            }
+            return sec;
+          })
+        );
       }
 
-      return prevSecs;
+      return deduplicateSections(prevSecs);
     });
   };
 
