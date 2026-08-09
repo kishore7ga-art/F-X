@@ -1422,109 +1422,166 @@ export function EditorStudio({
     void fetchDbSections(currentPage.slug);
   }, []);
 
+  const getApiBases = (): string[] => {
+    const bases: string[] = [];
+    if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
+    if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
+
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host.includes("meetkishore.in")) {
+        bases.push("https://api.meetkishore.in");
+        bases.push("https://api.xite.co.in");
+      } else if (host !== "localhost" && host !== "127.0.0.1") {
+        bases.push("https://api.xite.co.in");
+        bases.push("https://api.meetkishore.in");
+      }
+      bases.push(`${window.location.protocol}//${window.location.host}`);
+    }
+    bases.push("http://localhost:4000");
+    return Array.from(new Set(bases.map((b) => b.replace(/\/+$/, ""))));
+  };
+
   const loadAdminTemplates = async () => {
-    const apiBase = (() => {
-      if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-      if (
-        typeof window !== "undefined" &&
-        window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1"
-      ) {
-        return "https://api.xite.co.in";
-      }
-      return "http://localhost:4000";
-    })();
-
     let dbTemplates: any[] = [];
+    const freshMap: Record<string, string> = {};
 
-    try {
-      const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-          dbTemplates = data.templates;
-        }
-      }
-    } catch (e) {
-      console.warn("Could not fetch admin templates:", e);
-    }
-
-    try {
-      const defRes = await fetch(`${apiBase}/api/v1/default-website`);
-      if (defRes.ok) {
-        const defData = await defRes.json().catch(() => ({}));
-        if (defData && Array.isArray(defData.pages)) {
-          const defaultSecs: any[] = [];
-          const freshMap: Record<string, string> = {};
-          defData.pages.forEach((p: any) => {
-            if (Array.isArray(p.sections)) {
-              p.sections.forEach((s: any) => {
-                const code = s.code || s.html || s.content;
-                if (s && code) {
-                  const rawType = s.sectionType || s.category || s.type || s.id || "";
-                  const normType = normalizeCategory(rawType);
-                  defaultSecs.push({
-                    id: s.id || s.title,
-                    name: s.title || s.name || "Section",
-                    code: code,
-                    category: normType || rawType,
-                  });
-                  if (rawType) freshMap[rawType.toLowerCase()] = code;
-                  if (normType) freshMap[normType] = code;
-                }
-              });
-            }
-          });
-
-          // Combine Admin DB templates with default website templates without overwriting
-          const combined = [...dbTemplates];
-          defaultSecs.forEach((defSec) => {
-            if (!combined.some((t) => ((t.code || t.html || "") as string).trim() === defSec.code.trim())) {
-              combined.push(defSec);
-            }
-          });
-
-          setAdminDbTemplates(combined);
-          setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
-
-          // Replace dummy Greenfield starter sections with actual Admin DB default website sections
-          if (defaultSecs.length > 0) {
-            setSections((prevSecs) => {
-              const isDummy =
-                prevSecs.length === 0 ||
-                prevSecs.some(
-                  (s) =>
-                    s.code.includes("GREENFIELD UNIVERSITY") ||
-                    s.code.includes("Greenfield") ||
-                    s.code.includes("Building Tomorrow")
-                );
-              if (isDummy) {
-                const formatted = defaultSecs.map((ds, idx) => ({
-                  id: `sec-${idx}`,
-                  title: ds.title || ds.name || "Section",
-                  code: ds.code,
-                  category: ds.category,
-                  variantIndex: 0,
-                }));
-                try {
-                  if (typeof window !== "undefined") {
-                    localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(formatted));
-                  }
-                } catch {}
-                return formatted;
-              }
-              return prevSecs;
-            });
+    for (const baseUrl of getApiBases()) {
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/admin/templates`);
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
+            dbTemplates = data.templates;
+            break;
           }
-          return;
         }
-      }
-    } catch (e) {}
-
-    if (dbTemplates.length > 0) {
-      setAdminDbTemplates(dbTemplates);
+      } catch (e) {}
     }
+
+    // Map all Admin DB templates into freshMap
+    if (Array.isArray(dbTemplates) && dbTemplates.length > 0) {
+      dbTemplates.forEach((t: any) => {
+        const code = t.code || t.html || t.content;
+        if (!code) return;
+
+        // Parse category from t.category or t.name [bracket] notation
+        let parsedCat = (t.category || t.sectionType || t.type || "").toLowerCase();
+        if (!parsedCat && t.name) {
+          const match = t.name.match(/\[(.*?)\]/);
+          if (match && match[1]) {
+            parsedCat = match[1].toLowerCase().trim();
+          }
+        }
+        if (!parsedCat && t.name) {
+          const nameLower = t.name.toLowerCase();
+          if (nameLower.includes("header") || nameLower.includes("nav")) parsedCat = "header";
+          else if (nameLower.includes("hero") || nameLower.includes("banner")) parsedCat = "hero";
+          else if (nameLower.includes("about")) parsedCat = "about";
+          else if (nameLower.includes("courses") || nameLower.includes("program")) parsedCat = "courses";
+          else if (nameLower.includes("contact")) parsedCat = "contact";
+        }
+
+        t.category = parsedCat || t.category;
+        const normCat = normalizeCategory(parsedCat);
+
+        if (parsedCat) freshMap[parsedCat] = code;
+        if (normCat) freshMap[normCat] = code;
+        if (parsedCat.includes("header") || parsedCat.includes("nav") || (t.name || "").toLowerCase().includes("header") || (t.name || "").toLowerCase().includes("nav")) {
+          freshMap["header"] = code;
+          freshMap["navbar"] = code;
+        }
+      });
+    }
+
+    let defaultSecs: any[] = [];
+    for (const baseUrl of getApiBases()) {
+      try {
+        const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
+        if (defRes.ok) {
+          const defData = await defRes.json().catch(() => ({}));
+          if (defData && Array.isArray(defData.pages)) {
+            defData.pages.forEach((p: any) => {
+              if (Array.isArray(p.sections)) {
+                p.sections.forEach((s: any) => {
+                  const code = s.code || s.html || s.content;
+                  if (s && code) {
+                    const rawType = s.sectionType || s.category || s.type || s.id || "";
+                    const normType = normalizeCategory(rawType);
+                    defaultSecs.push({
+                      id: s.id || s.title,
+                      name: s.title || s.name || "Section",
+                      code: code,
+                      category: normType || rawType,
+                    });
+                    if (rawType && !freshMap[rawType.toLowerCase()]) freshMap[rawType.toLowerCase()] = code;
+                    if (normType && !freshMap[normType]) freshMap[normType] = code;
+                  }
+                });
+              }
+            });
+            break;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Combine Admin DB templates with default website templates without overwriting
+    const combined = [...dbTemplates];
+    defaultSecs.forEach((defSec) => {
+      if (!combined.some((t) => ((t.code || t.html || "") as string).trim() === defSec.code.trim())) {
+        combined.push(defSec);
+      }
+    });
+
+    setAdminDbTemplates(combined);
+    setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
+
+    // Update active page sections with live Admin DB templates
+    setSections((prevSecs) => {
+      const isDummyOrOldHeader =
+        prevSecs.length === 0 ||
+        prevSecs.some(
+          (s) =>
+            s.code.includes("GREENFIELD UNIVERSITY") ||
+            s.code.includes("Greenfield") ||
+            s.code.includes("Building Tomorrow")
+        );
+
+      if (isDummyOrOldHeader && defaultSecs.length > 0) {
+        const formatted = defaultSecs.map((ds, idx) => {
+          const norm = normalizeCategory(ds.category);
+          const liveAdminCode = freshMap[norm] || freshMap[ds.category.toLowerCase()] || ds.code;
+          return {
+            id: `sec-${idx}`,
+            title: ds.title || ds.name || "Section",
+            code: liveAdminCode,
+            category: ds.category,
+            variantIndex: 0,
+          };
+        });
+        try {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(formatted));
+          }
+        } catch {}
+        return formatted;
+      }
+
+      // Sync live Admin Header/Navbar if Admin added a new header
+      if (freshMap["header"] || freshMap["navbar"]) {
+        const liveHeaderCode = freshMap["header"] || freshMap["navbar"];
+        return prevSecs.map((sec) => {
+          const normCat = normalizeCategory(sec.category);
+          if ((normCat === "navbar" || normCat === "header" || sec.title.toLowerCase().includes("header") || sec.title.toLowerCase().includes("navbar")) && liveHeaderCode) {
+            return { ...sec, code: liveHeaderCode };
+          }
+          return sec;
+        });
+      }
+
+      return prevSecs;
+    });
   };
 
   // ALWAYS fetch Admin DB templates on mount & poll every 4s for live Admin section updates!
