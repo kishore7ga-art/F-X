@@ -1437,12 +1437,14 @@ export function EditorStudio({
       return "http://localhost:4000";
     })();
 
+    let dbTemplates: any[] = [];
+
     try {
       const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-          setAdminDbTemplates(data.templates);
+          dbTemplates = data.templates;
         }
       }
     } catch (e) {
@@ -1454,7 +1456,7 @@ export function EditorStudio({
       if (defRes.ok) {
         const defData = await defRes.json().catch(() => ({}));
         if (defData && Array.isArray(defData.pages)) {
-          const allSecs: any[] = [];
+          const defaultSecs: any[] = [];
           const freshMap: Record<string, string> = {};
           defData.pages.forEach((p: any) => {
             if (Array.isArray(p.sections)) {
@@ -1463,7 +1465,7 @@ export function EditorStudio({
                 if (s && code) {
                   const rawType = s.sectionType || s.category || s.type || s.id || "";
                   const normType = normalizeCategory(rawType);
-                  allSecs.push({
+                  defaultSecs.push({
                     id: s.id || s.title,
                     name: s.title || s.name || "Section",
                     code: code,
@@ -1471,21 +1473,29 @@ export function EditorStudio({
                   });
                   if (rawType) freshMap[rawType.toLowerCase()] = code;
                   if (normType) freshMap[normType] = code;
-                  if (rawType.toLowerCase().includes("admission")) {
-                    freshMap["admissions"] = code;
-                    freshMap["admission"] = code;
-                  }
                 }
               });
             }
           });
-          if (allSecs.length > 0) {
-            setAdminDbTemplates(allSecs);
-            setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
-          }
+
+          // Combine Admin DB templates with default website templates without overwriting
+          const combined = [...dbTemplates];
+          defaultSecs.forEach((defSec) => {
+            if (!combined.some((t) => ((t.code || t.html || "") as string).trim() === defSec.code.trim())) {
+              combined.push(defSec);
+            }
+          });
+
+          setAdminDbTemplates(combined);
+          setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
+          return;
         }
       }
     } catch (e) {}
+
+    if (dbTemplates.length > 0) {
+      setAdminDbTemplates(dbTemplates);
+    }
   };
 
   // ALWAYS fetch Admin DB templates on mount & poll every 4s for live Admin section updates!
