@@ -1327,11 +1327,8 @@ export function EditorStudio({
     return SECTION_CATEGORIES.map((cat, idx) => {
       const normCat = normalizeCategory(cat.id);
       const liveCode =
-        liveAdminTemplatesMap[normCat] ||
         liveAdminTemplatesMap[cat.id.toLowerCase()] ||
-        liveAdminTemplatesMap["admissions"] ||
-        liveAdminTemplatesMap["admission"] ||
-        liveAdminTemplatesMap[`def-home-${cat.id}`.toLowerCase()] ||
+        liveAdminTemplatesMap[normCat] ||
         liveAdminTemplatesMap[`def-${cat.id}`.toLowerCase()] ||
         ALL_19_SECTION_TEMPLATES[cat.id] ||
         ALL_19_SECTION_TEMPLATES[normCat] ||
