@@ -26,6 +26,10 @@ export default function SmoothScroll({
 
     lenis.on("scroll", ScrollTrigger.update);
 
+    // Force scroll position reset to top (0,0) on refresh
+    window.scrollTo(0, 0);
+    lenis.scrollTo(0, { immediate: true });
+
     const updateGSAP = (time: number) => {
       lenis.raf(time * 1000);
     };
