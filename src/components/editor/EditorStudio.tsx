@@ -2275,6 +2275,14 @@ export function EditorStudio({
         "Navbar Variant 2 (Light Minimal)",
         `<header style="background: #ffffff; color: #0f172a; padding: 16px 24px; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid #e2e8f0; position: relative; z-index: 100;"><div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;"><div style="display: flex; align-items: center; gap: 12px;"><img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="Emblem" data-logo="true" style="width: 38px; height: 38px; border-radius: 8px;" /><span style="font-size: 18px; font-weight: 900; color: #0f172a;">GREENFIELD UNIVERSITY</span></div><nav class="desktop-nav-links" style="display: flex; gap: 20px; font-size: 14px; font-weight: 700;"><a href="/home" style="color: #475569; text-decoration: none;">Home</a><a href="/about" style="color: #475569; text-decoration: none;">About Us</a><a href="/academics" style="color: #475569; text-decoration: none;">Academics</a><a href="/admissions" style="color: #475569; text-decoration: none;">Admissions</a><a href="/placements" style="color: #475569; text-decoration: none;">Placements</a><a href="/contact" style="color: #475569; text-decoration: none;">Contact</a></nav><a href="#apply" class="desktop-apply-btn" style="background: #0f172a; color: #ffffff; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none;">Apply Now</a></div></header>`
       );
+      addMatchingTemplate(
+        "Navbar Variant 3 (Centered Brand & Navigation)",
+        `<header style="background: #090d16; color: #ffffff; padding: 20px 24px; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.08);"><div style="max-width: 1100px; margin: 0 auto; text-align: center;"><div style="display: inline-flex; align-items: center; gap: 10px;"><img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="Emblem" data-logo="true" style="width: 44px; height: 44px; border-radius: 10px;" /><span style="font-size: 20px; font-weight: 900; color: #ffffff;">GREENFIELD ACADEMY</span></div><nav class="desktop-nav-links" style="display: flex; justify-content: center; gap: 24px; margin-top: 14px; font-size: 13px; font-weight: 800; text-transform: uppercase;"><a href="/home" style="color: #94a3b8; text-decoration: none;">Home</a><a href="/about" style="color: #94a3b8; text-decoration: none;">About</a><a href="/academics" style="color: #94a3b8; text-decoration: none;">Academics</a><a href="/admissions" style="color: #94a3b8; text-decoration: none;">Admissions</a><a href="/placements" style="color: #94a3b8; text-decoration: none;">Placements</a><a href="/contact" style="color: #94a3b8; text-decoration: none;">Contact</a></nav></div></header>`
+      );
+      addMatchingTemplate(
+        "Navbar Variant 4 (Gradient Crimson Accent)",
+        `<header style="background: linear-gradient(135deg, #4c0519 0%, #881337 100%); color: #ffffff; padding: 16px 24px; font-family: system-ui, sans-serif; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.15);"><div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;"><div style="display: flex; align-items: center; gap: 12px;"><img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="Emblem" data-logo="true" style="width: 40px; height: 40px; border-radius: 8px;" /><span style="font-size: 18px; font-weight: 900; color: #ffffff;">GREENFIELD COLLEGE</span></div><nav class="desktop-nav-links" style="display: flex; gap: 20px; font-size: 14px; font-weight: 700;"><a href="/home" style="color: #fecdd3; text-decoration: none;">Home</a><a href="/about" style="color: #fecdd3; text-decoration: none;">About</a><a href="/academics" style="color: #fecdd3; text-decoration: none;">Academics</a><a href="/admissions" style="color: #fecdd3; text-decoration: none;">Admissions</a><a href="/placements" style="color: #fecdd3; text-decoration: none;">Placements</a><a href="/contact" style="color: #fecdd3; text-decoration: none;">Contact</a></nav><a href="#apply" class="desktop-apply-btn" style="background: #f59e0b; color: #0f172a; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 900; text-decoration: none;">Apply Now</a></div></header>`
+      );
     } else if (catId === "admissions" || catId === "admission") {
       addMatchingTemplate(
         "Admission Variant 2 (3-Step Application Process)",
@@ -2294,10 +2302,13 @@ export function EditorStudio({
     }
 
     if (matchingTemplates.length > 1) {
-      const currentIdx = matchingTemplates.findIndex(
+      let currentIdx = matchingTemplates.findIndex(
         (t) => t.code.trim() === activeSec.code.trim()
       );
-      const nextIdx = currentIdx >= 0 ? (currentIdx + 1) % matchingTemplates.length : 0;
+      if (currentIdx < 0) {
+        currentIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
+      }
+      const nextIdx = (currentIdx + 1) % matchingTemplates.length;
       const nextTpl = matchingTemplates[nextIdx]!;
 
       setSectionsWithHistory((prev) =>
