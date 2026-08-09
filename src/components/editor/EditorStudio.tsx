@@ -1445,10 +1445,12 @@ export function EditorStudio({
       const host = window.location.hostname;
       if (host.includes("meetkishore.in")) {
         bases.push("https://api.meetkishore.in");
+        bases.push("https://admin.meetkishore.in");
         bases.push("https://api.xite.co.in");
       } else if (host !== "localhost" && host !== "127.0.0.1") {
         bases.push("https://api.xite.co.in");
         bases.push("https://api.meetkishore.in");
+        bases.push("https://admin.meetkishore.in");
       }
       bases.push(`${window.location.protocol}//${window.location.host}`);
     }
