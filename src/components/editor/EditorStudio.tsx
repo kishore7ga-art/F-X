@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import {
   Plus,
   Eye,
@@ -2448,16 +2449,14 @@ export function EditorStudio({
               <p className="text-xs text-slate-500 font-medium leading-relaxed">
                 No sections have been added for page {currentPage.name}. Click below to add sections to this page.
               </p>
-              <button
+              <AddSectionButton
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowAddSectionModal(true);
                 }}
-                className="inline-flex items-center gap-2 bg-[#0f172a] hover:bg-[#1e293b] text-white text-xs font-black px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Section</span>
-              </button>
+                label="Add Section"
+                size="md"
+              />
             </div>
           ) : (
             /* Pure Section Rendering for Current Page */
@@ -2579,16 +2578,14 @@ export function EditorStudio({
 
               {/* Empty Space + Add Section Button */}
               <div className="w-full py-12 flex flex-col items-center justify-center bg-zinc-950/80 border-t border-b border-dashed border-zinc-800 my-6 rounded-2xl">
-                <button
+                <AddSectionButton
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowAddSectionModal(true);
                   }}
-                  className="group flex items-center gap-2 bg-black hover:bg-zinc-900 text-white font-black text-xs px-6 py-3 rounded-full shadow-xl transition-all border border-zinc-700 hover:border-white hover:scale-105 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-300" />
-                  <span>Add Section</span>
-                </button>
+                  label="Add Section"
+                  size="md"
+                />
               </div>
 
               {/* Bottom Clearance Spacer for Floating Dock */}
