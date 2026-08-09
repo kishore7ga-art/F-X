@@ -2302,13 +2302,21 @@ export function EditorStudio({
     }
 
     if (matchingTemplates.length > 1) {
-      let currentIdx = matchingTemplates.findIndex(
-        (t) => t.code.trim() === activeSec.code.trim()
+      const currentVariantIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
+      let nextIdx = 0;
+
+      const matchedCodeIdx = matchingTemplates.findIndex(
+        (t) =>
+          t.code.trim() === activeSec.code.trim() ||
+          cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(activeSec.code)
       );
-      if (currentIdx < 0) {
-        currentIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
+
+      if (matchedCodeIdx >= 0) {
+        nextIdx = (matchedCodeIdx + 1) % matchingTemplates.length;
+      } else {
+        nextIdx = (currentVariantIdx + 1) % matchingTemplates.length;
       }
-      const nextIdx = (currentIdx + 1) % matchingTemplates.length;
+
       const nextTpl = matchingTemplates[nextIdx]!;
 
       setSectionsWithHistory((prev) =>
@@ -2316,7 +2324,7 @@ export function EditorStudio({
           if (idx !== activeSectionIndex) return sec;
           return {
             ...sec,
-            title: cleanBaseTitle,
+            title: nextTpl.name || cleanBaseTitle,
             code: nextTpl.code,
             category: catId,
             variantIndex: nextIdx,
