@@ -6,7 +6,6 @@ import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import {
   Plus,
   Eye,
-  Sparkles,
   Layout,
   RefreshCw,
   X,
@@ -47,7 +46,7 @@ interface SectionItem {
 const SECTION_CATEGORIES = [
   { id: "navbar", name: "Navbar / Header", description: "Top navigation bar with logo, menu links & action buttons", icon: Compass },
   { id: "hero", name: "Hero Banner", description: "Lead banner, masthead & title headline", icon: Layout },
-  { id: "highlights", name: "College Highlights", description: "Key stats, NIRF rankings & accreditation badges", icon: Sparkles },
+  { id: "highlights", name: "College Highlights", description: "Key stats, NIRF rankings & accreditation badges", icon: Award },
   { id: "about", name: "About College", description: "College history, overview & leadership message", icon: Info },
   { id: "vision", name: "Vision & Mission", description: "Institutional core values, vision & long-term goals", icon: Target },
   { id: "courses", name: "Courses / Programs Offered", description: "UG, PG & Ph.D degree programs grid", icon: GraduationCap },
@@ -2660,7 +2659,7 @@ export function EditorStudio({
                 }}
                 className="w-full p-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-black text-xs flex items-center justify-center gap-2.5 shadow-xl border border-white transition-all hover:scale-[1.01] cursor-pointer select-none"
               >
-                <Sparkles className="w-4 h-4 text-black animate-pulse" />
+                
                 <span>⚡ Load All 19 Default Sections (Full Website Layout)</span>
               </button>
 

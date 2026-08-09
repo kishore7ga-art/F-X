@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Sparkles, Globe, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Globe, ShieldCheck } from "lucide-react";
 
 import { loginAction } from "@/app/actions/auth";
 
@@ -127,7 +127,7 @@ export function CredentialsForm({
             {/* Top-Left Brand Logo */}
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white font-extrabold text-xs shadow-xs shrink-0">
-                <Sparkles className="h-4.5 w-4.5" />
+                
               </div>
               <span className="font-black text-2xl tracking-tight text-slate-900 leading-none">
                 XITE

@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { LayoutTemplate, Sparkles, Check, ArrowRight } from "lucide-react";
+import { LayoutTemplate, Check, ArrowRight } from "lucide-react";
 import GlassCard from "../cinematic/GlassCard";
 
 interface Section09TemplateHUDProps {

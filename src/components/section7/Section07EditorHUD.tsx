@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { MousePointer, Type, Image as ImageIcon, Move, Copy, LayoutGrid, Eye, Sparkles } from "lucide-react";
+import { MousePointer, Type, Image as ImageIcon, Move, Copy, LayoutGrid, Eye } from "lucide-react";
 import GlassCard from "../cinematic/GlassCard";
 
 interface Section07EditorHUDProps {
@@ -26,7 +26,7 @@ const Section07EditorHUD = forwardRef<HTMLDivElement, Section07EditorHUDProps>(
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-xl bg-white/[0.05] border border-white/[0.1]">
-                <Sparkles className="w-4 h-4 text-white" />
+                
               </div>
               <div className="text-left">
                 <span className="text-[10px] font-mono tracking-widest text-neutral-400 uppercase block">

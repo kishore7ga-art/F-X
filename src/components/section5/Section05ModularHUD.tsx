@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { Layers, Sparkles, Check } from "lucide-react";
+import { Layers, Check } from "lucide-react";
 import GlassCard from "../cinematic/GlassCard";
 
 interface Section05ModularHUDProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { Sparkles, Check, Shield } from "lucide-react";
+import { Check, Shield } from "lucide-react";
 import GlassCard from "../cinematic/GlassCard";
 
 interface Section06BrandHUDProps {

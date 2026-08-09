@@ -29,15 +29,7 @@ export default function SparklesSection() {
         <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-[5px] w-1/4 blur-sm" />
         <div className="absolute inset-x-60 top-0 bg-gradient-to-r from-transparent via-sky-500 to-transparent h-px w-1/4" />
 
-        <SparklesCore
-          background="transparent"
-          minSize={0.4}
-          maxSize={1.2}
-          particleDensity={1200}
-          className="w-full h-full"
-          particleColor="#FFFFFF"
-          speed={2}
-        />
+        
 
         {/* Radial mask so edges fade out cleanly */}
         <div className="absolute inset-0 w-full h-full bg-black [mask-image:radial-gradient(350px_180px_at_top,transparent_20%,white)]" />

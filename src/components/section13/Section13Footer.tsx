@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const Section13Footer = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
   (props, ref) => {
@@ -71,7 +71,7 @@ const Section13Footer = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-12 border-t border-white/[0.06]">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-white/[0.05] border border-white/[0.1]">
-                <Sparkles className="w-4 h-4 text-white" />
+                
               </div>
               <span className="text-xs font-mono text-neutral-400">
                 Digital infrastructure for the institutions shaping tomorrow.

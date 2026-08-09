@@ -26,7 +26,6 @@ import {
   Plus,
   Trash2,
   Calendar,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
