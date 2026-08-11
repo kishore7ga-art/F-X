@@ -1380,6 +1380,23 @@ export function EditorStudio({
   // Live Admin templates map state
   const [liveAdminTemplatesMap, setLiveAdminTemplatesMap] = useState<Record<string, string>>({});
 
+  // Sanitizer to guarantee VIT University style dark navbar
+  const sanitizeHeaderCode = (code: string): string => {
+    if (!code) return ALL_19_SECTION_TEMPLATES.navbar;
+    if (
+      code.includes("UNIVERSAL") ||
+      code.includes("universal") ||
+      code.includes("NAVIGATION MENU") ||
+      code.includes("About Institution") ||
+      code.includes("border-radius: 16px") ||
+      code.includes("border-radius:16px") ||
+      code.includes("mobile-drawer-menu")
+    ) {
+      return ALL_19_SECTION_TEMPLATES.navbar;
+    }
+    return code;
+  };
+
   const getAll19DefaultSections = (slug: string = "/home"): SectionItem[] => {
     const cleanSlug = slug.replace(/^\//, "").toLowerCase() || "home";
     return SECTION_CATEGORIES.map((cat, idx) => {
@@ -1425,12 +1442,12 @@ export function EditorStudio({
         const [h] = clean.splice(headerIdx, 1);
         clean.unshift(h!);
       }
-      // Force update header code if it has old UNIVERSAL COLLEGE markup
-      if (clean[0] && (clean[0].code.includes("UNIVERSAL") || clean[0].code.includes("universal") || clean[0].code.includes("border-radius: 16px") || clean[0].code.includes("mobile-drawer-menu"))) {
+      // Force update header code using sanitizeHeaderCode
+      if (clean[0]) {
         clean[0] = {
           ...clean[0],
           title: "Header Navigation",
-          code: activeHeaderCode,
+          code: sanitizeHeaderCode(clean[0].code),
           category: "navbar",
         };
       }
