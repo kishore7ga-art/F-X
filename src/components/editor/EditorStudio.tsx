@@ -1044,20 +1044,7 @@ export function EditorStudio({
     const bodyMatch = code.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
     if (bodyMatch && bodyMatch[1]) {
       const headMatch = code.match(/<head[\s\S]*?>([\s\S]*?)<\/head>/i);
-      let styles = "";
-      if (headMatch && headMatch[1]) {
-        // Only extract <style> blocks from <head>, NOT <link> or <meta> tags
-        // Also strip dangerous global selectors that would leak into the outer page
-        const styleMatches = headMatch[1].match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
-        styles = styleMatches
-          .map((s) =>
-            s
-              // Remove any rules targeting body, html, :root so they don't leak
-              .replace(/(?:^|\s|,)(body|html|\*|:root)\s*\{[^}]*\}/gi, "")
-              .replace(/(?:^|\s|,)(body|html|\*|:root)[^{]*\{[^}]*\}/gi, "")
-          )
-          .join("\n");
-      }
+      const styles = headMatch ? headMatch[1] : "";
       cleanCode = `${styles}\n${bodyMatch[1]}`;
     } else {
       cleanCode = code
@@ -1132,17 +1119,13 @@ export function EditorStudio({
       /* Ensure script/style/link tags inside canvas never create layout space */
       .section-canvas-box script,
       .section-canvas-box style,
-      .section-canvas-box link,
-      header script,
-      header style,
-      header link {
+      .section-canvas-box link {
         display: none !important;
-        visibility: hidden !important;
         height: 0 !important;
-        max-height: 0 !important;
+        width: 0 !important;
         overflow: hidden !important;
-        line-height: 0 !important;
-        font-size: 0 !important;
+        position: absolute !important;
+        visibility: hidden !important;
       }
 
       .section-canvas-box header div:first-child span,

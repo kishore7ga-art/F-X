@@ -397,18 +397,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     const bodyMatch = code.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
     if (bodyMatch && bodyMatch[1]) {
       const headMatch = code.match(/<head[\s\S]*?>([\s\S]*?)<\/head>/i);
-      let styles = "";
-      if (headMatch && headMatch[1]) {
-        // Only extract <style> blocks, strip <link>/<meta> and dangerous global selectors
-        const styleMatches = headMatch[1].match(/<style[^>]*>[\s\S]*?<\/style>/gi) || [];
-        styles = styleMatches
-          .map((s) =>
-            s
-              .replace(/(?:^|\s|,)(body|html|\*|:root)\s*\{[^}]*\}/gi, "")
-              .replace(/(?:^|\s|,)(body|html|\*|:root)[^{]*\{[^}]*\}/gi, "")
-          )
-          .join("\n");
-      }
+      const styles = headMatch ? headMatch[1] : "";
       cleanCode = `${styles}\n${bodyMatch[1]}`;
     } else {
       cleanCode = code
@@ -462,17 +451,13 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       /* Ensure script/style/link tags inside canvas never create layout space */
       .section-canvas-box script,
       .section-canvas-box style,
-      .section-canvas-box link,
-      header script,
-      header style,
-      header link {
+      .section-canvas-box link {
         display: none !important;
-        visibility: hidden !important;
         height: 0 !important;
-        max-height: 0 !important;
+        width: 0 !important;
         overflow: hidden !important;
-        line-height: 0 !important;
-        font-size: 0 !important;
+        position: absolute !important;
+        visibility: hidden !important;
       }
 
       /* First section renders flush to top - zero margin/padding */
