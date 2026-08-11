@@ -1380,7 +1380,7 @@ export function EditorStudio({
   const ensureEssentialSections = (secs: SectionItem[]): SectionItem[] => {
     let clean = secs.filter((sec) => sec && sec.code);
 
-    // 1. Ensure Header (Navbar) exists at index 0
+    // Ensure Header (Navbar) exists at index 0
     let hasHeader = clean.some((s) => {
       const cat = (s.category || s.title || "").toLowerCase();
       return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
@@ -1403,32 +1403,6 @@ export function EditorStudio({
       if (headerIdx > 0) {
         const [h] = clean.splice(headerIdx, 1);
         clean.unshift(h!);
-      }
-    }
-
-    // 2. Ensure Hero Banner exists at index 1
-    let hasHero = clean.some((s) => {
-      const cat = (s.category || s.title || "").toLowerCase();
-      return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
-    });
-
-    if (!hasHero) {
-      const heroCode = liveAdminTemplatesMap["hero"] || ALL_19_SECTION_TEMPLATES["hero"];
-      clean.splice(1, 0, {
-        id: `sec-hero-${Date.now()}`,
-        title: "Hero Banner",
-        code: heroCode,
-        category: "hero",
-        variantIndex: 0,
-      });
-    } else {
-      const heroIdx = clean.findIndex((s) => {
-        const cat = (s.category || s.title || "").toLowerCase();
-        return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
-      });
-      if (heroIdx !== 1 && heroIdx > 0) {
-        const [hr] = clean.splice(heroIdx, 1);
-        clean.splice(1, 0, hr!);
       }
     }
 
@@ -2786,11 +2760,40 @@ export function EditorStudio({
                       e.preventDefault();
                       e.stopPropagation();
 
+                      const href = (anchorElem.getAttribute("href") || "").toLowerCase().trim();
+                      const text = (anchorElem.textContent || "").toLowerCase().trim();
+
                       // Close mobile drawer menu if link was clicked inside drawer
                       const parentDrawer = anchorElem.closest(".mobile-drawer-menu") as HTMLElement | null;
                       if (parentDrawer) {
                         parentDrawer.classList.remove("active");
                         parentDrawer.style.setProperty("display", "none", "important");
+                      }
+
+                      // Find matching section in sections array
+                      const targetCategory = href.replace(/^#\/?/, "").replace(/^\//, "") || normalizeCategory(text);
+
+                      const matchedIdx = sections.findIndex((sec, sIdx) => {
+                        if (sIdx === 0 && (sec.category === "navbar" || sec.category === "header")) return false;
+                        const sCat = (sec.category || sec.title || "").toLowerCase();
+                        const normSCat = normalizeCategory(sCat);
+
+                        if (targetCategory && (sCat.includes(targetCategory) || normSCat === normalizeCategory(targetCategory))) {
+                          return true;
+                        }
+                        if (text && (sCat.includes(text) || (sec.title || "").toLowerCase().includes(text))) {
+                          return true;
+                        }
+                        return false;
+                      });
+
+                      if (matchedIdx >= 0) {
+                        setActiveSectionIndex(matchedIdx);
+                        const secContainers = document.querySelectorAll(".section-wrapper-container");
+                        const targetSecElem = secContainers[matchedIdx] as HTMLElement;
+                        if (targetSecElem) {
+                          targetSecElem.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
                       }
                     }
 
