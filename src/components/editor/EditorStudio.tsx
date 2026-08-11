@@ -335,11 +335,21 @@ const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
     </div>
   </section>`,
 
-  map: `<section style="background: #0f172a; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
-      <h2 style="font-size: 32px; font-weight: 900;">Campus Location & Directions</h2>
-      <p style="font-size: 14px; color: #94a3b8; margin-top: 8px;">Greenfield Campus, Knowledge Park III, Tech City - 600001</p>
-      <div style="width: 100%; height: 260px; background: #1e293b; border-radius: 20px; border: 1px solid #334155; margin-top: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #38bdf8;">📍 Interactive Google Map View</div>
+  map: `<section style="background: #090e1a; color: #ffffff; padding: 70px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
+    <div style="max-width: 1140px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;">
+      <div style="background: #0f172a; border: 1px solid #1e293b; padding: 32px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+        <span style="color: #38bdf8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; display: block;">MAIN CAMPUS LOCATION</span>
+        <h3 style="font-size: 24px; font-weight: 900; color: #ffffff; margin-top: 8px;">VELLORE INSTITUTE OF TECHNOLOGY</h3>
+        <p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Katpadi - Thiruvalam Rd, Vellore, Tamil Nadu 632014</p>
+        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="background: #1e293b; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; font-size: 12px; color: #e2e8f0; font-weight: 700;">✈️ Airport: Chennai International Airport (approx 2.5 hrs)</div>
+          <div style="background: #1e293b; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; font-size: 12px; color: #e2e8f0; font-weight: 700;">🚆 Railway Station: Katpadi Junction (3 km away)</div>
+        </div>
+        <a href="https://maps.google.com/?q=Vellore+Institute+of+Technology" target="_blank" class="desktop-apply-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; width: 100%; background: #2563eb; color: #ffffff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; text-decoration: none; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">GET DIRECTIONS ON GOOGLE MAPS →</a>
+      </div>
+      <div style="width: 100%; height: 380px; border-radius: 24px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+        <iframe src="https://maps.google.com/maps?q=Vellore%20Institute%20of%20Technology&t=&z=14&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
     </div>
   </section>`,
 
@@ -846,6 +856,14 @@ export function EditorStudio({
     activeTab: "logo" | "background" | "image" | "style";
     objectFit: "cover" | "contain" | "fill";
     borderRadius: string;
+  } | null>(null);
+
+  // Right-Click Map & Location Editor Modal State
+  const [mapPopup, setMapPopup] = useState<{
+    sectionIndex: number;
+    mapEmbedUrl: string;
+    directionsUrl: string;
+    locationName: string;
   } | null>(null);
 
   // Backward compatibility alias for legacy logoPopup state access
@@ -2128,10 +2146,83 @@ export function EditorStudio({
     showToastNotification("⚡ Image & Logo updated & auto-saved!");
   };
 
-  // Right-click handler for Images, Logos, Section Backgrounds, and Buttons
+  // Auto-Update & Save Map Location, iFrame Embed, and Directions Link
+  const handleUpdateAndSaveMap = (newParams: Partial<NonNullable<typeof mapPopup>>) => {
+    if (!mapPopup) return;
+    const updatedPopup = { ...mapPopup, ...newParams };
+    setMapPopup(updatedPopup);
+
+    const { sectionIndex, mapEmbedUrl, directionsUrl, locationName } = updatedPopup;
+    const sec = sections[sectionIndex];
+    if (!sec) return;
+
+    let code = sec.code;
+
+    // 1. Replace or insert iframe embed src
+    if (code.includes("<iframe")) {
+      code = code.replace(/<iframe[^>]*src=["']([^"']*)["'][^>]*>/gi, (match) => {
+        return match.replace(/src=["']([^"']*)["']/i, `src="${mapEmbedUrl}"`);
+      });
+    } else {
+      code = code.replace(
+        /<div[^>]*>.*?Interactive Google Map View.*?<\/div>/gi,
+        `<iframe src="${mapEmbedUrl}" width="100%" height="340" style="border:0; border-radius: 20px; margin-top: 24px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`
+      );
+    }
+
+    // 2. Update directions link href
+    if (directionsUrl && (code.includes("GET DIRECTIONS") || code.includes("maps.google"))) {
+      code = code.replace(/<a[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?GET DIRECTIONS[\s\S]*?)<\/a>/gi, (match) => {
+        return match.replace(/href=["']([^"']*)["']/i, `href="${directionsUrl}"`);
+      });
+    }
+
+    // 3. Update location name title text if present
+    if (locationName && (code.includes("CAMPUS") || code.includes("UNIVERSITY") || code.includes("LOCATION"))) {
+      code = code.replace(/(VELLORE INSTITUTE OF TECHNOLOGY|UNIVERSAL COLLEGE CAMPUS|GREENFIELD CAMPUS|MAIN CAMPUS LOCATION)/gi, locationName);
+    }
+
+    setSectionsWithHistory((prev) =>
+      prev.map((s, idx) => (idx === sectionIndex ? { ...s, code } : s))
+    );
+    void handlePersistWebsiteSave();
+    showToastNotification("⚡ Campus map location & directions updated!");
+  };
+
+  // Right-click handler for Images, Logos, Section Backgrounds, Maps, and Buttons
   const handleSectionContextMenu = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
     const target = e.target as HTMLElement;
     if (!target) return;
+
+    // 📍 1. Map & Location iFrame / Button Target Detection
+    const secObj = sections[sectionIndex];
+    const secCategory = (secObj?.category || secObj?.title || "").toLowerCase();
+    const isMapTarget =
+      target.tagName === "IFRAME" ||
+      target.closest("iframe") !== null ||
+      (target.textContent && (target.textContent.includes("GOOGLE MAPS") || target.textContent.includes("CAMPUS LOCATION") || target.textContent.includes("GET DIRECTIONS"))) ||
+      secCategory.includes("map") ||
+      secCategory.includes("location");
+
+    if (isMapTarget) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const secContainer = document.querySelectorAll(".section-wrapper-container")[sectionIndex] as HTMLElement;
+      const iframeElem = secContainer ? (secContainer.querySelector("iframe") as HTMLIFrameElement | null) : null;
+      const currentEmbedUrl = iframeElem?.src || "https://maps.google.com/maps?q=Vellore%20Institute%20of%20Technology&t=&z=14&ie=UTF8&iwloc=&output=embed";
+
+      const directionsBtn = secContainer ? (secContainer.querySelector("a[href*='maps']") as HTMLAnchorElement | null) : null;
+      const currentDirectionsUrl = directionsBtn?.getAttribute("href") || "https://maps.google.com/?q=Vellore+Institute+of+Technology";
+
+      setMapPopup({
+        sectionIndex,
+        mapEmbedUrl: currentEmbedUrl,
+        directionsUrl: currentDirectionsUrl,
+        locationName: "VELLORE INSTITUTE OF TECHNOLOGY",
+      });
+      return;
+    }
 
     let currElem: HTMLElement | null = target;
     let targetType: "logo" | "image" | "background" | null = null;
@@ -3571,6 +3662,178 @@ export function EditorStudio({
               </span>
               <button
                 onClick={() => setImagePopup(null)}
+                style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(255,255,255,0.15)" }}
+              >
+                Close Modal ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📍 Sleek Black & White Map Location & Navigation Customizer Modal */}
+      {mapPopup && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999999,
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+          onClick={() => setMapPopup(null)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "480px",
+              backgroundColor: "#000000",
+              border: "1px solid #27272a",
+              borderRadius: "24px",
+              padding: "24px 28px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.95)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              color: "#ffffff",
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              boxSizing: "border-box",
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-default text-xs"
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", borderBottom: "1px solid #27272a", paddingBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 0 10px rgba(255, 255, 255, 0.8)",
+                  }}
+                />
+                <div>
+                  <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff", letterSpacing: "-0.01em" }}>
+                    Edit Campus Map & Location
+                  </h3>
+                  <p style={{ fontSize: "11px", color: "#71717a", margin: "2px 0 0 0" }}>
+                    Changes apply immediately & auto-save automatically ⚡
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMapPopup(null)}
+                style={{ backgroundColor: "transparent", border: "none", color: "#a1a1aa", fontSize: "14px", fontWeight: 900, cursor: "pointer", padding: "4px 8px", borderRadius: "8px" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Location Presets */}
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+                Quick Location Presets
+              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                {[
+                  { name: "VIT Vellore Main Campus", query: "Vellore Institute of Technology" },
+                  { name: "Chennai Campus", query: "Vellore Institute of Technology Chennai" },
+                  { name: "Anna University", query: "Anna University Guindy Chennai" },
+                  { name: "IIT Madras", query: "IIT Madras Chennai" },
+                  { name: "SRM Kattankulathur", query: "SRM Institute of Science and Technology" },
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => {
+                      const cleanEmbed = `https://maps.google.com/maps?q=${encodeURIComponent(preset.query)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+                      const cleanDirections = `https://maps.google.com/?q=${encodeURIComponent(preset.query)}`;
+                      handleUpdateAndSaveMap({
+                        mapEmbedUrl: cleanEmbed,
+                        directionsUrl: cleanDirections,
+                        locationName: preset.name.toUpperCase(),
+                      });
+                    }}
+                    style={{
+                      backgroundColor: "#09090b",
+                      border: "1px solid #27272a",
+                      borderRadius: "8px",
+                      padding: "6px 10px",
+                      color: "#e4e4e7",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    📍 {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Form Input Fields */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {/* 1. Google Maps Embed URL */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Google Maps Embed URL / iFrame Source
+                </label>
+                <input
+                  type="text"
+                  value={mapPopup.mapEmbedUrl}
+                  onChange={(e) => handleUpdateAndSaveMap({ mapEmbedUrl: e.target.value })}
+                  placeholder="https://maps.google.com/maps?q=YourCollege&output=embed"
+                  style={{ width: "100%", height: "42px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {/* 2. Directions Button Link URL */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Get Directions Button Link (URL)
+                </label>
+                <input
+                  type="text"
+                  value={mapPopup.directionsUrl}
+                  onChange={(e) => handleUpdateAndSaveMap({ directionsUrl: e.target.value })}
+                  placeholder="https://maps.google.com/?q=YourCollege"
+                  style={{ width: "100%", height: "42px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {/* 3. Campus Title Name */}
+              <div>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  Campus Location Name
+                </label>
+                <input
+                  type="text"
+                  value={mapPopup.locationName}
+                  onChange={(e) => handleUpdateAndSaveMap({ locationName: e.target.value })}
+                  placeholder="VELLORE INSTITUTE OF TECHNOLOGY"
+                  style={{ width: "100%", height: "42px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "14px", borderTop: "1px solid #27272a" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#22c55e", display: "flex", alignItems: "center", gap: "6px" }}>
+                ✓ Auto-Saved & Live Updated ⚡
+              </span>
+              <button
+                onClick={() => setMapPopup(null)}
                 style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(255,255,255,0.15)" }}
               >
                 Close Modal ✕
