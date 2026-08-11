@@ -1077,10 +1077,22 @@ export function EditorStudio({
       .section-canvas-box > div,
       .section-canvas-box > header,
       .section-canvas-box > section,
-      .section-canvas-box > nav {
+      .section-canvas-box {
         width: 100% !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
         box-sizing: border-box !important;
       }
+
+      .section-canvas-box > *:first-child,
+      .section-wrapper-container:first-child,
+      .section-wrapper-container:first-child > div,
+      .section-wrapper-container:first-child header,
+      .section-wrapper-container:first-child section {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+
       .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
       .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
         position: relative !important;
@@ -2331,7 +2343,60 @@ export function EditorStudio({
       newCode = liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normCat] || ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE;
     }
 
-    // Check if a section matching this category ALREADY exists on the page
+    // 1. Header MUST ALWAYS be placed at index 0 (the very top of the page)
+    if (cat.id === "navbar" || cat.id === "header" || normCat === "navbar") {
+      const newHeaderSection: SectionItem = {
+        id: `sec-header-${Date.now()}`,
+        title: newTitle || "Header Navigation",
+        code: newCode,
+        category: "navbar",
+        variantIndex: 0,
+      };
+
+      setSectionsWithHistory((prev) => {
+        const filtered = prev.filter((s) => {
+          const sCat = (s.category || s.title || "").toLowerCase();
+          return !sCat.includes("header") && !sCat.includes("navbar") && normalizeCategory(sCat) !== "navbar";
+        });
+        return [newHeaderSection, ...filtered];
+      });
+      setActiveSectionIndex(0);
+      showToastNotification(`Set Header Navigation at top of page`);
+      setShowAddSectionModal(false);
+      void handlePersistWebsiteSave();
+      return;
+    }
+
+    // 2. Hero MUST ALWAYS be placed at index 1 (directly below Header)
+    if (cat.id === "hero" || normCat === "hero") {
+      const newHeroSection: SectionItem = {
+        id: `sec-hero-${Date.now()}`,
+        title: newTitle || "Hero Banner",
+        code: newCode,
+        category: "hero",
+        variantIndex: 0,
+      };
+
+      setSectionsWithHistory((prev) => {
+        const filtered = prev.filter((s) => {
+          const sCat = (s.category || s.title || "").toLowerCase();
+          return !sCat.includes("hero") && !sCat.includes("banner") && normalizeCategory(sCat) !== "hero";
+        });
+        const headerSec = filtered.find((s) => {
+          const sCat = (s.category || s.title || "").toLowerCase();
+          return sCat.includes("header") || sCat.includes("navbar") || normalizeCategory(sCat) === "navbar";
+        });
+        const rest = filtered.filter((s) => s !== headerSec);
+        return headerSec ? [headerSec, newHeroSection, ...rest] : [newHeroSection, ...rest];
+      });
+      setActiveSectionIndex(1);
+      showToastNotification(`Set Hero Banner directly under Header`);
+      setShowAddSectionModal(false);
+      void handlePersistWebsiteSave();
+      return;
+    }
+
+    // 3. For any other section: Replace in-place if exists, otherwise insert before Footer or append in sequence
     const existingIndex = sections.findIndex((s) => {
       const sCat = (s.category || s.title || "").toLowerCase();
       const normSCat = normalizeCategory(sCat) || sCat;
@@ -2339,7 +2404,6 @@ export function EditorStudio({
     });
 
     if (existingIndex >= 0) {
-      // REPLACE the existing section IN-PLACE!
       setSectionsWithHistory((prev) =>
         prev.map((sec, idx) => {
           if (idx !== existingIndex) return sec;
@@ -2355,7 +2419,6 @@ export function EditorStudio({
       setActiveSectionIndex(existingIndex);
       showToastNotification(`Updated ${newTitle} layout`);
     } else {
-      // Append new section to bottom ONLY if category does not exist on page
       const newSection: SectionItem = {
         id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         title: newTitle,
@@ -2363,7 +2426,20 @@ export function EditorStudio({
         category: cat.id,
         variantIndex: 0,
       };
-      setSectionsWithHistory((prev) => [...prev, newSection]);
+
+      setSectionsWithHistory((prev) => {
+        // Insert before footer if footer exists at the bottom
+        const footerIdx = prev.findIndex((s) => {
+          const sCat = (s.category || s.title || "").toLowerCase();
+          return sCat.includes("footer") || normalizeCategory(sCat) === "footer";
+        });
+        if (footerIdx >= 0) {
+          const copy = [...prev];
+          copy.splice(footerIdx, 0, newSection);
+          return copy;
+        }
+        return [...prev, newSection];
+      });
       setActiveSectionIndex(sections.length);
       showToastNotification(`Added ${newTitle} to page`);
     }
