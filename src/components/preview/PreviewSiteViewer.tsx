@@ -444,29 +444,6 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         max-width: 100% !important;
         box-sizing: border-box !important;
         position: relative !important;
-        margin-top: 0 !important;
-        top: 0 !important;
-      }
-
-      /* Ensure script/style/link tags inside canvas never create layout space */
-      .section-canvas-box script,
-      .section-canvas-box style,
-      .section-canvas-box link {
-        display: none !important;
-        height: 0 !important;
-        width: 0 !important;
-        overflow: hidden !important;
-        position: absolute !important;
-        visibility: hidden !important;
-      }
-
-      /* First section renders flush to top - zero margin/padding */
-      .section-canvas-box:first-child,
-      .section-canvas-box:first-child > *:first-child,
-      .section-canvas-box:first-child > header,
-      .section-canvas-box:first-child > section:first-child {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
       }
 
       ${isResponsiveView ? `
@@ -528,7 +505,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       `}
     </style>`;
 
-    return `<div class="section-canvas-box">${containmentStyles}${cleanCode}</div>`;
+    return `${containmentStyles}<div class="section-canvas-box">${cleanCode}</div>`;
   };
 
   const [isLive, setIsLive] = useState(false);
@@ -539,13 +516,10 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       const search = window.location.search;
       if (
         pathname.startsWith("/site") ||
-        pathname.startsWith("/preview") ||
         search.includes("live=true") ||
         search.includes("mode=live")
       ) {
         setIsLive(true);
-        // Force full-width 100% for live/preview sites so no py-12 top padding
-        setPreviewWidth("100%");
       }
     }
   }, []);
@@ -664,13 +638,13 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
       {/* Main Live Site View */}
       <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
-        previewWidth === "100%" ? "p-0 m-0 bg-white" : "pt-0 pb-12 px-4 bg-slate-100/90"
+        previewWidth === "100%" ? "p-0 m-0 bg-white pb-36" : "py-12 px-4 bg-slate-100/90 pb-36"
       }`}>
         <div
           className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
             previewWidth === "100%"
               ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
-              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 mb-4"
+              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
           }`}
           style={{ width: previewWidth, maxWidth: "100%" }}
         >
