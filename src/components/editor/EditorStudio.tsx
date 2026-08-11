@@ -1067,9 +1067,13 @@ export function EditorStudio({
         padding: 0 !important;
         box-sizing: border-box !important;
         position: relative !important;
+        display: block !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
       }
-      .section-canvas-box * {
-        box-sizing: border-box !important;
+      .section-canvas-box > * {
+        font-size: initial !important;
+        line-height: initial !important;
       }
       .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
         max-width: 100% !important;
@@ -1314,7 +1318,7 @@ export function EditorStudio({
       `}
     </style>`;
 
-    return `${containmentStyles}<div class="section-canvas-box">${autoCorrectMobileCode(cleanCode, width)}</div>`;
+    return `<div class="section-canvas-box">${containmentStyles}${autoCorrectMobileCode(cleanCode, width)}</div>`;
   };
 
   // Active Page State
