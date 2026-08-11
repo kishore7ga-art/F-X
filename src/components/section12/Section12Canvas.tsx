@@ -12,7 +12,7 @@ interface Section12CanvasProps {
 }
 
 const Section12Canvas = forwardRef<Section12CanvasRef, Section12CanvasProps>(
-  ({ totalFrames = 300, className }, ref) => {
+  ({ totalFrames = 60, className }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imagesRef = useRef<HTMLImageElement[]>([]);
     const [loadedCount, setLoadedCount] = useState(0);
@@ -39,9 +39,13 @@ const Section12Canvas = forwardRef<Section12CanvasRef, Section12CanvasProps>(
       }
 
       imagesRef.current = loadedImages;
+      const fastTimeout = setTimeout(() => {
+        if (isMounted) setLoadedCount(totalFrames);
+      }, 1500);
 
       return () => {
         isMounted = false;
+        clearTimeout(fastTimeout);
       };
     }, [totalFrames]);
 
