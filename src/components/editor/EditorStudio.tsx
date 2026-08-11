@@ -3385,7 +3385,7 @@ export function EditorStudio({
         </div>
       )}
 
-      {/* 🎨 Streamlined Auto Right-Click Context-Aware Customizer Modal */}
+      {/* 🎨 Streamlined Auto Right-Click Context-Aware Customizer Modal (Sleek Black & White Theme) */}
       {imagePopup && (
         <div
           style={{
@@ -3395,7 +3395,7 @@ export function EditorStudio({
             right: 0,
             bottom: 0,
             zIndex: 999999,
-            backgroundColor: "rgba(3, 7, 18, 0.82)",
+            backgroundColor: "rgba(0, 0, 0, 0.85)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
             display: "flex",
@@ -3409,42 +3409,50 @@ export function EditorStudio({
             style={{
               width: "100%",
               maxWidth: "460px",
-              backgroundColor: "#0d1527",
-              border: "1px solid #334155",
-              borderRadius: "26px",
-              padding: "24px",
-              boxShadow: "0 30px 80px -20px rgba(0, 0, 0, 0.9)",
+              backgroundColor: "#000000",
+              border: "1px solid #27272a",
+              borderRadius: "24px",
+              padding: "24px 28px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.95)",
               display: "flex",
               flexDirection: "column",
-              gap: "18px",
+              gap: "20px",
               color: "#ffffff",
               fontFamily: "system-ui, -apple-system, sans-serif",
+              boxSizing: "border-box",
             }}
             onClick={(e) => e.stopPropagation()}
+            className="cursor-default text-xs"
           >
-            {/* Context-Aware Modal Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", borderBottom: "1px solid #1e293b", paddingBottom: "14px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "18px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}>
-                  {imagePopup.targetType === "logo" ? "🏷️" : imagePopup.targetType === "background" ? "🎨" : "🖼️"}
-                </div>
+            {/* Modal Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", borderBottom: "1px solid #27272a", paddingBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    backgroundColor: "#ffffff",
+                    boxShadow: "0 0 10px rgba(255, 255, 255, 0.8)",
+                  }}
+                />
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff", letterSpacing: "-0.01em" }}>
                       {imagePopup.targetType === "logo" ? "Edit Logo & Branding" : imagePopup.targetType === "background" ? "Edit Section Background" : "Edit Image"}
                     </h3>
-                    <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "9999px", backgroundColor: imagePopup.targetType === "logo" ? "#1e3a8a" : "#1e293b", color: imagePopup.targetType === "logo" ? "#60a5fa" : "#38bdf8", border: "1px solid #334155", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "9999px", backgroundColor: "#18181b", color: "#a1a1aa", border: "1px solid #27272a", textTransform: "uppercase" }}>
                       AUTO-{imagePopup.targetType}
                     </span>
                   </div>
-                  <p style={{ fontSize: "11px", color: "#94a3b8", margin: "2px 0 0 0" }}>
+                  <p style={{ fontSize: "11px", color: "#71717a", margin: "2px 0 0 0" }}>
                     Changes apply immediately & auto-save automatically ⚡
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setImagePopup(null)}
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #334155", borderRadius: "10px", width: "32px", height: "32px", color: "#94a3b8", cursor: "pointer", fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                style={{ backgroundColor: "transparent", border: "none", color: "#a1a1aa", fontSize: "14px", fontWeight: 900, cursor: "pointer", padding: "4px 8px", borderRadius: "8px" }}
               >
                 ✕
               </button>
@@ -3452,28 +3460,28 @@ export function EditorStudio({
 
             {/* Target Navigation Bar ("NAV TO THE LOGOS") - ONLY Shown for Logo Target */}
             {imagePopup.targetType === "logo" && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "14px", border: "1px solid #1e293b" }}>
-                <span style={{ fontSize: "12px", fontWeight: 800, color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#09090b", padding: "10px 14px", borderRadius: "14px", border: "1px solid #27272a" }}>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: "#a1a1aa", display: "flex", alignItems: "center", gap: "6px" }}>
                   🎯 Target Navigation:
                 </span>
                 <button
                   onClick={handleJumpToNavbarLogo}
-                  style={{ backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "10px", padding: "6px 14px", fontSize: "11px", fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px", boxShadow: "0 4px 12px rgba(37,99,235,0.3)" }}
+                  style={{ backgroundColor: "#18181b", color: "#ffffff", border: "1px solid #3f3f46", borderRadius: "10px", padding: "6px 14px", fontSize: "11px", fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
                 >
-                  🚀 Jump / Nav to Navbar Logo
+                  🚀 Nav to Navbar Logo
                 </button>
               </div>
             )}
 
             {/* Streamlined Direct Inputs Body */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               
               {/* 1. File Upload from Device */}
               <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                   {imagePopup.targetType === "logo" ? "Upload Logo Image File" : imagePopup.targetType === "background" ? "Upload Background Image File" : "Upload Image File from Device"}
                 </label>
-                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "44px", backgroundColor: "#1e293b", border: "1px dashed #38bdf8", borderRadius: "12px", color: "#38bdf8", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
+                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "44px", backgroundColor: "#09090b", border: "1px dashed #3f3f46", borderRadius: "12px", color: "#ffffff", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
                   <span>📁 Select Image File from Device</span>
                   <input
                     type="file"
@@ -3497,7 +3505,7 @@ export function EditorStudio({
 
               {/* 2. Custom Image / Background / Logo URL Input */}
               <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                   {imagePopup.targetType === "logo" ? "Logo Image URL" : imagePopup.targetType === "background" ? "Background Image URL" : "Image URL"}
                 </label>
                 <input
@@ -3505,7 +3513,7 @@ export function EditorStudio({
                   value={imagePopup.imageUrl}
                   onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
                   placeholder="https://images.unsplash.com/your-image.jpg"
-                  style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", height: "42px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
 
@@ -3513,7 +3521,7 @@ export function EditorStudio({
               {imagePopup.targetType === "logo" && (
                 <>
                   <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#cbd5e1", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                       Logo Navigation Destination (URL / Link)
                     </label>
                     <input
@@ -3521,16 +3529,16 @@ export function EditorStudio({
                       value={imagePopup.linkUrl}
                       onChange={(e) => handleUpdateAndSaveImage({ linkUrl: e.target.value })}
                       placeholder="/home or https://yourcollege.edu.in"
-                      style={{ width: "100%", height: "42px", backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", height: "42px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
 
-                  <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "12px", border: "1px solid #1e293b", cursor: "pointer" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#09090b", padding: "10px 14px", borderRadius: "12px", border: "1px solid #27272a", cursor: "pointer" }}>
                     <input
                       type="checkbox"
                       checked={imagePopup.applyAllLogos}
                       onChange={(e) => handleUpdateAndSaveImage({ applyAllLogos: e.target.checked })}
-                      style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
+                      style={{ width: "16px", height: "16px", accentColor: "#ffffff", cursor: "pointer" }}
                     />
                     <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
                       ⚡ Apply logo change to ALL header navbars across site
@@ -3541,12 +3549,12 @@ export function EditorStudio({
 
               {/* 4. Section Background Specific Sync Toggle */}
               {imagePopup.targetType === "background" && (
-                <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#161e31", padding: "10px 14px", borderRadius: "12px", border: "1px solid #1e293b", cursor: "pointer" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#09090b", padding: "10px 14px", borderRadius: "12px", border: "1px solid #27272a", cursor: "pointer" }}>
                   <input
                     type="checkbox"
                     checked={imagePopup.applyAllBackgrounds}
                     onChange={(e) => handleUpdateAndSaveImage({ applyAllBackgrounds: e.target.checked })}
-                    style={{ width: "16px", height: "16px", accentColor: "#2563eb", cursor: "pointer" }}
+                    style={{ width: "16px", height: "16px", accentColor: "#ffffff", cursor: "pointer" }}
                   />
                   <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
                     Apply background image to ALL sections on this page
@@ -3557,13 +3565,13 @@ export function EditorStudio({
             </div>
 
             {/* Footer Action Buttons */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "14px", borderTop: "1px solid #1e293b" }}>
-              <span style={{ fontSize: "12px", fontWeight: 800, color: "#4ade80", display: "flex", alignItems: "center", gap: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "14px", borderTop: "1px solid #27272a" }}>
+              <span style={{ fontSize: "12px", fontWeight: 800, color: "#22c55e", display: "flex", alignItems: "center", gap: "6px" }}>
                 ✓ Auto-Saved & Live Updated ⚡
               </span>
               <button
                 onClick={() => setImagePopup(null)}
-                style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#2563eb", color: "#ffffff", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)" }}
+                style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(255,255,255,0.15)" }}
               >
                 Close Modal ✕
               </button>
