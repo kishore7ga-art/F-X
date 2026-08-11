@@ -1386,13 +1386,13 @@ export function EditorStudio({
   const ensureEssentialSections = (secs: SectionItem[]): SectionItem[] => {
     let clean = secs.filter((sec) => sec && sec.code);
 
-    // Ensure Header (Navbar) exists at index 0
-    let hasHeader = clean.some((s) => {
+    // 1. Ensure Header (Navbar) exists at Index 0 (Top edge)
+    const headerIdx = clean.findIndex((s) => {
       const cat = (s.category || s.title || "").toLowerCase();
       return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
     });
 
-    if (!hasHeader) {
+    if (headerIdx < 0) {
       const headerCode = liveAdminTemplatesMap["navbar"] || liveAdminTemplatesMap["header"] || ALL_19_SECTION_TEMPLATES["navbar"] || ALL_19_SECTION_TEMPLATES["header"];
       clean.unshift({
         id: `sec-header-${Date.now()}`,
@@ -1401,15 +1401,29 @@ export function EditorStudio({
         category: "navbar",
         variantIndex: 0,
       });
-    } else {
-      const headerIdx = clean.findIndex((s) => {
-        const cat = (s.category || s.title || "").toLowerCase();
-        return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
+    } else if (headerIdx > 0) {
+      const [h] = clean.splice(headerIdx, 1);
+      clean.unshift(h!);
+    }
+
+    // 2. Ensure Hero Banner exists at Index 1 (Directly below Header)
+    const heroIdx = clean.findIndex((s) => {
+      const cat = (s.category || s.title || "").toLowerCase();
+      return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
+    });
+
+    if (heroIdx < 0) {
+      const heroCode = liveAdminTemplatesMap["hero"] || ALL_19_SECTION_TEMPLATES["hero"];
+      clean.splice(1, 0, {
+        id: `sec-hero-${Date.now()}`,
+        title: "Hero Banner",
+        code: heroCode,
+        category: "hero",
+        variantIndex: 0,
       });
-      if (headerIdx > 0) {
-        const [h] = clean.splice(headerIdx, 1);
-        clean.unshift(h!);
-      }
+    } else if (heroIdx !== 1 && heroIdx > 0) {
+      const [hr] = clean.splice(heroIdx, 1);
+      clean.splice(1, 0, hr!);
     }
 
     return clean;
@@ -2718,14 +2732,14 @@ export function EditorStudio({
       <main
         onClick={() => setActiveSectionIndex(null)}
         className={`flex-1 w-full flex flex-col items-center justify-start pb-64 cursor-pointer min-h-screen transition-all ${
-          viewportWidth === "100%" ? "bg-white p-0 m-0" : "bg-slate-100/90 p-4 sm:p-8"
+          viewportWidth === "100%" ? "bg-white p-0 m-0" : "bg-slate-100/90 px-4 sm:px-8 pt-0 pb-12 mt-0"
         }`}
       >
         <div
           className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
             viewportWidth === "100%"
               ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
-              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
+              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 mt-0 mb-4"
           }`}
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
