@@ -1575,7 +1575,7 @@ export function EditorStudio({
     setAdminDbTemplates(dbTemplates);
     setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
 
-    // If canvas is empty, populate page sections EXCLUSIVELY with live Admin DB default website sections!
+    // Dynamically update canvas sections with live Admin DB templates created in xite-admin!
     setSections((prevSecs) => {
       if (prevSecs.length === 0 && defaultSecsFromAdminDb.length > 0) {
         const clean = deduplicateSections(defaultSecsFromAdminDb);
@@ -1586,7 +1586,40 @@ export function EditorStudio({
         } catch {}
         return clean;
       }
-      return deduplicateSections(prevSecs);
+
+      const updatedSecs = prevSecs.map((sec) => {
+        const secCat = (sec.category || sec.title || "").toLowerCase();
+        const normCat = normalizeCategory(secCat);
+
+        // Find Admin DB template matching this category
+        const adminTpl = dbTemplates.find((t: any) => {
+          const rawCat = (t.category && t.category !== "undefined" && t.category !== "null") ? t.category : "";
+          const tCat = (rawCat || t.type || t.catId || t.sectionType || t.name || "").toLowerCase();
+          const normTCat = normalizeCategory(tCat);
+          return tCat === secCat || normTCat === normCat || (t.name && t.name.toLowerCase().includes(normCat));
+        });
+
+        if (adminTpl && adminTpl.code) {
+          return {
+            ...sec,
+            title: adminTpl.name || sec.title,
+            code: adminTpl.code,
+            category: sec.category || normCat,
+          };
+        }
+
+        const mappedCode = freshMap[secCat] || freshMap[normCat];
+        if (mappedCode) {
+          return {
+            ...sec,
+            code: mappedCode,
+            category: sec.category || normCat,
+          };
+        }
+        return sec;
+      });
+
+      return deduplicateSections(updatedSecs);
     });
   };
 
