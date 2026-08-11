@@ -1382,16 +1382,7 @@ export function EditorStudio({
 
   // Sanitizer to guarantee VIT University style dark navbar
   const sanitizeHeaderCode = (code: string): string => {
-    if (!code) return ALL_19_SECTION_TEMPLATES.navbar;
-    if (
-      code.includes("UNIVERSAL") ||
-      code.includes("universal") ||
-      code.includes("NAVIGATION MENU") ||
-      code.includes("About Institution") ||
-      code.includes("border-radius: 16px") ||
-      code.includes("border-radius:16px") ||
-      code.includes("mobile-drawer-menu")
-    ) {
+    if (!code || !code.includes("VELLORE INSTITUTE OF TECHNOLOGY")) {
       return ALL_19_SECTION_TEMPLATES.navbar;
     }
     return code;
@@ -1532,7 +1523,7 @@ export function EditorStudio({
             const sanitizedSecs = savedSecs.map((s, i) => {
               const catKey = (s.category || s.title || "").toLowerCase();
               if (i === 0 || catKey.includes("header") || catKey.includes("navbar") || normalizeCategory(catKey) === "navbar") {
-                if (s.code.includes("UNIVERSAL") || s.code.includes("universal") || s.code.includes("border-radius") || s.code.includes("margin: 20px") || s.code.includes("mobile-drawer-menu")) {
+                if (!s.code.includes("VELLORE INSTITUTE OF TECHNOLOGY")) {
                   return {
                     ...s,
                     code: ALL_19_SECTION_TEMPLATES.navbar,
@@ -1547,6 +1538,9 @@ export function EditorStudio({
             setSections(cleanSecs);
             try {
               localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanSecs));
+              const currentSavedPages = JSON.parse(localStorage.getItem("xite_saved_pages") || "{}");
+              currentSavedPages[slug] = cleanSecs;
+              localStorage.setItem("xite_saved_pages", JSON.stringify(currentSavedPages));
             } catch {}
             setActiveSectionIndex(0);
             setLoadingDb(false);
