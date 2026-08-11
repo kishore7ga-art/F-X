@@ -1114,7 +1114,18 @@ export function EditorStudio({
         box-sizing: border-box !important;
         position: relative !important;
         top: 0 !important;
-        flex-wrap: wrap !important;
+      }
+
+      /* Ensure script/style/link tags inside canvas never create layout space */
+      .section-canvas-box script,
+      .section-canvas-box style,
+      .section-canvas-box link {
+        display: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
+        position: absolute !important;
+        visibility: hidden !important;
       }
 
       .section-canvas-box header div:first-child span,
