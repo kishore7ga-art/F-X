@@ -1446,17 +1446,18 @@ export function EditorStudio({
     if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
     if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
 
+    // Production & Local Express Backend API Endpoints (Explicitly priority ordered)
+    bases.push("https://api.xite.co.in");
+    bases.push("https://api.meetkishore.in");
+    bases.push("https://admin.meetkishore.in");
+    bases.push("http://localhost:4000");
+
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
       if (hostname === "localhost" || hostname === "127.0.0.1") {
         bases.push("http://localhost:4000");
       }
-      bases.push(`${window.location.protocol}//${window.location.host}`);
     }
-    bases.push("http://localhost:4000");
-    bases.push("https://admin.meetkishore.in");
-    bases.push("https://api.meetkishore.in");
-    bases.push("https://api.xite.co.in");
     return Array.from(new Set(bases.filter(Boolean).map((b) => b.replace(/\/+$/, ""))));
   };
 
