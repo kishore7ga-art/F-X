@@ -1377,23 +1377,86 @@ export function EditorStudio({
     });
   };
 
-  const deduplicateSections = (secs: SectionItem[]): SectionItem[] => {
-    const seenCategories = new Set<string>();
-    const seenCodes = new Set<string>();
+  const ensureEssentialSections = (secs: SectionItem[]): SectionItem[] => {
+    let clean = secs.filter((sec) => sec && sec.code);
 
-    return secs.filter((sec) => {
+    // 1. Ensure Header (Navbar) exists at index 0
+    let hasHeader = clean.some((s) => {
+      const cat = (s.category || s.title || "").toLowerCase();
+      return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
+    });
+
+    if (!hasHeader) {
+      const headerCode = liveAdminTemplatesMap["navbar"] || liveAdminTemplatesMap["header"] || ALL_19_SECTION_TEMPLATES["navbar"] || ALL_19_SECTION_TEMPLATES["header"];
+      clean.unshift({
+        id: `sec-header-${Date.now()}`,
+        title: "Header Navigation",
+        code: headerCode,
+        category: "navbar",
+        variantIndex: 0,
+      });
+    } else {
+      const headerIdx = clean.findIndex((s) => {
+        const cat = (s.category || s.title || "").toLowerCase();
+        return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
+      });
+      if (headerIdx > 0) {
+        const [h] = clean.splice(headerIdx, 1);
+        clean.unshift(h!);
+      }
+    }
+
+    // 2. Ensure Hero Banner exists at index 1
+    let hasHero = clean.some((s) => {
+      const cat = (s.category || s.title || "").toLowerCase();
+      return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
+    });
+
+    if (!hasHero) {
+      const heroCode = liveAdminTemplatesMap["hero"] || ALL_19_SECTION_TEMPLATES["hero"];
+      clean.splice(1, 0, {
+        id: `sec-hero-${Date.now()}`,
+        title: "Hero Banner",
+        code: heroCode,
+        category: "hero",
+        variantIndex: 0,
+      });
+    } else {
+      const heroIdx = clean.findIndex((s) => {
+        const cat = (s.category || s.title || "").toLowerCase();
+        return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
+      });
+      if (heroIdx !== 1 && heroIdx > 0) {
+        const [hr] = clean.splice(heroIdx, 1);
+        clean.splice(1, 0, hr!);
+      }
+    }
+
+    return clean;
+  };
+
+  const deduplicateSections = (secs: SectionItem[]): SectionItem[] => {
+    const seenIds = new Set<string>();
+    const seenCategories = new Set<string>();
+
+    const clean = secs.filter((sec) => {
       if (!sec || !sec.code) return false;
+      if (seenIds.has(sec.id)) return false;
+      seenIds.add(sec.id);
+
       const catKey = (sec.category || sec.title || "").toLowerCase();
       const normCat = normalizeCategory(catKey) || catKey;
-      const codeTrimmed = sec.code.trim();
-
-      if ((normCat && seenCategories.has(normCat)) || seenCodes.has(codeTrimmed)) {
+      if (normCat && (normCat === "navbar" || normCat === "hero")) {
+        return true;
+      }
+      if (normCat && seenCategories.has(normCat)) {
         return false;
       }
       if (normCat) seenCategories.add(normCat);
-      seenCodes.add(codeTrimmed);
       return true;
     });
+
+    return ensureEssentialSections(clean);
   };
 
   // Fetch sections & admin DB templates
