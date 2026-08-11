@@ -896,7 +896,7 @@ export function EditorStudio({
       "crimson-gold": { primary: "#3b0764", secondary: "#581c87", accent: "#eab308", headerBg: "#3b0764", textAccent: "#fde047" },
       "cyber-neon": { primary: "#050814", secondary: "#0f172a", accent: "#06b6d4", headerBg: "#050814", textAccent: "#22d3ee" },
       "rose-quartz": { primary: "#1f1924", secondary: "#2d2336", accent: "#f472b6", headerBg: "#1f1924", textAccent: "#f472b6" },
-      "light-minimal": { primary: "#ffffff", secondary: "#f8fafc", accent: "#2563eb", headerBg: "#ffffff", textAccent: "#2563eb" },
+      "light-minimal": { primary: "#ffffff", secondary: "#f8fafc", accent: "#2563eb", headerBg: "#0f172a", textAccent: "#2563eb" },
     };
 
     const target = PALETTES_MAP[paletteId] || PALETTES_MAP["academic-blue"]!;
@@ -1114,7 +1114,6 @@ export function EditorStudio({
         box-sizing: border-box !important;
         position: relative !important;
         top: 0 !important;
-        flex-wrap: wrap !important;
       }
 
       .section-canvas-box header div:first-child span,

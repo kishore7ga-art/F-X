@@ -442,8 +442,11 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       /* Universal Header Containment */
       header, .section-canvas-box header {
         max-width: 100% !important;
+        width: 100% !important;
         box-sizing: border-box !important;
         position: relative !important;
+        margin-top: 0 !important;
+        top: 0 !important;
       }
 
       ${isResponsiveView ? `
