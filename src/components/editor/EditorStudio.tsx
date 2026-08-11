@@ -1404,24 +1404,36 @@ export function EditorStudio({
   const ensureEssentialSections = (secs: SectionItem[]): SectionItem[] => {
     let clean = secs.filter((sec) => sec && sec.code);
 
-    // 1. Ensure Header (Navbar) exists at Index 0 (Top edge)
+    // 1. Ensure Header (Navbar) exists at Index 0 (Top edge) and uses clean VIT University layout
     const headerIdx = clean.findIndex((s) => {
       const cat = (s.category || s.title || "").toLowerCase();
       return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
     });
 
+    const activeHeaderCode = liveAdminTemplatesMap["navbar"] || liveAdminTemplatesMap["header"] || ALL_19_SECTION_TEMPLATES["navbar"] || ALL_19_SECTION_TEMPLATES["header"];
+
     if (headerIdx < 0) {
-      const headerCode = liveAdminTemplatesMap["navbar"] || liveAdminTemplatesMap["header"] || ALL_19_SECTION_TEMPLATES["navbar"] || ALL_19_SECTION_TEMPLATES["header"];
       clean.unshift({
         id: `sec-header-${Date.now()}`,
         title: "Header Navigation",
-        code: headerCode,
+        code: activeHeaderCode,
         category: "navbar",
         variantIndex: 0,
       });
-    } else if (headerIdx > 0) {
-      const [h] = clean.splice(headerIdx, 1);
-      clean.unshift(h!);
+    } else {
+      if (headerIdx > 0) {
+        const [h] = clean.splice(headerIdx, 1);
+        clean.unshift(h!);
+      }
+      // Force update header code if it has old UNIVERSAL COLLEGE markup
+      if (clean[0] && (clean[0].code.includes("UNIVERSAL") || clean[0].code.includes("universal") || clean[0].code.includes("border-radius: 16px") || clean[0].code.includes("mobile-drawer-menu"))) {
+        clean[0] = {
+          ...clean[0],
+          title: "Header Navigation",
+          code: activeHeaderCode,
+          category: "navbar",
+        };
+      }
     }
 
     // 2. Ensure Hero Banner exists at Index 1 (Directly below Header)
@@ -1503,7 +1515,7 @@ export function EditorStudio({
             const sanitizedSecs = savedSecs.map((s, i) => {
               const catKey = (s.category || s.title || "").toLowerCase();
               if (i === 0 || catKey.includes("header") || catKey.includes("navbar") || normalizeCategory(catKey) === "navbar") {
-                if (s.code.includes("border-radius") || s.code.includes("margin: 20px") || s.code.includes("UNIVERSAL COLLEGE")) {
+                if (s.code.includes("UNIVERSAL") || s.code.includes("universal") || s.code.includes("border-radius") || s.code.includes("margin: 20px") || s.code.includes("mobile-drawer-menu")) {
                   return {
                     ...s,
                     code: ALL_19_SECTION_TEMPLATES.navbar,
@@ -1516,6 +1528,9 @@ export function EditorStudio({
             });
             const cleanSecs = deduplicateSections(sanitizedSecs);
             setSections(cleanSecs);
+            try {
+              localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanSecs));
+            } catch {}
             setActiveSectionIndex(0);
             setLoadingDb(false);
             return;
