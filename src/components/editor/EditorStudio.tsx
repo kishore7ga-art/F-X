@@ -1840,6 +1840,7 @@ export function EditorStudio({
       await fetch(`${apiBase}/api/v1/default-website`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           pages: [
             {
