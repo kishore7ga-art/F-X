@@ -1087,11 +1087,17 @@ export function EditorStudio({
         top: auto !important;
       }
       
-      /* Universal Header Containment */
+      /* Universal Header Containment - Flush to Top Edge with Zero White Space */
       header, .section-canvas-box header {
         max-width: 100% !important;
+        width: 100% !important;
+        margin-top: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 0 !important;
         box-sizing: border-box !important;
         position: relative !important;
+        top: 0 !important;
         flex-wrap: wrap !important;
       }
 
@@ -1482,7 +1488,21 @@ export function EditorStudio({
           }
 
           if (savedSecs && savedSecs.length > 0) {
-            const cleanSecs = deduplicateSections(savedSecs);
+            const sanitizedSecs = savedSecs.map((s, i) => {
+              const catKey = (s.category || s.title || "").toLowerCase();
+              if (i === 0 || catKey.includes("header") || catKey.includes("navbar") || normalizeCategory(catKey) === "navbar") {
+                if (s.code.includes("border-radius") || s.code.includes("margin: 20px") || s.code.includes("UNIVERSAL COLLEGE")) {
+                  return {
+                    ...s,
+                    code: ALL_19_SECTION_TEMPLATES.navbar,
+                    title: "Header Navigation",
+                    category: "navbar",
+                  };
+                }
+              }
+              return s;
+            });
+            const cleanSecs = deduplicateSections(sanitizedSecs);
             setSections(cleanSecs);
             setActiveSectionIndex(0);
             setLoadingDb(false);
