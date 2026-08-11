@@ -2974,7 +2974,11 @@ export function EditorStudio({
                 >
                   <div
                     dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
-                    className="w-full overflow-hidden flex flex-col items-center justify-center text-center [&>*:first-child]:w-full [&>*:first-child]:mx-auto"
+                    className={`w-full overflow-hidden ${
+                      idx === 0 || sec.category === "navbar" || sec.category === "header"
+                        ? "block p-0 m-0 text-left [&>*:first-child]:w-full"
+                        : "flex flex-col items-center justify-center text-center [&>*:first-child]:w-full [&>*:first-child]:mx-auto"
+                    }`}
                   />
                 </div>
               ))}
