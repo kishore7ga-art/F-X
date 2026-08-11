@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "next dev --webpack --port 4000",
+    "dev": "next dev --webpack --port 3000",
     "build": "next build",
     "start": "node scripts/start.mjs",
     "postinstall": "prisma generate",

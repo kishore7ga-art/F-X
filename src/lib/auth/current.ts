@@ -28,7 +28,7 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
     if (payload?.college) return payload.college;
   } catch (error) {
-    if (error instanceof ServerApiError) {
+    if (error instanceof ServerApiError && error.status !== 401) {
       console.error(`[auth] could not resolve college: ${error.message}`);
     }
   }
@@ -93,7 +93,9 @@ export async function getCurrentCollegeOrNull() {
     return await getCurrentCollege();
   } catch (cause) {
     if (cause instanceof ServerApiError) {
-      console.error(`[auth] could not resolve college: ${cause.message}`);
+      if (cause.status !== 401) {
+        console.error(`[auth] could not resolve college: ${cause.message}`);
+      }
       return null;
     }
     throw cause;

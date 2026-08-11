@@ -876,29 +876,40 @@ export function EditorStudio({
     return clean.trim();
   };
 
-  // Handle full-page Color Theme Palette Switch across all sections
+  // Handle full-page Color Theme Palette Switch across ALL sections
   const handlePaletteSelect = (paletteId: string) => {
     setActivePalette(paletteId);
 
-    const PALETTES_MAP: Record<string, { primary: string; accent: string; headerBg: string }> = {
-      "academic-blue": { primary: "#0f172a", accent: "#2563eb", headerBg: "#0d1527" },
-      "emerald-gold": { primary: "#064e3b", accent: "#f59e0b", headerBg: "#022c22" },
-      "crimson-slate": { primary: "#881337", accent: "#e11d48", headerBg: "#4c0519" },
-      "midnight-purple": { primary: "#180828", accent: "#a855f7", headerBg: "#0d0418" },
-      "light-minimal": { primary: "#ffffff", accent: "#0f172a", headerBg: "#ffffff" },
+    const PALETTES_MAP: Record<string, { primary: string; secondary: string; accent: string; headerBg: string; textAccent: string }> = {
+      "academic-blue": { primary: "#0f172a", secondary: "#1e293b", accent: "#2563eb", headerBg: "#0d1527", textAccent: "#38bdf8" },
+      "emerald-gold": { primary: "#022c22", secondary: "#064e3b", accent: "#f59e0b", headerBg: "#022c22", textAccent: "#fbbf24" },
+      "crimson-slate": { primary: "#4c0519", secondary: "#881337", accent: "#f43f5e", headerBg: "#4c0519", textAccent: "#fb7185" },
+      "midnight-purple": { primary: "#0d0418", secondary: "#180828", accent: "#a855f7", headerBg: "#0d0418", textAccent: "#c084fc" },
+      "sunset-amber": { primary: "#18181b", secondary: "#27272a", accent: "#f59e0b", headerBg: "#09090b", textAccent: "#fbbf24" },
+      "modern-dark": { primary: "#0b1329", secondary: "#1e293b", accent: "#38bdf8", headerBg: "#0b1329", textAccent: "#7dd3fc" },
+      "crimson-gold": { primary: "#3b0764", secondary: "#581c87", accent: "#eab308", headerBg: "#3b0764", textAccent: "#fde047" },
+      "cyber-neon": { primary: "#050814", secondary: "#0f172a", accent: "#06b6d4", headerBg: "#050814", textAccent: "#22d3ee" },
+      "rose-quartz": { primary: "#1f1924", secondary: "#2d2336", accent: "#f472b6", headerBg: "#1f1924", textAccent: "#f472b6" },
+      "light-minimal": { primary: "#ffffff", secondary: "#f8fafc", accent: "#2563eb", headerBg: "#ffffff", textAccent: "#2563eb" },
     };
 
     const target = PALETTES_MAP[paletteId] || PALETTES_MAP["academic-blue"]!;
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`xite_theme_palette_${subdomain}`, paletteId);
+      }
+    } catch {}
 
-    // Transform color scheme across all sections
+    // Transform color scheme across ALL sections (Buttons, Cards, Accents, Headers, Footers, Badges)
     setSectionsWithHistory((prevSections) =>
       prevSections.map((sec) => {
         let code = sec.code;
-        // Swap primary button background colors & accent highlights
+        // Swap button background colors, accent badges & highlights
         code = code
-          .replace(/background:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `background: ${target.accent}`)
-          .replace(/background-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `background-color: ${target.accent}`)
-          .replace(/border-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b)/gi, `border-color: ${target.accent}`)
+          .replace(/background:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b|06b6d4|eab308|f472b6|f43f5e)/gi, `background: ${target.accent}`)
+          .replace(/background-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b|06b6d4|eab308|f472b6|f43f5e)/gi, `background-color: ${target.accent}`)
+          .replace(/border-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b|06b6d4|eab308|f472b6|f43f5e)/gi, `border-color: ${target.accent}`)
+          .replace(/color:\s*#(38bdf8|4ade80|fbbf24|c084fc|22d3ee|7dd3fc|fde047|f472b6|60a5fa)/gi, `color: ${target.textAccent}`)
           .replace(/<header style="background:\s*[^;]+;/gi, `<header style="background: ${target.headerBg};`)
           .replace(/<footer style="background:\s*[^;]+;/gi, `<footer style="background: ${target.primary};`);
 
@@ -907,19 +918,28 @@ export function EditorStudio({
     );
   };
 
-  // Handle full-page Font Family Switch across all sections
+  // Handle full-page Font Family Switch across ALL sections
   const handleFontSelect = (fontId: string) => {
     setActiveFont(fontId);
 
     const FONT_MAP: Record<string, string> = {
       inter: "'Inter', system-ui, -apple-system, sans-serif",
+      outfit: "'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif",
       serif: "'Playfair Display', Georgia, serif",
-      outfit: "'Outfit', 'Roboto', system-ui, sans-serif",
+      cormorant: "'Cormorant Garamond', Georgia, serif",
+      roboto: "'Roboto', system-ui, sans-serif",
+      "space-grotesk": "'Space Grotesk', system-ui, sans-serif",
+      "plus-jakarta": "'Plus Jakarta Sans', system-ui, sans-serif",
     };
 
     const targetFont = FONT_MAP[fontId] || FONT_MAP["inter"]!;
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`xite_theme_font_${subdomain}`, fontId);
+      }
+    } catch {}
 
-    // Update font-family style attribute across all sections
+    // Update font-family style attribute across ALL sections and inner elements
     setSectionsWithHistory((prevSections) =>
       prevSections.map((sec) => {
         let code = sec.code;
@@ -1361,30 +1381,19 @@ export function EditorStudio({
     const seenCategories = new Set<string>();
     const seenCodes = new Set<string>();
 
-    return secs
-      .filter((sec) => {
-        // Filter out default starter banners & Greenfield dummy templates
-        if (
-          sec.code.includes("Excellence in Higher Education") ||
-          sec.code.includes("OFFICIAL CAMPUS PORTAL") ||
-          sec.code.includes("GREENFIELD UNIVERSITY") ||
-          sec.code.includes("Building Tomorrow")
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .filter((sec) => {
-        const normCat = normalizeCategory(sec.category || "") || (sec.category || "").toLowerCase();
-        const codeTrimmed = sec.code.trim();
+    return secs.filter((sec) => {
+      if (!sec || !sec.code) return false;
+      const catKey = (sec.category || sec.title || "").toLowerCase();
+      const normCat = normalizeCategory(catKey) || catKey;
+      const codeTrimmed = sec.code.trim();
 
-        if (seenCategories.has(normCat) || seenCodes.has(codeTrimmed)) {
-          return false;
-        }
-        seenCategories.add(normCat);
-        seenCodes.add(codeTrimmed);
-        return true;
-      });
+      if ((normCat && seenCategories.has(normCat)) || seenCodes.has(codeTrimmed)) {
+        return false;
+      }
+      if (normCat) seenCategories.add(normCat);
+      seenCodes.add(codeTrimmed);
+      return true;
+    });
   };
 
   // Fetch sections & admin DB templates
@@ -1432,27 +1441,29 @@ export function EditorStudio({
     }
   };
 
-  useEffect(() => {
-    void fetchDbSections(currentPage.slug);
-  }, []);
-
   const getApiBases = (): string[] => {
-    const bases: string[] = ["https://admin.meetkishore.in"];
+    const bases: string[] = [];
     if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
     if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
 
     if (typeof window !== "undefined") {
-      bases.push("https://api.meetkishore.in");
-      bases.push("https://api.xite.co.in");
+      const hostname = window.location.hostname;
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        bases.push("http://localhost:4000");
+      }
       bases.push(`${window.location.protocol}//${window.location.host}`);
     }
     bases.push("http://localhost:4000");
-    return Array.from(new Set(bases.map((b) => b.replace(/\/+$/, ""))));
+    bases.push("https://admin.meetkishore.in");
+    bases.push("https://api.meetkishore.in");
+    bases.push("https://api.xite.co.in");
+    return Array.from(new Set(bases.filter(Boolean).map((b) => b.replace(/\/+$/, ""))));
   };
 
   const loadAdminTemplates = async () => {
     let dbTemplates: any[] = [];
     const freshMap: Record<string, string> = {};
+    const seenIds = new Set<string>();
 
     for (const baseUrl of getApiBases()) {
       try {
@@ -1460,8 +1471,15 @@ export function EditorStudio({
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-            dbTemplates = data.templates;
-            break;
+            data.templates.forEach((t: any) => {
+              if (t && t.code) {
+                const tId = t.id || `tpl-${t.name}`;
+                if (!seenIds.has(tId)) {
+                  seenIds.add(tId);
+                  dbTemplates.push(t);
+                }
+              }
+            });
           }
         }
       } catch (e) {}
@@ -1474,7 +1492,10 @@ export function EditorStudio({
         if (!code) return;
 
         // Parse category from t.category or t.name [bracket] notation
-        let parsedCat = (t.category || t.sectionType || t.type || "").toLowerCase();
+        let rawCat = (t.category && t.category !== "undefined" && t.category !== "null") ? t.category : "";
+        let parsedCat = (rawCat || t.sectionType || t.type || "").toLowerCase();
+        if (parsedCat === "undefined" || parsedCat === "null") parsedCat = "";
+
         if (!parsedCat && t.name) {
           const match = t.name.match(/\[(.*?)\]/);
           if (match && match[1]) {
@@ -1485,12 +1506,26 @@ export function EditorStudio({
           const nameLower = t.name.toLowerCase();
           if (nameLower.includes("header") || nameLower.includes("nav")) parsedCat = "header";
           else if (nameLower.includes("hero") || nameLower.includes("banner")) parsedCat = "hero";
+          else if (nameLower.includes("stat") || nameLower.includes("highlight")) parsedCat = "highlights";
           else if (nameLower.includes("about")) parsedCat = "about";
-          else if (nameLower.includes("courses") || nameLower.includes("program")) parsedCat = "courses";
-          else if (nameLower.includes("contact")) parsedCat = "contact";
+          else if (nameLower.includes("vision") || nameLower.includes("mission")) parsedCat = "vision";
+          else if (nameLower.includes("course") || nameLower.includes("program")) parsedCat = "courses";
+          else if (nameLower.includes("department")) parsedCat = "departments";
+          else if (nameLower.includes("admission") || nameLower.includes("apply")) parsedCat = "admissions";
+          else if (nameLower.includes("placement") || nameLower.includes("recruiter")) parsedCat = "placements";
+          else if (nameLower.includes("facility") || nameLower.includes("hostel")) parsedCat = "facilities";
+          else if (nameLower.includes("research") || nameLower.includes("innovation")) parsedCat = "research";
+          else if (nameLower.includes("news") || nameLower.includes("notice")) parsedCat = "news";
+          else if (nameLower.includes("event")) parsedCat = "events";
+          else if (nameLower.includes("gallery") || nameLower.includes("campus")) parsedCat = "gallery";
+          else if (nameLower.includes("testimonial") || nameLower.includes("alumni")) parsedCat = "testimonials";
+          else if (nameLower.includes("achievement") || nameLower.includes("award")) parsedCat = "achievements";
+          else if (nameLower.includes("contact") || nameLower.includes("enquiry")) parsedCat = "contact";
+          else if (nameLower.includes("map") || nameLower.includes("location")) parsedCat = "map";
+          else if (nameLower.includes("footer")) parsedCat = "footer";
         }
 
-        t.category = parsedCat || t.category;
+        t.category = parsedCat || t.category || "hero";
         const normCat = normalizeCategory(parsedCat);
 
         if (parsedCat) freshMap[parsedCat] = code;
@@ -1553,6 +1588,11 @@ export function EditorStudio({
       return deduplicateSections(prevSecs);
     });
   };
+
+  useEffect(() => {
+    void fetchDbSections(currentPage.slug);
+    void loadAdminTemplates();
+  }, [currentPage.slug]);
 
   const fetchAllDefaultSectionsFromAdminDb = async () => {
     setLoadingDb(true);
@@ -2159,33 +2199,30 @@ export function EditorStudio({
 
   // Add a section from predefined categories
   const handleAddSectionFromCategory = async (cat: { id: string; name: string }) => {
-    const apiBase = (() => {
-      if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-      if (
-        typeof window !== "undefined" &&
-        window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1"
-      ) {
-        return "https://api.xite.co.in";
-      }
-      return "http://localhost:4000";
-    })();
+    let templatesList: any[] = [];
+    const seenIds = new Set<string>();
 
-    let templatesList = adminDbTemplates;
-
-    // Fetch latest templates from backend API if empty
-    if (templatesList.length === 0) {
+    for (const baseUrl of getApiBases()) {
       try {
-        const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
+        const res = await fetch(`${baseUrl}/api/v1/admin/templates`);
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-            templatesList = data.templates;
-            setAdminDbTemplates(data.templates);
+            data.templates.forEach((t: any) => {
+              if (t && t.code) {
+                const tId = t.id || `tpl-${t.name}`;
+                if (!seenIds.has(tId)) {
+                  seenIds.add(tId);
+                  templatesList.push(t);
+                }
+              }
+            });
           }
         }
-      } catch {}
+      } catch (e) {}
+    }
+    if (templatesList.length === 0) {
+      templatesList = adminDbTemplates;
     }
 
     // Filter admin-added templates matching selected category tag ONLY
@@ -2194,13 +2231,14 @@ export function EditorStudio({
     const normCat = normalizeCategory(cat.id);
 
     const matchingTemplates = templatesList.filter((tpl) => {
-      const nameLower = (tpl.name || "").toLowerCase();
-      const tplCatLower = (tpl.category || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
-      const normTplCat = normalizeCategory(tplCatLower);
+      const nameLower = (tpl.name || tpl.title || "").toLowerCase();
+      const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null") ? tpl.category : "";
+      const tplCatLower = (rawCat || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
+      const normTplCat = normalizeCategory(tplCatLower) || normalizeCategory(nameLower);
 
-      if (normTplCat && normTplCat === normCat) return true;
+      if (normTplCat && (normTplCat === normCat || normTplCat === catIdLower)) return true;
       if (tplCatLower === catIdLower) return true;
-      if (nameLower.includes(`[${catIdLower}]`) || nameLower.includes(catIdLower) || nameLower.includes(catNameLower)) return true;
+      if (nameLower.includes(`[${catIdLower}]`) || nameLower.includes(catIdLower) || nameLower.includes(catNameLower) || (normCat && nameLower.includes(normCat))) return true;
       return false;
     });
 
@@ -2214,54 +2252,80 @@ export function EditorStudio({
       newCode = liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normCat] || ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE;
     }
 
-    const newSection: SectionItem = {
-      id: `sec-${Date.now()}`,
-      title: newTitle,
-      code: newCode,
-      category: cat.id,
-      variantIndex: 0,
-    };
+    // Check if a section matching this category ALREADY exists on the page
+    const existingIndex = sections.findIndex((s) => {
+      const sCat = (s.category || s.title || "").toLowerCase();
+      const normSCat = normalizeCategory(sCat) || sCat;
+      return sCat === cat.id.toLowerCase() || normSCat === normCat;
+    });
 
-    setSectionsWithHistory((prev) => [...prev, newSection]);
-    setActiveSectionIndex(sections.length);
+    if (existingIndex >= 0) {
+      // REPLACE the existing section IN-PLACE!
+      setSectionsWithHistory((prev) =>
+        prev.map((sec, idx) => {
+          if (idx !== existingIndex) return sec;
+          return {
+            ...sec,
+            title: newTitle,
+            code: newCode,
+            category: cat.id,
+            variantIndex: 0,
+          };
+        })
+      );
+      setActiveSectionIndex(existingIndex);
+      showToastNotification(`Updated ${newTitle} layout`);
+    } else {
+      // Append new section to bottom ONLY if category does not exist on page
+      const newSection: SectionItem = {
+        id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        title: newTitle,
+        code: newCode,
+        category: cat.id,
+        variantIndex: 0,
+      };
+      setSectionsWithHistory((prev) => [...prev, newSection]);
+      setActiveSectionIndex(sections.length);
+      showToastNotification(`Added ${newTitle} to page`);
+    }
     setShowAddSectionModal(false);
-    showToastNotification(`Added new ${cat.name} to page`);
+    void handlePersistWebsiteSave();
   };
 
   // Swap / Cycle between section variants for the ACTIVE category ONLY
   const handleSwapVariant = async () => {
-    if (activeSectionIndex === null || sections.length === 0) return;
-
-    const activeSec = sections[activeSectionIndex];
+    if (sections.length === 0) return;
+    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
+    const activeSec = sections[targetIndex];
     if (!activeSec) return;
+    if (activeSectionIndex === null) {
+      setActiveSectionIndex(0);
+    }
 
-    const apiBase = (() => {
-      if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-      if (
-        typeof window !== "undefined" &&
-        window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1"
-      ) {
-        return "https://api.xite.co.in";
-      }
-      return "http://localhost:4000";
-    })();
+    let templatesList: any[] = [];
+    const seenIds = new Set<string>();
 
-    let templatesList = adminDbTemplates;
-
-    // Fetch latest templates from API if empty
-    if (templatesList.length === 0) {
+    for (const baseUrl of getApiBases()) {
       try {
-        const res = await fetch(`${apiBase}/api/v1/admin/templates`, { credentials: "include" });
+        const res = await fetch(`${baseUrl}/api/v1/admin/templates`);
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-            templatesList = data.templates;
-            setAdminDbTemplates(data.templates);
+            data.templates.forEach((t: any) => {
+              if (t && t.code) {
+                const tId = t.id || `tpl-${t.name}`;
+                if (!seenIds.has(tId)) {
+                  seenIds.add(tId);
+                  templatesList.push(t);
+                }
+              }
+            });
           }
         }
-      } catch {}
+      } catch (e) {}
+    }
+    if (templatesList.length === 0) {
+      templatesList = adminDbTemplates;
     }
 
     // 1. Accurately determine Category ID of the ACTIVE section
@@ -2319,10 +2383,12 @@ export function EditorStudio({
 
     const normCatId = normalizeCategory(catId);
 
-    // Clean up repeating "Default" suffixes from current title
+    // Clean up repeating suffixes from current title
     const cleanBaseTitle = (activeSec.title || "")
-      .replace(/(\s*Default)+$/gi, "")
+      .replace(/\s*\([^)]*\)/g, "")
+      .replace(/(\s*Layout\s*\d+)+$/gi, "")
       .replace(/(\s*Variant\s*\d+)+$/gi, "")
+      .replace(/(\s*Default)+$/gi, "")
       .trim() || catId.toUpperCase();
 
     // 2. STRICT Category Filtering: Collect ONLY templates that belong to THIS SPECIFIC category
@@ -2332,7 +2398,8 @@ export function EditorStudio({
     const adminDbMatches: { name: string; code: string }[] = [];
     templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
-      const tplCatLower = (tpl.category || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
+      const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null") ? tpl.category : "";
+      const tplCatLower = (rawCat || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
       const codeStr = (tpl.code || tpl.html || tpl.content || tpl.templateCode || "").trim();
       const normTplCat = normalizeCategory(tplCatLower) || normalizeCategory(nameLower);
 
@@ -2344,6 +2411,8 @@ export function EditorStudio({
         isMatch = true;
       } else if (catId === "vision") {
         isMatch = tplCatLower === "vision" || tplCatLower.includes("vision") || nameLower.includes("vision") || nameLower.includes("mission");
+      } else if (catId === "events" || catId === "event") {
+        isMatch = tplCatLower === "events" || tplCatLower === "event" || tplCatLower.includes("event") || nameLower.includes("event");
       } else if (catId === "admissions" || catId === "admission") {
         isMatch = tplCatLower === "admissions" || tplCatLower === "admission" || nameLower.includes("admission");
       } else if (catId === "hero") {
@@ -2358,70 +2427,85 @@ export function EditorStudio({
         const trimmedCode = codeStr.trim();
         if (!adminDbMatches.some((m) => m.code.trim() === trimmedCode)) {
           adminDbMatches.push({
-            name: (tpl.name || tpl.title || `${cleanBaseTitle} Variant`).replace(/(\s*Default)+$/gi, "").trim(),
+            name: (tpl.name || tpl.title || cleanBaseTitle).replace(/\s*\([^)]*\)/g, "").trim(),
             code: trimmedCode,
           });
         }
       }
     });
 
+    const seenCodes = new Set<string>();
+
     if (adminDbMatches.length > 0) {
-      // User has custom Admin DB templates! Use ONLY Admin DB templates!
-      matchingTemplates.push(...adminDbMatches);
+      adminDbMatches.forEach((m) => {
+        const trimmed = m.code.trim();
+        if (!seenCodes.has(trimmed)) {
+          seenCodes.add(trimmed);
+          matchingTemplates.push(m);
+        }
+      });
     } else {
-      // Offline fallback: Use default template ONLY when Admin DB is empty
       const categoryDefaultCode = liveAdminTemplatesMap[catId] || liveAdminTemplatesMap[normCatId] || ALL_19_SECTION_TEMPLATES[catId] || ALL_19_SECTION_TEMPLATES[normCatId];
       if (categoryDefaultCode) {
+        const trimmed = categoryDefaultCode.trim();
+        if (!seenCodes.has(trimmed)) {
+          seenCodes.add(trimmed);
+          matchingTemplates.push({
+            name: `${cleanBaseTitle} - Layout 1`,
+            code: trimmed,
+          });
+        }
+      }
+
+      if (matchingTemplates.length === 1) {
+        const primaryCode = matchingTemplates[0]!.code;
+        let altCode = primaryCode;
+        if (altCode.includes("background: #ffffff") || altCode.includes("background:#ffffff") || altCode.includes("background: #f8fafc")) {
+          altCode = altCode.replace(/background:\s*#(ffffff|f8fafc|f1f5f9)/gi, "background: #0f172a")
+                           .replace(/color:\s*#(0f172a|1e293b|475569)/gi, "color: #ffffff");
+        } else {
+          altCode = altCode.replace(/background:\s*#(0f172a|090d16|0b1329|090e1a)/gi, "background: #ffffff")
+                           .replace(/color:\s*#(ffffff|f8fafc|cbd5e1|94a3b8)/gi, "color: #0f172a");
+        }
         matchingTemplates.push({
-          name: `${cleanBaseTitle} (Layout 1)`,
-          code: categoryDefaultCode.trim(),
+          name: `${cleanBaseTitle} - Layout 2`,
+          code: altCode,
         });
       }
     }
 
-    if (matchingTemplates.length > 1) {
-      const currentVariantIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
-      let nextIdx = 0;
+    const currentVariantIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
+    let nextIdx = 0;
 
-      const matchedCodeIdx = matchingTemplates.findIndex(
-        (t) =>
-          t.code.trim() === activeSec.code.trim() ||
-          cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(activeSec.code)
-      );
+    const matchedCodeIdx = matchingTemplates.findIndex(
+      (t) =>
+        t.code.trim() === activeSec.code.trim() ||
+        cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(activeSec.code)
+    );
 
-      if (matchedCodeIdx >= 0) {
-        nextIdx = (matchedCodeIdx + 1) % matchingTemplates.length;
-      } else {
-        nextIdx = (currentVariantIdx + 1) % matchingTemplates.length;
-      }
-
-      const nextTpl = matchingTemplates[nextIdx]!;
-
-      setSectionsWithHistory((prev) =>
-        prev.map((sec, idx) => {
-          if (idx !== activeSectionIndex) return sec;
-          return {
-            ...sec,
-            title: nextTpl.name || cleanBaseTitle,
-            code: nextTpl.code,
-            category: catId,
-            variantIndex: nextIdx,
-          };
-        })
-      );
-
-      showToastNotification(`Swapped ${cleanBaseTitle} to Layout ${nextIdx + 1} of ${matchingTemplates.length}`);
-      return;
+    if (matchedCodeIdx >= 0) {
+      nextIdx = (matchedCodeIdx + 1) % matchingTemplates.length;
+    } else {
+      nextIdx = (currentVariantIdx + 1) % matchingTemplates.length;
     }
 
-    // Clean up title if currently corrupted
-    if (activeSec.title !== cleanBaseTitle) {
-      setSectionsWithHistory((prev) =>
-        prev.map((sec, idx) => (idx === activeSectionIndex ? { ...sec, title: cleanBaseTitle } : sec))
-      );
-    }
+    const nextTpl = matchingTemplates[nextIdx]!;
 
-    showToastNotification(`Currently using primary layout for "${cleanBaseTitle}"`);
+    setSectionsWithHistory((prev) =>
+      prev.map((sec, idx) => {
+        if (idx !== targetIndex) return sec;
+        return {
+          ...sec,
+          title: nextTpl.name || cleanBaseTitle,
+          code: nextTpl.code,
+          category: catId,
+          variantIndex: nextIdx,
+        };
+      })
+    );
+
+    showToastNotification(`Section variant updated! (Layout ${nextIdx + 1} of ${matchingTemplates.length})`);
+    void handlePersistWebsiteSave();
   };
 
   const handleDuplicateSection = () => {

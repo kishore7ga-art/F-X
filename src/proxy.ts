@@ -36,11 +36,13 @@ export async function proxy(request: NextRequest) {
 
   // Handle clean subdomain mapping (e.g. kishore7ga-college.xite.co.in -> /site/kishore7ga-college)
   const isCustomSubdomain =
-    hostname.includes(".xite.co.in") &&
+    (hostname.includes(".xite.co.in") || hostname.includes(".localhost")) &&
     !hostname.startsWith("admin.") &&
     !hostname.startsWith("api.") &&
     !hostname.startsWith("www.") &&
-    hostname !== "xite.co.in";
+    hostname !== "xite.co.in" &&
+    hostname !== "localhost:3000" &&
+    hostname !== "localhost";
 
   if (isCustomSubdomain) {
     const subdomain = hostname.split(".")[0];
