@@ -560,7 +560,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white text-slate-900 font-sans overflow-x-hidden select-none relative">
+    <div className="min-h-screen w-full bg-white text-slate-900 font-sans relative">
       
       {/* Responsive Device Resolution Switcher Dock - Centered at bottom (Hidden in Live Mode) */}
       {!isLive && (

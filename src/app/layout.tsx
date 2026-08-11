@@ -34,9 +34,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jakarta.variable} h-full antialiased dark scroll-smooth bg-black text-white overflow-x-hidden w-full max-w-full font-sans`}
+      className={`${inter.variable} ${jakarta.variable} min-h-screen antialiased dark scroll-smooth bg-black text-white w-full max-w-full font-sans`}
     >
-      <body className={`${inter.className} min-h-full flex flex-col overflow-x-hidden w-full max-w-full font-sans`}>
+      <body className={`${inter.className} min-h-screen flex flex-col w-full max-w-full font-sans overflow-x-clip`}>
         <Script
           id="scroll-restoration"
           strategy="beforeInteractive"

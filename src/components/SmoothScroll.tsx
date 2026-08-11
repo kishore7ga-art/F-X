@@ -14,31 +14,29 @@ export default function SmoothScroll({
     gsap.registerPlugin(ScrollTrigger);
 
     const lenis = new Lenis({
-      duration: 2.2,
+      duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      wheelMultiplier: 0.65,
-      touchMultiplier: 1.2,
+      wheelMultiplier: 1,
+      touchMultiplier: 1.5,
       infinite: false,
     });
 
     lenis.on("scroll", ScrollTrigger.update);
 
-    // Force scroll position reset to top (0,0) on refresh
-    window.scrollTo(0, 0);
-    lenis.scrollTo(0, { immediate: true });
+    let animationFrameId: number;
 
-    const updateGSAP = (time: number) => {
-      lenis.raf(time * 1000);
-    };
+    function raf(time: number) {
+      lenis.raf(time);
+      animationFrameId = requestAnimationFrame(raf);
+    }
 
-    gsap.ticker.add(updateGSAP);
-    gsap.ticker.lagSmoothing(0);
+    animationFrameId = requestAnimationFrame(raf);
 
     return () => {
-      gsap.ticker.remove(updateGSAP);
+      cancelAnimationFrame(animationFrameId);
       lenis.destroy();
     };
   }, []);

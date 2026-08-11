@@ -2818,7 +2818,7 @@ export function EditorStudio({
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-x-hidden">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative">
       
 
 
