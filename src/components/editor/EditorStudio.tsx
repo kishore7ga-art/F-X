@@ -71,8 +71,8 @@ const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
       <div style="display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
         <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="University Logo" data-logo="true" style="width: 44px; height: 44px; object-fit: cover; border-radius: 50%; background: #ffffff; padding: 2px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer;" title="Right-click to edit university logo!" />
         <div>
-          <span style="font-size: 18px; font-weight: 900; color: #ffffff; letter-spacing: 0.03em; display: block; line-height: 1.1;">VELLORE INSTITUTE OF TECHNOLOGY</span>
-          <span style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;">DEEMED TO BE UNIVERSITY</span>
+          <span style="font-size: 18px; font-weight: 900; color: #ffffff; letter-spacing: 0.03em; display: block; line-height: 1.1;">UNIVERSAL COLLEGE OF ENGINEERING</span>
+          <span style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;">AUTONOMOUS INSTITUTION</span>
         </div>
       </div>
 
@@ -1401,9 +1401,9 @@ export function EditorStudio({
   // Live Admin templates map state
   const [liveAdminTemplatesMap, setLiveAdminTemplatesMap] = useState<Record<string, string>>({});
 
-  // Sanitizer to guarantee VIT University style dark navbar
+  // Sanitizer to guarantee valid header layout code
   const sanitizeHeaderCode = (code: string): string => {
-    if (!code || !code.includes("VELLORE INSTITUTE OF TECHNOLOGY")) {
+    if (!code || (!code.includes("<header") && !code.includes("<nav") && !code.toLowerCase().includes("header"))) {
       return ALL_19_SECTION_TEMPLATES.navbar;
     }
     return code;
