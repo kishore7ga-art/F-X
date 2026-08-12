@@ -390,7 +390,7 @@ export function EditorToolbar({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "space-between",
+              justifyContent: "flex-start",
               height: "100%",
               width: "100%",
               boxSizing: "border-box",
@@ -445,9 +445,6 @@ export function EditorToolbar({
             >
               <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
             </button>
-
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
 
             {/* 2. Top-Middle Group: Swap, Move Down, Move Up, Duplicate, Redo, Undo */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
@@ -574,9 +571,6 @@ export function EditorToolbar({
               </button>
             </div>
 
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
-
             {/* 3. Middle Resolution Switcher Group (In clean flex flow to prevent icon collision) */}
             <div
               style={{
@@ -651,9 +645,6 @@ export function EditorToolbar({
 
               <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
             </div>
-
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
 
             {/* 4. Bottom Group: Delete, External Preview, Copy Link, Save, Layers */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
