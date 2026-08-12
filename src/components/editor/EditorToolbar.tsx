@@ -357,6 +357,26 @@ export function EditorToolbar({
             >
               <ExternalLink style={{ width: "16px", height: "16px" }} />
             </button>
+
+            {/* Dark Red Trash Icon Button (Placed Next to ExternalLink) */}
+            <button
+              onClick={onDeleteSection}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#b91c1c",
+                ...buttonHoverStyle,
+              }}
+              title="Delete Section"
+            >
+              <Trash2 style={{ width: "16px", height: "16px", color: "#b91c1c" }} />
+            </button>
           </div>
         </div>
 
@@ -608,25 +628,7 @@ export function EditorToolbar({
               <Copy style={{ width: "16px", height: "16px" }} />
             </button>
 
-            {/* Dark Red Trash Icon Button (Placed next to Duplicate) */}
-            <button
-              onClick={onDeleteSection}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: "pointer",
-                color: "#b91c1c",
-                ...buttonHoverStyle,
-              }}
-              title="Delete Section"
-            >
-              <Trash2 style={{ width: "16px", height: "16px", color: "#b91c1c" }} />
-            </button>
+
 
             {/* Refresh / Swap Button */}
             <button
