@@ -924,15 +924,16 @@ export function EditorToolbar({
               </div>
             </div>
 
-            {/* 2. Center: Active Section Name Text */}
+            {/* 2. Center: Active Section Name Text — absolutely centered */}
             <div
               style={{
+                position: "absolute",
+                left: "50%",
+                transform: "translateX(-50%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "0 12px",
-                flexShrink: 1,
-                minWidth: 0,
+                pointerEvents: "none",
               }}
             >
               <span
