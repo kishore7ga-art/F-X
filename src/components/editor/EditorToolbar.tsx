@@ -224,7 +224,7 @@ export function EditorToolbar({
           backgroundColor: "#f4f6f9",
           backgroundImage: "linear-gradient(180deg, #fafbfc 0%, #edf0f5 100%)",
           borderTop: "1px solid rgba(226, 232, 240, 0.9)",
-          boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.12)",
+          boxShadow: "0 -10px 40px rgba(0, 0, 0, 0.45), 0 -2px 10px rgba(0, 0, 0, 0.25)",
           borderRadius: 0,
           padding: "0 24px",
           display: "flex",
