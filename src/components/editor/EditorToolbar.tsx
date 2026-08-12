@@ -19,7 +19,6 @@ import {
   Check,
   Layers,
   Type,
-  GripVertical,
 } from "lucide-react";
 
 interface EditorToolbarProps {
@@ -83,6 +82,10 @@ export function EditorToolbar({
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    // If user clicked directly on or inside a <button>, allow button click normally
+    if ((e.target as HTMLElement).closest("button")) {
+      return;
+    }
     e.preventDefault();
     setIsDragging(true);
     const rect = (e.currentTarget.closest(".editor-toolbar-dock") as HTMLElement)?.getBoundingClientRect();
@@ -353,8 +356,9 @@ export function EditorToolbar({
         userSelect: "none",
       }}
     >
-      {/* Dock Bar Container */}
+      {/* Dock Bar Container (Draggable from any empty space) */}
       <div
+        onPointerDown={handlePointerDown}
         style={{
           height: isVertical ? "auto" : "52px",
           width: isVertical ? "58px" : "100%",
@@ -377,27 +381,12 @@ export function EditorToolbar({
           boxSizing: "border-box",
           position: "relative",
           overflowY: isVertical ? "auto" : "visible",
+          cursor: isDragging ? "grabbing" : "grab",
+          touchAction: "none",
         }}
       >
-        {/* 1. Far Left / Top Group: Grip Handle + Logo + System Tools */}
+        {/* 1. Far Left / Top Group: Logo + System Tools */}
         <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "10px" : "16px" }}>
-          {/* Grip Drag Handle */}
-          <div
-            onPointerDown={handlePointerDown}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: isDragging ? "grabbing" : "grab",
-              padding: "4px",
-              color: "#64748b",
-              touchAction: "none",
-            }}
-            title="Hold & Drag to move toolbar to Top, Bottom, Left, or Right edge"
-          >
-            <GripVertical style={{ width: "16px", height: "16px", strokeWidth: 2, color: "#64748b" }} />
-          </div>
-
           {/* Logo Button */}
           <button
             onClick={onOpenSettings}
