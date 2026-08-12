@@ -563,31 +563,6 @@ export function EditorToolbar({
             )}
           </button>
         </div>
-
-        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
-
-        {/* 5. Active Section Title Badge (Fixed to Right Side of Dock Bar) */}
-        <div
-          style={{
-            height: "32px",
-            padding: "0 14px 0 10px",
-            borderRadius: "9999px",
-            backgroundColor: "#090d16",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-            boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            flexShrink: 0,
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#dc2626" strokeWidth="1" style={{ flexShrink: 0 }}>
-            <path d="M12 2L14.8 8.6L22 9.2L16.5 13.8L18.2 20.8L12 17L5.8 20.8L7.5 13.8L2 9.2L9.2 8.6L12 2Z" />
-          </svg>
-          <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff", whiteSpace: "nowrap" }}>
-            {activeSectionTitle}
-          </span>
-        </div>
       </div>
 
       {/* Floating Toast Notification */}
