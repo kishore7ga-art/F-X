@@ -358,7 +358,7 @@ export function EditorToolbar({
               <ExternalLink style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
             </button>
 
-            {/* Light Soft Red Trash Icon Button */}
+            {/* Trash Icon Button */}
             <button
               onClick={onDeleteSection}
               style={{
@@ -370,12 +370,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#ef4444",
+                color: "#0f172a",
                 ...buttonHoverStyle,
               }}
               title="Delete Section"
             >
-              <Trash2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#ef4444" }} />
+              <Trash2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#0f172a" }} />
             </button>
           </div>
         </div>
