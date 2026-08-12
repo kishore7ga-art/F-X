@@ -370,11 +370,11 @@ export function EditorToolbar({
               ? "0 10px 40px rgba(0, 0, 0, 0.45)"
               : "0 -10px 40px rgba(0, 0, 0, 0.45)",
           borderRadius: 0,
-          padding: isVertical ? "20px 0" : "0 24px",
+          padding: isVertical ? "16px 0" : "0 24px",
           display: "flex",
           flexDirection: isVertical ? "column" : "row",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: isVertical ? "flex-start" : "space-between",
           gap: isVertical ? "14px" : "16px",
           boxSizing: "border-box",
           position: "relative",
@@ -556,14 +556,14 @@ export function EditorToolbar({
             </span>
           </div>
         ) : (
-          /* Floating Section Name Badge beside Vertical Side Dock */
+          /* Top Floating Section Name Badge beside Vertical Side Dock */
           <div
             style={{
               position: "fixed",
-              left: dockPosition === "left" ? "82px" : "auto",
-              right: dockPosition === "right" ? "82px" : "auto",
-              top: "50%",
-              transform: "translateY(-50%)",
+              left: dockPosition === "left" ? "68px" : "auto",
+              right: dockPosition === "right" ? "68px" : "auto",
+              top: "16px",
+              transform: "none",
               padding: "6px 14px",
               borderRadius: "9999px",
               backgroundColor: "#ffffff",
