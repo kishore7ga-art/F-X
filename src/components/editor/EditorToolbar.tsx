@@ -360,9 +360,10 @@ export function EditorToolbar({
           width: isVertical ? "58px" : "100%",
           backgroundColor: "#f4f6f9",
           backgroundImage: "linear-gradient(180deg, #fafbfc 0%, #edf0f5 100%)",
-          border: isVertical ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          borderTop: dockPosition === "bottom" ? "1px solid rgba(226, 232, 240, 0.9)" : undefined,
-          borderBottom: dockPosition === "top" ? "1px solid rgba(226, 232, 240, 0.9)" : undefined,
+          borderTop: isVertical || dockPosition === "bottom" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          borderBottom: isVertical || dockPosition === "top" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          borderLeft: isVertical ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          borderRight: isVertical ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
           boxShadow: isVertical
             ? "0 16px 40px rgba(0, 0, 0, 0.35)"
             : "0 -10px 40px rgba(0, 0, 0, 0.45), 0 -2px 10px rgba(0, 0, 0, 0.25)",
