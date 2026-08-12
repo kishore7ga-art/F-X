@@ -234,29 +234,61 @@ export function EditorToolbar({
           boxSizing: "border-box",
         }}
       >
-        {/* 1. Far Left Element: Black Circular Logo Button ('N') */}
-        <button
-          onClick={onOpenSettings}
-          style={{
-            width: "32px",
-            height: "32px",
-            borderRadius: "50%",
-            backgroundColor: "#0d1527",
-            color: "#ffffff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 900,
-            fontSize: "13px",
-            border: "none",
-            cursor: "pointer",
-            flexShrink: 0,
-            boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
-          }}
-          title={isSettingsOpen ? "Back to Editor" : "XITE Studio"}
-        >
-          <span style={{ fontWeight: 900, fontSize: "14px", color: "#ffffff", lineHeight: 1, fontFamily: "system-ui, sans-serif" }}>N</span>
-        </button>
+        {/* 1. Far Left Element: Black Circular Logo Button ('N') + Section Title Pill */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px" }}>
+          <button
+            onClick={onOpenSettings}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "50%",
+              backgroundColor: "#0d1527",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 900,
+              fontSize: "13px",
+              border: "none",
+              cursor: "pointer",
+              flexShrink: 0,
+              boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
+            }}
+            title={isSettingsOpen ? "Back to Editor" : "XITE Studio"}
+          >
+            <span style={{ fontWeight: 900, fontSize: "14px", color: "#ffffff", lineHeight: 1, fontFamily: "system-ui, sans-serif" }}>N</span>
+          </button>
+
+          {/* Active Section Name Light-Grey Pill */}
+          <div
+            style={{
+              height: "32px",
+              padding: "0 14px",
+              borderRadius: "9999px",
+              backgroundColor: "#dbe0e8",
+              backgroundImage: "linear-gradient(180deg, #e5e9f0 0%, #d4d9e2 100%)",
+              border: "1px solid rgba(255, 255, 255, 0.7)",
+              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#581c25",
+                fontFamily: "system-ui, -apple-system, sans-serif",
+                whiteSpace: "nowrap",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {activeSectionTitle || "Select a section"}
+            </span>
+          </div>
+        </div>
 
         {/* 2. Far Right Group: All Action Tools in Exact Order */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
