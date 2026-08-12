@@ -3000,7 +3000,16 @@ export function EditorStudio({
                     e.stopPropagation();
                     const target = e.target as HTMLElement;
 
-                    // Handle link clicks inside header or section: select section without navigating away
+                    // If user is actively editing text in contenteditable, DO NOT trigger section re-render
+                    if (target && (target.isContentEditable || target.getAttribute("contenteditable") === "true" || target.closest("[contenteditable='true']"))) {
+                      setActiveSectionIndex(idx);
+                      return;
+                    }
+
+                    // Always select the exact section canvas item clicked on
+                    setActiveSectionIndex(idx);
+
+                    // Check if link was clicked
                     const anchorElem = target ? (target.closest("a") as HTMLAnchorElement | null) : null;
                     if (anchorElem) {
                       e.preventDefault();
@@ -3014,42 +3023,29 @@ export function EditorStudio({
                       if (parentDrawer) {
                         parentDrawer.classList.remove("active");
                         parentDrawer.style.setProperty("display", "none", "important");
-                      }
 
-                      // Find matching section in sections array
-                      const targetCategory = href.replace(/^#\/?/, "").replace(/^\//, "") || normalizeCategory(text);
-
-                      const matchedIdx = sections.findIndex((sec, sIdx) => {
-                        if (sIdx === 0 && (sec.category === "navbar" || sec.category === "header")) return false;
-                        const sCat = (sec.category || sec.title || "").toLowerCase();
-                        const normSCat = normalizeCategory(sCat);
-
-                        if (targetCategory && (sCat.includes(targetCategory) || normSCat === normalizeCategory(targetCategory))) {
-                          return true;
-                        }
-                        if (text && (sCat.includes(text) || (sec.title || "").toLowerCase().includes(text))) {
-                          return true;
-                        }
-                        return false;
-                      });
-
-                      if (matchedIdx >= 0) {
-                        setActiveSectionIndex(matchedIdx);
-                        const secContainers = document.querySelectorAll(".section-wrapper-container");
-                        const targetSecElem = secContainers[matchedIdx] as HTMLElement;
-                        if (targetSecElem) {
-                          targetSecElem.scrollIntoView({ behavior: "smooth", block: "start" });
+                        if (href.startsWith("/")) {
+                          const pageSlug = href;
+                          const pageName = text || href.replace("/", "");
+                          handlePageChange(pageName, pageSlug);
+                        } else {
+                          const targetCategory = href.replace(/^#\/?/, "").replace(/^\//, "") || normalizeCategory(text);
+                          const matchedIdx = sections.findIndex((sec, sIdx) => {
+                            if (sIdx === 0 && (sec.category === "navbar" || sec.category === "header")) return false;
+                            const sCat = (sec.category || sec.title || "").toLowerCase();
+                            const normSCat = normalizeCategory(sCat);
+                            return targetCategory && (sCat.includes(targetCategory) || normSCat === normalizeCategory(targetCategory));
+                          });
+                          if (matchedIdx >= 0) {
+                            setActiveSectionIndex(matchedIdx);
+                            const secContainers = document.querySelectorAll(".section-wrapper-container");
+                            const targetSecElem = secContainers[matchedIdx] as HTMLElement;
+                            if (targetSecElem) {
+                              targetSecElem.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }
+                          }
                         }
                       }
-                    }
-
-                    // If user is actively editing text in contenteditable, DO NOT trigger section re-render!
-                    if (target && (target.isContentEditable || target.getAttribute("contenteditable") === "true" || target.closest("[contenteditable='true']"))) {
-                      return;
-                    }
-
-                    if (activeSectionIndex !== idx) {
-                      setActiveSectionIndex(idx);
                     }
 
                     if (target) {
