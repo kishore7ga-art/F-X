@@ -530,8 +530,8 @@ export function EditorToolbar({
           </div>
         </div>
 
-        {/* 2. Center: Active Section Name Text (Only visible when horizontal) */}
-        {!isVertical && (
+        {/* 2. Center: Active Section Name Text (Visible when horizontal) */}
+        {!isVertical ? (
           <div
             style={{
               position: "absolute",
@@ -559,6 +559,33 @@ export function EditorToolbar({
             >
               {activeSectionTitle || "Select a section"}
             </span>
+          </div>
+        ) : (
+          /* Floating Section Name Badge beside Vertical Side Dock */
+          <div
+            style={{
+              position: "fixed",
+              left: dockPosition === "left" ? "82px" : "auto",
+              right: dockPosition === "right" ? "82px" : "auto",
+              top: "50%",
+              transform: "translateY(-50%)",
+              padding: "6px 14px",
+              borderRadius: "9999px",
+              backgroundColor: "#ffffff",
+              backgroundImage: "linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)",
+              border: "1px solid rgba(203, 213, 225, 0.9)",
+              boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
+              fontSize: "12.5px",
+              fontWeight: 800,
+              color: "#0f172a",
+              fontFamily: "'Plus Jakarta Sans', 'Outfit', sans-serif",
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+              zIndex: 999999,
+              transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            {activeSectionTitle || "Select a section"}
           </div>
         )}
 
