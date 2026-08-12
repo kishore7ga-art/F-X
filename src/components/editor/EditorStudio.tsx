@@ -2857,27 +2857,54 @@ export function EditorStudio({
   };
 
   const handleMoveUp = () => {
-    if (activeSectionIndex === null || activeSectionIndex <= 0) return;
+    if (sections.length <= 1) return;
+    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 1;
+    if (targetIndex <= 0) {
+      showToastNotification("Header is fixed at top edge");
+      return;
+    }
+    // Prevent moving section above top navbar (index 0) if index 0 is navbar
+    const isNavbarAtTop = sections[0] && (normalizeCategory(sections[0].category || "") === "navbar" || (sections[0].title || "").toLowerCase().includes("header"));
+    if (isNavbarAtTop && targetIndex <= 1) {
+      showToastNotification("Header Navigation remains fixed at top");
+      return;
+    }
+
     setSectionsWithHistory((prev) => {
       const copy = [...prev];
-      const temp = copy[activeSectionIndex];
-      copy[activeSectionIndex] = copy[activeSectionIndex - 1];
-      copy[activeSectionIndex - 1] = temp;
+      const temp = copy[targetIndex];
+      copy[targetIndex] = copy[targetIndex - 1];
+      copy[targetIndex - 1] = temp;
       return copy;
     });
-    setActiveSectionIndex((prev) => (prev !== null ? prev - 1 : null));
+    setActiveSectionIndex(targetIndex - 1);
+    showToastNotification(`Moved section up to position ${targetIndex}`);
   };
 
   const handleMoveDown = () => {
-    if (activeSectionIndex === null || activeSectionIndex >= sections.length - 1) return;
+    if (sections.length <= 1) return;
+    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
+    if (targetIndex >= sections.length - 1) {
+      showToastNotification("Section is already at bottom edge");
+      return;
+    }
+    // Prevent moving above footer or footer moving down
+    const lastIdx = sections.length - 1;
+    const isFooterAtBottom = sections[lastIdx] && (normalizeCategory(sections[lastIdx].category || "") === "footer" || (sections[lastIdx].title || "").toLowerCase().includes("footer"));
+    if (isFooterAtBottom && targetIndex >= lastIdx - 1) {
+      showToastNotification("Footer remains fixed at bottom");
+      return;
+    }
+
     setSectionsWithHistory((prev) => {
       const copy = [...prev];
-      const temp = copy[activeSectionIndex];
-      copy[activeSectionIndex] = copy[activeSectionIndex + 1];
-      copy[activeSectionIndex + 1] = temp;
+      const temp = copy[targetIndex];
+      copy[targetIndex] = copy[targetIndex + 1];
+      copy[targetIndex + 1] = temp;
       return copy;
     });
-    setActiveSectionIndex((prev) => (prev !== null ? prev + 1 : null));
+    setActiveSectionIndex(targetIndex + 1);
+    showToastNotification(`Moved section down to position ${targetIndex + 2}`);
   };
 
   const handleEnableTextEditingForActiveSection = () => {

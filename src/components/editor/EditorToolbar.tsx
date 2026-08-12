@@ -393,8 +393,70 @@ export function EditorToolbar({
 
           <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
 
-          {/* Section Tools Group */}
+          {/* Section Tools Group (Complete Tools Set) */}
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
+            {/* Undo Button */}
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: canUndo ? "pointer" : "default",
+                color: canUndo ? "#3b4759" : "#cbd5e1",
+                ...buttonHoverStyle,
+              }}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Redo Button */}
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: canRedo ? "pointer" : "default",
+                color: canRedo ? "#3b4759" : "#cbd5e1",
+                ...buttonHoverStyle,
+              }}
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Duplicate Button */}
+            <button
+              onClick={onDuplicateSection}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Duplicate Section"
+            >
+              <Copy style={{ width: "16px", height: "16px" }} />
+            </button>
+
             {/* Refresh / Swap Button */}
             <button
               onClick={handleRefreshSwap}
@@ -415,7 +477,27 @@ export function EditorToolbar({
               <RefreshCw style={{ width: "16px", height: "16px" }} />
             </button>
 
-            {/* Down Arrow Button */}
+            {/* Move Up Button */}
+            <button
+              onClick={onMoveUp}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Move Up"
+            >
+              <ArrowUp style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Move Down Button */}
             <button
               onClick={onMoveDown}
               style={{
