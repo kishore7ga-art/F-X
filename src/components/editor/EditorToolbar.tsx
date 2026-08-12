@@ -630,26 +630,6 @@ export function EditorToolbar({
 
 
 
-            {/* Refresh / Swap Button */}
-            <button
-              onClick={handleRefreshSwap}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: "pointer",
-                color: "#3b4759",
-                ...buttonHoverStyle,
-              }}
-              title="Swap Variant Layout"
-            >
-              <RefreshCw style={{ width: "16px", height: "16px" }} />
-            </button>
-
             {/* Move Up Button */}
             <button
               onClick={onMoveUp}
@@ -688,6 +668,26 @@ export function EditorToolbar({
               title="Move Down"
             >
               <ArrowDown style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Refresh / Swap Button (Moved to Last) */}
+            <button
+              onClick={handleRefreshSwap}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Swap Variant Layout"
+            >
+              <RefreshCw style={{ width: "16px", height: "16px" }} />
             </button>
           </div>
         </div>
