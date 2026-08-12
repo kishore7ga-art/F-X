@@ -430,89 +430,53 @@ export function EditorToolbar({
         {/* 3. Far Right Group: Viewport Switcher First + Editing Tools */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
 
-          {/* Viewport & Resolution Switcher Group (Moved to Front) */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px" }}>
+          {/* Viewport & Resolution Switcher Group (Underline Highlight Indicator) */}
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
             {/* Desktop Resolution Button */}
             <button
               onClick={handleDesktopClick}
-              style={
-                !activeTablet && !activeMobile
-                  ? {
-                      height: "30px",
-                      padding: "0 12px",
-                      borderRadius: "9999px",
-                      backgroundColor: "#3b82f6",
-                      backgroundImage: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
-                      boxShadow: "0 2px 6px rgba(37,99,235,0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "#ffffff",
-                      ...buttonHoverStyle,
-                    }
-                  : {
-                      width: "28px",
-                      height: "28px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      cursor: "pointer",
-                      color: "#3b4759",
-                      ...buttonHoverStyle,
-                    }
-              }
+              style={{
+                height: "32px",
+                padding: "0 4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                border: "none",
+                borderBottom: !activeTablet && !activeMobile ? "2.5px solid #2563eb" : "2.5px solid transparent",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b",
+                ...buttonHoverStyle,
+              }}
               title="Desktop Resolution (100%)"
             >
-              <Monitor style={{ width: "15px", height: "15px", color: !activeTablet && !activeMobile ? "#ffffff" : "#3b4759" }} />
-              {!activeTablet && !activeMobile && (
-                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: "12px", color: "#ffffff" }}>
-                  {viewportWidth === "100%" ? "100%" : viewportWidth}
-                </span>
-              )}
+              <Monitor style={{ width: "16px", height: "16px", color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b" }} />
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 800 : 600, fontSize: "12px", color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b" }}>
+                {viewportWidth === "100%" ? "100%" : viewportWidth}
+              </span>
             </button>
 
             {/* Tablet Resolution Button */}
             <button
               onClick={handleTabletClick}
-              style={
-                activeTablet
-                  ? {
-                      height: "30px",
-                      padding: "0 12px",
-                      borderRadius: "9999px",
-                      backgroundColor: "#3b82f6",
-                      backgroundImage: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
-                      boxShadow: "0 2px 6px rgba(37,99,235,0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "#ffffff",
-                      ...buttonHoverStyle,
-                    }
-                  : {
-                      width: "28px",
-                      height: "28px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      cursor: "pointer",
-                      color: "#3b4759",
-                      ...buttonHoverStyle,
-                    }
-              }
+              style={{
+                height: "32px",
+                padding: "0 4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                border: "none",
+                borderBottom: activeTablet ? "2.5px solid #2563eb" : "2.5px solid transparent",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: activeTablet ? "#2563eb" : "#64748b",
+                ...buttonHoverStyle,
+              }}
               title="Tablet Resolution"
             >
-              <Tablet style={{ width: "16px", height: "16px", color: activeTablet ? "#ffffff" : "#3b4759" }} />
+              <Tablet style={{ width: "16px", height: "16px", color: activeTablet ? "#2563eb" : "#64748b" }} />
               {activeTablet && (
-                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: "12px", color: "#ffffff" }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
               )}
@@ -521,41 +485,24 @@ export function EditorToolbar({
             {/* Mobile Resolution Button */}
             <button
               onClick={handleMobileClick}
-              style={
-                activeMobile
-                  ? {
-                      height: "30px",
-                      padding: "0 12px",
-                      borderRadius: "9999px",
-                      backgroundColor: "#3b82f6",
-                      backgroundImage: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
-                      boxShadow: "0 2px 6px rgba(37,99,235,0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "#ffffff",
-                      ...buttonHoverStyle,
-                    }
-                  : {
-                      width: "28px",
-                      height: "28px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      cursor: "pointer",
-                      color: "#3b4759",
-                      ...buttonHoverStyle,
-                    }
-              }
+              style={{
+                height: "32px",
+                padding: "0 4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                border: "none",
+                borderBottom: activeMobile ? "2.5px solid #2563eb" : "2.5px solid transparent",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: activeMobile ? "#2563eb" : "#64748b",
+                ...buttonHoverStyle,
+              }}
               title="Mobile Resolution"
             >
-              <Smartphone style={{ width: "16px", height: "16px", color: activeMobile ? "#ffffff" : "#3b4759" }} />
+              <Smartphone style={{ width: "16px", height: "16px", color: activeMobile ? "#2563eb" : "#64748b" }} />
               {activeMobile && (
-                <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: "12px", color: "#ffffff" }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
               )}
