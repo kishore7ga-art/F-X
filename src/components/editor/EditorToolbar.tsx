@@ -529,18 +529,16 @@ export function EditorToolbar({
           </div>
         </div>
 
-        {/* 2. Center: Active Section Name Text (Visible when horizontal) */}
+        {/* 2. Center: Active Section Name Text (In natural flex flow to prevent overlap) */}
         {!isVertical ? (
           <div
             style={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              pointerEvents: "none",
-              zIndex: 10,
+              padding: "0 12px",
+              flexShrink: 1,
+              minWidth: 0,
             }}
           >
             <span
@@ -553,7 +551,6 @@ export function EditorToolbar({
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 letterSpacing: "-0.015em",
-                pointerEvents: "auto",
               }}
             >
               {activeSectionTitle || "Select a section"}
