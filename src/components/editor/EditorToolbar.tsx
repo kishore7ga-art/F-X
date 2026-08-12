@@ -452,7 +452,7 @@ export function EditorToolbar({
             >
               <Monitor style={{ width: "16px", height: "16px", color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b" }} />
               <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 800 : 600, fontSize: "12px", color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b" }}>
-                {viewportWidth === "100%" ? "100%" : viewportWidth}
+                100%
               </span>
             </button>
 
