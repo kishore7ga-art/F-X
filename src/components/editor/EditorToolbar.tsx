@@ -303,14 +303,11 @@ export function EditorToolbar({
     if (dockPosition === "left") {
       return {
         position: "fixed",
-        left: "14px",
-        top: "50%",
-        transform: "translateY(-50%)",
-        bottom: "auto",
-        right: "auto",
-        width: "58px",
-        height: "auto",
-        maxHeight: "85vh",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: "52px",
+        height: "100%",
         transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         zIndex: 99999,
       };
@@ -319,14 +316,11 @@ export function EditorToolbar({
     if (dockPosition === "right") {
       return {
         position: "fixed",
-        right: "14px",
-        top: "50%",
-        transform: "translateY(-50%)",
-        bottom: "auto",
-        left: "auto",
-        width: "58px",
-        height: "auto",
-        maxHeight: "85vh",
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: "52px",
+        height: "100%",
         transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         zIndex: 99999,
       };
@@ -359,19 +353,24 @@ export function EditorToolbar({
       <div
         onPointerDown={handlePointerDown}
         style={{
-          height: isVertical ? "auto" : "52px",
-          width: isVertical ? "58px" : "100%",
+          height: isVertical ? "100%" : "52px",
+          width: isVertical ? "52px" : "100%",
           backgroundColor: "#f4f6f9",
           backgroundImage: "linear-gradient(180deg, #fafbfc 0%, #edf0f5 100%)",
-          borderTop: isVertical || dockPosition === "bottom" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          borderBottom: isVertical || dockPosition === "top" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          borderLeft: isVertical ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          borderRight: isVertical ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          boxShadow: isVertical
-            ? "0 16px 40px rgba(0, 0, 0, 0.35)"
-            : "0 -10px 40px rgba(0, 0, 0, 0.45), 0 -2px 10px rgba(0, 0, 0, 0.25)",
-          borderRadius: isVertical ? "30px" : "0",
-          padding: isVertical ? "16px 8px" : "0 24px",
+          borderRight: dockPosition === "left" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          borderLeft: dockPosition === "right" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          borderTop: dockPosition === "bottom" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          borderBottom: dockPosition === "top" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          boxShadow:
+            dockPosition === "left"
+              ? "10px 0 40px rgba(0, 0, 0, 0.45)"
+              : dockPosition === "right"
+              ? "-10px 0 40px rgba(0, 0, 0, 0.45)"
+              : dockPosition === "top"
+              ? "0 10px 40px rgba(0, 0, 0, 0.45)"
+              : "0 -10px 40px rgba(0, 0, 0, 0.45)",
+          borderRadius: 0,
+          padding: isVertical ? "20px 0" : "0 24px",
           display: "flex",
           flexDirection: isVertical ? "column" : "row",
           alignItems: "center",
