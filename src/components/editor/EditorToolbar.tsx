@@ -370,7 +370,7 @@ export function EditorToolbar({
               ? "0 10px 40px rgba(0, 0, 0, 0.45)"
               : "0 -10px 40px rgba(0, 0, 0, 0.45)",
           borderRadius: 0,
-          padding: isVertical ? "20px 0" : "0 24px",
+          padding: isVertical ? "8px 0" : "0 24px",
           display: "flex",
           flexDirection: isVertical ? "column" : "row",
           alignItems: "center",
@@ -394,9 +394,34 @@ export function EditorToolbar({
               height: "100%",
               width: "100%",
               boxSizing: "border-box",
-              padding: "12px 0",
+              padding: "6px 0",
             }}
           >
+            {/* Top Floating Section Name Badge beside Vertical Side Dock */}
+            <div
+              style={{
+                position: "fixed",
+                left: dockPosition === "left" ? "64px" : "auto",
+                right: dockPosition === "right" ? "64px" : "auto",
+                top: "8px",
+                padding: "6px 14px",
+                borderRadius: "9999px",
+                backgroundColor: "#ffffff",
+                backgroundImage: "linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)",
+                border: "1px solid rgba(203, 213, 225, 0.9)",
+                boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
+                fontSize: "12.5px",
+                fontWeight: 800,
+                color: "#0f172a",
+                fontFamily: "'Plus Jakarta Sans', 'Outfit', sans-serif",
+                whiteSpace: "nowrap",
+                pointerEvents: "none",
+                zIndex: 999999,
+                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            >
+              {activeSectionTitle || "Select a section"}
+            </div>
             {/* 1. Top Section: Logo */}
             <button
               onClick={onOpenSettings}
