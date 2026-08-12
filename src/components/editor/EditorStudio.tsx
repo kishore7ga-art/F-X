@@ -1364,18 +1364,19 @@ export function EditorStudio({
   // Auto-save active sections to pageStore & localStorage whenever sections update
   useEffect(() => {
     if (sections.length > 0 && currentPage.slug) {
+      const pageKey = (currentPage.slug || "/home").replace(/\//g, "_") || "home";
       setPageStore((prev) => {
         const updated = { ...prev, [currentPage.slug]: sections };
         if (typeof window !== "undefined") {
           try {
             localStorage.setItem("xite_saved_pages", JSON.stringify(updated));
-            localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(sections));
+            localStorage.setItem(`xite_active_sections_${subdomain}_${pageKey}`, JSON.stringify(sections));
           } catch {}
         }
         return updated;
       });
     }
-  }, [sections, currentPage.slug]);
+  }, [sections, currentPage.slug, subdomain]);
 
   // Helper to normalize category key aliases across Admin DB templates & Editor categories
   const normalizeCategory = (cat?: string): string => {
@@ -1435,10 +1436,10 @@ export function EditorStudio({
     });
   };
 
-  const ensureEssentialSections = (secs: SectionItem[]): SectionItem[] => {
+  const ensureEssentialSections = (secs: SectionItem[], slug: string = "/home"): SectionItem[] => {
     let clean = secs.filter((sec) => sec && sec.code);
 
-    // 1. Ensure Header (Navbar) exists at Index 0 (Top edge) and uses clean VIT University layout
+    // 1. Ensure Header (Navbar) exists at Index 0 (Top edge) for all pages
     const headerIdx = clean.findIndex((s) => {
       const cat = (s.category || s.title || "").toLowerCase();
       return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
@@ -1470,30 +1471,33 @@ export function EditorStudio({
       }
     }
 
-    // 2. Ensure Hero Banner exists at Index 1 (Directly below Header)
-    const heroIdx = clean.findIndex((s) => {
-      const cat = (s.category || s.title || "").toLowerCase();
-      return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
-    });
-
-    if (heroIdx < 0) {
-      const heroCode = liveAdminTemplatesMap["hero"] || ALL_19_SECTION_TEMPLATES["hero"];
-      clean.splice(1, 0, {
-        id: `sec-hero-${Date.now()}`,
-        title: "Hero Banner",
-        code: heroCode,
-        category: "hero",
-        variantIndex: 0,
+    // 2. Ensure Hero Banner exists at Index 1 ONLY on Home Page (/home, /, home)
+    const isHomePage = !slug || slug === "/home" || slug === "/" || slug === "home";
+    if (isHomePage) {
+      const heroIdx = clean.findIndex((s) => {
+        const cat = (s.category || s.title || "").toLowerCase();
+        return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
       });
-    } else if (heroIdx !== 1 && heroIdx > 0) {
-      const [hr] = clean.splice(heroIdx, 1);
-      clean.splice(1, 0, hr!);
+
+      if (heroIdx < 0) {
+        const heroCode = liveAdminTemplatesMap["hero"] || ALL_19_SECTION_TEMPLATES["hero"];
+        clean.splice(1, 0, {
+          id: `sec-hero-${Date.now()}`,
+          title: "Hero Banner",
+          code: heroCode,
+          category: "hero",
+          variantIndex: 0,
+        });
+      } else if (heroIdx !== 1 && heroIdx > 0) {
+        const [hr] = clean.splice(heroIdx, 1);
+        clean.splice(1, 0, hr!);
+      }
     }
 
     return clean;
   };
 
-  const deduplicateSections = (secs: SectionItem[]): SectionItem[] => {
+  const deduplicateSections = (secs: SectionItem[], slug: string = "/home"): SectionItem[] => {
     const seenIds = new Set<string>();
     const seenCategories = new Set<string>();
 
@@ -1514,16 +1518,17 @@ export function EditorStudio({
       return true;
     });
 
-    return ensureEssentialSections(clean);
+    return ensureEssentialSections(clean, slug);
   };
 
   // Fetch sections & admin DB templates
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
+    const cleanSlug = (slug || "/home").replace(/\//g, "_") || "home";
     try {
       if (!forceSync && typeof window !== "undefined") {
         try {
-          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}`);
+          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
           const rawSaved = localStorage.getItem("xite_saved_pages");
           let savedSecs: SectionItem[] | null = null;
 
@@ -1557,10 +1562,10 @@ export function EditorStudio({
               }
               return s;
             });
-            const cleanSecs = deduplicateSections(sanitizedSecs);
+            const cleanSecs = deduplicateSections(sanitizedSecs, slug);
             setSections(cleanSecs);
             try {
-              localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanSecs));
+              localStorage.setItem(`xite_active_sections_${subdomain}_${cleanSlug}`, JSON.stringify(cleanSecs));
               const currentSavedPages = JSON.parse(localStorage.getItem("xite_saved_pages") || "{}");
               currentSavedPages[slug] = cleanSecs;
               localStorage.setItem("xite_saved_pages", JSON.stringify(currentSavedPages));
@@ -1859,37 +1864,58 @@ export function EditorStudio({
   }, []);
 
   const handlePageChange = (pageName: string, pageSlug: string) => {
-    // 1. Auto-save current page sections first
+    // 1. Auto-save current page sections first to pageStore & page-specific localStorage
+    const currentSlugKey = (currentPage.slug || "/home").replace(/\//g, "_") || "home";
     setPageStore((prev) => {
       const updated = { ...prev, [currentPage.slug]: sections };
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem("xite_saved_pages", JSON.stringify(updated));
+          localStorage.setItem(`xite_active_sections_${subdomain}_${currentSlugKey}`, JSON.stringify(sections));
         } catch {}
       }
       return updated;
     });
 
-    // 2. Set new active page
+    // 2. Set new active page context
     setCurrentPage({ name: pageName, slug: pageSlug });
+    setActiveSectionIndex(0);
 
-    // 3. Load saved sections for target page if already in pageStore
+    // 3. Load saved sections for target page if already in pageStore or target page-specific localStorage
+    const targetSlugKey = (pageSlug || "/home").replace(/\//g, "_") || "home";
+    let targetSecs: SectionItem[] | null = null;
+
     if (pageStore[pageSlug] && pageStore[pageSlug].length > 0) {
-      setSections(pageStore[pageSlug]);
-      setActiveSectionIndex(0);
-      return;
+      targetSecs = pageStore[pageSlug];
+    } else if (typeof window !== "undefined") {
+      try {
+        const rawTargetActive = localStorage.getItem(`xite_active_sections_${subdomain}_${targetSlugKey}`);
+        if (rawTargetActive && rawTargetActive !== "undefined" && rawTargetActive !== "null") {
+          const parsed = JSON.parse(rawTargetActive);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            targetSecs = parsed;
+          }
+        }
+      } catch {}
     }
 
-    // 4. Fetch/Load sections for target page
-    void fetchDbSections(pageSlug, true);
-    setActiveSectionIndex(0);
+    if (targetSecs && targetSecs.length > 0) {
+      const cleanTarget = deduplicateSections(targetSecs, pageSlug);
+      setSections(cleanTarget);
+      showToastNotification(`Switched to page: ${pageName}`);
+    } else {
+      // 4. Fetch/Load sections for target page
+      void fetchDbSections(pageSlug, true);
+      showToastNotification(`Switched to page: ${pageName}`);
+    }
   };
 
   const handlePersistWebsiteSave = async () => {
+    const currentSlugKey = (currentPage.slug || "/home").replace(/\//g, "_") || "home";
     if (typeof window !== "undefined") {
       try {
         const updatedStore = { ...pageStore, [currentPage.slug]: sections };
-        localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(sections));
+        localStorage.setItem(`xite_active_sections_${subdomain}_${currentSlugKey}`, JSON.stringify(sections));
         localStorage.setItem("xite_saved_pages", JSON.stringify(updatedStore));
         setPageStore(updatedStore);
       } catch (err) {
