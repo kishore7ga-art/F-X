@@ -3098,13 +3098,13 @@ export function EditorStudio({
                     activeSectionIndex === idx ? "ring-2 ring-white ring-offset-2 ring-offset-black z-10" : ""
                   }`}
                 >
-                  {/* Top-Right Small Section Badge Pill with Red Star Icon (Matching Image) */}
+                  {/* Top-Right Premium Dark Frosted Section Badge Pill (Matching Image 1 & 2) */}
                   {activeSectionIndex === idx && (
-                    <div className="absolute top-4 right-6 z-30 pointer-events-none flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#090d16] border border-white/15 shadow-[0_4px_16px_rgba(0,0,0,0.5)] backdrop-blur-md select-none transition-all duration-200">
-                      <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="#ef4444" stroke="#dc2626" strokeWidth="1">
+                    <div className="absolute top-4 right-6 z-30 pointer-events-none flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#090d16]/95 border border-white/20 shadow-[0_10px_30px_rgba(0,0,0,0.7),0_0_1px_rgba(255,255,255,0.2)] backdrop-blur-xl select-none transition-all duration-300 transform hover:scale-105">
+                      <svg className="w-4 h-4 shrink-0 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" viewBox="0 0 24 24" fill="#ef4444" stroke="#dc2626" strokeWidth="1">
                         <path d="M12 2L14.8 8.6L22 9.2L16.5 13.8L18.2 20.8L12 17L5.8 20.8L7.5 13.8L2 9.2L9.2 8.6L12 2Z" />
                       </svg>
-                      <span className="text-[12px] font-extrabold text-white tracking-wide whitespace-nowrap">
+                      <span className="text-[13px] font-black text-white tracking-wide whitespace-nowrap drop-shadow-sm">
                         {sec.title || `Section ${idx + 1}`}
                       </span>
                     </div>
