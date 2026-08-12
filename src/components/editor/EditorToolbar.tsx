@@ -571,8 +571,20 @@ export function EditorToolbar({
               </button>
             </div>
 
-            {/* 3. Middle Resolution Switcher Group (Centered in Middle of Vertical Bar with Spacing) */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", margin: "auto 0" }}>
+            {/* 3. Middle Resolution Switcher Group (Exact Absolute Center of Vertical Bar) */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+                pointerEvents: "auto",
+              }}
+            >
               <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
 
               {/* Mobile Resolution Button */}
