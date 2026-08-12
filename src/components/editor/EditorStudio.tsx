@@ -2722,12 +2722,22 @@ export function EditorStudio({
 
       if (!codeStr) return;
 
+      // STRICT SAFETY GUARD 1: Do NOT allow navbar/header code into non-navbar categories
+      const isHeaderTpl = codeStr.toLowerCase().includes("<header") || nameLower.startsWith("header") || nameLower.includes("header navigation");
+      if (normCatId !== "navbar" && isHeaderTpl) return;
+
+      // STRICT SAFETY GUARD 2: Do NOT allow footer code into non-footer categories
+      const isFooterTpl = codeStr.toLowerCase().includes("<footer") || nameLower.startsWith("footer");
+      if (normCatId !== "footer" && isFooterTpl) return;
+
       let isMatch = false;
 
       if (normTplCat && normTplCat === normCatId) {
         isMatch = true;
       } else if (catId === "admissions" || catId === "admission") {
-        isMatch = normTplCat === "admissions" || tplCatLower === "admissions" || tplCatLower === "admission" || nameLower.includes("admission");
+        isMatch = normTplCat === "admissions" || tplCatLower === "admissions" || tplCatLower === "admission" || (nameLower.includes("admission") && !nameLower.includes("contact"));
+      } else if (catId === "contact") {
+        isMatch = normTplCat === "contact" || tplCatLower === "contact" || tplCatLower.includes("contact") || nameLower.includes("contact") || nameLower.includes("enquiry") || nameLower.includes("inquiry");
       } else if (catId === "vision") {
         isMatch = normTplCat === "vision" || (nameLower.includes("vision") || (nameLower.includes("mission") && !nameLower.includes("admission")));
       } else if (catId === "events" || catId === "event") {
