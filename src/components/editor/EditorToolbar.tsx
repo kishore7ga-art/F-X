@@ -215,108 +215,128 @@ export function EditorToolbar({
         gap: "8px",
       }}
     >
-      {/* Outer Dock Floating Capsule Container */}
+      {/* Outer Dock Floating Capsule Container (Styled from Image 21) */}
       <div
         style={{
-          height: "54px",
-          backgroundColor: "rgba(255, 255, 255, 0.92)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(226, 232, 240, 0.9)",
-          boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.12), 0 0 1px 1px rgba(0, 0, 0, 0.05)",
+          height: "50px",
+          backgroundColor: "#e8ebf0",
+          backgroundImage: "linear-gradient(180deg, #f3f5f8 0%, #e1e5eb 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.8)",
+          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0,0,0,0.06)",
           borderRadius: "9999px",
-          padding: "0 14px",
+          padding: "0 10px 0 6px",
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-          gap: "10px",
+          gap: "8px",
           boxSizing: "border-box",
         }}
       >
-        {/* 1. Monochrome Logo / Settings Button */}
-        <button
-          onClick={onOpenSettings}
+        {/* 1. Leftmost Light-Grey Text Input Pill */}
+        <div
           style={{
-            width: "36px",
             height: "36px",
-            borderRadius: "14px",
-            backgroundColor: "#0f172a",
+            padding: "0 16px",
+            borderRadius: "9999px",
+            backgroundColor: "#dbe0e8",
+            backgroundImage: "linear-gradient(180deg, #e5e9f0 0%, #d4d9e2 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.6)",
+            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "#581c25",
+              fontFamily: "system-ui, -apple-system, sans-serif",
+              whiteSpace: "nowrap",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {activeSectionTitle || "Placement & Top Recruiters [placements] - Placemen 2"}
+          </span>
+        </div>
+
+        {/* 2. Dark Blue Circular 'X' Close Button */}
+        <button
+          onClick={onClearSelection}
+          style={{
+            width: "30px",
+            height: "30px",
+            borderRadius: "50%",
+            backgroundColor: "#0d1527",
             color: "#ffffff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontWeight: 900,
-            fontSize: "14px",
             border: "none",
             cursor: "pointer",
             flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(15,23,42,0.25)",
+            boxShadow: "0 2px 6px rgba(13,21,39,0.3)",
+            marginRight: "4px",
           }}
-          title={isSettingsOpen ? "Back to Editor" : "Open XITE Studio Settings"}
+          title="Clear Selection / Close Section Toolbar"
         >
-          {isSettingsOpen ? (
-            <X style={{ width: "16px", height: "16px", color: "#ffffff" }} />
-          ) : (
-            <span style={{ fontWeight: 900, fontSize: "14px", color: "#ffffff", lineHeight: 1 }}>x</span>
-          )}
+          <X style={{ width: "14px", height: "14px", color: "#ffffff", strokeWidth: 2.5 }} />
         </button>
 
-        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
+        <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
 
-        {/* 2. Primary System Tools Group */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
+        {/* 3. Action Icons horizontal group */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
           {/* Layers Drawer Button */}
           <button
             onClick={onToggleDrawer}
-            className="hover:bg-slate-100 rounded-xl"
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#3b4759",
               ...buttonHoverStyle,
             }}
             title="Pages, Colors & Fonts Drawer"
           >
-            <Layers style={{ width: "18px", height: "18px" }} />
+            <Layers style={{ width: "17px", height: "17px" }} />
           </button>
 
-          {/* Save Status Disk Button */}
+          {/* Save Status Disk Button (with dot) */}
           <button
             onClick={handleManualSave}
-            className="hover:bg-slate-100 rounded-xl"
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#3b4759",
               position: "relative",
               ...buttonHoverStyle,
             }}
             title="Save Status (Click to Save)"
           >
-            <Save style={{ width: "18px", height: "18px" }} />
+            <Save style={{ width: "17px", height: "17px" }} />
             <span
               style={{
                 position: "absolute",
                 top: "4px",
                 right: "4px",
-                width: "7px",
-                height: "7px",
+                width: "5px",
+                height: "5px",
                 borderRadius: "50%",
-                backgroundColor: "#0f172a",
-                border: "1.5px solid #ffffff",
-                boxShadow: "0 0 4px rgba(15,23,42,0.4)",
+                backgroundColor: "#0d1527",
               }}
             />
           </button>
@@ -324,243 +344,181 @@ export function EditorToolbar({
           {/* Copy Link Button */}
           <button
             onClick={handleCopyLink}
-            className="hover:bg-slate-100 rounded-xl"
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#3b4759",
               ...buttonHoverStyle,
             }}
             title="Instant Share / Copy Live Website Link"
           >
             {copied ? (
-              <Check style={{ width: "18px", height: "18px", color: "#16a34a" }} />
+              <Check style={{ width: "17px", height: "17px", color: "#16a34a" }} />
             ) : (
-              <LinkIcon style={{ width: "18px", height: "18px" }} />
+              <LinkIcon style={{ width: "17px", height: "17px" }} />
             )}
           </button>
 
-          {/* External Preview Link Button */}
+          {/* External Link Button */}
           <button
             onClick={handleOpenPreview}
-            className="hover:bg-slate-100 rounded-xl"
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#3b4759",
               ...buttonHoverStyle,
             }}
             title="Open Live Website Preview in New Tab"
           >
-            <ExternalLink style={{ width: "18px", height: "18px" }} />
+            <ExternalLink style={{ width: "17px", height: "17px" }} />
           </button>
         </div>
 
-        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
+        <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
 
-        {/* 3. Section Editing Tools Group */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
-          {/* Duplicate Button */}
-          <button
-            onClick={onDuplicateSection}
-            className="hover:bg-slate-100 rounded-xl"
-            style={{
-              width: "34px",
-              height: "34px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#334155",
-              ...buttonHoverStyle,
-            }}
-            title="Duplicate Section"
-          >
-            <Copy style={{ width: "18px", height: "18px" }} />
-          </button>
-
-          {/* Swap Variant Refresh Button */}
+        {/* 4. Refresh & Down Arrow & Delete Trash Group */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
+          {/* Refresh / Swap Button */}
           <button
             onClick={handleRefreshSwap}
-            className="hover:bg-slate-100 rounded-xl"
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#3b4759",
               ...buttonHoverStyle,
             }}
             title="Swap Variant Layout"
           >
-            <RefreshCw style={{ width: "18px", height: "18px" }} />
+            <RefreshCw style={{ width: "17px", height: "17px" }} />
           </button>
 
-          {/* Move Up Button */}
-          <button
-            onClick={onMoveUp}
-            className="hover:bg-slate-100 rounded-xl"
-            style={{
-              width: "34px",
-              height: "34px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#334155",
-              ...buttonHoverStyle,
-            }}
-            title="Move Up"
-          >
-            <ArrowUp style={{ width: "18px", height: "18px" }} />
-          </button>
-
-          {/* Move Down Button */}
+          {/* Down Arrow Button */}
           <button
             onClick={onMoveDown}
-            className="hover:bg-slate-100 rounded-xl"
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#334155",
+              color: "#3b4759",
               ...buttonHoverStyle,
             }}
             title="Move Down"
           >
-            <ArrowDown style={{ width: "18px", height: "18px" }} />
+            <ArrowDown style={{ width: "17px", height: "17px" }} />
           </button>
 
-          {/* Delete Trash Icon Button */}
+          {/* Dark Red Trash Icon Button */}
           <button
             onClick={onDeleteSection}
-            className="hover:bg-red-50 rounded-xl"
             style={{
-              width: "34px",
-              height: "34px",
+              width: "32px",
+              height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
               backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#ef4444",
+              color: "#b91c1c",
               ...buttonHoverStyle,
             }}
             title="Delete Section"
           >
-            <Trash2 style={{ width: "18px", height: "18px" }} />
+            <Trash2 style={{ width: "17px", height: "17px", color: "#b91c1c" }} />
           </button>
         </div>
 
-        <div style={{ height: "20px", width: "1px", backgroundColor: "#e2e8f0", margin: "0 2px", flexShrink: 0 }} />
+        <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
 
-        {/* 4. Multi-Resolution Viewport Switcher Group */}
+        {/* 5. Blue Zoom Pill & Light Grey Viewport Icons Group */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
-          {/* Desktop Monitor Resolution Button */}
+          {/* Blue Zoom Pill (Monitor Icon + 100%) */}
           <button
             onClick={handleDesktopClick}
             style={{
-              height: "34px",
-              padding: activeDesktop ? "0 12px" : "0 8px",
-              borderRadius: "12px",
-              border: activeDesktop ? "1px solid #0f172a" : "none",
-              backgroundColor: activeDesktop ? "#0f172a" : "transparent",
-              boxShadow: activeDesktop ? "0 2px 8px rgba(15,23,42,0.2)" : "none",
+              height: "32px",
+              padding: "0 12px",
+              borderRadius: "9999px",
+              backgroundColor: "#3b82f6",
+              backgroundImage: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
+              boxShadow: "0 2px 6px rgba(37,99,235,0.3)",
               display: "flex",
               alignItems: "center",
               gap: "6px",
+              border: "none",
               cursor: "pointer",
-              color: activeDesktop ? "#ffffff" : "#64748b",
+              color: "#ffffff",
               ...buttonHoverStyle,
             }}
-            title="Desktop Resolution"
+            title="Desktop Resolution (100%)"
           >
-            <Monitor style={{ width: "18px", height: "18px", color: activeDesktop ? "#ffffff" : "#64748b" }} />
-            {activeDesktop && (
-              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "12px", color: "#ffffff" }}>
-                {activeDesktop.width}
-              </span>
-            )}
+            <Monitor style={{ width: "16px", height: "16px", color: "#ffffff" }} />
+            <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: "12px", color: "#ffffff" }}>
+              100%
+            </span>
           </button>
 
-          {/* Tablet Resolution Button */}
+          {/* Tablet Resolution Outline Button */}
           <button
             onClick={handleTabletClick}
             style={{
-              height: "34px",
-              padding: activeTablet ? "0 12px" : "0 8px",
-              borderRadius: "12px",
-              border: activeTablet ? "1px solid #0f172a" : "none",
-              backgroundColor: activeTablet ? "#0f172a" : "transparent",
-              boxShadow: activeTablet ? "0 2px 8px rgba(15,23,42,0.2)" : "none",
+              width: "30px",
+              height: "30px",
               display: "flex",
               alignItems: "center",
-              gap: "6px",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
               cursor: "pointer",
-              color: activeTablet ? "#ffffff" : "#64748b",
+              color: "#3b4759",
               ...buttonHoverStyle,
             }}
             title="Tablet Resolution"
           >
-            <Tablet style={{ width: "18px", height: "18px", color: activeTablet ? "#ffffff" : "#64748b" }} />
-            {activeTablet && (
-              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "12px", color: "#ffffff" }}>
-                {activeTablet.width}
-              </span>
-            )}
+            <Tablet style={{ width: "18px", height: "18px", color: "#3b4759" }} />
           </button>
 
-          {/* Mobile Phone Resolution Button */}
+          {/* Mobile Resolution Outline Button */}
           <button
             onClick={handleMobileClick}
             style={{
-              height: "34px",
-              padding: activeMobile ? "0 12px" : "0 8px",
-              borderRadius: "12px",
-              border: activeMobile ? "1px solid #0f172a" : "none",
-              backgroundColor: activeMobile ? "#0f172a" : "transparent",
-              boxShadow: activeMobile ? "0 2px 8px rgba(15,23,42,0.2)" : "none",
+              width: "30px",
+              height: "30px",
               display: "flex",
               alignItems: "center",
-              gap: "6px",
+              justifyContent: "center",
+              border: "none",
+              backgroundColor: "transparent",
               cursor: "pointer",
-              color: activeMobile ? "#ffffff" : "#64748b",
+              color: "#3b4759",
               ...buttonHoverStyle,
             }}
             title="Mobile Resolution"
           >
-            <Smartphone style={{ width: "18px", height: "18px", color: activeMobile ? "#ffffff" : "#64748b" }} />
-            {activeMobile && (
-              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "12px", color: "#ffffff" }}>
-                {activeMobile.width}
-              </span>
-            )}
+            <Smartphone style={{ width: "18px", height: "18px", color: "#3b4759" }} />
           </button>
         </div>
       </div>
