@@ -232,6 +232,7 @@ export function EditorToolbar({
           alignItems: "center",
           justifyContent: "space-between",
           boxSizing: "border-box",
+          position: "relative",
         }}
       >
         {/* 1. Far Left Group: Logo Button + Primary System Tools (Layers, Save, Link, Preview) */}
@@ -359,8 +360,19 @@ export function EditorToolbar({
           </div>
         </div>
 
-        {/* 2. Absolute Center Group: Active Section Name Light-Grey Pill */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "0 16px" }}>
+        {/* 2. Absolute Geometric Center: Active Section Name Light-Grey Pill */}
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        >
           <div
             style={{
               height: "32px",
@@ -375,6 +387,7 @@ export function EditorToolbar({
               justifyContent: "center",
               maxWidth: "400px",
               overflow: "hidden",
+              pointerEvents: "auto",
             }}
           >
             <span
