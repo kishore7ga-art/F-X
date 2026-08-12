@@ -274,12 +274,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 ...buttonHoverStyle,
               }}
               title="Pages, Colors & Fonts Drawer"
             >
-              <Layers style={{ width: "16px", height: "16px" }} />
+              <Layers style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
             </button>
 
             {/* Save Status Disk Button (with dot) */}
@@ -294,13 +294,13 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 position: "relative",
                 ...buttonHoverStyle,
               }}
               title="Save Status (Click to Save)"
             >
-              <Save style={{ width: "16px", height: "16px" }} />
+              <Save style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
               <span
                 style={{
                   position: "absolute",
@@ -326,15 +326,15 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 ...buttonHoverStyle,
               }}
               title="Instant Share / Copy Live Website Link"
             >
               {copied ? (
-                <Check style={{ width: "16px", height: "16px", color: "#16a34a" }} />
+                <Check style={{ width: "17px", height: "17px", strokeWidth: 2.8, color: "#16a34a" }} />
               ) : (
-                <LinkIcon style={{ width: "16px", height: "16px" }} />
+                <LinkIcon style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
               )}
             </button>
 
@@ -350,12 +350,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 ...buttonHoverStyle,
               }}
               title="Open Live Website Preview in New Tab"
             >
-              <ExternalLink style={{ width: "16px", height: "16px" }} />
+              <ExternalLink style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
             </button>
 
             {/* Dark Red Trash Icon Button (Placed Next to ExternalLink) */}
@@ -370,12 +370,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#b91c1c",
+                color: "#dc2626",
                 ...buttonHoverStyle,
               }}
               title="Delete Section"
             >
-              <Trash2 style={{ width: "16px", height: "16px", color: "#b91c1c" }} />
+              <Trash2 style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#dc2626" }} />
             </button>
           </div>
         </div>
@@ -445,13 +445,13 @@ export function EditorToolbar({
                 borderBottom: !activeTablet && !activeMobile ? "2.5px solid #2563eb" : "2.5px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b",
+                color: !activeTablet && !activeMobile ? "#2563eb" : "#475569",
                 ...buttonHoverStyle,
               }}
               title="Desktop Resolution (100%)"
             >
-              <Monitor style={{ width: "16px", height: "16px", color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b" }} />
-              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 800 : 600, fontSize: "12px", color: !activeTablet && !activeMobile ? "#2563eb" : "#64748b" }}>
+              <Monitor style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }} />
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 800 : 700, fontSize: "12.5px", color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }}>
                 100%
               </span>
             </button>
@@ -469,14 +469,14 @@ export function EditorToolbar({
                 borderBottom: activeTablet ? "2.5px solid #2563eb" : "2.5px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: activeTablet ? "#2563eb" : "#64748b",
+                color: activeTablet ? "#2563eb" : "#475569",
                 ...buttonHoverStyle,
               }}
               title="Tablet Resolution"
             >
-              <Tablet style={{ width: "16px", height: "16px", color: activeTablet ? "#2563eb" : "#64748b" }} />
+              <Tablet style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: activeTablet ? "#2563eb" : "#475569" }} />
               {activeTablet && (
-                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12px", color: "#2563eb" }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12.5px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
               )}
@@ -495,23 +495,23 @@ export function EditorToolbar({
                 borderBottom: activeMobile ? "2.5px solid #2563eb" : "2.5px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: activeMobile ? "#2563eb" : "#64748b",
+                color: activeMobile ? "#2563eb" : "#475569",
                 ...buttonHoverStyle,
               }}
               title="Mobile Resolution"
             >
-              <Smartphone style={{ width: "16px", height: "16px", color: activeMobile ? "#2563eb" : "#64748b" }} />
+              <Smartphone style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: activeMobile ? "#2563eb" : "#475569" }} />
               {activeMobile && (
-                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12px", color: "#2563eb" }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12.5px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
               )}
             </button>
           </div>
 
-          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
+          <div style={{ height: "18px", width: "1.5px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
 
-          {/* Section Tools Group (Undo, Redo, Duplicate, Red Trash, Swap, Move Up, Move Down) */}
+          {/* Section Tools Group (Undo, Redo, Duplicate, Move Up, Move Down, Swap) */}
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
             {/* Undo Button */}
             <button
@@ -526,12 +526,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: canUndo ? "pointer" : "default",
-                color: canUndo ? "#3b4759" : "#cbd5e1",
+                color: canUndo ? "#1e293b" : "#cbd5e1",
                 ...buttonHoverStyle,
               }}
               title="Undo (Ctrl+Z)"
             >
-              <Undo2 style={{ width: "16px", height: "16px" }} />
+              <Undo2 style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: canUndo ? "#1e293b" : "#cbd5e1" }} />
             </button>
 
             {/* Redo Button */}
@@ -547,12 +547,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: canRedo ? "pointer" : "default",
-                color: canRedo ? "#3b4759" : "#cbd5e1",
+                color: canRedo ? "#1e293b" : "#cbd5e1",
                 ...buttonHoverStyle,
               }}
               title="Redo (Ctrl+Y)"
             >
-              <Redo2 style={{ width: "16px", height: "16px" }} />
+              <Redo2 style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: canRedo ? "#1e293b" : "#cbd5e1" }} />
             </button>
 
             {/* Duplicate Button */}
@@ -567,15 +567,13 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 ...buttonHoverStyle,
               }}
               title="Duplicate Section"
             >
-              <Copy style={{ width: "16px", height: "16px" }} />
+              <Copy style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
             </button>
-
-
 
             {/* Move Up Button */}
             <button
@@ -589,12 +587,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 ...buttonHoverStyle,
               }}
               title="Move Up"
             >
-              <ArrowUp style={{ width: "16px", height: "16px" }} />
+              <ArrowUp style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
             </button>
 
             {/* Move Down Button */}
@@ -609,12 +607,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 ...buttonHoverStyle,
               }}
               title="Move Down"
             >
-              <ArrowDown style={{ width: "16px", height: "16px" }} />
+              <ArrowDown style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
             </button>
 
             {/* Refresh / Swap Button (Moved to Last) */}
@@ -629,12 +627,12 @@ export function EditorToolbar({
                 border: "none",
                 backgroundColor: "transparent",
                 cursor: "pointer",
-                color: "#3b4759",
+                color: "#1e293b",
                 ...buttonHoverStyle,
               }}
               title="Swap Variant Layout"
             >
-              <RefreshCw style={{ width: "16px", height: "16px" }} />
+              <RefreshCw style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: "#1e293b" }} />
             </button>
           </div>
         </div>
