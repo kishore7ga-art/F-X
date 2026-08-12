@@ -290,10 +290,10 @@ export function EditorToolbar({
         </div>
 
         {/* 2. Far Right Group: All Action Tools in Exact Order */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
 
           {/* Primary System Tools Group */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
             {/* Layers Drawer Button */}
             <button
               onClick={onToggleDrawer}
@@ -391,10 +391,10 @@ export function EditorToolbar({
             </button>
           </div>
 
-          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
+          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
 
           {/* Section Tools Group (Complete Tools Set) */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
             {/* Undo Button */}
             <button
               onClick={onUndo}
@@ -538,10 +538,10 @@ export function EditorToolbar({
             </button>
           </div>
 
-          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
+          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
 
           {/* Viewport & Resolution Switcher Group (Dynamic Active Mode Pill) */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px" }}>
             {/* Desktop Resolution Button */}
             <button
               onClick={handleDesktopClick}
