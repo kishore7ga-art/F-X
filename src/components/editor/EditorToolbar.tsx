@@ -390,7 +390,7 @@ export function EditorToolbar({
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "flex-start",
+              justifyContent: "space-between",
               height: "100%",
               width: "100%",
               boxSizing: "border-box",
@@ -422,32 +422,34 @@ export function EditorToolbar({
             >
               {activeSectionTitle || "Select a section"}
             </div>
-            {/* 1. Top Section: Logo */}
-            <button
-              onClick={onOpenSettings}
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "50%",
-                backgroundColor: "#0d1527",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                cursor: "pointer",
-                flexShrink: 0,
-                boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
-                overflow: "hidden",
-                marginBottom: "4px",
-              }}
-              title={isSettingsOpen ? "Back to Editor" : "XITE Studio Settings"}
-            >
-              <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
-            </button>
 
-            {/* 2. Top-Middle Group: Swap, Move Down, Move Up, Duplicate, Redo, Undo */}
+            {/* === TOP GROUP: Logo + Action Buttons === */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+              {/* Logo */}
+              <button
+                onClick={onOpenSettings}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "50%",
+                  backgroundColor: "#0d1527",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
+                  overflow: "hidden",
+                  marginBottom: "4px",
+                }}
+                title={isSettingsOpen ? "Back to Editor" : "XITE Studio Settings"}
+              >
+                <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
+              </button>
+
+              {/* 2. Swap, Move Down, Move Up, Duplicate, Redo, Undo */}
               {/* Swap Variant Layout Button */}
               <button
                 onClick={handleRefreshSwap}
@@ -570,10 +572,7 @@ export function EditorToolbar({
                 <Undo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canUndo ? "#334155" : "#cbd5e1" }} />
               </button>
             </div>
-
-            {/* Flex spacer — pushes resolution group to vertical center */}
-            <div style={{ flex: 1 }} />
-
+            {/* === CENTER GROUP: Resolution Switcher === */}
             {/* 3. Middle Resolution Switcher Group */}
             <div
               style={{
@@ -649,8 +648,8 @@ export function EditorToolbar({
               <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
             </div>
 
-            {/* 4. Bottom Group: Delete, External Preview, Copy Link, Save, Layers */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginTop: "auto" }}>
+            {/* === BOTTOM GROUP: Delete, External Preview, Copy Link, Save, Layers === */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
               {/* Trash / Delete Section Button */}
               <button
                 onClick={onDeleteSection}
