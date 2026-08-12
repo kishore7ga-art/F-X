@@ -372,27 +372,6 @@ export function EditorToolbar({
 
         {/* 3. Section Editing Tools Group */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
-          {/* Active Section Title Badge */}
-          <span
-            style={{
-              height: "32px",
-              padding: "0 14px",
-              borderRadius: "12px",
-              backgroundColor: "#0f172a",
-              border: "1px solid #1e293b",
-              fontSize: "13px",
-              fontWeight: 800,
-              color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
-          >
-            {activeSectionTitle}
-          </span>
-
           {/* Duplicate Button */}
           <button
             onClick={onDuplicateSection}
