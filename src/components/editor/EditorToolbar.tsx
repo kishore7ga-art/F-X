@@ -442,7 +442,7 @@ export function EditorToolbar({
                 alignItems: "center",
                 gap: "4px",
                 border: "none",
-                borderBottom: !activeTablet && !activeMobile ? "2.5px solid #2563eb" : "2.5px solid transparent",
+                borderBottom: !activeTablet && !activeMobile ? "2px solid #2563eb" : "2px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 color: !activeTablet && !activeMobile ? "#2563eb" : "#475569",
@@ -450,8 +450,8 @@ export function EditorToolbar({
               }}
               title="Desktop Resolution (100%)"
             >
-              <Monitor style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }} />
-              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 800 : 700, fontSize: "12.5px", color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }}>
+              <Monitor style={{ width: "16px", height: "16px", strokeWidth: 2, color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }} />
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 600 : 500, fontSize: "12px", color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }}>
                 100%
               </span>
             </button>
@@ -466,7 +466,7 @@ export function EditorToolbar({
                 alignItems: "center",
                 gap: "4px",
                 border: "none",
-                borderBottom: activeTablet ? "2.5px solid #2563eb" : "2.5px solid transparent",
+                borderBottom: activeTablet ? "2px solid #2563eb" : "2px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 color: activeTablet ? "#2563eb" : "#475569",
@@ -474,9 +474,9 @@ export function EditorToolbar({
               }}
               title="Tablet Resolution"
             >
-              <Tablet style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: activeTablet ? "#2563eb" : "#475569" }} />
+              <Tablet style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeTablet ? "#2563eb" : "#475569" }} />
               {activeTablet && (
-                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12.5px", color: "#2563eb" }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: "12px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
               )}
@@ -492,7 +492,7 @@ export function EditorToolbar({
                 alignItems: "center",
                 gap: "4px",
                 border: "none",
-                borderBottom: activeMobile ? "2.5px solid #2563eb" : "2.5px solid transparent",
+                borderBottom: activeMobile ? "2px solid #2563eb" : "2px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 color: activeMobile ? "#2563eb" : "#475569",
@@ -500,9 +500,9 @@ export function EditorToolbar({
               }}
               title="Mobile Resolution"
             >
-              <Smartphone style={{ width: "17px", height: "17px", strokeWidth: 2.6, color: activeMobile ? "#2563eb" : "#475569" }} />
+              <Smartphone style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeMobile ? "#2563eb" : "#475569" }} />
               {activeMobile && (
-                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: "12.5px", color: "#2563eb" }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: "12px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
               )}
