@@ -370,12 +370,12 @@ export function EditorToolbar({
               ? "0 10px 40px rgba(0, 0, 0, 0.45)"
               : "0 -10px 40px rgba(0, 0, 0, 0.45)",
           borderRadius: 0,
-          padding: isVertical ? "12px 0" : "0 24px",
+          padding: isVertical ? "20px 0" : "0 24px",
           display: "flex",
           flexDirection: isVertical ? "column" : "row",
           alignItems: "center",
-          justifyContent: isVertical ? "flex-start" : "space-between",
-          gap: isVertical ? "8px" : "16px",
+          justifyContent: "space-between",
+          gap: isVertical ? "16px" : "16px",
           boxSizing: "border-box",
           position: "relative",
           overflowY: isVertical ? "auto" : "visible",
@@ -383,8 +383,8 @@ export function EditorToolbar({
           touchAction: "none",
         }}
       >
-        {/* 1. Far Left / Top Group: Logo + System Tools */}
-        <div style={{ display: isVertical ? "contents" : "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
+        {/* 1. Far Left (Horizontal) / Top Group (Vertical): Logo + System Tools */}
+        <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "10px" : "16px" }}>
           {/* Logo Button */}
           <button
             onClick={onOpenSettings}
@@ -409,7 +409,7 @@ export function EditorToolbar({
           </button>
 
           {/* Primary System Tools Group */}
-          <div style={{ display: isVertical ? "contents" : "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "10px" : "12px" }}>
             {/* Layers Drawer Button */}
             <button
               onClick={onToggleDrawer}
@@ -528,7 +528,7 @@ export function EditorToolbar({
           </div>
         </div>
 
-        {/* 2. Center: Active Section Name Text (In natural flex flow to prevent overlap) */}
+        {/* 2. Center: Active Section Name Text (Visible when horizontal) */}
         {!isVertical ? (
           <div
             style={{
@@ -584,11 +584,11 @@ export function EditorToolbar({
           </div>
         )}
 
-        {/* 3. Right / Bottom Group: Viewport Switcher First + Editing Tools */}
-        <div style={{ display: isVertical ? "contents" : "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
+        {/* 3. Right Group (Horizontal) / Center & Bottom Groups (Vertical) */}
+        <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", justifyContent: isVertical ? "space-between" : "flex-end", flex: isVertical ? 1 : "initial", width: isVertical ? "100%" : "auto", gap: "12px" }}>
 
-          {/* Viewport & Resolution Switcher Group */}
-          <div style={{ display: isVertical ? "contents" : "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+          {/* Viewport & Resolution Switcher Group (Centered in Vertical Mode) */}
+          <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "12px" : "10px", margin: isVertical ? "auto 0" : "0" }}>
             {/* Desktop Resolution Button */}
             <button
               onClick={handleDesktopClick}
@@ -668,10 +668,10 @@ export function EditorToolbar({
             </button>
           </div>
 
-          <div style={{ height: isVertical ? "1px" : "18px", width: isVertical ? "18px" : "1.5px", backgroundColor: "#cbd5e1", margin: isVertical ? "4px 0" : "0 6px", flexShrink: 0 }} />
+          <div style={{ height: isVertical ? "1px" : "18px", width: isVertical ? "18px" : "1.5px", backgroundColor: "#cbd5e1", margin: isVertical ? "6px 0" : "0 6px", flexShrink: 0 }} />
 
           {/* Section Tools Group (Undo, Redo, Duplicate, Move Up, Move Down, Swap) */}
-          <div style={{ display: isVertical ? "contents" : "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+          <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "8px" : "6px" }}>
             {/* Undo Button */}
             <button
               onClick={onUndo}
