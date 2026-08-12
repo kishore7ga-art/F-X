@@ -412,14 +412,14 @@ export function EditorToolbar({
           >
             <span
               style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#581c25",
-                fontFamily: "system-ui, -apple-system, sans-serif",
+                fontSize: "12.5px",
+                fontWeight: 800,
+                color: "#4a151b",
+                fontFamily: "'Plus Jakarta Sans', 'Outfit', var(--font-jakarta), var(--font-inter), sans-serif",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                letterSpacing: "-0.01em",
+                letterSpacing: "-0.015em",
               }}
             >
               {activeSectionTitle || "Select a section"}
