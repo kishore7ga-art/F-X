@@ -407,157 +407,10 @@ export function EditorToolbar({
           </div>
         </div>
 
-        {/* 3. Far Right Group: Editing Tools & Viewport Switcher */}
+        {/* 3. Far Right Group: Viewport Switcher First + Editing Tools */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
 
-          {/* Section Tools Group (Complete Tools Set) */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
-            {/* Undo Button */}
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: canUndo ? "pointer" : "default",
-                color: canUndo ? "#3b4759" : "#cbd5e1",
-                ...buttonHoverStyle,
-              }}
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 style={{ width: "16px", height: "16px" }} />
-            </button>
-
-            {/* Redo Button */}
-            <button
-              onClick={onRedo}
-              disabled={!canRedo}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: canRedo ? "pointer" : "default",
-                color: canRedo ? "#3b4759" : "#cbd5e1",
-                ...buttonHoverStyle,
-              }}
-              title="Redo (Ctrl+Y)"
-            >
-              <Redo2 style={{ width: "16px", height: "16px" }} />
-            </button>
-
-            {/* Duplicate Button */}
-            <button
-              onClick={onDuplicateSection}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: "pointer",
-                color: "#3b4759",
-                ...buttonHoverStyle,
-              }}
-              title="Duplicate Section"
-            >
-              <Copy style={{ width: "16px", height: "16px" }} />
-            </button>
-
-            {/* Refresh / Swap Button */}
-            <button
-              onClick={handleRefreshSwap}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: "pointer",
-                color: "#3b4759",
-                ...buttonHoverStyle,
-              }}
-              title="Swap Variant Layout"
-            >
-              <RefreshCw style={{ width: "16px", height: "16px" }} />
-            </button>
-
-            {/* Move Up Button */}
-            <button
-              onClick={onMoveUp}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: "pointer",
-                color: "#3b4759",
-                ...buttonHoverStyle,
-              }}
-              title="Move Up"
-            >
-              <ArrowUp style={{ width: "16px", height: "16px" }} />
-            </button>
-
-            {/* Move Down Button */}
-            <button
-              onClick={onMoveDown}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: "pointer",
-                color: "#3b4759",
-                ...buttonHoverStyle,
-              }}
-              title="Move Down"
-            >
-              <ArrowDown style={{ width: "16px", height: "16px" }} />
-            </button>
-
-            {/* Dark Red Trash Icon Button */}
-            <button
-              onClick={onDeleteSection}
-              style={{
-                width: "30px",
-                height: "30px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                cursor: "pointer",
-                color: "#b91c1c",
-                ...buttonHoverStyle,
-              }}
-              title="Delete Section"
-            >
-              <Trash2 style={{ width: "16px", height: "16px", color: "#b91c1c" }} />
-            </button>
-          </div>
-
-          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
-
-          {/* Viewport & Resolution Switcher Group (Dynamic Active Mode Pill) */}
+          {/* Viewport & Resolution Switcher Group (Moved to Front) */}
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px" }}>
             {/* Desktop Resolution Button */}
             <button
@@ -686,6 +539,153 @@ export function EditorToolbar({
                   {viewportWidth}
                 </span>
               )}
+            </button>
+          </div>
+
+          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
+
+          {/* Section Tools Group (Undo, Redo, Duplicate, Red Trash, Swap, Move Up, Move Down) */}
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+            {/* Undo Button */}
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: canUndo ? "pointer" : "default",
+                color: canUndo ? "#3b4759" : "#cbd5e1",
+                ...buttonHoverStyle,
+              }}
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Redo Button */}
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: canRedo ? "pointer" : "default",
+                color: canRedo ? "#3b4759" : "#cbd5e1",
+                ...buttonHoverStyle,
+              }}
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Duplicate Button */}
+            <button
+              onClick={onDuplicateSection}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Duplicate Section"
+            >
+              <Copy style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Dark Red Trash Icon Button (Placed next to Duplicate) */}
+            <button
+              onClick={onDeleteSection}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#b91c1c",
+                ...buttonHoverStyle,
+              }}
+              title="Delete Section"
+            >
+              <Trash2 style={{ width: "16px", height: "16px", color: "#b91c1c" }} />
+            </button>
+
+            {/* Refresh / Swap Button */}
+            <button
+              onClick={handleRefreshSwap}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Swap Variant Layout"
+            >
+              <RefreshCw style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Move Up Button */}
+            <button
+              onClick={onMoveUp}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Move Up"
+            >
+              <ArrowUp style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Move Down Button */}
+            <button
+              onClick={onMoveDown}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Move Down"
+            >
+              <ArrowDown style={{ width: "16px", height: "16px" }} />
             </button>
           </div>
         </div>
