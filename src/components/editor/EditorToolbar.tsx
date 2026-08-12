@@ -414,7 +414,7 @@ export function EditorToolbar({
               style={{
                 fontSize: "12.5px",
                 fontWeight: 800,
-                color: "#4a151b",
+                color: "#000000",
                 fontFamily: "'Plus Jakarta Sans', 'Outfit', var(--font-jakarta), var(--font-inter), sans-serif",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
