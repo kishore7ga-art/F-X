@@ -380,7 +380,7 @@ export function EditorToolbar({
           </div>
         </div>
 
-        {/* 2. Absolute Geometric Center: Active Section Name Light-Grey Pill */}
+        {/* 2. Absolute Geometric Center: Active Section Name Text (Clean Typography, No Round Bar) */}
         <div
           style={{
             position: "absolute",
@@ -393,38 +393,21 @@ export function EditorToolbar({
             zIndex: 10,
           }}
         >
-          <div
+          <span
             style={{
-              height: "32px",
-              padding: "0 18px",
-              borderRadius: "9999px",
-              backgroundColor: "#dbe0e8",
-              backgroundImage: "linear-gradient(180deg, #e5e9f0 0%, #d4d9e2 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.7)",
-              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              maxWidth: "400px",
+              fontSize: "13px",
+              fontWeight: 800,
+              color: "#0f172a",
+              fontFamily: "'Plus Jakarta Sans', 'Outfit', var(--font-jakarta), var(--font-inter), sans-serif",
+              whiteSpace: "nowrap",
               overflow: "hidden",
+              textOverflow: "ellipsis",
+              letterSpacing: "-0.015em",
               pointerEvents: "auto",
             }}
           >
-            <span
-              style={{
-                fontSize: "12.5px",
-                fontWeight: 800,
-                color: "#000000",
-                fontFamily: "'Plus Jakarta Sans', 'Outfit', var(--font-jakarta), var(--font-inter), sans-serif",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                letterSpacing: "-0.015em",
-              }}
-            >
-              {activeSectionTitle || "Select a section"}
-            </span>
-          </div>
+            {activeSectionTitle || "Select a section"}
+          </span>
         </div>
 
         {/* 3. Far Right Group: Viewport Switcher First + Editing Tools */}
