@@ -462,10 +462,10 @@ export function EditorToolbar({
             >
             {/* === TOP GROUP: Action Buttons === */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-              {/* 2. Swap, Move Down, Move Up, Duplicate, Redo, Undo */}
-              {/* Swap Variant Layout Button */}
+              {/* Undo Button */}
               <button
-                onClick={handleRefreshSwap}
+                onClick={onUndo}
+                disabled={!canUndo}
                 style={{
                   width: "30px",
                   height: "30px",
@@ -474,73 +474,13 @@ export function EditorToolbar({
                   justifyContent: "center",
                   border: "none",
                   backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
+                  cursor: canUndo ? "pointer" : "default",
+                  color: canUndo ? "#334155" : "#cbd5e1",
                   ...buttonHoverStyle,
                 }}
-                title="Swap Variant Layout"
+                title="Undo (Ctrl+Z)"
               >
-                <RefreshCw style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-              </button>
-
-              {/* Move Down Button */}
-              <button
-                onClick={onMoveDown}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Move Down"
-              >
-                <ArrowDown style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-              </button>
-
-              {/* Move Up Button */}
-              <button
-                onClick={onMoveUp}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Move Up"
-              >
-                <ArrowUp style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-              </button>
-
-              {/* Duplicate Section Button */}
-              <button
-                onClick={onDuplicateSection}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Duplicate Section"
-              >
-                <Copy style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
+                <Undo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canUndo ? "#334155" : "#cbd5e1" }} />
               </button>
 
               {/* Redo Button */}
@@ -564,10 +504,9 @@ export function EditorToolbar({
                 <Redo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canRedo ? "#334155" : "#cbd5e1" }} />
               </button>
 
-              {/* Undo Button */}
+              {/* Duplicate Section Button */}
               <button
-                onClick={onUndo}
-                disabled={!canUndo}
+                onClick={onDuplicateSection}
                 style={{
                   width: "30px",
                   height: "30px",
@@ -576,13 +515,73 @@ export function EditorToolbar({
                   justifyContent: "center",
                   border: "none",
                   backgroundColor: "transparent",
-                  cursor: canUndo ? "pointer" : "default",
-                  color: canUndo ? "#334155" : "#cbd5e1",
+                  cursor: "pointer",
+                  color: "#334155",
                   ...buttonHoverStyle,
                 }}
-                title="Undo (Ctrl+Z)"
+                title="Duplicate Section"
               >
-                <Undo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canUndo ? "#334155" : "#cbd5e1" }} />
+                <Copy style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
+              </button>
+
+              {/* Move Up Button */}
+              <button
+                onClick={onMoveUp}
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  color: "#334155",
+                  ...buttonHoverStyle,
+                }}
+                title="Move Up"
+              >
+                <ArrowUp style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
+              </button>
+
+              {/* Move Down Button */}
+              <button
+                onClick={onMoveDown}
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  color: "#334155",
+                  ...buttonHoverStyle,
+                }}
+                title="Move Down"
+              >
+                <ArrowDown style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
+              </button>
+
+              {/* Swap Variant Layout Button */}
+              <button
+                onClick={handleRefreshSwap}
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  color: "#334155",
+                  ...buttonHoverStyle,
+                }}
+                title="Swap Variant Layout"
+              >
+                <RefreshCw style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
               </button>
             </div>
             {/* === CENTER GROUP: Resolution Switcher === */}
