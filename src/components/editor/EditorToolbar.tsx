@@ -260,29 +260,6 @@ export function EditorToolbar({
 
         {/* 2. Far Right Group: All Action Tools in Exact Order */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
-          {/* Dark Blue Circular 'X' Close Button */}
-          <button
-            onClick={onClearSelection}
-            style={{
-              width: "28px",
-              height: "28px",
-              borderRadius: "50%",
-              backgroundColor: "#0d1527",
-              color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              cursor: "pointer",
-              flexShrink: 0,
-              boxShadow: "0 2px 5px rgba(13,21,39,0.25)",
-            }}
-            title="Clear Selection / Close Toolbar"
-          >
-            <X style={{ width: "13px", height: "13px", color: "#ffffff", strokeWidth: 2.5 }} />
-          </button>
-
-          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
 
           {/* Primary System Tools Group */}
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
