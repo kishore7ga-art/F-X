@@ -234,8 +234,9 @@ export function EditorToolbar({
           boxSizing: "border-box",
         }}
       >
-        {/* 1. Far Left Element: Black Circular Logo Button ('N') + Section Title Pill */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "8px" }}>
+        {/* 1. Far Left Group: Logo Button + Primary System Tools (Layers, Save, Link, Preview) */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+          {/* Logo Button */}
           <button
             onClick={onOpenSettings}
             style={{
@@ -257,40 +258,6 @@ export function EditorToolbar({
           >
             <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
           </button>
-
-          {/* Active Section Name Light-Grey Pill */}
-          <div
-            style={{
-              height: "32px",
-              padding: "0 14px",
-              borderRadius: "9999px",
-              backgroundColor: "#dbe0e8",
-              backgroundImage: "linear-gradient(180deg, #e5e9f0 0%, #d4d9e2 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.7)",
-              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#581c25",
-                fontFamily: "system-ui, -apple-system, sans-serif",
-                whiteSpace: "nowrap",
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {activeSectionTitle || "Select a section"}
-            </span>
-          </div>
-        </div>
-
-        {/* 2. Far Right Group: All Action Tools in Exact Order */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
 
           {/* Primary System Tools Group */}
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
@@ -390,8 +357,45 @@ export function EditorToolbar({
               <ExternalLink style={{ width: "16px", height: "16px" }} />
             </button>
           </div>
+        </div>
 
-          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
+        {/* 2. Absolute Center Group: Active Section Name Light-Grey Pill */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "0 16px" }}>
+          <div
+            style={{
+              height: "32px",
+              padding: "0 18px",
+              borderRadius: "9999px",
+              backgroundColor: "#dbe0e8",
+              backgroundImage: "linear-gradient(180deg, #e5e9f0 0%, #d4d9e2 100%)",
+              border: "1px solid rgba(255, 255, 255, 0.7)",
+              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              maxWidth: "400px",
+              overflow: "hidden",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#581c25",
+                fontFamily: "system-ui, -apple-system, sans-serif",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {activeSectionTitle || "Select a section"}
+            </span>
+          </div>
+        </div>
+
+        {/* 3. Far Right Group: Editing Tools & Viewport Switcher */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
 
           {/* Section Tools Group (Complete Tools Set) */}
           <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
