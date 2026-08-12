@@ -3128,8 +3128,8 @@ export function EditorStudio({
                   }}
                   onDoubleClick={(e) => handleSectionDoubleClick(e, idx)}
                   onContextMenu={(e) => handleSectionContextMenu(e, idx)}
-                  className={`w-full cursor-pointer relative transition-all group section-wrapper-container overflow-hidden ${
-                    activeSectionIndex === idx ? "ring-2 ring-white ring-offset-2 ring-offset-black z-10" : ""
+                  className={`w-full relative transition-all group section-wrapper-container overflow-hidden ${
+                    activeSectionIndex === idx ? "cursor-pointer ring-2 ring-white ring-offset-2 ring-offset-black z-10" : "cursor-default"
                   }`}
                 >
 
