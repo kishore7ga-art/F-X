@@ -546,11 +546,10 @@ export function EditorToolbar({
               </button>
             </div>
 
-            {/* Separator Line */}
-            <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "2px 0" }} />
+            {/* 3. Middle Resolution Switcher Group (Centered in Middle of Vertical Bar with Spacing) */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", margin: "auto 0" }}>
+              <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
 
-            {/* 3. Middle-Lower Group: Mobile, Tablet, Desktop Viewports */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
               {/* Mobile Resolution Button */}
               <button
                 onClick={handleMobileClick}
@@ -610,6 +609,8 @@ export function EditorToolbar({
               >
                 <Monitor style={{ width: "16px", height: "16px", strokeWidth: 2, color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }} />
               </button>
+
+              <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
             </div>
 
             {/* 4. Bottom Group: Delete, External Preview, Copy Link, Save, Layers */}
