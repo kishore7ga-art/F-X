@@ -571,7 +571,10 @@ export function EditorToolbar({
               </button>
             </div>
 
-            {/* 3. Middle Resolution Switcher Group (In clean flex flow to prevent icon collision) */}
+            {/* Flex spacer — pushes resolution group to vertical center */}
+            <div style={{ flex: 1 }} />
+
+            {/* 3. Middle Resolution Switcher Group */}
             <div
               style={{
                 display: "flex",
