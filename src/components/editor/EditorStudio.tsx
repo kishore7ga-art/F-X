@@ -1571,7 +1571,50 @@ export function EditorStudio({
           console.warn("Could not load saved sections from localStorage:", err);
         }
       }
-      setLoadingDb(false);
+
+      // If no saved sections in localStorage, load default sections for slug from API or fallback
+      let fetchedSecs: SectionItem[] = [];
+      for (const baseUrl of getApiBases()) {
+        try {
+          const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
+          if (defRes.ok) {
+            const defData = await defRes.json().catch(() => ({}));
+            if (defData && Array.isArray(defData.pages)) {
+              const targetPage = defData.pages.find((p: any) => p.slug === slug) || defData.pages.find((p: any) => p.slug === "/home");
+              if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
+                targetPage.sections.forEach((s: any, idx: number) => {
+                  const code = s.code || s.html || s.content;
+                  if (s && code) {
+                    const rawType = s.sectionType || s.category || s.type || s.id || "";
+                    const normType = normalizeCategory(rawType);
+                    fetchedSecs.push({
+                      id: s.id || `admin-def-sec-${idx}`,
+                      title: s.title || s.name || "Section",
+                      code: code,
+                      category: normType || rawType,
+                      variantIndex: 0,
+                    });
+                  }
+                });
+                if (fetchedSecs.length > 0) break;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (fetchedSecs.length === 0) {
+        fetchedSecs = getAll19DefaultSections(slug);
+      }
+
+      const cleanSecs = deduplicateSections(fetchedSecs);
+      setSections(cleanSecs);
+      setActiveSectionIndex(0);
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanSecs));
+        }
+      } catch {}
     } finally {
       setLoadingDb(false);
     }
@@ -1579,6 +1622,14 @@ export function EditorStudio({
 
   const getApiBases = (): string[] => {
     const bases: string[] = [];
+
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        bases.push("http://localhost:4000");
+      }
+    }
+
     if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
     if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
 
@@ -1588,12 +1639,6 @@ export function EditorStudio({
     bases.push("https://admin.meetkishore.in");
     bases.push("http://localhost:4000");
 
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      if (hostname === "localhost" || hostname === "127.0.0.1") {
-        bases.push("http://localhost:4000");
-      }
-    }
     return Array.from(new Set(bases.filter(Boolean).map((b) => b.replace(/\/+$/, ""))));
   };
 
@@ -1617,6 +1662,7 @@ export function EditorStudio({
                 }
               }
             });
+            break;
           }
         }
       } catch (e) {}
@@ -1682,23 +1728,32 @@ export function EditorStudio({
         if (defRes.ok) {
           const defData = await defRes.json().catch(() => ({}));
           if (defData && Array.isArray(defData.pages)) {
+            const targetPage = defData.pages.find((p: any) => p.slug === currentPage.slug) || defData.pages.find((p: any) => p.slug === "/home");
+            if (targetPage && Array.isArray(targetPage.sections)) {
+              targetPage.sections.forEach((s: any, idx: number) => {
+                const code = s.code || s.html || s.content;
+                if (s && code) {
+                  const rawType = s.sectionType || s.category || s.type || s.id || "";
+                  const normType = normalizeCategory(rawType);
+                  defaultSecsFromAdminDb.push({
+                    id: s.id || `admin-def-sec-${idx}`,
+                    title: s.title || s.name || "Section",
+                    code: code,
+                    category: normType || rawType,
+                    variantIndex: 0,
+                  });
+                }
+              });
+            }
+
             defData.pages.forEach((p: any) => {
               if (Array.isArray(p.sections)) {
-                p.sections.forEach((s: any, idx: number) => {
+                p.sections.forEach((s: any) => {
                   const code = s.code || s.html || s.content;
-                  if (s && code) {
-                    const rawType = s.sectionType || s.category || s.type || s.id || "";
-                    const normType = normalizeCategory(rawType);
-                    defaultSecsFromAdminDb.push({
-                      id: `admin-def-sec-${idx}`,
-                      title: s.title || s.name || "Section",
-                      code: code,
-                      category: normType || rawType,
-                      variantIndex: 0,
-                    });
-                    if (rawType && !freshMap[rawType.toLowerCase()]) freshMap[rawType.toLowerCase()] = code;
-                    if (normType && !freshMap[normType]) freshMap[normType] = code;
-                  }
+                  const rawType = s.sectionType || s.category || s.type || s.id || "";
+                  const normType = normalizeCategory(rawType);
+                  if (rawType && !freshMap[rawType.toLowerCase()]) freshMap[rawType.toLowerCase()] = code;
+                  if (normType && !freshMap[normType]) freshMap[normType] = code;
                 });
               }
             });
@@ -1742,24 +1797,23 @@ export function EditorStudio({
         if (defRes.ok) {
           const defData = await defRes.json().catch(() => ({}));
           if (defData && Array.isArray(defData.pages)) {
-            defData.pages.forEach((p: any) => {
-              if (Array.isArray(p.sections)) {
-                p.sections.forEach((s: any, idx: number) => {
-                  const code = s.code || s.html || s.content;
-                  if (s && code) {
-                    const rawType = s.sectionType || s.category || s.type || s.id || "";
-                    const normType = normalizeCategory(rawType);
-                    defaultSecs.push({
-                      id: `admin-def-sec-${idx}`,
-                      title: s.title || s.name || "Section",
-                      code: code,
-                      category: normType || rawType,
-                      variantIndex: 0,
-                    });
-                  }
-                });
-              }
-            });
+            const targetPage = defData.pages.find((p: any) => p.slug === currentPage.slug) || defData.pages.find((p: any) => p.slug === "/home");
+            if (targetPage && Array.isArray(targetPage.sections)) {
+              targetPage.sections.forEach((s: any, idx: number) => {
+                const code = s.code || s.html || s.content;
+                if (s && code) {
+                  const rawType = s.sectionType || s.category || s.type || s.id || "";
+                  const normType = normalizeCategory(rawType);
+                  defaultSecs.push({
+                    id: s.id || `admin-def-sec-${idx}`,
+                    title: s.title || s.name || "Section",
+                    code: code,
+                    category: normType || rawType,
+                    variantIndex: 0,
+                  });
+                }
+              });
+            }
             if (defaultSecs.length > 0) break;
           }
         }
@@ -1820,23 +1874,8 @@ export function EditorStudio({
       return;
     }
 
-    // 4. Initialize clean page with Header & Footer ONLY so ONLY user-added sections exist
-    const headerCode = sections.find((s) => s.id?.includes("header") || s.title?.toLowerCase().includes("header") || s.code?.includes("<header"))?.code || getSharedHeader(collegeName);
-    const footerCode = sections.find((s) => s.id?.includes("footer") || s.title?.toLowerCase().includes("footer") || s.code?.includes("<footer"))?.code || getSharedFooter(collegeName);
-
-    const cleanSlug = pageSlug.replace(/^\//, "").toLowerCase();
-    const cleanPageSecs: SectionItem[] = [
-      { id: `${cleanSlug}-header`, title: "Navbar / Header", code: headerCode, variantIndex: 0 },
-      { id: `${cleanSlug}-footer`, title: "Footer", code: footerCode, variantIndex: 0 },
-    ];
-
-    setSections(cleanPageSecs);
-    setPageStore((prev) => ({ ...prev, [pageSlug]: cleanPageSecs }));
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("xite_saved_pages", JSON.stringify({ ...pageStore, [pageSlug]: cleanPageSecs }));
-      } catch {}
-    }
+    // 4. Fetch/Load sections for target page
+    void fetchDbSections(pageSlug, true);
     setActiveSectionIndex(0);
   };
 
@@ -2429,6 +2468,7 @@ export function EditorStudio({
                 }
               }
             });
+            break;
           }
         }
       } catch (e) {}
@@ -2596,6 +2636,7 @@ export function EditorStudio({
                 }
               }
             });
+            break;
           }
         }
       } catch (e) {}
