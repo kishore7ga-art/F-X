@@ -149,9 +149,8 @@ export function EditorToolbar({
     };
   }, [isDragging, dragOffset]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+  const showToast = (_msg: string) => {
+    // Disabled all toast notifications per user request
   };
 
   const handleCopyLink = async () => {
@@ -802,33 +801,7 @@ export function EditorToolbar({
         </div>
       </div>
 
-      {/* Floating Toast Notification */}
-      {toastMessage && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: "86px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 999999,
-            backgroundColor: "#000000",
-            color: "#ffffff",
-            fontSize: "12px",
-            fontWeight: 800,
-            padding: "10px 20px",
-            borderRadius: "16px",
-            boxShadow: "0 20px 30px rgba(0,0,0,0.8)",
-            border: "1px solid #3f3f46",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            pointerEvents: "none",
-          }}
-        >
-          <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ffffff" }} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+
       {/* 🔗 Share Public Live Website Link Modal */}
       {showShareModal && (
         <div
