@@ -215,311 +215,309 @@ export function EditorToolbar({
         gap: "8px",
       }}
     >
-      {/* Outer Dock Floating Capsule Container (Styled from Image 21) */}
+      {/* Outer Dock Floating Capsule Container (Exact Match to Screenshot) */}
       <div
         style={{
-          height: "50px",
-          backgroundColor: "#e8ebf0",
-          backgroundImage: "linear-gradient(180deg, #f3f5f8 0%, #e1e5eb 100%)",
-          border: "1px solid rgba(255, 255, 255, 0.8)",
-          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0,0,0,0.06)",
+          height: "52px",
+          width: "90vw",
+          maxWidth: "1280px",
+          backgroundColor: "#f4f6f9",
+          backgroundImage: "linear-gradient(180deg, #fafbfc 0%, #edf0f5 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.9)",
+          boxShadow: "0 16px 40px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0,0,0,0.06)",
           borderRadius: "9999px",
-          padding: "0 10px 0 6px",
+          padding: "0 14px",
           display: "flex",
           flexDirection: "row",
           alignItems: "center",
-          gap: "8px",
+          justifyContent: "space-between",
           boxSizing: "border-box",
         }}
       >
-        {/* 1. Leftmost Light-Grey Text Input Pill */}
-        <div
-          style={{
-            height: "36px",
-            padding: "0 16px",
-            borderRadius: "9999px",
-            backgroundColor: "#dbe0e8",
-            backgroundImage: "linear-gradient(180deg, #e5e9f0 0%, #d4d9e2 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.6)",
-            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#581c25",
-              fontFamily: "system-ui, -apple-system, sans-serif",
-              whiteSpace: "nowrap",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {activeSectionTitle || "Placement & Top Recruiters [placements] - Placemen 2"}
-          </span>
-        </div>
-
-        {/* 2. Dark Blue Circular 'X' Close Button */}
+        {/* 1. Far Left Element: Black Circular Logo Button ('N') */}
         <button
-          onClick={onClearSelection}
+          onClick={onOpenSettings}
           style={{
-            width: "30px",
-            height: "30px",
+            width: "32px",
+            height: "32px",
             borderRadius: "50%",
             backgroundColor: "#0d1527",
             color: "#ffffff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            fontWeight: 900,
+            fontSize: "13px",
             border: "none",
             cursor: "pointer",
             flexShrink: 0,
-            boxShadow: "0 2px 6px rgba(13,21,39,0.3)",
-            marginRight: "4px",
+            boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
           }}
-          title="Clear Selection / Close Section Toolbar"
+          title={isSettingsOpen ? "Back to Editor" : "XITE Studio"}
         >
-          <X style={{ width: "14px", height: "14px", color: "#ffffff", strokeWidth: 2.5 }} />
+          <span style={{ fontWeight: 900, fontSize: "14px", color: "#ffffff", lineHeight: 1, fontFamily: "system-ui, sans-serif" }}>N</span>
         </button>
 
-        <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
-
-        {/* 3. Action Icons horizontal group */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
-          {/* Layers Drawer Button */}
-          <button
-            onClick={onToggleDrawer}
-            style={{
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#3b4759",
-              ...buttonHoverStyle,
-            }}
-            title="Pages, Colors & Fonts Drawer"
-          >
-            <Layers style={{ width: "17px", height: "17px" }} />
-          </button>
-
-          {/* Save Status Disk Button (with dot) */}
-          <button
-            onClick={handleManualSave}
-            style={{
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#3b4759",
-              position: "relative",
-              ...buttonHoverStyle,
-            }}
-            title="Save Status (Click to Save)"
-          >
-            <Save style={{ width: "17px", height: "17px" }} />
-            <span
-              style={{
-                position: "absolute",
-                top: "4px",
-                right: "4px",
-                width: "5px",
-                height: "5px",
-                borderRadius: "50%",
-                backgroundColor: "#0d1527",
-              }}
-            />
-          </button>
-
-          {/* Copy Link Button */}
-          <button
-            onClick={handleCopyLink}
-            style={{
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#3b4759",
-              ...buttonHoverStyle,
-            }}
-            title="Instant Share / Copy Live Website Link"
-          >
-            {copied ? (
-              <Check style={{ width: "17px", height: "17px", color: "#16a34a" }} />
-            ) : (
-              <LinkIcon style={{ width: "17px", height: "17px" }} />
-            )}
-          </button>
-
-          {/* External Link Button */}
-          <button
-            onClick={handleOpenPreview}
-            style={{
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#3b4759",
-              ...buttonHoverStyle,
-            }}
-            title="Open Live Website Preview in New Tab"
-          >
-            <ExternalLink style={{ width: "17px", height: "17px" }} />
-          </button>
-        </div>
-
-        <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
-
-        {/* 4. Refresh & Down Arrow & Delete Trash Group */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
-          {/* Refresh / Swap Button */}
-          <button
-            onClick={handleRefreshSwap}
-            style={{
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#3b4759",
-              ...buttonHoverStyle,
-            }}
-            title="Swap Variant Layout"
-          >
-            <RefreshCw style={{ width: "17px", height: "17px" }} />
-          </button>
-
-          {/* Down Arrow Button */}
-          <button
-            onClick={onMoveDown}
-            style={{
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#3b4759",
-              ...buttonHoverStyle,
-            }}
-            title="Move Down"
-          >
-            <ArrowDown style={{ width: "17px", height: "17px" }} />
-          </button>
-
-          {/* Dark Red Trash Icon Button */}
-          <button
-            onClick={onDeleteSection}
-            style={{
-              width: "32px",
-              height: "32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#b91c1c",
-              ...buttonHoverStyle,
-            }}
-            title="Delete Section"
-          >
-            <Trash2 style={{ width: "17px", height: "17px", color: "#b91c1c" }} />
-          </button>
-        </div>
-
-        <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
-
-        {/* 5. Blue Zoom Pill & Light Grey Viewport Icons Group */}
+        {/* 2. Far Right Group: All Action Tools in Exact Order */}
         <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
-          {/* Blue Zoom Pill (Monitor Icon + 100%) */}
+          {/* Dark Blue Circular 'X' Close Button */}
           <button
-            onClick={handleDesktopClick}
+            onClick={onClearSelection}
             style={{
-              height: "32px",
-              padding: "0 12px",
-              borderRadius: "9999px",
-              backgroundColor: "#3b82f6",
-              backgroundImage: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
-              boxShadow: "0 2px 6px rgba(37,99,235,0.3)",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              border: "none",
-              cursor: "pointer",
+              width: "28px",
+              height: "28px",
+              borderRadius: "50%",
+              backgroundColor: "#0d1527",
               color: "#ffffff",
-              ...buttonHoverStyle,
-            }}
-            title="Desktop Resolution (100%)"
-          >
-            <Monitor style={{ width: "16px", height: "16px", color: "#ffffff" }} />
-            <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: "12px", color: "#ffffff" }}>
-              100%
-            </span>
-          </button>
-
-          {/* Tablet Resolution Outline Button */}
-          <button
-            onClick={handleTabletClick}
-            style={{
-              width: "30px",
-              height: "30px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               border: "none",
-              backgroundColor: "transparent",
               cursor: "pointer",
-              color: "#3b4759",
-              ...buttonHoverStyle,
+              flexShrink: 0,
+              boxShadow: "0 2px 5px rgba(13,21,39,0.25)",
             }}
-            title="Tablet Resolution"
+            title="Clear Selection / Close Toolbar"
           >
-            <Tablet style={{ width: "18px", height: "18px", color: "#3b4759" }} />
+            <X style={{ width: "13px", height: "13px", color: "#ffffff", strokeWidth: 2.5 }} />
           </button>
 
-          {/* Mobile Resolution Outline Button */}
-          <button
-            onClick={handleMobileClick}
-            style={{
-              width: "30px",
-              height: "30px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              color: "#3b4759",
-              ...buttonHoverStyle,
-            }}
-            title="Mobile Resolution"
-          >
-            <Smartphone style={{ width: "18px", height: "18px", color: "#3b4759" }} />
-          </button>
+          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
+
+          {/* Primary System Tools Group */}
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
+            {/* Layers Drawer Button */}
+            <button
+              onClick={onToggleDrawer}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Pages, Colors & Fonts Drawer"
+            >
+              <Layers style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Save Status Disk Button (with dot) */}
+            <button
+              onClick={handleManualSave}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                position: "relative",
+                ...buttonHoverStyle,
+              }}
+              title="Save Status (Click to Save)"
+            >
+              <Save style={{ width: "16px", height: "16px" }} />
+              <span
+                style={{
+                  position: "absolute",
+                  top: "4px",
+                  right: "4px",
+                  width: "5px",
+                  height: "5px",
+                  borderRadius: "50%",
+                  backgroundColor: "#0d1527",
+                }}
+              />
+            </button>
+
+            {/* Copy Link Button */}
+            <button
+              onClick={handleCopyLink}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Instant Share / Copy Live Website Link"
+            >
+              {copied ? (
+                <Check style={{ width: "16px", height: "16px", color: "#16a34a" }} />
+              ) : (
+                <LinkIcon style={{ width: "16px", height: "16px" }} />
+              )}
+            </button>
+
+            {/* External Link Button */}
+            <button
+              onClick={handleOpenPreview}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Open Live Website Preview in New Tab"
+            >
+              <ExternalLink style={{ width: "16px", height: "16px" }} />
+            </button>
+          </div>
+
+          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
+
+          {/* Section Tools Group */}
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "2px" }}>
+            {/* Refresh / Swap Button */}
+            <button
+              onClick={handleRefreshSwap}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Swap Variant Layout"
+            >
+              <RefreshCw style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Down Arrow Button */}
+            <button
+              onClick={onMoveDown}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Move Down"
+            >
+              <ArrowDown style={{ width: "16px", height: "16px" }} />
+            </button>
+
+            {/* Dark Red Trash Icon Button */}
+            <button
+              onClick={onDeleteSection}
+              style={{
+                width: "30px",
+                height: "30px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#b91c1c",
+                ...buttonHoverStyle,
+              }}
+              title="Delete Section"
+            >
+              <Trash2 style={{ width: "16px", height: "16px", color: "#b91c1c" }} />
+            </button>
+          </div>
+
+          <div style={{ height: "18px", width: "1px", backgroundColor: "#cbd5e1", margin: "0 2px", flexShrink: 0 }} />
+
+          {/* Viewport & Resolution Switcher Group */}
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+            {/* Blue Zoom Pill (Monitor Icon + 100%) */}
+            <button
+              onClick={handleDesktopClick}
+              style={{
+                height: "30px",
+                padding: "0 12px",
+                borderRadius: "9999px",
+                backgroundColor: "#3b82f6",
+                backgroundImage: "linear-gradient(180deg, #3b82f6 0%, #2563eb 100%)",
+                boxShadow: "0 2px 6px rgba(37,99,235,0.3)",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                border: "none",
+                cursor: "pointer",
+                color: "#ffffff",
+                ...buttonHoverStyle,
+              }}
+              title="Desktop Resolution (100%)"
+            >
+              <Monitor style={{ width: "15px", height: "15px", color: "#ffffff" }} />
+              <span style={{ fontFamily: "system-ui, sans-serif", fontWeight: 800, fontSize: "12px", color: "#ffffff" }}>
+                100%
+              </span>
+            </button>
+
+            {/* Tablet Resolution Outline Button */}
+            <button
+              onClick={handleTabletClick}
+              style={{
+                width: "28px",
+                height: "28px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Tablet Resolution"
+            >
+              <Tablet style={{ width: "17px", height: "17px", color: "#3b4759" }} />
+            </button>
+
+            {/* Mobile Resolution Outline Button */}
+            <button
+              onClick={handleMobileClick}
+              style={{
+                width: "28px",
+                height: "28px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                color: "#3b4759",
+                ...buttonHoverStyle,
+              }}
+              title="Mobile Resolution"
+            >
+              <Smartphone style={{ width: "17px", height: "17px", color: "#3b4759" }} />
+            </button>
+          </div>
         </div>
       </div>
 
