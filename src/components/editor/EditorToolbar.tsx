@@ -383,18 +383,19 @@ export function EditorToolbar({
           touchAction: "none",
         }}
       >
-        {/* Vertical Side Dock Layout (Exact match to user mockup image) */}
+        {/* Vertical Side Dock Layout */}
         {isVertical ? (
           <div
             style={{
               display: "flex",
-              flexDirection: dockPosition === "right" ? "column-reverse" : "column",
+              flexDirection: "column",
               alignItems: "center",
-              justifyContent: "space-between",
+              justifyContent: "flex-start",
               height: "100%",
               width: "100%",
               boxSizing: "border-box",
               padding: "6px 0",
+              gap: "0",
             }}
           >
             {/* Top Floating Section Name Badge beside Vertical Side Dock */}
@@ -423,32 +424,44 @@ export function EditorToolbar({
               {activeSectionTitle || "Select a section"}
             </div>
 
-            {/* === TOP GROUP: Logo + Action Buttons === */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-              {/* Logo */}
-              <button
-                onClick={onOpenSettings}
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "50%",
-                  backgroundColor: "#0d1527",
-                  color: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                  boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
-                  overflow: "hidden",
-                  marginBottom: "4px",
-                }}
-                title={isSettingsOpen ? "Back to Editor" : "XITE Studio Settings"}
-              >
-                <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
-              </button>
+            {/* Logo — always pinned at the top regardless of dock side */}
+            <button
+              onClick={onOpenSettings}
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "50%",
+                backgroundColor: "#0d1527",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "none",
+                cursor: "pointer",
+                flexShrink: 0,
+                boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
+                overflow: "hidden",
+                marginBottom: "4px",
+              }}
+              title={isSettingsOpen ? "Back to Editor" : "XITE Studio Settings"}
+            >
+              <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
+            </button>
 
+            {/* Inner container — reverses for right dock */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: dockPosition === "right" ? "column-reverse" : "column",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flex: 1,
+                width: "100%",
+                padding: "4px 0",
+              }}
+            >
+            {/* === TOP GROUP: Action Buttons === */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
               {/* 2. Swap, Move Down, Move Up, Duplicate, Redo, Undo */}
               {/* Swap Variant Layout Button */}
               <button
@@ -765,6 +778,7 @@ export function EditorToolbar({
               >
                 <Layers style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
               </button>
+            </div>
             </div>
           </div>
         ) : (
