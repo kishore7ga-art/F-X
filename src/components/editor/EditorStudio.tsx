@@ -2960,7 +2960,7 @@ export function EditorStudio({
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-y-auto">
       
 
 
@@ -2972,7 +2972,7 @@ export function EditorStudio({
         }`}
       >
         <div
-          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
+          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white max-w-full ${
             viewportWidth === "100%"
               ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
               : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 mt-0 mb-4"
