@@ -1544,14 +1544,11 @@ export function EditorStudio({
             const sanitizedSecs = savedSecs.map((s, i) => {
               const catKey = (s.category || s.title || "").toLowerCase();
               if (i === 0 || catKey.includes("header") || catKey.includes("navbar") || normalizeCategory(catKey) === "navbar") {
-                if (!s.code.includes("VELLORE INSTITUTE OF TECHNOLOGY")) {
-                  return {
-                    ...s,
-                    code: ALL_19_SECTION_TEMPLATES.navbar,
-                    title: "Header Navigation",
-                    category: "navbar",
-                  };
-                }
+                return {
+                  ...s,
+                  title: s.title || "Header Navigation",
+                  category: "navbar",
+                };
               }
               return s;
             });
