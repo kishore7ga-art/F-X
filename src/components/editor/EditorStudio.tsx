@@ -3132,14 +3132,7 @@ export function EditorStudio({
                     activeSectionIndex === idx ? "ring-2 ring-white ring-offset-2 ring-offset-black z-10" : ""
                   }`}
                 >
-                  {/* Top-Right UI Section Badge (Fixed High-Contrast Design) */}
-                  {activeSectionIndex === idx && (
-                    <div className="absolute top-4 right-6 z-30 pointer-events-none flex items-center justify-center min-w-[90px] px-4 py-2 rounded-xl bg-slate-950/95 text-white shadow-[0_6px_20px_rgba(0,0,0,0.6)] border border-white/20 backdrop-blur-md select-none transition-all duration-200">
-                      <span className="text-[13px] font-extrabold tracking-wide text-white whitespace-nowrap drop-shadow-sm">
-                        {sec.title || `Section ${idx + 1}`}
-                      </span>
-                    </div>
-                  )}
+
 
                   <div
                     dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
