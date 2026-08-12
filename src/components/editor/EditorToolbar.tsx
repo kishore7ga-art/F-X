@@ -647,7 +647,7 @@ export function EditorToolbar({
             </div>
 
             {/* 4. Bottom Group: Delete, External Preview, Copy Link, Save, Layers */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", marginTop: "auto" }}>
               {/* Trash / Delete Section Button */}
               <button
                 onClick={onDeleteSection}
