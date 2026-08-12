@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Save,
   Link as LinkIcon,
@@ -19,6 +19,7 @@ import {
   Check,
   Layers,
   Type,
+  GripVertical,
 } from "lucide-react";
 
 interface EditorToolbarProps {
@@ -74,6 +75,76 @@ export function EditorToolbar({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+
+  // 4-Direction Hold & Drag + Auto-Docking State
+  const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const rect = (e.currentTarget.closest(".editor-toolbar-dock") as HTMLElement)?.getBoundingClientRect();
+    if (rect) {
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+      setDragPos({
+        x: rect.left,
+        y: rect.top,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!dragOffset) return;
+      setDragPos({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y,
+      });
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      setIsDragging(false);
+      setDragOffset(null);
+
+      // Snap to nearest 4 edges (Top, Bottom, Left, Right)
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const x = e.clientX;
+      const y = e.clientY;
+
+      const distTop = y;
+      const distBottom = h - y;
+      const distLeft = x;
+      const distRight = w - x;
+
+      const minDist = Math.min(distTop, distBottom, distLeft, distRight);
+
+      let targetDock: "bottom" | "top" | "left" | "right" = "bottom";
+      if (minDist === distTop) targetDock = "top";
+      else if (minDist === distBottom) targetDock = "bottom";
+      else if (minDist === distLeft) targetDock = "left";
+      else targetDock = "right";
+
+      setDockPosition(targetDock);
+      setDragPos(null);
+      showToast(`Toolbar docked to ${targetDock.toUpperCase()} 🎯`);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [isDragging, dragOffset]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -196,47 +267,136 @@ export function EditorToolbar({
     transition: "all 0.15s ease",
   };
 
-  return (
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
+  const isVertical = dockPosition === "left" || dockPosition === "right";
+
+  // Dynamic Dock Positioning Styles
+  const getDockPositionStyles = (): React.CSSProperties => {
+    if (isDragging && dragPos) {
+      return {
         position: "fixed",
-        bottom: 0,
+        left: `${dragPos.x}px`,
+        top: `${dragPos.y}px`,
+        bottom: "auto",
+        right: "auto",
+        transform: "none",
+        transition: "none",
+        zIndex: 999999,
+      };
+    }
+
+    if (dockPosition === "top") {
+      return {
+        position: "fixed",
+        top: 0,
         left: 0,
         right: 0,
-        margin: 0,
-        zIndex: 99999,
+        bottom: "auto",
         width: "100%",
-        maxWidth: "100%",
+        height: "52px",
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        zIndex: 99999,
+      };
+    }
+
+    if (dockPosition === "left") {
+      return {
+        position: "fixed",
+        left: "14px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        bottom: "auto",
+        right: "auto",
+        width: "58px",
+        height: "auto",
+        maxHeight: "85vh",
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        zIndex: 99999,
+      };
+    }
+
+    if (dockPosition === "right") {
+      return {
+        position: "fixed",
+        right: "14px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        bottom: "auto",
+        left: "auto",
+        width: "58px",
+        height: "auto",
+        maxHeight: "85vh",
+        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        zIndex: 99999,
+      };
+    }
+
+    // Default "bottom"
+    return {
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      top: "auto",
+      width: "100%",
+      height: "52px",
+      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+      zIndex: 99999,
+    };
+  };
+
+  return (
+    <div
+      className="editor-toolbar-dock"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        ...getDockPositionStyles(),
         userSelect: "none",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 0,
       }}
     >
-      {/* Full Width Dock Container (Fills Side Space 100%) */}
+      {/* Dock Bar Container */}
       <div
         style={{
-          height: "52px",
-          width: "100%",
-          maxWidth: "100%",
+          height: isVertical ? "auto" : "52px",
+          width: isVertical ? "58px" : "100%",
           backgroundColor: "#f4f6f9",
           backgroundImage: "linear-gradient(180deg, #fafbfc 0%, #edf0f5 100%)",
-          borderTop: "1px solid rgba(226, 232, 240, 0.9)",
-          boxShadow: "0 -10px 40px rgba(0, 0, 0, 0.45), 0 -2px 10px rgba(0, 0, 0, 0.25)",
-          borderRadius: 0,
-          padding: "0 24px",
+          border: isVertical ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
+          borderTop: dockPosition === "bottom" ? "1px solid rgba(226, 232, 240, 0.9)" : undefined,
+          borderBottom: dockPosition === "top" ? "1px solid rgba(226, 232, 240, 0.9)" : undefined,
+          boxShadow: isVertical
+            ? "0 16px 40px rgba(0, 0, 0, 0.35)"
+            : "0 -10px 40px rgba(0, 0, 0, 0.45), 0 -2px 10px rgba(0, 0, 0, 0.25)",
+          borderRadius: isVertical ? "30px" : "0",
+          padding: isVertical ? "16px 8px" : "0 24px",
           display: "flex",
-          flexDirection: "row",
+          flexDirection: isVertical ? "column" : "row",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: isVertical ? "14px" : "16px",
           boxSizing: "border-box",
           position: "relative",
+          overflowY: isVertical ? "auto" : "visible",
         }}
       >
-        {/* 1. Far Left Group: Logo Button + Primary System Tools (Layers, Save, Link, Preview, Trash) */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
+        {/* 1. Far Left / Top Group: Grip Handle + Logo + System Tools */}
+        <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "10px" : "16px" }}>
+          {/* Grip Drag Handle */}
+          <div
+            onPointerDown={handlePointerDown}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: isDragging ? "grabbing" : "grab",
+              padding: "4px",
+              color: "#64748b",
+              touchAction: "none",
+            }}
+            title="Hold & Drag to move toolbar to Top, Bottom, Left, or Right edge"
+          >
+            <GripVertical style={{ width: "16px", height: "16px", strokeWidth: 2, color: "#64748b" }} />
+          </div>
+
           {/* Logo Button */}
           <button
             onClick={onOpenSettings}
@@ -260,8 +420,8 @@ export function EditorToolbar({
             <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
           </button>
 
-          {/* Primary System Tools Group (Spacious 12px Gap) */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
+          {/* Primary System Tools Group */}
+          <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "10px" : "12px" }}>
             {/* Layers Drawer Button */}
             <button
               onClick={onToggleDrawer}
@@ -380,41 +540,43 @@ export function EditorToolbar({
           </div>
         </div>
 
-        {/* 2. Absolute Geometric Center: Active Section Name Text (Clean Typography, No Round Bar) */}
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-            zIndex: 10,
-          }}
-        >
-          <span
+        {/* 2. Center: Active Section Name Text (Only visible when horizontal) */}
+        {!isVertical && (
+          <div
             style={{
-              fontSize: "13px",
-              fontWeight: 800,
-              color: "#0f172a",
-              fontFamily: "'Plus Jakarta Sans', 'Outfit', var(--font-jakarta), var(--font-inter), sans-serif",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              letterSpacing: "-0.015em",
-              pointerEvents: "auto",
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "none",
+              zIndex: 10,
             }}
           >
-            {activeSectionTitle || "Select a section"}
-          </span>
-        </div>
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 800,
+                color: "#0f172a",
+                fontFamily: "'Plus Jakarta Sans', 'Outfit', var(--font-jakarta), var(--font-inter), sans-serif",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                letterSpacing: "-0.015em",
+                pointerEvents: "auto",
+              }}
+            >
+              {activeSectionTitle || "Select a section"}
+            </span>
+          </div>
+        )}
 
-        {/* 3. Far Right Group: Viewport Switcher First + Editing Tools */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
+        {/* 3. Right / Bottom Group: Viewport Switcher First + Editing Tools */}
+        <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "10px" : "12px" }}>
 
-          {/* Viewport & Resolution Switcher Group (Underline Highlight Indicator) */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+          {/* Viewport & Resolution Switcher Group */}
+          <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "8px" : "10px" }}>
             {/* Desktop Resolution Button */}
             <button
               onClick={handleDesktopClick}
@@ -425,7 +587,7 @@ export function EditorToolbar({
                 alignItems: "center",
                 gap: "4px",
                 border: "none",
-                borderBottom: !activeTablet && !activeMobile ? "2px solid #2563eb" : "2px solid transparent",
+                borderBottom: !isVertical && !activeTablet && !activeMobile ? "2px solid #2563eb" : "2px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 color: !activeTablet && !activeMobile ? "#2563eb" : "#475569",
@@ -434,9 +596,11 @@ export function EditorToolbar({
               title="Desktop Resolution (100%)"
             >
               <Monitor style={{ width: "16px", height: "16px", strokeWidth: 2, color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }} />
-              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 600 : 500, fontSize: "12px", color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }}>
-                100%
-              </span>
+              {!isVertical && (
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 600 : 500, fontSize: "12px", color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }}>
+                  100%
+                </span>
+              )}
             </button>
 
             {/* Tablet Resolution Button */}
@@ -449,7 +613,7 @@ export function EditorToolbar({
                 alignItems: "center",
                 gap: "4px",
                 border: "none",
-                borderBottom: activeTablet ? "2px solid #2563eb" : "2px solid transparent",
+                borderBottom: !isVertical && activeTablet ? "2px solid #2563eb" : "2px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 color: activeTablet ? "#2563eb" : "#475569",
@@ -458,7 +622,7 @@ export function EditorToolbar({
               title="Tablet Resolution"
             >
               <Tablet style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeTablet ? "#2563eb" : "#475569" }} />
-              {activeTablet && (
+              {!isVertical && activeTablet && (
                 <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: "12px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
@@ -475,7 +639,7 @@ export function EditorToolbar({
                 alignItems: "center",
                 gap: "4px",
                 border: "none",
-                borderBottom: activeMobile ? "2px solid #2563eb" : "2px solid transparent",
+                borderBottom: !isVertical && activeMobile ? "2.5px solid #2563eb" : "2px solid transparent",
                 backgroundColor: "transparent",
                 cursor: "pointer",
                 color: activeMobile ? "#2563eb" : "#475569",
@@ -484,7 +648,7 @@ export function EditorToolbar({
               title="Mobile Resolution"
             >
               <Smartphone style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeMobile ? "#2563eb" : "#475569" }} />
-              {activeMobile && (
+              {!isVertical && activeMobile && (
                 <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: "12px", color: "#2563eb" }}>
                   {viewportWidth}
                 </span>
@@ -492,10 +656,10 @@ export function EditorToolbar({
             </button>
           </div>
 
-          <div style={{ height: "18px", width: "1.5px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
+          <div style={{ height: isVertical ? "1px" : "18px", width: isVertical ? "18px" : "1.5px", backgroundColor: "#cbd5e1", margin: isVertical ? "4px 0" : "0 6px", flexShrink: 0 }} />
 
           {/* Section Tools Group (Undo, Redo, Duplicate, Move Up, Move Down, Swap) */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+          <div style={{ display: "flex", flexDirection: isVertical ? "column" : "row", alignItems: "center", gap: isVertical ? "8px" : "6px" }}>
             {/* Undo Button */}
             <button
               onClick={onUndo}
