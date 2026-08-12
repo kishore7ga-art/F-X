@@ -235,8 +235,8 @@ export function EditorToolbar({
           position: "relative",
         }}
       >
-        {/* 1. Far Left Group: Logo Button + Primary System Tools (Layers, Save, Link, Preview) */}
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
+        {/* 1. Far Left Group: Logo Button + Primary System Tools (Layers, Save, Link, Preview, Trash) */}
+        <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
           {/* Logo Button */}
           <button
             onClick={onOpenSettings}
@@ -260,8 +260,8 @@ export function EditorToolbar({
             <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
           </button>
 
-          {/* Primary System Tools Group */}
-          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
+          {/* Primary System Tools Group (Spacious 12px Gap) */}
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
             {/* Layers Drawer Button */}
             <button
               onClick={onToggleDrawer}
