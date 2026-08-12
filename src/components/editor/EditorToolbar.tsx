@@ -247,16 +247,15 @@ export function EditorToolbar({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontWeight: 900,
-              fontSize: "13px",
               border: "none",
               cursor: "pointer",
               flexShrink: 0,
               boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
+              overflow: "hidden",
             }}
-            title={isSettingsOpen ? "Back to Editor" : "XITE Studio"}
+            title={isSettingsOpen ? "Back to Editor" : "XITE Studio Settings"}
           >
-            <span style={{ fontWeight: 900, fontSize: "14px", color: "#ffffff", lineHeight: 1, fontFamily: "system-ui, sans-serif" }}>N</span>
+            <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
           </button>
 
           {/* Active Section Name Light-Grey Pill */}
