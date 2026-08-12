@@ -3085,7 +3085,6 @@ export function EditorStudio({
                     fetchAllDefaultSectionsFromAdminDb();
                   }}
                   label="Add Section"
-                  size="md"
                 />
               </div>
             </div>
@@ -3210,16 +3209,17 @@ export function EditorStudio({
                 </div>
               ))}
 
-              {/* Empty Space + Add Section Button */}
-              <div className="w-full max-w-full py-12 px-6 flex items-center justify-center text-center bg-zinc-950/90 border-t border-b border-dashed border-zinc-800/80 my-8 rounded-2xl shadow-inner overflow-visible">
-                <AddSectionButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAddSectionModal(true);
-                  }}
-                  label="Add Section"
-                  size="md"
-                />
+              {/* Section Boundary Divider Line with Centered Floating Compact "+ Add Section" Button */}
+              <div className="w-full relative flex items-center justify-center my-10 border-t border-dashed border-slate-800 z-20">
+                <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+                  <AddSectionButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAddSectionModal(true);
+                    }}
+                    label="Add Section"
+                  />
+                </div>
               </div>
 
               {/* Bottom Clearance Spacer for Floating Dock */}
