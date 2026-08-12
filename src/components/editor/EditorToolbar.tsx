@@ -201,7 +201,7 @@ export function EditorToolbar({
       onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
-        bottom: "24px",
+        bottom: "10px",
         left: 0,
         right: 0,
         margin: "0 auto",
