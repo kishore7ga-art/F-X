@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import {
@@ -737,6 +737,11 @@ export function EditorStudio({
   const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
   const [loadingDb, setLoadingDb] = useState(true);
+
+  // Active inline text editing state tracking
+  const activeEditingElemRef = useRef<HTMLElement | null>(null);
+  const activeEditingSectionIdxRef = useRef<number | null>(null);
+  const activeEditingContainerRef = useRef<HTMLElement | null>(null);
 
   // Check if user has explicitly logged out
   useEffect(() => {
@@ -1837,10 +1842,14 @@ export function EditorStudio({
   useEffect(() => {
     void loadAdminTemplates();
     const interval = setInterval(() => {
-      void loadAdminTemplates();
+      if (!activeEditingElemRef.current) {
+        void loadAdminTemplates();
+      }
     }, 4000);
     const handleFocus = () => {
-      void loadAdminTemplates();
+      if (!activeEditingElemRef.current) {
+        void loadAdminTemplates();
+      }
     };
     window.addEventListener("focus", handleFocus);
     return () => {
@@ -1915,6 +1924,66 @@ export function EditorStudio({
     }
   };
 
+  // Save active inline text edit and update section code in state when clicking outside
+  const finishInlineTextEditing = useCallback(() => {
+    const textElem = activeEditingElemRef.current;
+    const sectionIndex = activeEditingSectionIdxRef.current;
+    const container = activeEditingContainerRef.current;
+
+    if (!textElem || sectionIndex === null || !container) return;
+
+    textElem.contentEditable = "false";
+    textElem.style.outline = "";
+    textElem.style.outlineOffset = "";
+    textElem.style.borderRadius = "";
+    textElem.style.backgroundColor = "";
+
+    activeEditingElemRef.current = null;
+    activeEditingSectionIdxRef.current = null;
+    activeEditingContainerRef.current = null;
+
+    const canvasBox = container.querySelector(".section-canvas-box") as HTMLElement;
+    const targetNode = canvasBox || container;
+
+    const clone = targetNode.cloneNode(true) as HTMLElement;
+
+    const badges = clone.querySelectorAll('.pointer-events-none');
+    badges.forEach((b) => b.remove());
+
+    const editables = clone.querySelectorAll('[contenteditable]');
+    editables.forEach((el) => {
+      el.removeAttribute('contenteditable');
+      (el as HTMLElement).style.outline = '';
+      (el as HTMLElement).style.outlineOffset = '';
+      (el as HTMLElement).style.borderRadius = '';
+      (el as HTMLElement).style.backgroundColor = '';
+    });
+
+    const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
+    if (newCode) {
+      setSectionsWithHistory((prev) =>
+        prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
+      );
+      showToastNotification("Text content updated!");
+    }
+  }, []);
+
+  // Global document click handler to finish inline text editing when clicking outside
+  useEffect(() => {
+    const handleDocumentMouseDown = (e: MouseEvent) => {
+      if (activeEditingElemRef.current) {
+        const target = e.target as HTMLElement;
+        if (target && !activeEditingElemRef.current.contains(target)) {
+          finishInlineTextEditing();
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleDocumentMouseDown);
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentMouseDown);
+    };
+  }, [finishInlineTextEditing]);
+
   // Handle double-click inline text editing directly on section canvas
   const handleSectionDoubleClick = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
     e.stopPropagation();
@@ -1939,7 +2008,17 @@ export function EditorStudio({
 
     if (textElem.tagName === "DIV" && textElem.children.length > 2) return;
 
-    // Enable inline content editing
+    // Finish previous edit first if user double-clicked another element directly
+    if (activeEditingElemRef.current && activeEditingElemRef.current !== textElem) {
+      finishInlineTextEditing();
+    }
+
+    // Set active editing references
+    activeEditingElemRef.current = textElem;
+    activeEditingSectionIdxRef.current = sectionIndex;
+    activeEditingContainerRef.current = e.currentTarget;
+
+    // Enable inline content editing with high-visibility blue dashed outline
     textElem.contentEditable = "true";
     textElem.style.userSelect = "text";
     (textElem.style as any).webkitUserSelect = "text";
@@ -1947,7 +2026,7 @@ export function EditorStudio({
     textElem.style.outlineOffset = "4px";
     textElem.style.borderRadius = "4px";
     textElem.style.backgroundColor = "rgba(37, 99, 235, 0.08)";
-    
+
     setTimeout(() => {
       textElem?.focus();
       try {
@@ -1961,50 +2040,10 @@ export function EditorStudio({
       }
     }, 20);
 
-    // Save pre-edit history snapshot via setSectionsWithHistory when editing completes in saveUpdatedContent
-    const container = e.currentTarget;
-
-    const saveUpdatedContent = () => {
-      if (!textElem) return;
-      textElem.contentEditable = "false";
-      textElem.style.outline = "";
-      textElem.style.outlineOffset = "";
-      textElem.style.borderRadius = "";
-      textElem.style.backgroundColor = "";
-
-      const canvasBox = container.querySelector(".section-canvas-box") as HTMLElement;
-      const targetNode = canvasBox || container;
-
-      const clone = targetNode.cloneNode(true) as HTMLElement;
-      
-      const badges = clone.querySelectorAll('.pointer-events-none');
-      badges.forEach((b) => b.remove());
-
-      const editables = clone.querySelectorAll('[contenteditable]');
-      editables.forEach((el) => {
-        el.removeAttribute('contenteditable');
-        (el as HTMLElement).style.outline = '';
-        (el as HTMLElement).style.outlineOffset = '';
-        (el as HTMLElement).style.borderRadius = '';
-        (el as HTMLElement).style.backgroundColor = '';
-      });
-
-      const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
-      if (newCode) {
-        setSectionsWithHistory((prev) =>
-          prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
-        );
-      }
-    };
-
-    textElem.onblur = () => {
-      saveUpdatedContent();
-    };
-
     textElem.onkeydown = (keyEvent) => {
-      if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
+      if (keyEvent.key === "Escape") {
         keyEvent.preventDefault();
-        textElem!.blur();
+        finishInlineTextEditing();
       }
     };
   };
