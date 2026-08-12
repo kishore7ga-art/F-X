@@ -1378,12 +1378,12 @@ export function EditorStudio({
     const c = cat.toLowerCase().trim();
     if (c.includes("header") || c.includes("navbar") || c === "nav") return "navbar";
     if (c.includes("hero") || c.includes("banner") || c.includes("masthead")) return "hero";
+    if (c.includes("admission") || c.includes("apply") || c.includes("eligibility")) return "admissions";
     if (c.includes("highlight") || c.includes("stat") || c.includes("metric")) return "highlights";
     if (c.includes("about")) return "about";
-    if (c.includes("vision") || c.includes("mission") || c.includes("principle")) return "vision";
+    if (c.includes("vision") || (c.includes("mission") && !c.includes("admission")) || c.includes("principle")) return "vision";
     if (c.includes("course") || c.includes("program") || c.includes("degree")) return "courses";
     if (c.includes("department") || c.includes("faculty") || c.includes("school")) return "departments";
-    if (c.includes("admission") || c.includes("apply") || c.includes("eligibility")) return "admissions";
     if (c.includes("placement") || c.includes("recruiter") || c.includes("career")) return "placements";
     if (c.includes("facilit") || c.includes("infrastruct") || c.includes("hostel") || c.includes("library")) return "facilities";
     if (c.includes("research") || c.includes("patent") || c.includes("r&d") || c.includes("lab")) return "research";
@@ -2658,18 +2658,18 @@ export function EditorStudio({
         catId = "navbar";
       } else if (titleLower.includes("hero") || titleLower.includes("banner") || idLower.includes("hero") || idLower.includes("banner")) {
         catId = "hero";
+      } else if (titleLower.includes("admission") || idLower.includes("admission")) {
+        catId = "admissions";
       } else if (titleLower.includes("highlight") || titleLower.includes("stat") || titleLower.includes("metric") || idLower.includes("highlight") || idLower.includes("stat")) {
         catId = "highlights";
       } else if (titleLower.includes("about") || idLower.includes("about")) {
         catId = "about";
-      } else if (titleLower.includes("vision") || titleLower.includes("mission") || idLower.includes("vision")) {
+      } else if (titleLower.includes("vision") || (titleLower.includes("mission") && !titleLower.includes("admission")) || idLower.includes("vision")) {
         catId = "vision";
       } else if (titleLower.includes("course") || titleLower.includes("program") || titleLower.includes("academic") || idLower.includes("course") || idLower.includes("program")) {
         catId = "courses";
       } else if (titleLower.includes("department") || idLower.includes("department")) {
         catId = "departments";
-      } else if (titleLower.includes("admission") || idLower.includes("admission")) {
-        catId = "admissions";
       } else if (titleLower.includes("placement") || titleLower.includes("recruiter") || titleLower.includes("career") || idLower.includes("placement")) {
         catId = "placements";
       } else if (titleLower.includes("facilit") || titleLower.includes("infrastruct") || idLower.includes("facilit")) {
@@ -2726,12 +2726,12 @@ export function EditorStudio({
 
       if (normTplCat && normTplCat === normCatId) {
         isMatch = true;
-      } else if (catId === "vision") {
-        isMatch = tplCatLower === "vision" || tplCatLower.includes("vision") || nameLower.includes("vision") || nameLower.includes("mission");
-      } else if (catId === "events" || catId === "event") {
-        isMatch = tplCatLower === "events" || tplCatLower === "event" || tplCatLower.includes("event") || nameLower.includes("event");
       } else if (catId === "admissions" || catId === "admission") {
-        isMatch = tplCatLower === "admissions" || tplCatLower === "admission" || nameLower.includes("admission");
+        isMatch = normTplCat === "admissions" || tplCatLower === "admissions" || tplCatLower === "admission" || nameLower.includes("admission");
+      } else if (catId === "vision") {
+        isMatch = normTplCat === "vision" || (nameLower.includes("vision") || (nameLower.includes("mission") && !nameLower.includes("admission")));
+      } else if (catId === "events" || catId === "event") {
+        isMatch = normTplCat === "events" || tplCatLower === "events" || tplCatLower === "event" || tplCatLower.includes("event") || nameLower.includes("event");
       } else if (catId === "hero") {
         isMatch = (normTplCat === "hero" || tplCatLower.includes("hero") || nameLower.includes("hero") || nameLower.includes("banner")) && !nameLower.includes("header") && !nameLower.includes("nav");
       } else if (catId === "navbar" || catId === "header") {
