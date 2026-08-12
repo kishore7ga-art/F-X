@@ -571,18 +571,14 @@ export function EditorToolbar({
               </button>
             </div>
 
-            {/* 3. Middle Resolution Switcher Group (Exact Absolute Center of Vertical Bar) */}
+            {/* 3. Middle Resolution Switcher Group (In clean flex flow to prevent icon collision) */}
             <div
               style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: "8px",
-                pointerEvents: "auto",
+                gap: "6px",
+                margin: "4px 0",
               }}
             >
               <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
