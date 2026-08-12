@@ -388,7 +388,7 @@ export function EditorToolbar({
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
+              flexDirection: dockPosition === "right" ? "column-reverse" : "column",
               alignItems: "center",
               justifyContent: "space-between",
               height: "100%",
