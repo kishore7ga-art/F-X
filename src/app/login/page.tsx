@@ -11,9 +11,17 @@ export const metadata = { title: "Sign in — XITE" };
 
 export default async function LoginPage({
   searchParams,
-}: PageProps<"/login">) {
-  const { error, registered, requested, email, force } = await searchParams;
-  const signInError = typeof error === "string" ? error : null;
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const error = typeof params.error === "string" ? params.error : null;
+  const registered = params.registered;
+  const requested = params.requested;
+  const email = typeof params.email === "string" ? params.email : "";
+  const force = params.force;
+
+  const signInError = error;
   const justRegistered = registered === "1";
   const justRequested = requested === "1";
 
@@ -29,7 +37,7 @@ export default async function LoginPage({
 
   return (
     <CredentialsForm
-      initialEmail={typeof email === "string" ? email : ""}
+      initialEmail={email}
       showGoogleButton={googleEnabled}
       notice={
         signInError

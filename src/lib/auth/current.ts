@@ -92,13 +92,8 @@ export async function getCurrentCollegeOrNull() {
   try {
     return await getCurrentCollege();
   } catch (cause) {
-    if (cause instanceof ServerApiError) {
-      if (cause.status !== 401) {
-        console.error(`[auth] could not resolve college: ${cause.message}`);
-      }
-      return null;
-    }
-    throw cause;
+    console.error(`[auth] could not resolve college:`, cause instanceof Error ? cause.message : cause);
+    return null;
   }
 }
 
