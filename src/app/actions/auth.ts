@@ -43,6 +43,9 @@ export async function loginAction(
       store.set(COOKIE_NAME, "dev-local-session", sessionCookieOptions());
       nextUrl = "/editor/greenfield";
     } else if (cause instanceof ServerApiError) {
+      if (cause.status >= 500) {
+        return { error: "Unable to connect to backend server (502). Please ensure the backend service is running." };
+      }
       return { error: cause.message };
     } else {
       return { error: "Could not reach the server. Check your connection and try again." };
