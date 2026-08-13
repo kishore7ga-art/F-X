@@ -12,7 +12,7 @@ export const metadata = { title: "Sign in — XITE" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = searchParams ? await searchParams : {};
   const error = typeof params.error === "string" ? params.error : null;

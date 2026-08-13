@@ -21,9 +21,7 @@ import { getSession } from "@/lib/auth/session";
  */
 export type CurrentCollege = CollegePayload;
 
-export async function getCurrentCollege(): Promise<CurrentCollege | null> {
-  const session = await getSession();
-
+export async function getCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege | null> {
   try {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
     if (payload?.college) return payload.college;
@@ -34,7 +32,7 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
   }
 
   // Fallback to open access / local database college so auth never gets stuck in redirect loop
-  const openCollege = await openAccessCollege();
+  const openCollege = await openAccessCollege(targetSubdomain);
   if (openCollege) {
     return {
       id: openCollege.id,
@@ -58,7 +56,7 @@ export async function getCurrentCollege(): Promise<CurrentCollege | null> {
 import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
 
 export async function requireCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege> {
-  const college = await getCurrentCollege();
+  const college = await getCurrentCollege(targetSubdomain);
   if (college) return college;
 
   const openCollege = await openAccessCollege(targetSubdomain);
