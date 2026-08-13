@@ -737,6 +737,8 @@ export function EditorStudio({
   const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
   const [loadingDb, setLoadingDb] = useState(true);
+  // Full multi-page config loaded from /api/v1/my-website (per-college, DB-persisted)
+  const [myWebsiteConfig, setMyWebsiteConfig] = useState<{ pages: Array<{ slug: string; title: string; sections: SectionItem[] }> } | null>(null);
 
   // Active inline text editing state tracking
   const activeEditingElemRef = useRef<HTMLElement | null>(null);
@@ -1378,6 +1380,20 @@ export function EditorStudio({
     }
   }, [sections, currentPage.slug, subdomain]);
 
+  // Debounced autosave to /api/v1/my-website (per-college DB) whenever sections change.
+  // 2s debounce: fires after user stops editing, not on every keystroke.
+  useEffect(() => {
+    if (sections.length === 0 || !currentPage.slug || loadingDb) return;
+
+    const timer = setTimeout(() => {
+      // Fire-and-forget: errors are non-fatal (localStorage is the fallback)
+      void handlePersistWebsiteSave();
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections]);
+
   // Helper to normalize category key aliases across Admin DB templates & Editor categories
   const normalizeCategory = (cat?: string): string => {
     if (!cat) return "";
@@ -1521,107 +1537,103 @@ export function EditorStudio({
     return ensureEssentialSections(clean, slug);
   };
 
-  // Fetch sections & admin DB templates
+  // Fetch sections for a given page slug from the per-college config.
+  // Priority order:
+  //   1. myWebsiteConfig already loaded in state (avoid redundant API calls)
+  //   2. /api/v1/my-website (per-college, DB-persisted)
+  //   3. localStorage fast cache
+  //   4. Built-in default sections as final fallback
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
     const cleanSlug = (slug || "/home").replace(/\//g, "_") || "home";
     try {
-      if (!forceSync && typeof window !== "undefined") {
-        try {
-          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
-          const rawSaved = localStorage.getItem("xite_saved_pages");
-          let savedSecs: SectionItem[] | null = null;
-
-          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
-            const parsedActive = JSON.parse(rawActive);
-            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
-              savedSecs = parsedActive;
-            }
-          }
-
-          if (!savedSecs && pageStore[slug] && pageStore[slug].length > 0) {
-            savedSecs = pageStore[slug];
-          }
-
-          if (!savedSecs && rawSaved && rawSaved !== "undefined" && rawSaved !== "null") {
-            const parsedSaved = JSON.parse(rawSaved);
-            if (parsedSaved && Array.isArray(parsedSaved[slug]) && parsedSaved[slug].length > 0) {
-              savedSecs = parsedSaved[slug];
-            }
-          }
-
-          if (savedSecs && savedSecs.length > 0) {
-            const sanitizedSecs = savedSecs.map((s, i) => {
-              const catKey = (s.category || s.title || "").toLowerCase();
-              if (i === 0 || catKey.includes("header") || catKey.includes("navbar") || normalizeCategory(catKey) === "navbar") {
-                return {
-                  ...s,
-                  title: s.title || "Header Navigation",
-                  category: "navbar",
-                };
-              }
-              return s;
-            });
-            const cleanSecs = deduplicateSections(sanitizedSecs, slug);
-            setSections(cleanSecs);
-            try {
-              localStorage.setItem(`xite_active_sections_${subdomain}_${cleanSlug}`, JSON.stringify(cleanSecs));
-              const currentSavedPages = JSON.parse(localStorage.getItem("xite_saved_pages") || "{}");
-              currentSavedPages[slug] = cleanSecs;
-              localStorage.setItem("xite_saved_pages", JSON.stringify(currentSavedPages));
-            } catch {}
-            setActiveSectionIndex(0);
-            setLoadingDb(false);
-            return;
-          }
-        } catch (err) {
-          console.warn("Could not load saved sections from localStorage:", err);
+      // 1. If we already have the full config in state, just switch the active page sections
+      if (!forceSync && myWebsiteConfig && myWebsiteConfig.pages) {
+        const targetPage = myWebsiteConfig.pages.find((p) => p.slug === slug)
+          || myWebsiteConfig.pages.find((p) => p.slug === "/home")
+          || myWebsiteConfig.pages[0];
+        if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
+          const cleanSecs = deduplicateSections(targetPage.sections, slug);
+          setSections(cleanSecs);
+          setActiveSectionIndex(0);
+          setLoadingDb(false);
+          return;
         }
       }
 
-      // If no saved sections in localStorage, load default sections for slug from API or fallback
-      let fetchedSecs: SectionItem[] = [];
+      // 2. Fetch from /api/v1/my-website (per-college, authenticated)
       for (const baseUrl of getApiBases()) {
         try {
-          const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
-          if (defRes.ok) {
-            const defData = await defRes.json().catch(() => ({}));
-            if (defData && Array.isArray(defData.pages)) {
-              const targetPage = defData.pages.find((p: any) => p.slug === slug) || defData.pages.find((p: any) => p.slug === "/home");
-              if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
-                targetPage.sections.forEach((s: any, idx: number) => {
-                  const code = s.code || s.html || s.content;
-                  if (s && code) {
-                    const rawType = s.sectionType || s.category || s.type || s.id || "";
-                    const normType = normalizeCategory(rawType);
-                    fetchedSecs.push({
-                      id: s.id || `admin-def-sec-${idx}`,
-                      title: s.title || s.name || "Section",
-                      code: code,
-                      category: normType || rawType,
-                      variantIndex: 0,
-                    });
-                  }
-                });
-                if (fetchedSecs.length > 0) break;
+          const res = await fetch(`${baseUrl}/api/v1/my-website`, { credentials: "include" });
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data && Array.isArray(data.pages) && data.pages.length > 0) {
+              // Store full config for later cross-page saves
+              const configWithSections = {
+                pages: data.pages.map((p: any) => ({
+                  slug: p.slug,
+                  title: p.title,
+                  sections: Array.isArray(p.sections)
+                    ? p.sections.map((s: any, idx: number) => ({
+                        id: s.id || `sec-${idx}`,
+                        title: s.title || s.name || "Section",
+                        code: s.code || s.html || s.content || "",
+                        category: normalizeCategory(s.sectionType || s.category || s.type || ""),
+                        variantIndex: 0,
+                      }))
+                    : [],
+                })),
+              };
+              setMyWebsiteConfig(configWithSections);
+
+              // Also update pageStore for cross-page navigation
+              const newPageStore: Record<string, SectionItem[]> = {};
+              configWithSections.pages.forEach((p: { slug: string; title: string; sections: SectionItem[] }) => { newPageStore[p.slug] = p.sections; });
+              setPageStore((prev) => ({ ...prev, ...newPageStore }));
+
+              const targetPage = configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === slug)
+                || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
+                || configWithSections.pages[0];
+              if (targetPage && targetPage.sections.length > 0) {
+                const cleanSecs = deduplicateSections(targetPage.sections, slug);
+                setSections(cleanSecs);
+                setActiveSectionIndex(0);
+                // Update localStorage cache
+                try {
+                  localStorage.setItem(`xite_active_sections_${subdomain}_${cleanSlug}`, JSON.stringify(cleanSecs));
+                } catch {}
+                setLoadingDb(false);
+                return;
               }
             }
           }
         } catch (e) {}
       }
 
-      if (fetchedSecs.length === 0) {
-        fetchedSecs = getAll19DefaultSections(slug);
+      // 3. localStorage fast cache (offline or auth not available)
+      if (typeof window !== "undefined") {
+        try {
+          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
+          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
+            const parsedActive = JSON.parse(rawActive);
+            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
+              const cleanSecs = deduplicateSections(parsedActive, slug);
+              setSections(cleanSecs);
+              setActiveSectionIndex(0);
+              setLoadingDb(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Could not load sections from localStorage:", err);
+        }
       }
 
-      const cleanSecs = deduplicateSections(fetchedSecs);
+      // 4. Built-in default fallback
+      const fallbackSecs = getAll19DefaultSections(slug);
+      const cleanSecs = deduplicateSections(fallbackSecs, slug);
       setSections(cleanSecs);
       setActiveSectionIndex(0);
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanSecs));
-        }
-      } catch {}
     } finally {
       setLoadingDb(false);
     }
@@ -1772,21 +1784,9 @@ export function EditorStudio({
 
     setAdminDbTemplates(dbTemplates);
     setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
-
-    // ONLY set initial sections if canvas is currently completely empty!
-    setSections((prevSecs) => {
-      if (prevSecs.length === 0 && defaultSecsFromAdminDb.length > 0) {
-        const clean = deduplicateSections(defaultSecsFromAdminDb);
-        try {
-          if (typeof window !== "undefined") {
-            localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(clean));
-          }
-        } catch {}
-        return clean;
-      }
-
-      return prevSecs;
-    });
+    // Note: intentionally NOT setting sections here.
+    // Admin DB templates are only used in the Add Section picker UI.
+    // User sections are loaded exclusively from /api/v1/my-website.
   };
 
   useEffect(() => {
@@ -1795,70 +1795,65 @@ export function EditorStudio({
   }, [currentPage.slug]);
 
   const fetchAllDefaultSectionsFromAdminDb = async () => {
+    // Re-fetch the user's own config from the server and reload the current page sections.
+    // This is called when the user clicks a "Reload from saved" action.
     setLoadingDb(true);
-    let defaultSecs: SectionItem[] = [];
-
     for (const baseUrl of getApiBases()) {
       try {
-        const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
-        if (defRes.ok) {
-          const defData = await defRes.json().catch(() => ({}));
-          if (defData && Array.isArray(defData.pages)) {
-            const targetPage = defData.pages.find((p: any) => p.slug === currentPage.slug) || defData.pages.find((p: any) => p.slug === "/home");
-            if (targetPage && Array.isArray(targetPage.sections)) {
-              targetPage.sections.forEach((s: any, idx: number) => {
-                const code = s.code || s.html || s.content;
-                if (s && code) {
-                  const rawType = s.sectionType || s.category || s.type || s.id || "";
-                  const normType = normalizeCategory(rawType);
-                  defaultSecs.push({
-                    id: s.id || `admin-def-sec-${idx}`,
-                    title: s.title || s.name || "Section",
-                    code: code,
-                    category: normType || rawType,
-                    variantIndex: 0,
-                  });
-                }
-              });
+        const res = await fetch(`${baseUrl}/api/v1/my-website`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          if (data && Array.isArray(data.pages) && data.pages.length > 0) {
+            const configWithSections = {
+              pages: data.pages.map((p: any) => ({
+                slug: p.slug,
+                title: p.title,
+                sections: Array.isArray(p.sections)
+                  ? p.sections.map((s: any, idx: number) => ({
+                      id: s.id || `sec-${idx}`,
+                      title: s.title || s.name || "Section",
+                      code: s.code || s.html || s.content || "",
+                      category: normalizeCategory(s.sectionType || s.category || s.type || ""),
+                      variantIndex: 0,
+                    }))
+                  : [],
+              })),
+            };
+            setMyWebsiteConfig(configWithSections);
+            const newPageStore: Record<string, SectionItem[]> = {};
+            configWithSections.pages.forEach((p: { slug: string; title: string; sections: SectionItem[] }) => { newPageStore[p.slug] = p.sections; });
+            setPageStore((prev) => ({ ...prev, ...newPageStore }));
+
+            const targetPage = configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === currentPage.slug)
+              || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
+              || configWithSections.pages[0];
+            if (targetPage && targetPage.sections.length > 0) {
+              const cleanSecs = deduplicateSections(targetPage.sections, currentPage.slug);
+              setSections(cleanSecs);
+              setActiveSectionIndex(0);
             }
-            if (defaultSecs.length > 0) break;
+            setLoadingDb(false);
+            return;
           }
         }
       } catch (e) {}
     }
-
-    if (defaultSecs.length > 0) {
-      const cleanSecs = deduplicateSections(defaultSecs);
-      setSections(cleanSecs);
-      setActiveSectionIndex(0);
-      try {
-        if (typeof window !== "undefined") {
-          localStorage.setItem(`xite_active_sections_${subdomain}`, JSON.stringify(cleanSecs));
-        }
-      } catch {}
-      showToastNotification(`Loaded ${cleanSecs.length} Default Sections from Live Admin DB!`);
-    } else {
-      setShowAddSectionModal(true);
-    }
+    // Fallback: open add section modal
+    setShowAddSectionModal(true);
     setLoadingDb(false);
   };
 
-  // ALWAYS fetch Admin DB templates on mount & poll every 4s for live Admin section updates!
+  // Fetch admin UI templates (for the add-section picker UI only — does NOT override user sections)
   useEffect(() => {
     void loadAdminTemplates();
-    const interval = setInterval(() => {
-      if (!activeEditingElemRef.current) {
-        void loadAdminTemplates();
-      }
-    }, 4000);
     const handleFocus = () => {
+      // Refresh template picker on window focus but do NOT push into user's sections
       if (!activeEditingElemRef.current) {
         void loadAdminTemplates();
       }
     };
     window.addEventListener("focus", handleFocus);
     return () => {
-      clearInterval(interval);
       window.removeEventListener("focus", handleFocus);
     };
   }, []);
@@ -1911,42 +1906,114 @@ export function EditorStudio({
   };
 
   const handlePersistWebsiteSave = async () => {
+    // Build the full multi-page config from the current page sections + all other pages in state
+    const updatedPageStore = { ...pageStore, [currentPage.slug]: sections };
     const currentSlugKey = (currentPage.slug || "/home").replace(/\//g, "_") || "home";
+
+    // Update localStorage cache
     if (typeof window !== "undefined") {
       try {
-        const updatedStore = { ...pageStore, [currentPage.slug]: sections };
         localStorage.setItem(`xite_active_sections_${subdomain}_${currentSlugKey}`, JSON.stringify(sections));
-        localStorage.setItem("xite_saved_pages", JSON.stringify(updatedStore));
-        setPageStore(updatedStore);
+        localStorage.setItem("xite_saved_pages", JSON.stringify(updatedPageStore));
+        setPageStore(updatedPageStore);
       } catch (err) {
         console.warn("Could not write to localStorage:", err);
       }
     }
 
-    try {
-      const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-      const apiBase = hostname === "localhost" || hostname === "127.0.0.1" ? "http://localhost:4000" : "https://api.xite.co.in";
-      await fetch(`${apiBase}/api/v1/default-website`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          pages: [
-            {
-              slug: currentPage.slug || "/home",
-              title: currentPage.name || "Home",
-              sections: sections.map((sec, idx) => ({
-                id: sec.id || `sec-${idx}`,
-                title: sec.title || `Section #${idx + 1}`,
-                code: sec.code,
-                sortOrder: idx,
-              })),
-            },
-          ],
-        }),
+    // Build the full pages config from all pages we know about
+    const knownPages = myWebsiteConfig?.pages ?? [];
+    const pageSlugSet = new Set(knownPages.map((p) => p.slug));
+
+    // Merge: update sections for pages we have in state, keep rest from server config
+    const mergedPages = knownPages.map((p) => ({
+      slug: p.slug,
+      title: p.title,
+      sections: updatedPageStore[p.slug]
+        ? updatedPageStore[p.slug].map((sec, idx) => ({
+            id: sec.id || `sec-${idx}`,
+            title: sec.title || `Section #${idx + 1}`,
+            sectionType: sec.category || "hero",
+            code: sec.code,
+            sortOrder: idx,
+          }))
+        : (p.sections as any[]).map((s, idx) => ({
+            id: s.id || `sec-${idx}`,
+            title: s.title || `Section #${idx + 1}`,
+            sectionType: s.category || s.sectionType || "hero",
+            code: s.code || s.html || s.content || "",
+            sortOrder: idx,
+          })),
+    }));
+
+    // Add any pages that are only in pageStore but not yet in the server config
+    Object.entries(updatedPageStore).forEach(([slug, secs]) => {
+      if (!pageSlugSet.has(slug) && secs && secs.length > 0) {
+        mergedPages.push({
+          slug,
+          title: slug.replace(/^\//, "").replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase()) || "Page",
+          sections: secs.map((sec, idx) => ({
+            id: sec.id || `sec-${idx}`,
+            title: sec.title || `Section #${idx + 1}`,
+            sectionType: sec.category || "hero",
+            code: sec.code,
+            sortOrder: idx,
+          })) as any,
+        });
+      }
+    });
+
+    // If config is empty (no known pages yet), just save the current page
+    if (mergedPages.length === 0) {
+      mergedPages.push({
+        slug: currentPage.slug || "/home",
+        title: currentPage.name || "Home",
+        sections: sections.map((sec, idx) => ({
+          id: sec.id || `sec-${idx}`,
+          title: sec.title || `Section #${idx + 1}`,
+          sectionType: sec.category || "hero",
+          code: sec.code,
+          sortOrder: idx,
+        })) as any,
       });
-    } catch (err) {
-      console.warn("Could not save sections to backend API:", err);
+    }
+
+    const fullConfig = { pages: mergedPages };
+
+    // Save to /api/v1/my-website (per-college, authenticated)
+    for (const baseUrl of getApiBases()) {
+      try {
+        const res = await fetch(`${baseUrl}/api/v1/my-website`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(fullConfig),
+        });
+        if (res.ok) {
+          // Update the local full-config state so subsequent saves are incremental
+          const saved = await res.json().catch(() => fullConfig);
+          if (saved && Array.isArray(saved.pages)) {
+            setMyWebsiteConfig({
+              pages: saved.pages.map((p: any) => ({
+                slug: p.slug,
+                title: p.title,
+                sections: Array.isArray(p.sections)
+                  ? p.sections.map((s: any, idx: number) => ({
+                      id: s.id || `sec-${idx}`,
+                      title: s.title || "Section",
+                      code: s.code || s.html || s.content || "",
+                      category: normalizeCategory(s.sectionType || s.category || ""),
+                      variantIndex: 0,
+                    }))
+                  : [],
+              })),
+            });
+          }
+          break; // saved successfully, stop trying other bases
+        }
+      } catch (err) {
+        console.warn("Could not save to /api/v1/my-website:", err);
+      }
     }
   };
 
@@ -3209,18 +3276,6 @@ export function EditorStudio({
                 </div>
               ))}
 
-              {/* Section Boundary Divider Line with Centered Floating Compact "+ Add Section" Button */}
-              <div className="w-full relative flex items-center justify-center my-10 border-t border-dashed border-slate-800 z-20">
-                <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-                  <AddSectionButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowAddSectionModal(true);
-                    }}
-                    label="Add Section"
-                  />
-                </div>
-              </div>
 
               {/* Bottom Clearance Spacer for Floating Dock */}
               <div className="w-full h-48 bg-transparent pointer-events-none shrink-0" />

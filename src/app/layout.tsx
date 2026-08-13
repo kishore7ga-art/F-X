@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
-import SmoothScroll from "@/components/SmoothScroll";
+
 import "./globals.css";
 
 const inter = Inter({
@@ -49,7 +49,7 @@ export default function RootLayout({
             `,
           }}
         />
-        <SmoothScroll>{children}</SmoothScroll>
+        {children}
       </body>
     </html>
   );
