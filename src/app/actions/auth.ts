@@ -53,7 +53,7 @@ export async function loginAction(
   }
 
   if (nextUrl) {
-    redirect(nextUrl);
+    return { success: true, next: nextUrl };
   }
 
   return { success: true };

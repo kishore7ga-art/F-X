@@ -64,7 +64,7 @@ export function CredentialsForm({
         }
         setPending(false);
       } else if (result?.next) {
-        window.location.assign(result.next);
+        window.location.href = result.next;
       }
     } catch {
       setError("Sign-in failed. Check your credentials and try again.");
