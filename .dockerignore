@@ -10,7 +10,6 @@ dist
 .env.*
 !.env.example
 
-src/generated/prisma
 public/uploads
 
 .git
