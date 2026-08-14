@@ -1515,22 +1515,11 @@ export function EditorStudio({
 
   const deduplicateSections = (secs: SectionItem[], slug: string = "/home"): SectionItem[] => {
     const seenIds = new Set<string>();
-    const seenCategories = new Set<string>();
 
     const clean = secs.filter((sec) => {
       if (!sec || !sec.code) return false;
       if (seenIds.has(sec.id)) return false;
       seenIds.add(sec.id);
-
-      const catKey = (sec.category || sec.title || "").toLowerCase();
-      const normCat = normalizeCategory(catKey) || catKey;
-      if (normCat && (normCat === "navbar" || normCat === "hero")) {
-        return true;
-      }
-      if (normCat && seenCategories.has(normCat)) {
-        return false;
-      }
-      if (normCat) seenCategories.add(normCat);
       return true;
     });
 
