@@ -19,6 +19,7 @@ import {
   Check,
   Trash2,
   FileText,
+  Sparkles,
 } from "lucide-react";
 
 interface DrawerPanelProps {
@@ -27,6 +28,8 @@ interface DrawerPanelProps {
   onPageSelect?: (pageName: string, pageSlug: string) => void;
   onPaletteSelect?: (paletteId: string) => void;
   onFontSelect?: (fontId: string) => void;
+  onSectionAdd?: (section: { id: string; title: string; sectionType: string; code: string }) => void;
+  subdomain?: string;
 }
 
 interface PageItem {
@@ -70,12 +73,18 @@ export function DrawerPanel({
   onPageSelect,
   onPaletteSelect,
   onFontSelect,
+  onSectionAdd,
+  subdomain,
 }: DrawerPanelProps) {
-  const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts" | "ai">("pages");
   const [pages, setPages] = useState<PageItem[]>(INITIAL_PAGES);
   const [selectedPageSlug, setSelectedPageSlug] = useState("/home");
   const [selectedPalette, setSelectedPalette] = useState("academic-blue");
   const [selectedFont, setSelectedFont] = useState("inter");
+
+  // AI Section Generation State
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // New Page Modal State
   const [showNewPageModal, setShowNewPageModal] = useState(false);
@@ -85,6 +94,32 @@ export function DrawerPanel({
   const showNotification = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handleAiGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiPrompt.trim()) return;
+
+    setIsGenerating(true);
+    try {
+      const res = await fetch("http://localhost:4000/api/v1/ai/generate-section", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt, subdomain }),
+      });
+
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      if (data.section && onSectionAdd) {
+        onSectionAdd(data.section);
+        showNotification("AI Section generated & added to canvas!");
+        setAiPrompt("");
+      }
+    } catch {
+      showNotification("Failed to generate AI section. Try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSelectPage = (page: PageItem) => {
@@ -304,6 +339,29 @@ export function DrawerPanel({
               <Type style={{ width: "14px", height: "14px" }} />
               <span>Fonts</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("ai")}
+              style={{
+                flex: 1,
+                height: "36px",
+                borderRadius: "12px",
+                fontSize: "12px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: activeTab === "ai" ? "#0f172a" : "transparent",
+                color: activeTab === "ai" ? "#38bdf8" : "#64748b",
+                boxShadow: activeTab === "ai" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
+              }}
+            >
+              <Sparkles style={{ width: "14px", height: "14px" }} />
+              <span>AI</span>
+            </button>
           </div>
         </div>
 
@@ -445,6 +503,62 @@ export function DrawerPanel({
                 );
               })}
             </div>
+          )}
+
+          {/* AI GENERATOR TAB */}
+          {activeTab === "ai" && (
+            <form onSubmit={handleAiGenerate} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div style={{ background: "#0f172a", color: "#ffffff", padding: "16px", borderRadius: "16px", border: "1px solid #334155" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Sparkles style={{ width: "18px", height: "18px", color: "#38bdf8" }} />
+                  <span style={{ fontSize: "14px", fontWeight: 900, color: "#ffffff" }}>AI Section Generator</span>
+                </div>
+                <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "6px", lineHeight: "1.5" }}>
+                  Describe any campus section (e.g. "Research Labs", "Sports Complex", "Placement Stats") and AI will craft & inject it into your page.
+                </p>
+              </div>
+
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Enter prompt e.g. Generate a modern Quantum Research Lab section with 3 cards..."
+                rows={4}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: "12px",
+                  border: "1px solid #cbd5e1",
+                  fontSize: "13px",
+                  fontFamily: "inherit",
+                  outline: "none",
+                  resize: "vertical",
+                  boxSizing: "border-box",
+                }}
+              />
+
+              <button
+                type="submit"
+                disabled={isGenerating || !aiPrompt.trim()}
+                style={{
+                  height: "44px",
+                  backgroundColor: isGenerating || !aiPrompt.trim() ? "#94a3b8" : "#2563eb",
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: 900,
+                  borderRadius: "12px",
+                  border: "none",
+                  cursor: isGenerating || !aiPrompt.trim() ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  boxShadow: "0 4px 12px rgba(37,99,235,0.3)",
+                }}
+              >
+                <Sparkles style={{ width: "16px", height: "16px" }} />
+                <span>{isGenerating ? "Generating Section..." : "Generate & Add Section"}</span>
+              </button>
+            </form>
           )}
         </div>
 

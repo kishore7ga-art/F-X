@@ -3423,6 +3423,16 @@ export function EditorStudio({
         onPageSelect={handlePageChange}
         onPaletteSelect={handlePaletteSelect}
         onFontSelect={handleFontSelect}
+        onSectionAdd={(sec) => {
+          const newSection: SectionItem = {
+            id: sec.id || `ai-${Date.now()}`,
+            title: sec.title || "AI Generated Section",
+            code: sec.code,
+            variantIndex: 0,
+          };
+          setSections((prev) => [...prev, newSection]);
+        }}
+        subdomain={subdomain}
       />
 
       {/* Domain Settings Modal */}
