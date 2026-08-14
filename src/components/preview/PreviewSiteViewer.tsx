@@ -307,13 +307,21 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     // 1. Load exact live sections edited in Editor Studio from localStorage
     if (typeof window !== "undefined") {
       try {
-        const savedActive = localStorage.getItem(`xite_active_sections_${subdomain}`);
-        if (savedActive && savedActive !== "undefined" && savedActive !== "null") {
-          const parsed = JSON.parse(savedActive);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setSections(parsed);
-            setLoading(false);
-            return;
+        const keysToTry = [
+          `xite_active_sections_${subdomain}_/home`,
+          `xite_active_sections_${subdomain}_home`,
+          `xite_active_sections_${subdomain}`,
+        ];
+
+        for (const key of keysToTry) {
+          const savedActive = localStorage.getItem(key);
+          if (savedActive && savedActive !== "undefined" && savedActive !== "null") {
+            const parsed = JSON.parse(savedActive);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setSections(parsed);
+              setLoading(false);
+              break;
+            }
           }
         }
 
@@ -324,7 +332,6 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           if (Array.isArray(homeSecs) && homeSecs.length > 0) {
             setSections(homeSecs);
             setLoading(false);
-            return;
           }
         }
       } catch (err) {
@@ -332,12 +339,24 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       }
     }
 
-    // 2. Fallback to backend API if localStorage is empty
+    // 2. Fallback to backend API if localStorage is empty or to sync live published sections
     const fetchSiteSections = async () => {
       try {
         const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-        const apiBase = hostname === "localhost" || hostname === "127.0.0.1" ? "http://localhost:4000" : "https://api.xite.co.in";
-        const res = await fetch(`${apiBase}/api/v1/default-website`, { credentials: "include" });
+        const apiBase =
+          process.env.NEXT_PUBLIC_API_BASE_URL ||
+          (hostname === "localhost" || hostname === "127.0.0.1"
+            ? "http://localhost:4000"
+            : hostname.includes("meetkishore.in")
+            ? "https://api.meetkishore.in"
+            : "https://api.meetkishore.in");
+
+        // Try /api/v1/my-website first, then fallback to /api/v1/default-website
+        let res = await fetch(`${apiBase}/api/v1/my-website`, { credentials: "include" });
+        if (!res.ok) {
+          res = await fetch(`${apiBase}/api/v1/default-website`, { credentials: "include" });
+        }
+
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           const pageSecs =
