@@ -1453,7 +1453,7 @@ export function EditorStudio({
   };
 
   const ensureEssentialSections = (secs: SectionItem[], slug: string = "/home"): SectionItem[] => {
-    let clean = secs.filter((sec) => sec && sec.code);
+    const clean = secs.filter((sec) => sec && sec.code);
 
     // 1. Ensure Header (Navbar) exists at Index 0 (Top edge) for all pages
     const headerIdx = clean.findIndex((s) => {
@@ -1662,7 +1662,7 @@ export function EditorStudio({
   };
 
   const loadAdminTemplates = async () => {
-    let dbTemplates: any[] = [];
+    const dbTemplates: any[] = [];
     const freshMap: Record<string, string> = {};
     const seenIds = new Set<string>();
 
@@ -1694,7 +1694,7 @@ export function EditorStudio({
         if (!code) return;
 
         // Parse category from t.category or t.name [bracket] notation
-        let rawCat = (t.category && t.category !== "undefined" && t.category !== "null") ? t.category : "";
+        const rawCat = (t.category && t.category !== "undefined" && t.category !== "null") ? t.category : "";
         let parsedCat = (rawCat || t.sectionType || t.type || "").toLowerCase();
         if (parsedCat === "undefined" || parsedCat === "null") parsedCat = "";
 
@@ -1740,7 +1740,7 @@ export function EditorStudio({
     }
 
     // Fetch live Admin DB default website sections (/api/v1/default-website) configured by Super Admin
-    let defaultSecsFromAdminDb: SectionItem[] = [];
+    const defaultSecsFromAdminDb: SectionItem[] = [];
     for (const baseUrl of getApiBases()) {
       try {
         const defRes = await fetch(`${baseUrl}/api/v1/default-website`);

@@ -225,7 +225,7 @@ const SparklesInner = (props: ParticlesProps) => {
 export const SparklesCore = (props: ParticlesProps) => {
   return (
     <ParticlesProvider init={staticInitEngine}>
-      
+      <SparklesInner {...props} />
     </ParticlesProvider>
   );
 };

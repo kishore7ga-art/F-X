@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 
 import type { CollegePayload } from "@/lib/api-contract";
 import { serverApi, ServerApiError } from "@/lib/api/server";
-import { getSession } from "@/lib/auth/session";
 
 /**
  * The signed-in college, fetched from the backend.

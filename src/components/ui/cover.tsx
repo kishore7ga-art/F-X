@@ -1,9 +1,8 @@
 "use client";
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
-import { SparklesCore } from "@/components/ui/sparkles";
 
 export const Cover = ({
   children,
@@ -21,9 +20,9 @@ export const Cover = ({
 
   useEffect(() => {
     if (ref.current) {
-      setContainerWidth(ref.current?.clientWidth ?? 0);
+      setContainerWidth(ref.current.clientWidth ?? 0);
 
-      const height = ref.current?.clientHeight ?? 0;
+      const height = ref.current.clientHeight ?? 0;
       const numberOfBeams = Math.floor(height / 10);
       const positions = Array.from(
         { length: numberOfBeams },
@@ -31,7 +30,7 @@ export const Cover = ({
       );
       setBeamPositions(positions);
     }
-  }, [ref.current]);
+  }, []);
 
   return (
     <div
@@ -76,8 +75,8 @@ export const Cover = ({
         <Beam
           key={index}
           hovered={hovered}
-          duration={Math.random() * 2 + 1}
-          delay={Math.random() * 2 + 1}
+          duration={(index % 3) * 0.5 + 1.5}
+          delay={(index % 4) * 0.4 + 0.2}
           width={containerWidth}
           style={{
             top: `${position}px`,
@@ -147,8 +146,8 @@ export const Beam = ({
 } & React.ComponentProps<typeof motion.svg>) => {
   const id = useId();
 
-  const randomDelay = useMemo(() => Math.random() * (1 - 0.2) + 0.2, []);
-  const randomRepeatDelay = useMemo(() => Math.random() * (2 - 1) + 1, []);
+  const [randomDelay] = useState(() => Math.random() * (1 - 0.2) + 0.2);
+  const [randomRepeatDelay] = useState(() => Math.random() * (2 - 1) + 1);
 
   return (
     <motion.svg
@@ -214,3 +213,4 @@ export const CircleIcon = ({
     ></div>
   );
 };
+

@@ -34,7 +34,7 @@ export async function openAccessCollege(targetSubdomain?: string) {
       update: {},
       create: { name: NAME, subdomain: sub, status: "DRAFT" },
     });
-  } catch (_error) {
+  } catch {
     // If local Prisma database / DATABASE_URL is not configured on xite-F,
     // return a synthetic college object so the Visual Live Editor loads seamlessly!
     return {
