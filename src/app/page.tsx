@@ -1,11 +1,14 @@
-import XiteIntroSection from "@/components/XiteIntroSection";
+import { redirect } from "next/navigation";
+import { getCurrentCollegeOrNull } from "@/lib/auth/current";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
-  return (
-    <main className="bg-black">
-      <XiteIntroSection />
-    </main>
-  );
+export default async function HomePage() {
+  const college = await getCurrentCollegeOrNull();
+
+  if (college) {
+    redirect(`/editor/${college.subdomain || "greenfield"}`);
+  }
+
+  redirect("/login");
 }
