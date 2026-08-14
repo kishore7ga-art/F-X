@@ -7,8 +7,8 @@ COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 FROM base AS builder
-WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+# Force fresh build context copy (invalidation timestamp: 2026-08-14T19:25:00Z)
 COPY . .
 
 ARG NEXT_PUBLIC_API_BASE_URL=""
