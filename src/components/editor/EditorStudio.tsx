@@ -1632,6 +1632,7 @@ export function EditorStudio({
     const bases: string[] = [];
 
     if (typeof window !== "undefined") {
+      bases.push("");
       const hostname = window.location.hostname;
       if (hostname === "localhost" || hostname === "127.0.0.1") {
         bases.push("http://localhost:4000");
@@ -1647,7 +1648,7 @@ export function EditorStudio({
     bases.push("https://admin.meetkishore.in");
     bases.push("http://localhost:4000");
 
-    return Array.from(new Set(bases.filter(Boolean).map((b) => b.replace(/\/+$/, ""))));
+    return Array.from(new Set(bases.filter((b) => b !== undefined && b !== null).map((b) => b.replace(/\/+$/, ""))));
   };
 
   const loadAdminTemplates = async () => {
@@ -1657,7 +1658,7 @@ export function EditorStudio({
 
     for (const baseUrl of getApiBases()) {
       try {
-        const res = await fetch(`${baseUrl}/api/v1/admin/templates`);
+        const res = await fetch(`${baseUrl}/api/v1/admin/templates`, { credentials: "include" });
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           if (data && Array.isArray(data.templates) && data.templates.length > 0) {
