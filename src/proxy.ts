@@ -44,8 +44,10 @@ export async function proxy(request: NextRequest) {
     !hostname.startsWith("admin.") &&
     !hostname.startsWith("api.") &&
     !hostname.startsWith("www.") &&
+    !hostname.startsWith("xite.") &&
     hostname !== "xite.co.in" &&
     hostname !== "meetkishore.in" &&
+    hostname !== "xite.meetkishore.in" &&
     (rootDomain ? hostname !== rootDomain : true) &&
     hostname !== "localhost:3000" &&
     hostname !== "localhost";
