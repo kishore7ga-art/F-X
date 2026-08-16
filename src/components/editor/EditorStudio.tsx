@@ -1487,29 +1487,6 @@ export function EditorStudio({
       }
     }
 
-    // 2. Ensure Hero Banner exists at Index 1 ONLY on Home Page (/home, /, home)
-    const isHomePage = !slug || slug === "/home" || slug === "/" || slug === "home";
-    if (isHomePage) {
-      const heroIdx = clean.findIndex((s) => {
-        const cat = (s.category || s.title || "").toLowerCase();
-        return cat.includes("hero") || cat.includes("banner") || normalizeCategory(cat) === "hero";
-      });
-
-      if (heroIdx < 0) {
-        const heroCode = liveAdminTemplatesMap["hero"] || ALL_19_SECTION_TEMPLATES["hero"];
-        clean.splice(1, 0, {
-          id: `sec-hero-${Date.now()}`,
-          title: "Hero Banner",
-          code: heroCode,
-          category: "hero",
-          variantIndex: 0,
-        });
-      } else if (heroIdx !== 1 && heroIdx > 0) {
-        const [hr] = clean.splice(heroIdx, 1);
-        clean.splice(1, 0, hr!);
-      }
-    }
-
     return clean;
   };
 
@@ -1676,25 +1653,43 @@ export function EditorStudio({
     const freshMap: Record<string, string> = {};
     const seenIds = new Set<string>();
 
+    const endpoints = [
+      "/api/v1/admin/templates",
+      "/admin/templates",
+      "/api/admin/templates",
+      "/api/v1/templates",
+      "/templates",
+    ];
+
     for (const baseUrl of getApiBases()) {
-      try {
-        const res = await fetch(`${baseUrl}/api/v1/admin/templates`, { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-            data.templates.forEach((t: any) => {
-              if (t && t.code) {
-                const tId = t.id || `tpl-${t.name}`;
-                if (!seenIds.has(tId)) {
-                  seenIds.add(tId);
-                  dbTemplates.push(t);
-                }
-              }
-            });
-            break;
+      for (const endpoint of endpoints) {
+        try {
+          // Try fetching without requiring cookie credentials first
+          let res = await fetch(`${baseUrl}${endpoint}`).catch(() => null);
+          if (!res || !res.ok) {
+            res = await fetch(`${baseUrl}${endpoint}`, { credentials: "include" }).catch(() => null);
           }
-        }
-      } catch (e) {}
+
+          if (res && res.ok) {
+            const data = await res.json().catch(() => ({}));
+            const rawList = Array.isArray(data) ? data : data?.templates || data?.data || [];
+
+            if (Array.isArray(rawList) && rawList.length > 0) {
+              rawList.forEach((t: any) => {
+                if (t && (t.code || t.html || t.content)) {
+                  const tId = t.id || `tpl-${t.name || Math.random()}`;
+                  if (!seenIds.has(tId)) {
+                    seenIds.add(tId);
+                    dbTemplates.push(t);
+                  }
+                }
+              });
+              if (dbTemplates.length > 0) break;
+            }
+          }
+        } catch (e) {}
+      }
+      if (dbTemplates.length > 0) break;
     }
 
     // Map all Admin DB templates into freshMap
