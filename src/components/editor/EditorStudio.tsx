@@ -2912,6 +2912,34 @@ export function EditorStudio({
       });
     }
 
+    if (normCatId === "navbar" || normCatId === "header") {
+      const presets = [
+        {
+          name: "Monash University Header",
+          code: `<header style="background: #0f172a; color: #ffffff; padding: 0; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="background: #0284c7; height: 12px; width: 100%;"></div><div style="padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b;"><div style="display: flex; align-items: center; gap: 14px;"><div style="width: 42px; height: 42px; background: #0284c7; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; border-radius: 6px;">M</div><div><span style="font-size: 20px; font-weight: 900; color: #ffffff; display: block; line-height: 1;">MONASH</span><span style="font-size: 13px; color: #94a3b8; display: block;">University</span></div></div><nav style="display: flex; gap: 24px; font-size: 13px; font-weight: 800; text-transform: uppercase;"><a href="#about" style="color: #cbd5e1; text-decoration: none;">ABOUT</a><a href="#study" style="color: #cbd5e1; text-decoration: none;">STUDY</a><a href="#research" style="color: #cbd5e1; text-decoration: none;">RESEARCH</a><a href="#enterprise" style="color: #cbd5e1; text-decoration: none;">ENTERPRISE</a><a href="#international" style="color: #cbd5e1; text-decoration: none;">INTERNATIONAL</a><a href="#news" style="color: #cbd5e1; text-decoration: none;">NEWS & EVENTS</a></nav></div></header>`
+        },
+        {
+          name: "UPF Barcelona Header",
+          code: `<header style="background: #ffffff; color: #000000; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 2px solid #b91c1c;"><div style="display: flex; align-items: center; gap: 12px;"><div style="width: 40px; height: 40px; border-radius: 8px; background: #b91c1c; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px;">upf.</div><div style="line-height: 1.1;"><span style="font-size: 15px; font-weight: 900; color: #b91c1c; display: block;">Universitat Pompeu Fabra</span><span style="font-size: 11px; font-style: italic; color: #991b1b;">Barcelona</span></div></div><nav style="display: flex; gap: 28px; font-size: 14px; font-weight: 700; color: #b91c1c;"><a href="#estudis" style="color: #b91c1c; text-decoration: none;">Estudis</a><a href="#recerca" style="color: #b91c1c; text-decoration: none;">Recerca</a><a href="#transferencia" style="color: #b91c1c; text-decoration: none;">Transferència</a><a href="#serveis" style="color: #b91c1c; text-decoration: none;">Serveis</a><a href="#universitat" style="color: #b91c1c; text-decoration: none;">Universitat</a></nav></header>`
+        },
+        {
+          name: "Seoul National University Header",
+          code: `<header style="background: #1e293b; color: #ffffff; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 2px solid #f59e0b;"><div style="display: flex; align-items: center; gap: 14px;"><div style="width: 44px; height: 44px; border-radius: 50%; background: #0f172a; border: 2px solid #f59e0b; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px;">SNU</div><div style="line-height: 1.1;"><span style="font-size: 17px; font-weight: 900; color: #ffffff; letter-spacing: 0.05em; display: block;">SEOUL NATIONAL UNIVERSITY</span><span style="font-size: 10px; font-weight: 700; color: #f59e0b; letter-spacing: 0.1em;">VERITAS LUX MEA</span></div></div><nav style="display: flex; gap: 24px; font-size: 13px; font-weight: 800; text-transform: uppercase;"><a href="#about" style="color: #f8fafc; text-decoration: none;">About</a><a href="#academics" style="color: #f8fafc; text-decoration: none;">Academics</a><a href="#admissions" style="color: #f8fafc; text-decoration: none;">Admissions</a><a href="#snu-now" style="color: #f59e0b; text-decoration: none;">SNU Now</a><a href="#campus" style="color: #f8fafc; text-decoration: none;">Campus</a></nav></header>`
+        },
+        {
+          name: "Greenfield University Header",
+          code: `<header style="background: #0d1527; color: #ffffff; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1);"><div style="display: flex; align-items: center; gap: 12px;"><div style="width: 40px; height: 40px; border-radius: 10px; background: #2563eb; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px;">🎓</div><span style="font-size: 20px; font-weight: 900; color: #ffffff;">GREENFIELD UNIVERSITY</span></div><nav style="display: flex; gap: 24px; font-size: 14px; font-weight: 700;"><a href="#about" style="color: #cbd5e1; text-decoration: none;">About</a><a href="#courses" style="color: #cbd5e1; text-decoration: none;">Academics</a><a href="#admissions" style="color: #cbd5e1; text-decoration: none;">Admissions</a><a href="#contact" style="color: #cbd5e1; text-decoration: none;">Contact</a></nav><a href="#apply" style="background: #2563eb; color: #ffffff; padding: 10px 24px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none;">Apply Now</a></header>`
+        }
+      ];
+      presets.forEach((p) => {
+        const trimmed = p.code.trim();
+        if (!seenCodes.has(trimmed)) {
+          seenCodes.add(trimmed);
+          matchingTemplates.push(p);
+        }
+      });
+    }
+
     // Ensure current active section code is included in matchingTemplates if not already present
     const currentActiveCode = (activeSec.code || "").trim();
     const alreadyInTemplates = matchingTemplates.some(
