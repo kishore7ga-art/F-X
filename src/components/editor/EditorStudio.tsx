@@ -2910,34 +2910,11 @@ export function EditorStudio({
           matchingTemplates.push(m);
         }
       });
-    } else {
-      const categoryDefaultCode = liveAdminTemplatesMap[catId] || liveAdminTemplatesMap[normCatId] || ALL_19_SECTION_TEMPLATES[catId] || ALL_19_SECTION_TEMPLATES[normCatId];
-      if (categoryDefaultCode) {
-        const trimmed = categoryDefaultCode.trim();
-        if (!seenCodes.has(trimmed)) {
-          seenCodes.add(trimmed);
-          matchingTemplates.push({
-            name: `${cleanBaseTitle} - Layout 1`,
-            code: trimmed,
-          });
-        }
-      }
+    }
 
-      if (matchingTemplates.length === 1) {
-        const primaryCode = matchingTemplates[0]!.code;
-        let altCode = primaryCode;
-        if (altCode.includes("background: #ffffff") || altCode.includes("background:#ffffff") || altCode.includes("background: #f8fafc")) {
-          altCode = altCode.replace(/background:\s*#(ffffff|f8fafc|f1f5f9)/gi, "background: #0f172a")
-                           .replace(/color:\s*#(0f172a|1e293b|475569)/gi, "color: #ffffff");
-        } else {
-          altCode = altCode.replace(/background:\s*#(0f172a|090d16|0b1329|090e1a)/gi, "background: #ffffff")
-                           .replace(/color:\s*#(ffffff|f8fafc|cbd5e1|94a3b8)/gi, "color: #0f172a");
-        }
-        matchingTemplates.push({
-          name: `${cleanBaseTitle} - Layout 2`,
-          code: altCode,
-        });
-      }
+    if (matchingTemplates.length <= 1) {
+      showToastNotification("No additional section variant found in database");
+      return;
     }
 
     const currentVariantIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
