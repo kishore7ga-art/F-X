@@ -355,12 +355,18 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
               ? data.pages[0].sections
               : [];
 
+          const headerFooterSecs = pageSecs.filter((sec: any) => {
+            const cat = (sec.category || sec.title || sec.sectionType || sec.type || "").toLowerCase();
+            return cat.includes("header") || cat.includes("navbar") || cat.includes("footer");
+          });
+
           if (!cancelled) {
             setSections(
-              pageSecs.map((sec: any, idx: number) => ({
+              headerFooterSecs.map((sec: any, idx: number) => ({
                 id: sec.id || `sec-${idx}`,
                 title: sec.title || `Section ${idx + 1}`,
                 code: sec.code || "",
+                category: sec.category || sec.sectionType || (sec.title?.toLowerCase().includes("footer") ? "footer" : "navbar"),
               }))
             );
           }

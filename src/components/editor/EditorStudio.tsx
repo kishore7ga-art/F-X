@@ -3302,19 +3302,7 @@ export function EditorStudio({
 
             {/* Scrollable Modal Content Body */}
             <div className="flex-1 overflow-y-auto pr-2 space-y-6 pt-2 pb-2 custom-scrollbar">
-              {/* Quick Action: Load All 19 Default Sections */}
-              <button
-                onClick={() => {
-                  const all19 = getAll19DefaultSections(currentPage.slug);
-                  setSections(all19);
-                  setActiveSectionIndex(0);
-                  setShowAddSectionModal(false);
-                }}
-                className="w-full p-4 rounded-2xl bg-white hover:bg-zinc-200 text-black font-black text-xs flex items-center justify-center gap-2.5 shadow-xl border border-white transition-all hover:scale-[1.01] cursor-pointer select-none"
-              >
-                
-                <span>⚡ Load All 19 Default Sections (Full Website Layout)</span>
-              </button>
+
 
               {/* Admin DB Section Variants List */}
               {adminDbTemplates.length > 0 && (
