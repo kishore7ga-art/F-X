@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Monitor, Tablet, Smartphone } from "lucide-react";
+import { Monitor, Tablet, Smartphone, Edit3 } from "lucide-react";
 
 interface SectionItem {
   id: string;
@@ -655,6 +655,19 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
               </span>
             )}
           </button>
+
+          {/* Vertical Divider */}
+          <div className="h-4.5 w-[1px] bg-slate-200 shrink-0 mx-0.5" />
+
+          {/* 4. Open Editor Studio Button */}
+          <a
+            href={`/editor/${subdomain || "greenfield"}`}
+            className="flex items-center gap-1.5 h-9 px-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-full shadow-[0_2px_8px_rgba(37,99,235,0.3)] transition-all duration-200 cursor-pointer no-underline shrink-0"
+            title="Open Full Visual Editor Studio with Floating Toolbar"
+          >
+            <Edit3 className="w-3.5 h-3.5 shrink-0" />
+            <span>Open Editor Studio</span>
+          </a>
         </div>
       )}
 
