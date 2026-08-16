@@ -2912,14 +2912,25 @@ export function EditorStudio({
       });
     }
 
+    // Ensure current active section code is included in matchingTemplates if not already present
+    const currentActiveCode = (activeSec.code || "").trim();
+    const alreadyInTemplates = matchingTemplates.some(
+      (t) => t.code.trim() === currentActiveCode || cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(currentActiveCode)
+    );
+
+    if (!alreadyInTemplates && currentActiveCode) {
+      matchingTemplates.unshift({
+        name: activeSec.title || `${cleanBaseTitle} (Current)`,
+        code: currentActiveCode,
+      });
+    }
+
     if (matchingTemplates.length <= 1) {
       showToastNotification("No additional section variant found in database");
       return;
     }
 
-    const currentVariantIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
     let nextIdx = 0;
-
     const matchedCodeIdx = matchingTemplates.findIndex(
       (t) =>
         t.code.trim() === activeSec.code.trim() ||
@@ -2929,6 +2940,7 @@ export function EditorStudio({
     if (matchedCodeIdx >= 0) {
       nextIdx = (matchedCodeIdx + 1) % matchingTemplates.length;
     } else {
+      const currentVariantIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
       nextIdx = (currentVariantIdx + 1) % matchingTemplates.length;
     }
 
@@ -2947,7 +2959,7 @@ export function EditorStudio({
       })
     );
 
-    showToastNotification(`Section variant updated! (Layout ${nextIdx + 1} of ${matchingTemplates.length})`);
+    showToastNotification(`Swapped to variant ${nextIdx + 1} of ${matchingTemplates.length}: ${nextTpl.name}`);
     void handlePersistWebsiteSave();
   };
 
