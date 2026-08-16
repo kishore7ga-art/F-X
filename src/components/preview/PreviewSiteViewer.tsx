@@ -297,7 +297,7 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
 ];
 
 export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
-  const [sections, setSections] = useState<SectionItem[]>(DEFAULT_CLEAN_FULL_SECTIONS);
+  const [sections, setSections] = useState<SectionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewWidth, setPreviewWidth] = useState<string>("100%");
 

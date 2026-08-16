@@ -1618,11 +1618,9 @@ export function EditorStudio({
         }
       }
 
-      // 4. Built-in default fallback
-      const fallbackSecs = getAll19DefaultSections(slug);
-      const cleanSecs = deduplicateSections(fallbackSecs, slug);
-      setSections(cleanSecs);
-      setActiveSectionIndex(0);
+      // 4. Built-in default fallback (Empty array by default so only user-added sections appear)
+      setSections([]);
+      setActiveSectionIndex(null);
     } finally {
       setLoadingDb(false);
     }
