@@ -1618,7 +1618,29 @@ export function EditorStudio({
         }
       }
 
-      // 4. Built-in default fallback (Empty array by default so only user-added sections appear)
+      // 4. Fallback to Super Admin Default Website Config (/api/v1/default-website)
+      for (const baseUrl of getApiBases()) {
+        try {
+          const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
+          if (defRes.ok) {
+            const defData = await defRes.json().catch(() => ({}));
+            if (defData && Array.isArray(defData.pages)) {
+              const targetPage =
+                defData.pages.find((p: any) => p.slug === slug) ||
+                defData.pages.find((p: any) => p.slug === "/home") ||
+                defData.pages[0];
+              if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
+                const cleanSecs = deduplicateSections(targetPage.sections, slug);
+                setSections(cleanSecs);
+                setActiveSectionIndex(0);
+                setLoadingDb(false);
+                return;
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
       setSections([]);
       setActiveSectionIndex(null);
     } finally {

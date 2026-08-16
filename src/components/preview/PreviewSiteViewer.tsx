@@ -346,30 +346,41 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           res = await fetch(`${apiBase}/api/v1/editor/${subdomain}`);
         }
 
+        let pageSecs: any[] = [];
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
-          const pageSecs =
-            Array.isArray(data.sections)
+          pageSecs =
+            Array.isArray(data.sections) && data.sections.length > 0
               ? data.sections
               : Array.isArray(data.pages) && data.pages[0] && Array.isArray(data.pages[0].sections)
               ? data.pages[0].sections
               : [];
+        }
 
-          const headerFooterSecs = pageSecs.filter((sec: any) => {
-            const cat = (sec.category || sec.title || sec.sectionType || sec.type || "").toLowerCase();
-            return cat.includes("header") || cat.includes("navbar") || cat.includes("footer");
-          });
-
-          if (!cancelled) {
-            setSections(
-              headerFooterSecs.map((sec: any, idx: number) => ({
-                id: sec.id || `sec-${idx}`,
-                title: sec.title || `Section ${idx + 1}`,
-                code: sec.code || "",
-                category: sec.category || sec.sectionType || (sec.title?.toLowerCase().includes("footer") ? "footer" : "navbar"),
-              }))
-            );
+        if (pageSecs.length === 0) {
+          const defRes = await fetch(`${apiBase}/api/v1/default-website`);
+          if (defRes.ok) {
+            const defData = await defRes.json().catch(() => ({}));
+            if (defData && Array.isArray(defData.pages) && defData.pages[0] && Array.isArray(defData.pages[0].sections)) {
+              pageSecs = defData.pages[0].sections;
+            }
           }
+        }
+
+        const headerFooterSecs = pageSecs.filter((sec: any) => {
+          const cat = (sec.category || sec.title || sec.sectionType || sec.type || "").toLowerCase();
+          return cat.includes("header") || cat.includes("navbar") || cat.includes("footer");
+        });
+
+        if (!cancelled) {
+          setSections(
+            headerFooterSecs.map((sec: any, idx: number) => ({
+              id: sec.id || `sec-${idx}`,
+              title: sec.title || `Section ${idx + 1}`,
+              code: sec.code || "",
+              category: sec.category || sec.sectionType || (sec.title?.toLowerCase().includes("footer") ? "footer" : "navbar"),
+            }))
+          );
         }
       } catch (err) {
         console.warn("Could not load backend published site sections:", err);
