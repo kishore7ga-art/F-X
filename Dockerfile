@@ -11,7 +11,7 @@ COPY --from=deps /app/node_modules ./node_modules
 # Force fresh build context copy (invalidation timestamp: 2026-08-14T19:25:00Z)
 COPY . .
 
-ARG NEXT_PUBLIC_API_BASE_URL=""
+ARG NEXT_PUBLIC_API_BASE_URL="https://api.meetkishore.in"
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ARG BUILD_VERSION="v2.1.0-production-hardened"
 ENV BUILD_VERSION=$BUILD_VERSION

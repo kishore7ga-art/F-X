@@ -1527,7 +1527,26 @@ export function EditorStudio({
         }
       }
 
-      // 2. Fetch from /api/v1/my-website (per-college, authenticated)
+      // 2. Check localStorage fast cache FIRST if not forceSync (prevents refresh from wiping user edits)
+      if (!forceSync && typeof window !== "undefined") {
+        try {
+          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
+          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
+            const parsedActive = JSON.parse(rawActive);
+            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
+              const cleanSecs = deduplicateSections(parsedActive, slug);
+              setSections(cleanSecs);
+              setActiveSectionIndex(0);
+              setLoadingDb(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Could not load sections from localStorage:", err);
+        }
+      }
+
+      // 3. Fetch from /api/v1/my-website (per-college, authenticated)
       for (const baseUrl of getApiBases()) {
         try {
           const res = await fetch(`${baseUrl}/api/v1/my-website`, { credentials: "include" });
@@ -1561,6 +1580,21 @@ export function EditorStudio({
                 || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
                 || configWithSections.pages[0];
               if (targetPage && targetPage.sections.length > 0) {
+                // If localStorage already had user's custom edits and forceSync is false, keep localStorage!
+                const rawActive = typeof window !== "undefined" ? localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`) : null;
+                if (!forceSync && rawActive && rawActive !== "undefined" && rawActive !== "null") {
+                  try {
+                    const parsedActive = JSON.parse(rawActive);
+                    if (Array.isArray(parsedActive) && parsedActive.length > 0) {
+                      const cleanSecs = deduplicateSections(parsedActive, slug);
+                      setSections(cleanSecs);
+                      setActiveSectionIndex(0);
+                      setLoadingDb(false);
+                      return;
+                    }
+                  } catch {}
+                }
+
                 const cleanSecs = deduplicateSections(targetPage.sections, slug);
                 setSections(cleanSecs);
                 setActiveSectionIndex(0);
@@ -1574,25 +1608,6 @@ export function EditorStudio({
             }
           }
         } catch (e) {}
-      }
-
-      // 3. localStorage fast cache (offline or auth not available)
-      if (typeof window !== "undefined") {
-        try {
-          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
-          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
-            const parsedActive = JSON.parse(rawActive);
-            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
-              const cleanSecs = deduplicateSections(parsedActive, slug);
-              setSections(cleanSecs);
-              setActiveSectionIndex(0);
-              setLoadingDb(false);
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn("Could not load sections from localStorage:", err);
-        }
       }
 
       // 4. Fallback to Super Admin Default Website Config (/api/v1/default-website)
