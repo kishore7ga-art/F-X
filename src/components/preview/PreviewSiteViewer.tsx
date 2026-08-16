@@ -304,8 +304,8 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   useEffect(() => {
     let cancelled = false;
 
-    // 1. Load exact live sections edited in Editor Studio from localStorage
-    if (typeof window !== "undefined") {
+    const checkLocalStorageFallback = () => {
+      if (typeof window === "undefined") return;
       try {
         const keysToTry = [
           `xite_active_sections_${subdomain}_/home`,
@@ -319,27 +319,16 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
             const parsed = JSON.parse(savedActive);
             if (Array.isArray(parsed) && parsed.length > 0) {
               setSections(parsed);
-              setLoading(false);
-              break;
+              return;
             }
           }
         }
-
-        const savedPages = localStorage.getItem("xite_saved_pages");
-        if (savedPages && savedPages !== "undefined" && savedPages !== "null") {
-          const parsedPages = JSON.parse(savedPages);
-          const homeSecs = parsedPages["/home"] || parsedPages["/"] || Object.values(parsedPages)[0];
-          if (Array.isArray(homeSecs) && homeSecs.length > 0) {
-            setSections(homeSecs);
-            setLoading(false);
-          }
-        }
       } catch (err) {
-        console.warn("Could not read localStorage sections for live preview:", err);
+        console.warn("Could not read localStorage fallback sections:", err);
       }
-    }
+    };
 
-    // 2. Fallback to backend API if localStorage is empty or to sync live published sections
+    // Fetch live published site sections from DB by tenant subdomain (Source of Truth)
     const fetchSiteSections = async () => {
       try {
         const hostname = typeof window !== "undefined" ? window.location.hostname : "";
@@ -351,30 +340,29 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
             ? "https://api.meetkishore.in"
             : "https://api.meetkishore.in");
 
-        // Try /api/v1/my-website first, then fallback to /api/v1/default-website
-        let res = await fetch(`${apiBase}/api/v1/my-website`, { credentials: "include" });
+        // Call dedicated public site endpoint for target subdomain
+        let res = await fetch(`${apiBase}/api/v1/public/site/${subdomain}`);
         if (!res.ok) {
-          res = await fetch(`${apiBase}/api/v1/default-website`, { credentials: "include" });
+          res = await fetch(`${apiBase}/api/v1/editor/${subdomain}`);
         }
 
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           const pageSecs =
-            Array.isArray(data.sections) && data.sections.length > 0
+            Array.isArray(data.sections)
               ? data.sections
               : Array.isArray(data.pages) && data.pages[0] && Array.isArray(data.pages[0].sections)
               ? data.pages[0].sections
               : [];
-          if (pageSecs.length > 0) {
-            if (!cancelled) {
-              setSections(
-                pageSecs.map((sec: any, idx: number) => ({
-                  id: sec.id || `sec-${idx}`,
-                  title: sec.title || `Section ${idx + 1}`,
-                  code: sec.code || "",
-                }))
-              );
-            }
+
+          if (!cancelled) {
+            setSections(
+              pageSecs.map((sec: any, idx: number) => ({
+                id: sec.id || `sec-${idx}`,
+                title: sec.title || `Section ${idx + 1}`,
+                code: sec.code || "",
+              }))
+            );
           }
         }
       } catch (err) {
