@@ -35,12 +35,18 @@ export async function proxy(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
 
   // Handle clean subdomain mapping (e.g. kishore7ga-college.xite.co.in -> /site/kishore7ga-college)
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || "";
   const isCustomSubdomain =
-    (hostname.includes(".xite.co.in") || hostname.includes(".localhost")) &&
+    (hostname.includes(".xite.co.in") ||
+      hostname.includes(".meetkishore.in") ||
+      (rootDomain && hostname.includes(`.${rootDomain}`)) ||
+      hostname.includes(".localhost")) &&
     !hostname.startsWith("admin.") &&
     !hostname.startsWith("api.") &&
     !hostname.startsWith("www.") &&
     hostname !== "xite.co.in" &&
+    hostname !== "meetkishore.in" &&
+    (rootDomain ? hostname !== rootDomain : true) &&
     hostname !== "localhost:3000" &&
     hostname !== "localhost";
 
