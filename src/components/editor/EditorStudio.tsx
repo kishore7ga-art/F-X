@@ -1655,9 +1655,7 @@ export function EditorStudio({
     if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
 
     // Production & Local Express Backend API Endpoints (Explicitly priority ordered)
-    bases.push("https://api.meetkishore.in");
     bases.push("https://api.xite.co.in");
-    bases.push("https://admin.meetkishore.in");
     bases.push("http://localhost:4000");
 
     return Array.from(new Set(bases.filter((b) => b !== undefined && b !== null).map((b) => b.replace(/\/+$/, ""))));

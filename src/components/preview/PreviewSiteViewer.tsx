@@ -336,9 +336,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           process.env.NEXT_PUBLIC_API_BASE_URL ||
           (hostname === "localhost" || hostname === "127.0.0.1"
             ? "http://localhost:4000"
-            : hostname.includes("meetkishore.in")
-            ? "https://api.meetkishore.in"
-            : "https://api.meetkishore.in");
+            : "https://api.xite.co.in");
 
         // Call dedicated public site endpoint for target subdomain
         let res = await fetch(`${apiBase}/api/v1/public/site/${subdomain}`);
