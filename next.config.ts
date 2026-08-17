@@ -18,6 +18,19 @@ const nextConfig: NextConfig = {
         source: "/api/v1/:path*",
         destination: `${backendUrl}/api/v1/:path*`,
       },
+      {
+        source: "/api/admin/:path*",
+        destination: `${backendUrl}/api/v1/admin/:path*`,
+      },
+      {
+        source: "/api/public/:path*",
+        destination: `${backendUrl}/api/v1/public/:path*`,
+      },
+      {
+        // Safety net: bare /admin/:path* with no /api prefix — catches stale references
+        source: "/admin/:path*",
+        destination: `${backendUrl}/api/v1/admin/:path*`,
+      },
     ];
   },
   async headers() {

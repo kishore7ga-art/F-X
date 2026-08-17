@@ -1513,7 +1513,7 @@ export function EditorStudio({
     setLoadingDb(true);
     const cleanSlug = (slug || "/home").replace(/\//g, "_") || "home";
     try {
-      // 1. If we already have the full config in state, just switch the active page sections
+      // 1. If we already have the full config in state and not forceSync, switch active page sections
       if (!forceSync && myWebsiteConfig && myWebsiteConfig.pages) {
         const targetPage = myWebsiteConfig.pages.find((p) => p.slug === slug)
           || myWebsiteConfig.pages.find((p) => p.slug === "/home")
@@ -1527,26 +1527,7 @@ export function EditorStudio({
         }
       }
 
-      // 2. Check localStorage fast cache FIRST if not forceSync (prevents refresh from wiping user edits)
-      if (!forceSync && typeof window !== "undefined") {
-        try {
-          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
-          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
-            const parsedActive = JSON.parse(rawActive);
-            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
-              const cleanSecs = deduplicateSections(parsedActive, slug);
-              setSections(cleanSecs);
-              setActiveSectionIndex(0);
-              setLoadingDb(false);
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn("Could not load sections from localStorage:", err);
-        }
-      }
-
-      // 3. Fetch from /api/v1/my-website (per-college, authenticated)
+      // 2. Primary Source: Fetch from /api/v1/my-website (per-college, authenticated DB)
       for (const baseUrl of getApiBases()) {
         try {
           const res = await fetch(`${baseUrl}/api/v1/my-website`, { credentials: "include" });
@@ -1580,25 +1561,9 @@ export function EditorStudio({
                 || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
                 || configWithSections.pages[0];
               if (targetPage && targetPage.sections.length > 0) {
-                // If localStorage already had user's custom edits and forceSync is false, keep localStorage!
-                const rawActive = typeof window !== "undefined" ? localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`) : null;
-                if (!forceSync && rawActive && rawActive !== "undefined" && rawActive !== "null") {
-                  try {
-                    const parsedActive = JSON.parse(rawActive);
-                    if (Array.isArray(parsedActive) && parsedActive.length > 0) {
-                      const cleanSecs = deduplicateSections(parsedActive, slug);
-                      setSections(cleanSecs);
-                      setActiveSectionIndex(0);
-                      setLoadingDb(false);
-                      return;
-                    }
-                  } catch {}
-                }
-
                 const cleanSecs = deduplicateSections(targetPage.sections, slug);
                 setSections(cleanSecs);
                 setActiveSectionIndex(0);
-                // Update localStorage cache
                 try {
                   localStorage.setItem(`xite_active_sections_${subdomain}_${cleanSlug}`, JSON.stringify(cleanSecs));
                 } catch {}
@@ -1610,7 +1575,7 @@ export function EditorStudio({
         } catch (e) {}
       }
 
-      // 4. Fallback to Super Admin Default Website Config (/api/v1/default-website)
+      // 3. Fallback: Super Admin Default Website Config (/api/v1/default-website)
       for (const baseUrl of getApiBases()) {
         try {
           const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
@@ -1625,12 +1590,34 @@ export function EditorStudio({
                 const cleanSecs = deduplicateSections(targetPage.sections, slug);
                 setSections(cleanSecs);
                 setActiveSectionIndex(0);
+                try {
+                  localStorage.setItem(`xite_active_sections_${subdomain}_${cleanSlug}`, JSON.stringify(cleanSecs));
+                } catch {}
                 setLoadingDb(false);
                 return;
               }
             }
           }
         } catch (e) {}
+      }
+
+      // 4. Fallback: localStorage cache if DB offline
+      if (typeof window !== "undefined") {
+        try {
+          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
+          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
+            const parsedActive = JSON.parse(rawActive);
+            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
+              const cleanSecs = deduplicateSections(parsedActive, slug);
+              setSections(cleanSecs);
+              setActiveSectionIndex(0);
+              setLoadingDb(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Could not load sections from localStorage:", err);
+        }
       }
 
       setSections([]);
@@ -1640,25 +1627,30 @@ export function EditorStudio({
     }
   };
 
+  // Returns only valid absolute backend URLs — NEVER empty string (which causes
+  // relative requests to broken Next.js routes like /admin/templates that previously
+  // resolved to the legacy meetkishore.in domain).
   const getApiBases = (): string[] => {
     const bases: string[] = [];
 
+    // 1. Env-configured API base (highest priority)
+    if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
+    if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
+
+    // 2. Localhost dev fallback (only when running locally)
     if (typeof window !== "undefined") {
-      bases.push("");
       const hostname = window.location.hostname;
       if (hostname === "localhost" || hostname === "127.0.0.1") {
         bases.push("http://localhost:4000");
       }
+      // NOTE: Do NOT push "" (empty string) here — it creates relative requests
+      // to Next.js routes that have no backend handler and cause cascading 404s
     }
 
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
-    if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
-
-    // Production & Local Express Backend API Endpoints (Explicitly priority ordered)
+    // 3. Hardcoded production backend (final fallback)
     bases.push("https://api.xite.co.in");
-    bases.push("http://localhost:4000");
 
-    return Array.from(new Set(bases.filter((b) => b !== undefined && b !== null).map((b) => b.replace(/\/+$/, ""))));
+    return Array.from(new Set(bases.filter((b) => b !== undefined && b !== null && b !== "").map((b) => b.replace(/\/+$/, ""))));
   };
 
   const loadAdminTemplates = async () => {
@@ -1666,43 +1658,34 @@ export function EditorStudio({
     const freshMap: Record<string, string> = {};
     const seenIds = new Set<string>();
 
-    const endpoints = [
-      "/api/v1/admin/templates",
-      "/admin/templates",
-      "/api/admin/templates",
-      "/api/v1/templates",
-      "/templates",
-    ];
-
+    // ONLY use the canonical admin templates endpoint — do NOT fallback to
+    // /admin/templates or /api/admin/templates which have no backend route
+    // and previously caused requests to leak to meetkishore.in
     for (const baseUrl of getApiBases()) {
-      for (const endpoint of endpoints) {
-        try {
-          // Try fetching without requiring cookie credentials first
-          let res = await fetch(`${baseUrl}${endpoint}`).catch(() => null);
-          if (!res || !res.ok) {
-            res = await fetch(`${baseUrl}${endpoint}`, { credentials: "include" }).catch(() => null);
-          }
+      try {
+        let res = await fetch(`${baseUrl}/api/v1/admin/templates`).catch(() => null);
+        if (!res || !res.ok) {
+          res = await fetch(`${baseUrl}/api/v1/admin/templates`, { credentials: "include" }).catch(() => null);
+        }
 
-          if (res && res.ok) {
-            const data = await res.json().catch(() => ({}));
-            const rawList = Array.isArray(data) ? data : data?.templates || data?.data || [];
+        if (res && res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const rawList = Array.isArray(data) ? data : data?.templates || data?.data || [];
 
-            if (Array.isArray(rawList) && rawList.length > 0) {
-              rawList.forEach((t: any) => {
-                if (t && (t.code || t.html || t.content)) {
-                  const tId = t.id || `tpl-${t.name || Math.random()}`;
-                  if (!seenIds.has(tId)) {
-                    seenIds.add(tId);
-                    dbTemplates.push(t);
-                  }
+          if (Array.isArray(rawList) && rawList.length > 0) {
+            rawList.forEach((t: any) => {
+              if (t && (t.code || t.html || t.content)) {
+                const tId = t.id || `tpl-${t.name || Math.random()}`;
+                if (!seenIds.has(tId)) {
+                  seenIds.add(tId);
+                  dbTemplates.push(t);
                 }
-              });
-              if (dbTemplates.length > 0) break;
-            }
+              }
+            });
+            break; // Stop after first successful base URL
           }
-        } catch (e) {}
-      }
-      if (dbTemplates.length > 0) break;
+        }
+      } catch (e) {}
     }
 
     // Map all Admin DB templates into freshMap
@@ -2597,32 +2580,9 @@ export function EditorStudio({
 
   // Add a section from predefined categories
   const handleAddSectionFromCategory = async (cat: { id: string; name: string }) => {
-    let templatesList: any[] = [];
-    const seenIds = new Set<string>();
-
-    for (const baseUrl of getApiBases()) {
-      try {
-        const res = await fetch(`${baseUrl}/api/v1/admin/templates`);
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-            data.templates.forEach((t: any) => {
-              if (t && t.code) {
-                const tId = t.id || `tpl-${t.name}`;
-                if (!seenIds.has(tId)) {
-                  seenIds.add(tId);
-                  templatesList.push(t);
-                }
-              }
-            });
-            break;
-          }
-        }
-      } catch (e) {}
-    }
-    if (templatesList.length === 0) {
-      templatesList = adminDbTemplates;
-    }
+    // Reuse already-loaded templates from state — no additional network request needed.
+    // Templates are loaded once on mount via loadAdminTemplates() and kept in adminDbTemplates.
+    const templatesList: any[] = adminDbTemplates.length > 0 ? adminDbTemplates : [];
 
     // Filter admin-added templates matching selected category tag ONLY
     const catIdLower = cat.id.toLowerCase();
@@ -2765,32 +2725,9 @@ export function EditorStudio({
       setActiveSectionIndex(0);
     }
 
-    let templatesList: any[] = [];
-    const seenIds = new Set<string>();
-
-    for (const baseUrl of getApiBases()) {
-      try {
-        const res = await fetch(`${baseUrl}/api/v1/admin/templates`);
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data && Array.isArray(data.templates) && data.templates.length > 0) {
-            data.templates.forEach((t: any) => {
-              if (t && t.code) {
-                const tId = t.id || `tpl-${t.name}`;
-                if (!seenIds.has(tId)) {
-                  seenIds.add(tId);
-                  templatesList.push(t);
-                }
-              }
-            });
-            break;
-          }
-        }
-      } catch (e) {}
-    }
-    if (templatesList.length === 0) {
-      templatesList = adminDbTemplates;
-    }
+    // Reuse already-loaded templates from state — avoids duplicate network requests on every swap.
+    // Templates are fetched once on mount by loadAdminTemplates().
+    const templatesList: any[] = adminDbTemplates.length > 0 ? adminDbTemplates : [];
 
     // 1. Accurately determine Category ID of the ACTIVE section
     const titleLower = (activeSec.title || "").toLowerCase();

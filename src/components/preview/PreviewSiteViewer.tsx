@@ -365,14 +365,10 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           }
         }
 
-        const headerFooterSecs = pageSecs.filter((sec: any) => {
-          const cat = (sec.category || sec.title || sec.sectionType || sec.type || "").toLowerCase();
-          return cat.includes("header") || cat.includes("navbar") || cat.includes("footer");
-        });
-
         if (!cancelled) {
+          const finalSecs = pageSecs.length > 0 ? pageSecs : DEFAULT_CLEAN_FULL_SECTIONS;
           setSections(
-            headerFooterSecs.map((sec: any, idx: number) => ({
+            finalSecs.map((sec: any, idx: number) => ({
               id: sec.id || `sec-${idx}`,
               title: sec.title || `Section ${idx + 1}`,
               code: sec.code || "",
