@@ -2607,7 +2607,7 @@ export function EditorStudio({
   };
 
   // Add a section from predefined categories
-  const handleAddSectionFromCategory = async (cat: { id: string; name: string }) => {
+  const handleAddSectionFromCategory = async (cat: { id: string; name: string }, overrideCode?: string, overrideTitle?: string) => {
     // Reuse already-loaded templates from state — no additional network request needed.
     // Templates are loaded once on mount via loadAdminTemplates() and kept in adminDbTemplates.
     const templatesList: any[] = adminDbTemplates.length > 0 ? adminDbTemplates : [];
@@ -2632,7 +2632,11 @@ export function EditorStudio({
     let newCode = "";
     let newTitle = cat.name;
 
-    if (matchingTemplates.length > 0) {
+    // overrideCode/overrideTitle take priority — used when an Admin DB card passes its exact code
+    if (overrideCode) {
+      newCode = overrideCode;
+      newTitle = overrideTitle || cat.name;
+    } else if (matchingTemplates.length > 0) {
       newCode = matchingTemplates[0]!.code;
       newTitle = matchingTemplates[0]!.name || cat.name;
     } else {
@@ -3312,16 +3316,56 @@ export function EditorStudio({
                     {adminDbTemplates.map((tpl) => (
                       <div
                         key={tpl.id || tpl.name}
-                        onClick={() => {
-                          const newSection: SectionItem = {
-                            id: `sec-${Date.now()}`,
-                            title: tpl.name,
-                            code: tpl.code,
-                            variantIndex: 0,
-                          };
-                          setSections((prev) => [...prev, newSection]);
-                          setActiveSectionIndex(sections.length);
-                          setShowAddSectionModal(false);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null")
+                            ? tpl.category
+                            : "";
+                          const nameLower = (tpl.name || "").toLowerCase();
+                          // Match to a SECTION_CATEGORIES entry for proper position/dedup logic
+                          const matchedCat = SECTION_CATEGORIES.find((c) => {
+                            const cId = c.id.toLowerCase();
+                            const normC = normalizeCategory(cId);
+                            const tplCatLow = rawCat.toLowerCase();
+                            if (tplCatLow === cId || normalizeCategory(tplCatLow) === normC) return true;
+                            if (nameLower.includes(`[${cId}]`) || nameLower.includes(cId)) return true;
+                            return false;
+                          }) || SECTION_CATEGORIES.find((c) => nameLower.includes(c.name.toLowerCase()));
+
+                          if (matchedCat) {
+                            // Pass overrideCode so handleAddSectionFromCategory uses the exact
+                            // admin DB code — not a fallback template. This also handles all
+                            // dedup, header/hero/footer positioning, history, and save.
+                            void handleAddSectionFromCategory(
+                              { id: matchedCat.id, name: tpl.name },
+                              tpl.code,
+                              tpl.name
+                            );
+                          } else {
+                            // Unknown category fallback — use setSectionsWithHistory for undo/redo
+                            setSectionsWithHistory((prev) => {
+                              const newSection: SectionItem = {
+                                id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                                title: tpl.name,
+                                code: tpl.code,
+                                category: rawCat || "hero",
+                                variantIndex: 0,
+                              };
+                              const footerIdx = prev.findIndex((s) => {
+                                const sCat = (s.category || s.title || "").toLowerCase();
+                                return sCat.includes("footer") || normalizeCategory(sCat) === "footer";
+                              });
+                              if (footerIdx >= 0) {
+                                const copy = [...prev];
+                                copy.splice(footerIdx, 0, newSection);
+                                return copy;
+                              }
+                              return [...prev, newSection];
+                            });
+                            setActiveSectionIndex(sections.length);
+                            setShowAddSectionModal(false);
+                            void handlePersistWebsiteSave();
+                          }
                         }}
                         className="group flex items-center justify-between p-3.5 rounded-2xl bg-black/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-500 transition-all duration-200 cursor-pointer shadow-sm select-none"
                       >
