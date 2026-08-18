@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Monitor, Tablet, Smartphone, Edit3 } from "lucide-react";
 
 interface SectionItem {
@@ -295,6 +295,100 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
   </footer>`,
   },
 ];
+
+// ─── Native Isolated Section Canvas Renderer for Live Sites ──────────────────
+function PreviewSectionIframe({
+  sec,
+}: {
+  sec: SectionItem;
+}) {
+  const [frameHeight, setFrameHeight] = useState<number>(140);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const htmlDoc = useMemo(() => {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+${sec.code || ""}
+<script>
+  function notifyHeight() {
+    try {
+      var b = document.body;
+      var d = document.documentElement;
+      var h = Math.max(
+        b ? b.scrollHeight : 0,
+        d ? d.scrollHeight : 0,
+        b ? b.offsetHeight : 0,
+        d ? d.offsetHeight : 0,
+        60
+      );
+      window.parent.postMessage({ type: 'XITE_PREVIEW_HEIGHT', secId: '${sec.id}', height: h }, '*');
+    } catch(e) {}
+  }
+  window.addEventListener('load', notifyHeight);
+  window.addEventListener('resize', notifyHeight);
+  if (window.ResizeObserver && document.body) {
+    new ResizeObserver(notifyHeight).observe(document.body);
+  }
+  setTimeout(notifyHeight, 30);
+  setTimeout(notifyHeight, 120);
+  setTimeout(notifyHeight, 400);
+  setTimeout(notifyHeight, 1000);
+  setTimeout(notifyHeight, 2500);
+</script>
+</body>
+</html>`;
+  }, [sec.code, sec.id]);
+
+  useEffect(() => {
+    const handleMsg = (ev: MessageEvent) => {
+      if (ev.data && ev.data.type === 'XITE_PREVIEW_HEIGHT' && ev.data.secId === sec.id) {
+        if (typeof ev.data.height === 'number' && ev.data.height > 0) {
+          setFrameHeight(Math.ceil(ev.data.height));
+        }
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+  }, [sec.id]);
+
+  return (
+    <div className="w-full relative transition-all group section-wrapper-container overflow-hidden">
+      <iframe
+        ref={iframeRef}
+        srcDoc={htmlDoc}
+        title={`Preview-Section-${sec.id}`}
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+        style={{
+          width: "100%",
+          height: `${frameHeight}px`,
+          border: "none",
+          display: "block",
+          overflow: "hidden",
+          backgroundColor: "transparent",
+        }}
+      />
+    </div>
+  );
+}
 
 export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [sections, setSections] = useState<SectionItem[]>([]);
@@ -710,46 +804,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           style={{ width: previewWidth, maxWidth: "100%" }}
         >
           {sections.map((sec) => (
-            <div
-              key={sec.id}
-              onClick={(e) => {
-                const target = e.target as HTMLElement;
-                if (target) {
-                  const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger, header button, header svg") as HTMLElement;
-                  if (hamburgerBtn) {
-                    const headerElem = hamburgerBtn.closest("header") || target.closest("header");
-                    if (headerElem) {
-                      let drawer = headerElem.querySelector(".mobile-drawer-menu, nav.mobile-menu, nav:not(.desktop-nav-links)") as HTMLElement;
-                      if (!drawer) {
-                        drawer = document.createElement("div");
-                        drawer.className = "mobile-drawer-menu active";
-                        drawer.style.cssText = "display: block !important; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;";
-                        drawer.innerHTML = `
-                          <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
-                            <a href="#home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
-                            <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About Us</a>
-                            <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics & Courses</a>
-                            <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
-                            <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements & Careers</a>
-                            <a href="#contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact Helpdesk</a>
-                          </nav>
-                        `;
-                        headerElem.appendChild(drawer);
-                      } else {
-                        drawer.classList.toggle("active");
-                        if (drawer.style.display === "none" || !drawer.classList.contains("active")) {
-                          drawer.style.display = "none";
-                        } else {
-                          drawer.style.display = "block";
-                        }
-                      }
-                    }
-                  }
-                }
-              }}
-              dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
-              className="w-full overflow-hidden"
-            />
+            <PreviewSectionIframe key={sec.id} sec={sec} />
           ))}
           <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />
         </div>

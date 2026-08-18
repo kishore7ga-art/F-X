@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import {
@@ -982,6 +982,121 @@ export function EditorStudio({
 
   const showToast = (_msg?: string) => {
     // Toast popups completely removed
+  };
+
+  // ─── Native Isolated Section Canvas Renderer ─────────────────────────────────
+  // Uses srcDoc iframe rendering matching Admin Studio preview 100%.
+  // Eliminates Tailwind CSS conflicts, enables scripts/dropdowns, and guarantees
+  // byte-for-byte visual & functional parity between Admin Section Studio and Editor.
+  const SectionCanvasItemIframe = ({
+    sec,
+    idx,
+    isActive,
+    onSelect,
+    onContextMenu,
+  }: {
+    sec: SectionItem;
+    idx: number;
+    isActive: boolean;
+    onSelect: (index: number) => void;
+    onContextMenu: (e: React.MouseEvent, index: number) => void;
+  }) => {
+    const [frameHeight, setFrameHeight] = useState<number>(140);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+
+    const htmlDoc = useMemo(() => {
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      overflow-y: hidden;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+${sec.code || ""}
+<script>
+  function notifyHeight() {
+    try {
+      var b = document.body;
+      var d = document.documentElement;
+      var h = Math.max(
+        b ? b.scrollHeight : 0,
+        d ? d.scrollHeight : 0,
+        b ? b.offsetHeight : 0,
+        d ? d.offsetHeight : 0,
+        60
+      );
+      window.parent.postMessage({ type: 'XITE_FRAME_HEIGHT', secId: '${sec.id}', height: h }, '*');
+    } catch(e) {}
+  }
+  window.addEventListener('load', notifyHeight);
+  window.addEventListener('resize', notifyHeight);
+  if (window.ResizeObserver && document.body) {
+    new ResizeObserver(notifyHeight).observe(document.body);
+  }
+  setTimeout(notifyHeight, 30);
+  setTimeout(notifyHeight, 120);
+  setTimeout(notifyHeight, 400);
+  setTimeout(notifyHeight, 1000);
+  setTimeout(notifyHeight, 2500);
+
+  document.addEventListener('click', function() {
+    window.parent.postMessage({ type: 'XITE_SELECT_SEC', idx: ${idx} }, '*');
+  });
+</script>
+</body>
+</html>`;
+    }, [sec.code, sec.id, idx]);
+
+    useEffect(() => {
+      const handleMsg = (ev: MessageEvent) => {
+        if (ev.data && ev.data.type === 'XITE_FRAME_HEIGHT' && ev.data.secId === sec.id) {
+          if (typeof ev.data.height === 'number' && ev.data.height > 0) {
+            setFrameHeight(Math.ceil(ev.data.height));
+          }
+        }
+      };
+      window.addEventListener('message', handleMsg);
+      return () => window.removeEventListener('message', handleMsg);
+    }, [sec.id]);
+
+    return (
+      <div
+        onClick={() => onSelect(idx)}
+        onContextMenu={(e) => onContextMenu(e, idx)}
+        className={`w-full relative transition-all group section-wrapper-container overflow-hidden ${
+          isActive ? "ring-2 ring-white ring-offset-2 ring-offset-black z-10 shadow-2xl" : "cursor-default"
+        }`}
+      >
+        <iframe
+          ref={iframeRef}
+          srcDoc={htmlDoc}
+          title={`Canvas-Section-${sec.id}`}
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+          style={{
+            width: "100%",
+            height: `${frameHeight}px`,
+            border: "none",
+            display: "block",
+            overflow: "hidden",
+            backgroundColor: "transparent",
+          }}
+        />
+      </div>
+    );
   };
 
   // ─── Section CSS + Link Injection ────────────────────────────────────────────
@@ -2925,120 +3040,17 @@ export function EditorStudio({
               </div>
             </div>
           ) : (
-            /* Pure Section Rendering for Current Page */
+            /* Pure Section Rendering for Current Page using Native Iframe Isolation */
             <div className="w-full overflow-hidden">
               {sections.map((sec, idx) => (
-                <div
+                <SectionCanvasItemIframe
                   key={sec.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const target = e.target as HTMLElement;
-
-                    // If user is actively editing text in contenteditable, DO NOT trigger section re-render
-                    if (target && (target.isContentEditable || target.getAttribute("contenteditable") === "true" || target.closest("[contenteditable='true']"))) {
-                      setActiveSectionIndex(idx);
-                      return;
-                    }
-
-                    // Always select the exact section canvas item clicked on
-                    setActiveSectionIndex(idx);
-
-                    // Check if link was clicked
-                    const anchorElem = target ? (target.closest("a") as HTMLAnchorElement | null) : null;
-                    if (anchorElem) {
-                      e.preventDefault();
-                      e.stopPropagation();
-
-                      const href = (anchorElem.getAttribute("href") || "").toLowerCase().trim();
-                      const text = (anchorElem.textContent || "").toLowerCase().trim();
-
-                      // Close mobile drawer menu if link was clicked inside drawer
-                      const parentDrawer = anchorElem.closest(".mobile-drawer-menu") as HTMLElement | null;
-                      if (parentDrawer) {
-                        parentDrawer.classList.remove("active");
-                        parentDrawer.style.setProperty("display", "none", "important");
-
-                        if (href.startsWith("/")) {
-                          const pageSlug = href;
-                          const pageName = text || href.replace("/", "");
-                          handlePageChange(pageName, pageSlug);
-                        } else {
-                          const targetCategory = href.replace(/^#\/?/, "").replace(/^\//, "") || normalizeCategory(text);
-                          const matchedIdx = sections.findIndex((sec, sIdx) => {
-                            if (sIdx === 0 && (sec.category === "navbar" || sec.category === "header")) return false;
-                            const sCat = (sec.category || sec.title || "").toLowerCase();
-                            const normSCat = normalizeCategory(sCat);
-                            return targetCategory && (sCat.includes(targetCategory) || normSCat === normalizeCategory(targetCategory));
-                          });
-                          if (matchedIdx >= 0) {
-                            setActiveSectionIndex(matchedIdx);
-                            const secContainers = document.querySelectorAll(".section-wrapper-container");
-                            const targetSecElem = secContainers[matchedIdx] as HTMLElement;
-                            if (targetSecElem) {
-                              targetSecElem.scrollIntoView({ behavior: "smooth", block: "start" });
-                            }
-                          }
-                        }
-                      }
-                    }
-
-                    if (target) {
-                      const hamburgerBtn = target.closest("button.hamburger-toggle-btn, button.hamburger, [data-mobile-menu], .mobile-menu-btn, .hamburger, header button, header svg") as HTMLElement;
-                      if (hamburgerBtn) {
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const headerElem = hamburgerBtn.closest("header") || hamburgerBtn.closest(".section-wrapper-container") || target.closest("header") || document.querySelector("header");
-                        if (headerElem) {
-                          let drawer = headerElem.querySelector(".mobile-drawer-menu, .mobile-menu, [data-mobile-drawer]") as HTMLElement;
-                          if (!drawer) {
-                            drawer = document.createElement("div");
-                            drawer.className = "mobile-drawer-menu active";
-                            drawer.setAttribute("data-mobile-drawer", "true");
-                            drawer.style.cssText = "display: block !important; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;";
-                            drawer.innerHTML = `
-                              <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
-                                <a href="/home" style="color: #ffffff; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Home</a>
-                                <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">About Us</a>
-                                <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Academics & Courses</a>
-                                <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Admissions</a>
-                                <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Placements & Careers</a>
-                                <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Contact Helpdesk</a>
-                              </nav>
-                            `;
-                            headerElem.appendChild(drawer);
-                          } else {
-                            const isCurrentlyHidden = drawer.style.display === "none" || !drawer.classList.contains("active");
-                            if (isCurrentlyHidden) {
-                              drawer.classList.add("active");
-                              drawer.style.setProperty("display", "block", "important");
-                            } else {
-                              drawer.classList.remove("active");
-                              drawer.style.setProperty("display", "none", "important");
-                            }
-                          }
-                        }
-                        return;
-                      }
-                    }
-
-                    if (target && (target.tagName === "IMG" || target.getAttribute("data-logo") === "true" || (target.className || "").toString().toLowerCase().includes("logo"))) {
-                      handleSectionContextMenu(e, idx);
-                    }
-                  }}
-                  onDoubleClick={(e) => handleSectionDoubleClick(e, idx)}
-                  onContextMenu={(e) => handleSectionContextMenu(e, idx)}
-                  className={`w-full relative transition-all group section-wrapper-container overflow-hidden ${
-                    activeSectionIndex === idx ? "cursor-pointer ring-2 ring-white ring-offset-2 ring-offset-black z-10" : "cursor-default"
-                  }`}
-                >
-
-
-                  <div
-                    dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
-                    className="w-full overflow-hidden block p-0 m-0 text-left"
-                  />
-                </div>
+                  sec={sec}
+                  idx={idx}
+                  isActive={activeSectionIndex === idx}
+                  onSelect={(index) => setActiveSectionIndex(index)}
+                  onContextMenu={(e: any, index) => handleSectionContextMenu(e, index)}
+                />
               ))}
 
 
