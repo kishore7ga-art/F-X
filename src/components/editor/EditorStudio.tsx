@@ -2842,27 +2842,23 @@ export function EditorStudio({
       }
     });
 
-    // 3. Build the circular variant list:
-    //    SLOT 0 = Default (built-in hardcoded section from ALL_19_SECTION_TEMPLATES)
-    //    SLOT 1..N = Admin-uploaded variants
-    //    Pressing swap always advances +1, and wraps from last back to 0 (default)
+    // 3. Build the swap cycle from ONLY admin-uploaded sections.
+    //    Do NOT include hardcoded built-in sections — user only wants what they added.
+    //    The current active section is always included so pressing swap can return to it.
     const matchingTemplates: { name: string; code: string }[] = [];
     const seenCodes = new Set<string>();
 
-    // Always put the default built-in section FIRST in the cycle
-    const defaultCode =
-      ALL_19_SECTION_TEMPLATES[catId] ||
-      ALL_19_SECTION_TEMPLATES[normCatId] ||
-      ALL_19_SECTION_TEMPLATES[catId === "navbar" ? "header" : catId === "header" ? "navbar" : catId] ||
-      null;
-
-    if (defaultCode) {
-      const trimmedDefault = defaultCode.trim();
-      seenCodes.add(trimmedDefault);
-      matchingTemplates.push({ name: `${cleanBaseTitle} (Default)`, code: trimmedDefault });
+    // First: include the current active section so the cycle can wrap back to it
+    const currentActiveCode = (activeSec.code || "").trim();
+    if (currentActiveCode) {
+      seenCodes.add(currentActiveCode);
+      matchingTemplates.push({
+        name: activeSec.title || cleanBaseTitle,
+        code: currentActiveCode,
+      });
     }
 
-    // Add all admin DB variants after the default
+    // Then: add all admin DB variants for this category (deduplicated)
     adminDbMatches.forEach((m) => {
       const trimmed = m.code.trim();
       if (!seenCodes.has(trimmed)) {
@@ -2871,27 +2867,19 @@ export function EditorStudio({
       }
     });
 
-    // If we have no default AND no admin variants, show message
+    // No variants at all
     if (matchingTemplates.length === 0) {
-      showToastNotification("No section variants found — add sections in Admin panel");
+      showToastNotification("No section variants found — add sections in Admin › Templates");
       return;
     }
 
-    // If only 1 item (e.g. only the default, no admin variants), still allow cycling
-    // but show a helpful message
-    if (matchingTemplates.length === 1) {
-      // Check if current section IS the default — if so, no variants to swap to
-      const currentCode = (activeSec.code || "").trim();
-      const isAlreadyDefault = seenCodes.has(currentCode) || cleanCanvasWrapperFromCode(matchingTemplates[0]!.code) === cleanCanvasWrapperFromCode(currentCode);
-      if (isAlreadyDefault) {
-        showToastNotification("Only one variant — add more in Admin › Templates");
-        return;
-      }
-      // Current is not the default — swap to it
+    // Only 1 item = current section with no admin variants added yet
+    if (matchingTemplates.length <= 1) {
+      showToastNotification("Only 1 variant — add more sections in Admin › Templates to enable swapping");
+      return;
     }
 
-    // 4. Find where current section sits in the cycle, advance by 1 (circular)
-    const currentActiveCode = (activeSec.code || "").trim();
+    // 4. Find current position in the cycle and advance by 1 (circular)
     const matchedCodeIdx = matchingTemplates.findIndex(
       (t) =>
         t.code.trim() === currentActiveCode ||
@@ -2900,11 +2888,10 @@ export function EditorStudio({
 
     let nextIdx: number;
     if (matchedCodeIdx >= 0) {
-      // Known position — advance circularly
+      // Advance circularly: last item wraps back to first (which is the original section)
       nextIdx = (matchedCodeIdx + 1) % matchingTemplates.length;
     } else {
-      // Current section not in list — jump to default (index 0)
-      nextIdx = 0;
+      nextIdx = 1; // Jump to first admin variant
     }
 
     const nextTpl = matchingTemplates[nextIdx]!;
@@ -2922,11 +2909,13 @@ export function EditorStudio({
       })
     );
 
-    // Show clear position indicator: e.g. "Variant 2/3: Hero Banner (Default)"
-    const label = nextIdx === 0 ? `${nextTpl.name} ✦ Default` : nextTpl.name;
-    showToastNotification(`${nextIdx + 1} / ${matchingTemplates.length}  —  ${label}`);
+    // Toast: "2 / 3 — My Admin Header"
+    showToastNotification(`${nextIdx + 1} / ${matchingTemplates.length}  —  ${nextTpl.name}`);
     void handlePersistWebsiteSave();
   };
+
+
+
 
 
 
