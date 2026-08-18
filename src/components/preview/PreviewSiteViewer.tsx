@@ -317,7 +317,12 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       let m;
       let combined = "";
       while ((m = styleRegex.exec(sec.code)) !== null) {
-        if (m[1]?.trim()) combined += m[1] + "\n";
+        if (m[1]?.trim()) {
+          const remapped = m[1]
+            .replace(/(^|[\s,{}])body\s*\{/gi, "$1body, .section-canvas-box, .xite-body-wrapper {")
+            .replace(/(^|[\s,{}])html\s*,\s*body\s*\{/gi, "$1html, body, .section-canvas-box, .xite-body-wrapper {");
+          combined += remapped + "\n";
+        }
       }
       if (combined.trim()) {
         const tag = document.createElement("style");
@@ -477,7 +482,11 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           if (srcMatch && srcMatch[1]) {
             scriptEl.src = srcMatch[1];
           } else if (inlineJs.trim()) {
-            scriptEl.textContent = `try { (function(){\n${inlineJs}\n})(); } catch(e) { console.warn("Section script error:", e); }`;
+            const processed = inlineJs.replace(
+              /(?:document|window)\.addEventListener\(\s*['"](?:DOMContentLoaded|load)['"]\s*,\s*(?:function\s*\([^)]*\)\s*|\([^)]*\)\s*=>\s*)\{([\s\S]*)\}\s*\);?/gi,
+              "$1"
+            );
+            scriptEl.textContent = `try { (function(){\n${processed}\n})(); } catch(e) { console.warn("Section script error:", e); }`;
           }
           document.body.appendChild(scriptEl);
         }
@@ -495,11 +504,13 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
 
     let cleanCode = code;
 
-    const bodyMatch = code.match(/<body[\s\S]*?>([\s\S]*?)<\/body>/i);
-    if (bodyMatch && bodyMatch[1]) {
+    const bodyFullMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body>/i);
+    if (bodyFullMatch) {
+      const bodyAttrs = bodyFullMatch[1] || "";
+      const bodyContent = bodyFullMatch[2] || "";
       const headMatch = code.match(/<head[\s\S]*?>([\s\S]*?)<\/head>/i);
       const styles = headMatch ? headMatch[1] : "";
-      cleanCode = `${styles}\n${bodyMatch[1]}`;
+      cleanCode = `${styles}\n<div class="xite-body-wrapper" ${bodyAttrs}>${bodyContent}</div>`;
     } else {
       cleanCode = code
         .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
@@ -524,6 +535,12 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         text-align: left;
       }
       .section-canvas-box * {
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box .xite-body-wrapper {
+        width: 100% !important;
+        min-height: 100% !important;
+        display: block !important;
         box-sizing: border-box !important;
       }
       .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
