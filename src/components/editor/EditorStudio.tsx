@@ -984,80 +984,6 @@ export function EditorStudio({
     // Toast popups completely removed
   };
 
-  // Auto-correct responsive section code and alignment across all viewports
-  const autoCorrectMobileCode = (code: string, width: string) => {
-    if (!code) return "";
-    const isMobile = width === "375px" || width === "425px";
-    const isTablet = width === "640px" || width === "768px" || width === "1024px";
-    const isResponsiveView = isMobile || isTablet;
-
-    let corrected = code;
-
-    // Inject hamburger button & drawer for headers if missing when in Tablet or Mobile view
-    if (isResponsiveView && corrected.includes("<header") && !corrected.includes("hamburger-toggle-btn")) {
-      corrected = corrected.replace(/<\/header>/gi, (match) => {
-        return `
-          <button class="hamburger-toggle-btn" style="display: inline-flex !important; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center; position: relative !important; margin-left: 6px !important; flex-shrink: 0 !important; z-index: 10;" aria-label="Toggle Menu">
-            ☰
-          </button>
-          <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;">
-            <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
-              <a href="/home" style="color: #ffffff; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Home</a>
-              <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">About Us</a>
-              <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Academics & Courses</a>
-              <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Admissions</a>
-              <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Placements & Careers</a>
-              <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Contact Helpdesk</a>
-            </nav>
-          </div>
-        ${match}`;
-      });
-    } else if (corrected.includes("mobile-drawer-menu")) {
-      corrected = corrected.replace(/<div[^>]*class="[^"]*mobile-drawer-menu[^"]*"[^>]*>[\s\S]*?<\/div>/gi, `
-        <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; z-index: 99;">
-          <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
-            <a href="/home" style="color: #ffffff; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Home</a>
-            <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">About Us</a>
-            <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Academics & Courses</a>
-            <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Admissions</a>
-            <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Placements & Careers</a>
-            <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Contact Helpdesk</a>
-          </nav>
-        </div>
-      `);
-    }
-
-    // Ensure all max-width containers have mx-auto / margin: 0 auto centering
-    corrected = corrected.replace(/class="([^"]*max-w-[^"]*)"/gi, (_m, p1) => {
-      if (!p1.includes("mx-auto") && !p1.includes("ml-") && !p1.includes("mr-")) {
-        return `class="${p1} mx-auto"`;
-      }
-      return _m;
-    });
-
-    if (isTablet) {
-      // Auto-correct multi-column layouts for Tablet screens (max 2 columns, scaled text)
-      corrected = corrected
-        .replace(/grid-template-columns:\s*repeat\(\s*[4-9]\s*,\s*1fr\s*\)/gi, "grid-template-columns: repeat(2, 1fr)")
-        .replace(/grid-template-columns:\s*1fr\s+1fr\s+1fr\s+1fr/gi, "grid-template-columns: 1fr 1fr")
-        .replace(/font-size:\s*([4-9][0-9])px/gi, (_match, p1) => `font-size: ${Math.min(parseInt(p1, 10), 32)}px`);
-    }
-
-    if (isMobile) {
-      // Auto-correct multi-column flex/grid containers for Mobile phone screens (1 column)
-      corrected = corrected
-        .replace(/grid-template-columns:\s*repeat\(\s*[2-9]\s*,\s*1fr\s*\)/gi, "grid-template-columns: repeat(1, 1fr)")
-        .replace(/grid-template-columns:\s*1fr\s+1fr\s+1fr/gi, "grid-template-columns: 1fr")
-        .replace(/grid-template-columns:\s*repeat\(\s*auto-fit\s*,\s*minmax\([^)]+\)\)/gi, "grid-template-columns: 1fr")
-        .replace(/flex-direction:\s*row/gi, "flex-direction: column")
-        .replace(/border-r\b/g, "border-b border-r-0")
-        .replace(/border-right:[^;]+;/gi, "border-bottom: 1px solid rgba(255,255,255,0.1); border-right: none;")
-        .replace(/font-size:\s*([3-9][0-9])px/gi, (_match, p1) => `font-size: ${Math.min(parseInt(p1, 10), 22)}px`);
-    }
-
-    return corrected;
-  };
-
   // ─── Section CSS + Link Injection ────────────────────────────────────────────
   // Browsers IGNORE <style> and <link> tags injected via innerHTML /
   // dangerouslySetInnerHTML. Fix: extract all <style> blocks AND <link> tags
@@ -1086,18 +1012,14 @@ export function EditorStudio({
       }
 
       // 2. Inject <link> tags (Google Fonts, external CSS, preconnect)
-      // Browsers ignore <link> in innerHTML just like <style>.
       const linkRegex = /<link([^>]+)>/gi;
       while ((m = linkRegex.exec(sec.code)) !== null) {
         const attrs = m[1] || "";
-        // Only inject stylesheet / preconnect / preload links — not icon/manifest etc.
         if (!/rel=["']?(stylesheet|preconnect|preload|dns-prefetch)/i.test(attrs)) continue;
         const href = (attrs.match(/href=["']([^"']+)["']/i) || [])[1];
         if (!href) continue;
-        // Skip if already in document.head (avoid duplicates)
         if (document.querySelector(`link[href="${href}"]`)) continue;
         const linkEl = document.createElement("link");
-        // Copy all attributes from the original tag
         attrs.replace(/([\w-]+)=["']([^"']*)["']/gi, (_full: string, name: string, val: string) => {
           linkEl.setAttribute(name, val);
           return "";
@@ -1113,11 +1035,46 @@ export function EditorStudio({
     };
   }, [sections]);
 
-  // Parse full web HTML documents (with <!DOCTYPE>, <html>, <head>, <style>, <body>) for canvas rendering
-  const cleanFullWebCodeForCanvas = (code: string, width: string): string => {
-    if (!code) return "";
+  // ─── Section Script Execution ───────────────────────────────────────────────
+  // Browsers ignore <script> tags inserted via dangerouslySetInnerHTML.
+  // Extract and execute inline and external scripts per section so interactive menus,
+  // dropdown toggles, drawers, modals, and tab scripts work exactly as in Admin preview.
+  useEffect(() => {
+    document.querySelectorAll("script[data-xite-section-script]").forEach((el) => el.remove());
 
-    const isResponsiveView = width === "768px" || width === "375px" || width === "425px";
+    const timer = setTimeout(() => {
+      sections.forEach((sec) => {
+        if (!sec.code) return;
+        const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
+        let m;
+        while ((m = scriptRegex.exec(sec.code)) !== null) {
+          const attrs = m[1] || "";
+          const inlineJs = m[2] || "";
+          const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
+
+          const scriptEl = document.createElement("script");
+          scriptEl.setAttribute("data-xite-section-script", sec.id);
+
+          if (srcMatch && srcMatch[1]) {
+            scriptEl.src = srcMatch[1];
+          } else if (inlineJs.trim()) {
+            scriptEl.textContent = `try { (function(){\n${inlineJs}\n})(); } catch(e) { console.warn("Section script error:", e); }`;
+          }
+          document.body.appendChild(scriptEl);
+        }
+      });
+    }, 120);
+
+    return () => {
+      clearTimeout(timer);
+      document.querySelectorAll("script[data-xite-section-script]").forEach((el) => el.remove());
+    };
+  }, [sections]);
+
+  // Non-destructive canvas HTML processor
+  // Preserves 100% of user-defined HTML, styles, layout, and colors exactly as in Admin
+  const cleanFullWebCodeForCanvas = (code: string, _width: string): string => {
+    if (!code) return "";
 
     let cleanCode = code;
 
@@ -1134,7 +1091,7 @@ export function EditorStudio({
         .replace(/<\/?body[\s\S]*?>/gi, "");
     }
 
-    // Neutralize fixed/sticky positioning in inline HTML so canvas layout stays static & aligned
+    // Neutralize fixed/sticky positioning in inline HTML so canvas layout stays inline
     cleanCode = cleanCode
       .replace(/position:\s*fixed/gi, "position: relative")
       .replace(/position:\s*sticky/gi, "position: relative");
@@ -1148,256 +1105,22 @@ export function EditorStudio({
         box-sizing: border-box !important;
         position: relative !important;
         display: block !important;
-        font-size: 0 !important;
-        line-height: 0 !important;
+        text-align: left;
       }
-      .section-canvas-box > * {
-        font-size: initial !important;
-        line-height: initial !important;
+      .section-canvas-box * {
+        box-sizing: border-box !important;
       }
       .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
         max-width: 100% !important;
       }
-      .section-canvas-box > div,
-      .section-canvas-box > header,
-      .section-canvas-box > section,
-      .section-canvas-box {
-        width: 100% !important;
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-        box-sizing: border-box !important;
-      }
-
-      .section-canvas-box > *:first-child,
-      .section-wrapper-container:first-child,
-      .section-wrapper-container:first-child > div,
-      .section-wrapper-container:first-child header,
-      .section-wrapper-container:first-child section {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-      }
-
       .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
       .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
         position: relative !important;
         top: auto !important;
       }
-      
-      /* Universal Header Containment - Flush to Top Edge with Zero White Space */
-      header, .section-canvas-box header {
-        max-width: 100% !important;
-        width: 100% !important;
-        margin-top: 0 !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        border-radius: 0 !important;
-        box-sizing: border-box !important;
-        position: relative !important;
-        top: 0 !important;
-      }
-
-      .section-canvas-box header div:first-child span,
-      .section-canvas-box header div:first-child a,
-      header div:first-child span,
-      header div:first-child a {
-        font-size: clamp(10px, 1.1vw, 13px) !important;
-        white-space: nowrap !important;
-      }
-
-      /* Hide crowded utility links on mobile phone viewports so top bar stays 1 line */
-      ${width === "375px" ? `
-        .section-canvas-box header div:first-child:not(:only-child) > div:last-child,
-        header div:first-child:not(:only-child) > div:last-child {
-          display: none !important;
-        }
-      ` : ''}
-
-      .section-canvas-box .mobile-drawer-menu,
-      header .mobile-drawer-menu {
-        width: 100% !important;
-        flex-basis: 100% !important;
-        clear: both !important;
-        margin-top: 12px !important;
-        position: relative !important;
-        left: 0 !important;
-        right: 0 !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-        z-index: 99 !important;
-      }
-
-      ${isResponsiveView ? `
-        /* Forced Tablet & Mobile Rules when responsive viewport selected in Editor */
-        .section-canvas-box header nav:not(.mobile-drawer-menu nav),
-        .section-canvas-box header ul:not(.mobile-drawer-menu ul),
-        .section-canvas-box header .desktop-nav-links,
-        header nav:not(.mobile-drawer-menu nav),
-        header ul:not(.mobile-drawer-menu ul),
-        header .desktop-nav-links {
-          display: none !important;
-        }
-
-        .section-canvas-box header > div,
-        header > div {
-          display: flex !important;
-          flex-direction: row !important;
-          flex-wrap: nowrap !important;
-          align-items: center !important;
-          justify-content: space-between !important;
-          gap: 8px !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
-        }
-
-        .section-canvas-box header .desktop-apply-btn,
-        .section-canvas-box header a.desktop-apply-btn,
-        .section-canvas-box header button.desktop-apply-btn,
-        header .desktop-apply-btn,
-        header a.desktop-apply-btn,
-        header button.desktop-apply-btn,
-        header a[href*="apply"],
-        header a[href*="admissions"] {
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          padding: 6px 14px !important;
-          font-size: 12px !important;
-          font-weight: 800 !important;
-          white-space: nowrap !important;
-          flex-shrink: 0 !important;
-          position: relative !important;
-          top: auto !important;
-          transform: none !important;
-          margin-left: auto !important;
-          margin-right: 4px !important;
-        }
-
-        .section-canvas-box .hamburger-toggle-btn,
-        header .hamburger-toggle-btn {
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          padding: 6px 12px !important;
-          border-radius: 8px !important;
-          font-size: 20px !important;
-          cursor: pointer !important;
-          flex-shrink: 0 !important;
-          position: relative !important;
-          top: auto !important;
-          transform: none !important;
-          margin-left: 0 !important;
-        }
-
-        .section-canvas-box .mobile-drawer-menu.active,
-        header .mobile-drawer-menu.active {
-          display: block !important;
-          width: 100% !important;
-          flex-basis: 100% !important;
-          clear: both !important;
-        }
-      ` : `
-        /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
-        @media (max-width: 900px) {
-          .section-canvas-box header nav:not(.mobile-drawer-menu nav),
-          .section-canvas-box header ul:not(.mobile-drawer-menu ul),
-          .section-canvas-box header .desktop-nav-links,
-          header nav:not(.mobile-drawer-menu nav),
-          header ul:not(.mobile-drawer-menu ul),
-          header .desktop-nav-links {
-            display: none !important;
-          }
-
-          .section-canvas-box header > div,
-          header > div {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            align-items: center !important;
-            justify-content: space-between !important;
-            gap: 8px !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-          }
-
-          .section-canvas-box header .desktop-apply-btn,
-          .section-canvas-box header a.desktop-apply-btn,
-          .section-canvas-box header button.desktop-apply-btn,
-          header .desktop-apply-btn,
-          header a.desktop-apply-btn,
-          header button.desktop-apply-btn,
-          header a[href*="apply"],
-          header a[href*="admissions"] {
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 6px 14px !important;
-            font-size: 12px !important;
-            font-weight: 800 !important;
-            white-space: nowrap !important;
-            flex-shrink: 0 !important;
-            position: relative !important;
-            top: auto !important;
-            transform: none !important;
-            margin-left: auto !important;
-            margin-right: 4px !important;
-          }
-
-          .section-canvas-box .hamburger-toggle-btn,
-          header .hamburger-toggle-btn {
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 6px 12px !important;
-            border-radius: 8px !important;
-            font-size: 20px !important;
-            cursor: pointer !important;
-            flex-shrink: 0 !important;
-            position: relative !important;
-            top: auto !important;
-            transform: none !important;
-            margin-left: 0 !important;
-          }
-
-          .section-canvas-box .mobile-drawer-menu.active,
-          header .mobile-drawer-menu.active {
-            display: block !important;
-            width: 100% !important;
-            flex-basis: 100% !important;
-            clear: both !important;
-          }
-        }
-
-        /* Desktop Viewport Rules (> 900px) */
-        @media (min-width: 901px) {
-          .section-canvas-box .hamburger-toggle-btn,
-          .section-canvas-box .mobile-drawer-menu,
-          header .hamburger-toggle-btn,
-          header .mobile-drawer-menu {
-            display: none !important;
-          }
-          .section-canvas-box .desktop-nav-links,
-          header nav, header .desktop-nav-links, header ul {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            gap: clamp(4px, 1.2vw, 16px) !important;
-            min-width: 0 !important;
-          }
-          .section-canvas-box .desktop-nav-links a,
-          header nav a, header .desktop-nav-links a, header ul a {
-            white-space: nowrap !important;
-            font-size: clamp(11px, 1.05vw, 14px) !important;
-            line-height: 1.2 !important;
-          }
-          .section-canvas-box .desktop-apply-btn,
-          header a[style*="background"], header button[style*="background"], header .desktop-apply-btn {
-            display: inline-block !important;
-            flex-shrink: 0 !important;
-            white-space: nowrap !important;
-          }
-        }
-      `}
     </style>`;
 
-    return `<div class="section-canvas-box">${containmentStyles}${autoCorrectMobileCode(cleanCode, width)}</div>`;
+    return `<div class="section-canvas-box">${containmentStyles}${cleanCode}</div>`;
   };
 
   // Active Page State
@@ -3293,11 +3016,7 @@ export function EditorStudio({
 
                   <div
                     dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
-                    className={`w-full overflow-hidden ${
-                      idx === 0 || sec.category === "navbar" || sec.category === "header"
-                        ? "block p-0 m-0 text-left [&>*:first-child]:w-full"
-                        : "flex flex-col items-center justify-center text-center [&>*:first-child]:w-full [&>*:first-child]:mx-auto"
-                    }`}
+                    className="w-full overflow-hidden block p-0 m-0 text-left"
                   />
                 </div>
               ))}

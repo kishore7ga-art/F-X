@@ -454,10 +454,44 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     );
   }
 
-  const cleanFullWebCodeForCanvas = (code: string, currentWidth: string): string => {
-    if (!code) return "";
+  // ─── Section Script Execution ───────────────────────────────────────────────
+  // Browsers ignore <script> tags inserted via dangerouslySetInnerHTML.
+  // Extract and execute inline and external scripts per section so interactive menus,
+  // dropdown toggles, drawers, modals, and tab scripts work exactly as in Admin preview.
+  useEffect(() => {
+    document.querySelectorAll("script[data-xite-preview-script]").forEach((el) => el.remove());
 
-    const isResponsiveView = currentWidth === "768px" || currentWidth === "375px" || currentWidth === "425px" || currentWidth === "640px";
+    const timer = setTimeout(() => {
+      sections.forEach((sec) => {
+        if (!sec.code) return;
+        const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
+        let m;
+        while ((m = scriptRegex.exec(sec.code)) !== null) {
+          const attrs = m[1] || "";
+          const inlineJs = m[2] || "";
+          const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
+
+          const scriptEl = document.createElement("script");
+          scriptEl.setAttribute("data-xite-preview-script", sec.id);
+
+          if (srcMatch && srcMatch[1]) {
+            scriptEl.src = srcMatch[1];
+          } else if (inlineJs.trim()) {
+            scriptEl.textContent = `try { (function(){\n${inlineJs}\n})(); } catch(e) { console.warn("Section script error:", e); }`;
+          }
+          document.body.appendChild(scriptEl);
+        }
+      });
+    }, 120);
+
+    return () => {
+      clearTimeout(timer);
+      document.querySelectorAll("script[data-xite-preview-script]").forEach((el) => el.remove());
+    };
+  }, [sections]);
+
+  const cleanFullWebCodeForCanvas = (code: string, _currentWidth: string): string => {
+    if (!code) return "";
 
     let cleanCode = code;
 
@@ -486,6 +520,8 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         padding: 0 !important;
         box-sizing: border-box !important;
         position: relative !important;
+        display: block !important;
+        text-align: left;
       }
       .section-canvas-box * {
         box-sizing: border-box !important;
@@ -493,89 +529,14 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
         max-width: 100% !important;
       }
-      .section-canvas-box > div,
-      .section-canvas-box > header,
-      .section-canvas-box > section,
-      .section-canvas-box > nav {
-        width: 100% !important;
-        box-sizing: border-box !important;
-      }
       .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
       .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
         position: relative !important;
         top: auto !important;
       }
-
-      /* Universal Header Containment */
-      header, .section-canvas-box header {
-        max-width: 100% !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        position: relative !important;
-        margin-top: 0 !important;
-        top: 0 !important;
-      }
-
-      ${isResponsiveView ? `
-        /* Forced Tablet & Mobile Rules when responsive viewport selected */
-        header nav:not(.mobile-drawer-menu nav),
-        header .desktop-nav-links,
-        header ul:not(.mobile-drawer-menu ul),
-        header a[style*="background"]:not(.mobile-drawer-menu a),
-        header .desktop-apply-btn {
-          display: none !important;
-        }
-        header .hamburger-toggle-btn {
-          display: flex !important;
-        }
-        header .mobile-drawer-menu.active {
-          display: block !important;
-        }
-      ` : `
-        /* Mobile & Tablet Viewport Rules (<= 900px: Phone 375px & Tablet 768px) */
-        @media (max-width: 900px) {
-          header nav:not(.mobile-drawer-menu nav),
-          header .desktop-nav-links,
-          header ul:not(.mobile-drawer-menu ul),
-          header a[style*="background"]:not(.mobile-drawer-menu a),
-          header .desktop-apply-btn {
-            display: none !important;
-          }
-          header .hamburger-toggle-btn {
-            display: flex !important;
-          }
-          header .mobile-drawer-menu.active {
-            display: block !important;
-          }
-        }
-
-        /* Desktop Viewport Rules (> 900px) */
-        @media (min-width: 901px) {
-          header .hamburger-toggle-btn,
-          header .mobile-drawer-menu {
-            display: none !important;
-          }
-          header nav, header .desktop-nav-links, header ul {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            gap: clamp(4px, 1.2vw, 16px) !important;
-            min-width: 0 !important;
-          }
-          header nav a, header .desktop-nav-links a, header ul a {
-            white-space: nowrap !important;
-            font-size: clamp(11px, 1.05vw, 14px) !important;
-            line-height: 1.2 !important;
-          }
-          header a[style*="background"], header button[style*="background"], header .desktop-apply-btn {
-            display: inline-block !important;
-            flex-shrink: 0 !important;
-            white-space: nowrap !important;
-          }
-        }
-      `}
     </style>`;
 
-    return `${containmentStyles}<div class="section-canvas-box">${cleanCode}</div>`;
+    return `<div class="section-canvas-box">${containmentStyles}${cleanCode}</div>`;
   };
 
   const [isLive, setIsLive] = useState(false);
