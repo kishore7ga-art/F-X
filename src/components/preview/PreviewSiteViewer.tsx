@@ -301,6 +301,34 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [loading, setLoading] = useState(true);
   const [previewWidth, setPreviewWidth] = useState<string>("100%");
 
+  // ─── Section CSS Injection ───────────────────────────────────────────────────
+  // Browsers IGNORE <style> tags injected via innerHTML / dangerouslySetInnerHTML.
+  // Fix: extract all <style> blocks from section codes and inject them into
+  // document.head with a unique ID per section. Clean up on unmount / section change.
+  useEffect(() => {
+    // Remove any previously injected section styles
+    document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
+
+    sections.forEach((sec) => {
+      if (!sec.code) return;
+      const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+      let m;
+      let combined = "";
+      while ((m = styleRegex.exec(sec.code)) !== null) {
+        if (m[1]?.trim()) combined += m[1] + "\n";
+      }
+      if (!combined.trim()) return;
+      const tag = document.createElement("style");
+      tag.setAttribute("data-xite-section", sec.id);
+      tag.textContent = combined;
+      document.head.appendChild(tag);
+    });
+
+    return () => {
+      document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
+    };
+  }, [sections]);
+
   useEffect(() => {
     let cancelled = false;
 
