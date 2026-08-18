@@ -179,6 +179,9 @@ export function EditorToolbar({
 
   const handleOpenPreview = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (onSyncAdminWebsite) {
+      onSyncAdminWebsite();
+    }
     if (typeof window !== "undefined") {
       const sub = subdomain || "greenfield";
       const origin = window.location.origin;
@@ -186,7 +189,6 @@ export function EditorToolbar({
       const previewTargetUrl = isProd ? `https://xite.co.in/site/${sub}` : `${origin}/site/${sub}`;
       
       window.open(previewTargetUrl, "_blank");
-      showToast("Opening Live Full Website in new tab... 🚀");
     }
   };
 
