@@ -296,135 +296,6 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
   },
 ];
 
-// ─── Native Isolated Section Canvas Renderer for Live Sites ──────────────────
-function PreviewSectionIframe({
-  sec,
-  idx,
-}: {
-  sec: SectionItem;
-  idx?: number;
-}) {
-  const [frameHeight, setFrameHeight] = useState<number>(140);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const isHeader = (typeof idx === "number" && idx === 0) || (sec.title || "").toLowerCase().includes("header") || (sec.title || "").toLowerCase().includes("nav");
-
-  const htmlDoc = useMemo(() => {
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      overflow-x: hidden;
-      overflow-y: visible;
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    * {
-      box-sizing: border-box;
-    }
-  </style>
-</head>
-<body>
-${sec.code || ""}
-<script>
-  function notifyHeight() {
-    try {
-      var b = document.body;
-      var d = document.documentElement;
-      var maxBottom = Math.max(
-        b ? b.scrollHeight : 0,
-        d ? d.scrollHeight : 0,
-        b ? b.offsetHeight : 0,
-        d ? d.offsetHeight : 0,
-        60
-      );
-      // Scan all visible elements (including absolute / fixed dropdowns, drawers, and modal popups)
-      var allElems = document.querySelectorAll('header, nav, div, ul, section, aside, form, [class*="menu"], [class*="nav"], [class*="modal"], [class*="drawer"], [class*="dropdown"], [class*="quick"], [id*="menu"], [id*="nav"]');
-      for (var i = 0; i < allElems.length; i++) {
-        var el = allElems[i];
-        var style = window.getComputedStyle(el);
-        if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-          var rect = el.getBoundingClientRect();
-          var elemBottom = rect.top + window.pageYOffset + rect.height;
-          if (elemBottom > maxBottom && rect.height > 10) {
-            maxBottom = elemBottom;
-          }
-        }
-      }
-      window.parent.postMessage({ type: 'XITE_PREVIEW_HEIGHT', secId: '${sec.id}', height: Math.ceil(maxBottom + 4) }, '*');
-    } catch(e) {}
-  }
-  window.addEventListener('load', notifyHeight);
-  window.addEventListener('resize', notifyHeight);
-  if (window.ResizeObserver && document.body) {
-    new ResizeObserver(notifyHeight).observe(document.body);
-  }
-  if (window.MutationObserver && document.body) {
-    new MutationObserver(function() {
-      notifyHeight();
-      setTimeout(notifyHeight, 80);
-      setTimeout(notifyHeight, 300);
-    }).observe(document.body, { attributes: true, childList: true, subtree: true });
-  }
-  document.addEventListener('click', function() {
-    setTimeout(notifyHeight, 40);
-    setTimeout(notifyHeight, 200);
-    setTimeout(notifyHeight, 500);
-  });
-  setTimeout(notifyHeight, 20);
-  setTimeout(notifyHeight, 100);
-  setTimeout(notifyHeight, 300);
-  setTimeout(notifyHeight, 800);
-  setTimeout(notifyHeight, 2000);
-</script>
-</body>
-</html>`;
-  }, [sec.code, sec.id]);
-
-  useEffect(() => {
-    const handleMsg = (ev: MessageEvent) => {
-      if (ev.data && ev.data.type === 'XITE_PREVIEW_HEIGHT' && ev.data.secId === sec.id) {
-        if (typeof ev.data.height === 'number' && ev.data.height > 0) {
-          setFrameHeight(Math.ceil(ev.data.height));
-        }
-      }
-    };
-    window.addEventListener('message', handleMsg);
-    return () => window.removeEventListener('message', handleMsg);
-  }, [sec.id]);
-
-  return (
-    <div
-      style={{
-        zIndex: isHeader ? 50 : 25 - Math.min(typeof idx === "number" ? idx : 0, 20),
-        position: "relative",
-      }}
-      className="w-full relative transition-all group section-wrapper-container overflow-visible"
-    >
-      <iframe
-        ref={iframeRef}
-        srcDoc={htmlDoc}
-        title={`Preview-Section-${sec.id}`}
-        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-        style={{
-          width: "100%",
-          height: `${frameHeight}px`,
-          border: "none",
-          display: "block",
-          overflow: "visible",
-          backgroundColor: "transparent",
-          transition: "height 0.15s ease-out",
-        }}
-      />
-    </div>
-  );
-}
-
 export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [sections, setSections] = useState<SectionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -648,41 +519,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
         .replace(/<\/?body[\s\S]*?>/gi, "");
     }
 
-    cleanCode = cleanCode
-      .replace(/position:\s*fixed/gi, "position: relative")
-      .replace(/position:\s*sticky/gi, "position: relative");
-
-    const containmentStyles = `<style>
-      .section-canvas-box {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-        position: relative !important;
-        display: block !important;
-        text-align: left;
-      }
-      .section-canvas-box * {
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box .xite-body-wrapper {
-        width: 100% !important;
-        min-height: 100% !important;
-        display: block !important;
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
-        max-width: 100% !important;
-      }
-      .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
-      .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
-        position: relative !important;
-        top: auto !important;
-      }
-    </style>`;
-
-    return `<div class="section-canvas-box">${containmentStyles}${cleanCode}</div>`;
+    return `<div class="section-canvas-box w-full block text-left relative">${cleanCode}</div>`;
   };
 
   const [isLive, setIsLive] = useState(false);
@@ -838,9 +675,22 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           }`}
           style={{ width: previewWidth, maxWidth: "100%" }}
         >
-          {sections.map((sec, idx) => (
-            <PreviewSectionIframe key={sec.id} sec={sec} idx={idx} />
-          ))}
+          {sections.map((sec, idx) => {
+            const isHeader = idx === 0 || (sec.title || "").toLowerCase().includes("header") || (sec.title || "").toLowerCase().includes("nav");
+            return (
+              <div
+                key={sec.id}
+                style={{
+                  zIndex: isHeader ? 40 : 20 - Math.min(idx, 15),
+                  position: "relative",
+                }}
+                className={`w-full relative transition-all group section-wrapper-container ${
+                  isHeader ? "overflow-visible" : "overflow-hidden"
+                }`}
+                dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
+              />
+            );
+          })}
           <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />
         </div>
       </main>

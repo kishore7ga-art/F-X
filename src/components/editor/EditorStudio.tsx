@@ -984,149 +984,6 @@ export function EditorStudio({
     // Toast popups completely removed
   };
 
-  // ─── Native Isolated Section Canvas Renderer ─────────────────────────────────
-  // Uses srcDoc iframe rendering matching Admin Studio preview 100%.
-  // Eliminates Tailwind CSS conflicts, enables scripts/dropdowns, and guarantees
-  // byte-for-byte visual & functional parity between Admin Section Studio and Editor.
-  const SectionCanvasItemIframe = ({
-    sec,
-    idx,
-    isActive,
-    onSelect,
-    onContextMenu,
-  }: {
-    sec: SectionItem;
-    idx: number;
-    isActive: boolean;
-    onSelect: (index: number) => void;
-    onContextMenu: (e: React.MouseEvent, index: number) => void;
-  }) => {
-    const [frameHeight, setFrameHeight] = useState<number>(140);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
-    const isHeader = idx === 0 || sec.category === "navbar" || sec.category === "header" || (sec.title || "").toLowerCase().includes("header") || (sec.title || "").toLowerCase().includes("navbar");
-
-    const htmlDoc = useMemo(() => {
-      return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      overflow-x: hidden;
-      overflow-y: visible;
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    * {
-      box-sizing: border-box;
-    }
-  </style>
-</head>
-<body>
-${sec.code || ""}
-<script>
-  function notifyHeight() {
-    try {
-      var b = document.body;
-      var d = document.documentElement;
-      var maxBottom = Math.max(
-        b ? b.scrollHeight : 0,
-        d ? d.scrollHeight : 0,
-        b ? b.offsetHeight : 0,
-        d ? d.offsetHeight : 0,
-        60
-      );
-      // Scan all visible elements (including absolute / fixed dropdowns, drawers, and modal popups)
-      var allElems = document.querySelectorAll('header, nav, div, ul, section, aside, form, [class*="menu"], [class*="nav"], [class*="modal"], [class*="drawer"], [class*="dropdown"], [class*="quick"], [id*="menu"], [id*="nav"]');
-      for (var i = 0; i < allElems.length; i++) {
-        var el = allElems[i];
-        var style = window.getComputedStyle(el);
-        if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-          var rect = el.getBoundingClientRect();
-          var elemBottom = rect.top + window.pageYOffset + rect.height;
-          if (elemBottom > maxBottom && rect.height > 10) {
-            maxBottom = elemBottom;
-          }
-        }
-      }
-      window.parent.postMessage({ type: 'XITE_FRAME_HEIGHT', secId: '${sec.id}', height: Math.ceil(maxBottom + 4) }, '*');
-    } catch(e) {}
-  }
-  window.addEventListener('load', notifyHeight);
-  window.addEventListener('resize', notifyHeight);
-  if (window.ResizeObserver && document.body) {
-    new ResizeObserver(notifyHeight).observe(document.body);
-  }
-  if (window.MutationObserver && document.body) {
-    new MutationObserver(function() {
-      notifyHeight();
-      setTimeout(notifyHeight, 80);
-      setTimeout(notifyHeight, 300);
-    }).observe(document.body, { attributes: true, childList: true, subtree: true });
-  }
-  document.addEventListener('click', function() {
-    setTimeout(notifyHeight, 40);
-    setTimeout(notifyHeight, 200);
-    setTimeout(notifyHeight, 500);
-    window.parent.postMessage({ type: 'XITE_SELECT_SEC', idx: ${idx} }, '*');
-  });
-  setTimeout(notifyHeight, 20);
-  setTimeout(notifyHeight, 100);
-  setTimeout(notifyHeight, 300);
-  setTimeout(notifyHeight, 800);
-  setTimeout(notifyHeight, 2000);
-</script>
-</body>
-</html>`;
-    }, [sec.code, sec.id, idx]);
-
-    useEffect(() => {
-      const handleMsg = (ev: MessageEvent) => {
-        if (ev.data && ev.data.type === 'XITE_FRAME_HEIGHT' && ev.data.secId === sec.id) {
-          if (typeof ev.data.height === 'number' && ev.data.height > 0) {
-            setFrameHeight(Math.ceil(ev.data.height));
-          }
-        }
-      };
-      window.addEventListener('message', handleMsg);
-      return () => window.removeEventListener('message', handleMsg);
-    }, [sec.id]);
-
-    return (
-      <div
-        onClick={() => onSelect(idx)}
-        onContextMenu={(e) => onContextMenu(e, idx)}
-        style={{
-          zIndex: isHeader ? 50 : 25 - Math.min(idx, 20),
-          position: "relative",
-        }}
-        className={`w-full relative transition-all group section-wrapper-container overflow-visible ${
-          isActive ? "ring-2 ring-white ring-offset-2 ring-offset-black z-10 shadow-2xl" : "cursor-default"
-        }`}
-      >
-        <iframe
-          ref={iframeRef}
-          srcDoc={htmlDoc}
-          title={`Canvas-Section-${sec.id}`}
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-          style={{
-            width: "100%",
-            height: `${frameHeight}px`,
-            border: "none",
-            display: "block",
-            overflow: "visible",
-            backgroundColor: "transparent",
-            transition: "height 0.15s ease-out",
-          }}
-        />
-      </div>
-    );
-  };
-
   // ─── Section CSS + Link Injection ────────────────────────────────────────────
   // Browsers IGNORE <style> and <link> tags injected via innerHTML /
   // dangerouslySetInnerHTML. Fix: extract all <style> blocks AND <link> tags
@@ -1248,42 +1105,7 @@ ${sec.code || ""}
         .replace(/<\/?body[\s\S]*?>/gi, "");
     }
 
-    // Neutralize fixed/sticky positioning in inline HTML so canvas layout stays inline
-    cleanCode = cleanCode
-      .replace(/position:\s*fixed/gi, "position: relative")
-      .replace(/position:\s*sticky/gi, "position: relative");
-
-    const containmentStyles = `<style>
-      .section-canvas-box {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-        position: relative !important;
-        display: block !important;
-        text-align: left;
-      }
-      .section-canvas-box * {
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box .xite-body-wrapper {
-        width: 100% !important;
-        min-height: 100% !important;
-        display: block !important;
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box img, .section-canvas-box video, .section-canvas-box iframe, .section-canvas-box svg {
-        max-width: 100% !important;
-      }
-      .section-canvas-box [style*="position: fixed"], .section-canvas-box [style*="position:fixed"],
-      .section-canvas-box [style*="position: sticky"], .section-canvas-box [style*="position:sticky"] {
-        position: relative !important;
-        top: auto !important;
-      }
-    </style>`;
-
-    return `<div class="section-canvas-box">${containmentStyles}${cleanCode}</div>`;
+    return `<div class="section-canvas-box w-full block text-left relative">${cleanCode}</div>`;
   };
 
   // Active Page State
@@ -3068,19 +2890,35 @@ ${sec.code || ""}
               </div>
             </div>
           ) : (
-            /* Pure Section Rendering for Current Page using Native Iframe Isolation */
-            <div className="w-full overflow-hidden">
-              {sections.map((sec, idx) => (
-                <SectionCanvasItemIframe
-                  key={sec.id}
-                  sec={sec}
-                  idx={idx}
-                  isActive={activeSectionIndex === idx}
-                  onSelect={(index) => setActiveSectionIndex(index)}
-                  onContextMenu={(e: any, index) => handleSectionContextMenu(e, index)}
-                />
-              ))}
-
+            /* Pure Section Rendering for Current Page */
+            <div className="w-full">
+              {sections.map((sec, idx) => {
+                const isHeader = idx === 0 || sec.category === "navbar" || sec.category === "header" || (sec.title || "").toLowerCase().includes("header") || (sec.title || "").toLowerCase().includes("navbar");
+                return (
+                  <div
+                    key={sec.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveSectionIndex(idx);
+                    }}
+                    onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
+                    style={{
+                      zIndex: isHeader ? 40 : 20 - Math.min(idx, 15),
+                      position: "relative",
+                    }}
+                    className={`w-full relative transition-all group section-wrapper-container ${
+                      isHeader ? "overflow-visible" : "overflow-hidden"
+                    } ${
+                      activeSectionIndex === idx ? "ring-2 ring-white ring-offset-2 ring-offset-black z-30" : "cursor-default"
+                    }`}
+                  >
+                    <div
+                      dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
+                      className="w-full block p-0 m-0 text-left"
+                    />
+                  </div>
+                );
+              })}
 
               {/* Bottom Clearance Spacer for Floating Dock */}
               <div className="w-full h-48 bg-transparent pointer-events-none shrink-0" />
