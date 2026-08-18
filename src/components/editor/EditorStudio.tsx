@@ -1728,7 +1728,7 @@ export function EditorStudio({
           if (Array.isArray(rawList) && rawList.length > 0) {
             rawList.forEach((t: any) => {
               if (t && (t.code || t.html || t.content)) {
-                const tId = t.id || `tpl-${t.name || Math.random()}`;
+                const tId = t.id || t._id?.toString?.() || `tpl-${t.name || Math.random()}`;
                 if (!seenIds.has(tId)) {
                   seenIds.add(tId);
                   dbTemplates.push(t);
@@ -1779,6 +1779,13 @@ export function EditorStudio({
           else if (nameLower.includes("contact") || nameLower.includes("enquiry")) parsedCat = "contact";
           else if (nameLower.includes("map") || nameLower.includes("location")) parsedCat = "map";
           else if (nameLower.includes("footer")) parsedCat = "footer";
+        }
+
+        // Auto-detect header or footer from HTML tags if category is still unknown
+        if (!parsedCat && typeof code === "string") {
+          const codeLower = code.toLowerCase();
+          if (codeLower.includes("<header") || codeLower.includes("<nav")) parsedCat = "header";
+          else if (codeLower.includes("<footer")) parsedCat = "footer";
         }
 
         t.category = parsedCat || t.category || "hero";
@@ -2849,7 +2856,7 @@ export function EditorStudio({
       .replace(/(\s*Default)+$/gi, "")
       .trim() || catId.toUpperCase();
 
-    // 2. STRICT Category Filtering: Collect admin DB variants for this category
+    // 2. Collect ALL admin DB variants and built-in variants for this category
     const adminDbMatches: { name: string; code: string }[] = [];
     templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
@@ -2872,6 +2879,10 @@ export function EditorStudio({
 
       if (normTplCat && normTplCat === normCatId) {
         isMatch = true;
+      } else if (normCatId === "navbar" || catId === "navbar" || catId === "header") {
+        isMatch = normTplCat === "navbar" || tplCatLower.includes("header") || tplCatLower.includes("nav") || nameLower.includes("header") || nameLower.includes("nav") || codeStr.toLowerCase().includes("<header");
+      } else if (normCatId === "footer" || catId === "footer") {
+        isMatch = normTplCat === "footer" || tplCatLower.includes("footer") || nameLower.includes("footer") || codeStr.toLowerCase().includes("<footer");
       } else if (catId === "admissions" || catId === "admission") {
         isMatch = normTplCat === "admissions" || tplCatLower === "admissions" || tplCatLower === "admission" || (nameLower.includes("admission") && !nameLower.includes("contact"));
       } else if (catId === "contact") {
@@ -2882,15 +2893,13 @@ export function EditorStudio({
         isMatch = normTplCat === "events" || tplCatLower === "events" || tplCatLower === "event" || tplCatLower.includes("event") || nameLower.includes("event");
       } else if (catId === "hero") {
         isMatch = (normTplCat === "hero" || tplCatLower.includes("hero") || nameLower.includes("hero") || nameLower.includes("banner")) && !nameLower.includes("header") && !nameLower.includes("nav");
-      } else if (catId === "navbar" || catId === "header") {
-        isMatch = normTplCat === "navbar" || tplCatLower.includes("header") || tplCatLower.includes("nav") || nameLower.includes("header") || nameLower.includes("nav");
       } else {
         isMatch = tplCatLower === catId || nameLower.includes(catId);
       }
 
       if (isMatch) {
         const trimmedCode = codeStr.trim();
-        if (!adminDbMatches.some((m) => m.code.trim() === trimmedCode)) {
+        if (!adminDbMatches.some((m) => m.code.trim() === trimmedCode || cleanCanvasWrapperFromCode(m.code) === cleanCanvasWrapperFromCode(trimmedCode))) {
           adminDbMatches.push({
             name: (tpl.name || tpl.title || cleanBaseTitle).replace(/\s*\([^)]*\)/g, "").trim(),
             code: trimmedCode,
@@ -2899,59 +2908,64 @@ export function EditorStudio({
       }
     });
 
-    // 3. Build the swap cycle from ONLY admin-uploaded sections.
-    //    Do NOT include hardcoded built-in sections — user only wants what they added.
-    //    The current active section is always included so pressing swap can return to it.
-    const matchingTemplates: { name: string; code: string }[] = [];
-    const seenCodes = new Set<string>();
+    // 3. Build the swap cycle list with a DETERMINISTIC, STABLE ORDER.
+    //    We NEVER prepend the active section dynamically, because doing so mutates the array
+    //    order on every click and causes alternating 2-item ping-pong behavior.
+    const stableCycle: { name: string; code: string }[] = [];
+    const seenCleanCodes = new Set<string>();
 
-    // First: include the current active section so the cycle can wrap back to it
-    const currentActiveCode = (activeSec.code || "").trim();
-    if (currentActiveCode) {
-      seenCodes.add(currentActiveCode);
-      matchingTemplates.push({
-        name: activeSec.title || cleanBaseTitle,
-        code: currentActiveCode,
-      });
-    }
-
-    // Then: add all admin DB variants for this category (deduplicated)
+    // Step A: Add all Admin DB variants for this category in their natural registered order
     adminDbMatches.forEach((m) => {
-      const trimmed = m.code.trim();
-      if (!seenCodes.has(trimmed)) {
-        seenCodes.add(trimmed);
-        matchingTemplates.push(m);
+      const clean = cleanCanvasWrapperFromCode(m.code);
+      if (!seenCleanCodes.has(clean)) {
+        seenCleanCodes.add(clean);
+        stableCycle.push(m);
       }
     });
 
+    // Step B: If the current active section code is not in the list (e.g. built-in default or customized),
+    // append it to the cycle so the user can cycle back to it
+    const currentActiveCode = (activeSec.code || "").trim();
+    if (currentActiveCode) {
+      const cleanCurrent = cleanCanvasWrapperFromCode(currentActiveCode);
+      if (!seenCleanCodes.has(cleanCurrent)) {
+        seenCleanCodes.add(cleanCurrent);
+        stableCycle.unshift({
+          name: activeSec.title || cleanBaseTitle,
+          code: currentActiveCode,
+        });
+      }
+    }
+
     // No variants at all
-    if (matchingTemplates.length === 0) {
+    if (stableCycle.length === 0) {
       showToastNotification("No section variants found — add sections in Admin › Templates");
       return;
     }
 
     // Only 1 item = current section with no admin variants added yet
-    if (matchingTemplates.length <= 1) {
+    if (stableCycle.length <= 1) {
       showToastNotification("Only 1 variant — add more sections in Admin › Templates to enable swapping");
       return;
     }
 
-    // 4. Find current position in the cycle and advance by 1 (circular)
-    const matchedCodeIdx = matchingTemplates.findIndex(
+    // 4. Find the current active section's index in the STABLE cycle
+    const currentClean = cleanCanvasWrapperFromCode(currentActiveCode);
+    const matchedIdx = stableCycle.findIndex(
       (t) =>
         t.code.trim() === currentActiveCode ||
-        cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(currentActiveCode)
+        cleanCanvasWrapperFromCode(t.code) === currentClean
     );
 
+    // 5. Advance cleanly in circular order (0 -> 1 -> 2 -> ... -> N-1 -> 0)
     let nextIdx: number;
-    if (matchedCodeIdx >= 0) {
-      // Advance circularly: last item wraps back to first (which is the original section)
-      nextIdx = (matchedCodeIdx + 1) % matchingTemplates.length;
+    if (matchedIdx >= 0) {
+      nextIdx = (matchedIdx + 1) % stableCycle.length;
     } else {
-      nextIdx = 1; // Jump to first admin variant
+      nextIdx = 0;
     }
 
-    const nextTpl = matchingTemplates[nextIdx]!;
+    const nextTpl = stableCycle[nextIdx]!;
 
     setSectionsWithHistory((prev) =>
       prev.map((sec, idx) => {
@@ -2966,8 +2980,8 @@ export function EditorStudio({
       })
     );
 
-    // Toast: "2 / 3 — My Admin Header"
-    showToastNotification(`${nextIdx + 1} / ${matchingTemplates.length}  —  ${nextTpl.name}`);
+    // Toast: "3 / 3 — Navbar Variant 3"
+    showToastNotification(`${nextIdx + 1} / ${stableCycle.length}  —  ${nextTpl.name}`);
     void handlePersistWebsiteSave();
   };
 
