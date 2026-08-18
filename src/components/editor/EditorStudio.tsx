@@ -2792,10 +2792,7 @@ export function EditorStudio({
       .replace(/(\s*Default)+$/gi, "")
       .trim() || catId.toUpperCase();
 
-    // 2. STRICT Category Filtering: Collect ONLY templates that belong to THIS SPECIFIC category
-    const matchingTemplates: { name: string; code: string }[] = [];
-
-    // Filter Admin DB templates strictly by category
+    // 2. STRICT Category Filtering: Collect admin DB variants for this category
     const adminDbMatches: { name: string; code: string }[] = [];
     templatesList.forEach((tpl) => {
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
@@ -2845,48 +2842,69 @@ export function EditorStudio({
       }
     });
 
+    // 3. Build the circular variant list:
+    //    SLOT 0 = Default (built-in hardcoded section from ALL_19_SECTION_TEMPLATES)
+    //    SLOT 1..N = Admin-uploaded variants
+    //    Pressing swap always advances +1, and wraps from last back to 0 (default)
+    const matchingTemplates: { name: string; code: string }[] = [];
     const seenCodes = new Set<string>();
 
-    if (adminDbMatches.length > 0) {
-      adminDbMatches.forEach((m) => {
-        const trimmed = m.code.trim();
-        if (!seenCodes.has(trimmed)) {
-          seenCodes.add(trimmed);
-          matchingTemplates.push(m);
-        }
-      });
+    // Always put the default built-in section FIRST in the cycle
+    const defaultCode =
+      ALL_19_SECTION_TEMPLATES[catId] ||
+      ALL_19_SECTION_TEMPLATES[normCatId] ||
+      ALL_19_SECTION_TEMPLATES[catId === "navbar" ? "header" : catId === "header" ? "navbar" : catId] ||
+      null;
+
+    if (defaultCode) {
+      const trimmedDefault = defaultCode.trim();
+      seenCodes.add(trimmedDefault);
+      matchingTemplates.push({ name: `${cleanBaseTitle} (Default)`, code: trimmedDefault });
     }
 
-    // Ensure current active section code is included in matchingTemplates if not already present
-    const currentActiveCode = (activeSec.code || "").trim();
-    const alreadyInTemplates = matchingTemplates.some(
-      (t) => t.code.trim() === currentActiveCode || cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(currentActiveCode)
-    );
+    // Add all admin DB variants after the default
+    adminDbMatches.forEach((m) => {
+      const trimmed = m.code.trim();
+      if (!seenCodes.has(trimmed)) {
+        seenCodes.add(trimmed);
+        matchingTemplates.push(m);
+      }
+    });
 
-    if (!alreadyInTemplates && currentActiveCode) {
-      matchingTemplates.unshift({
-        name: activeSec.title || `${cleanBaseTitle} (Current)`,
-        code: currentActiveCode,
-      });
-    }
-
-    if (matchingTemplates.length <= 1) {
-      showToastNotification("No additional section variant found in database");
+    // If we have no default AND no admin variants, show message
+    if (matchingTemplates.length === 0) {
+      showToastNotification("No section variants found — add sections in Admin panel");
       return;
     }
 
-    let nextIdx = 0;
+    // If only 1 item (e.g. only the default, no admin variants), still allow cycling
+    // but show a helpful message
+    if (matchingTemplates.length === 1) {
+      // Check if current section IS the default — if so, no variants to swap to
+      const currentCode = (activeSec.code || "").trim();
+      const isAlreadyDefault = seenCodes.has(currentCode) || cleanCanvasWrapperFromCode(matchingTemplates[0]!.code) === cleanCanvasWrapperFromCode(currentCode);
+      if (isAlreadyDefault) {
+        showToastNotification("Only one variant — add more in Admin › Templates");
+        return;
+      }
+      // Current is not the default — swap to it
+    }
+
+    // 4. Find where current section sits in the cycle, advance by 1 (circular)
+    const currentActiveCode = (activeSec.code || "").trim();
     const matchedCodeIdx = matchingTemplates.findIndex(
       (t) =>
-        t.code.trim() === activeSec.code.trim() ||
-        cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(activeSec.code)
+        t.code.trim() === currentActiveCode ||
+        cleanCanvasWrapperFromCode(t.code) === cleanCanvasWrapperFromCode(currentActiveCode)
     );
 
+    let nextIdx: number;
     if (matchedCodeIdx >= 0) {
+      // Known position — advance circularly
       nextIdx = (matchedCodeIdx + 1) % matchingTemplates.length;
     } else {
-      const currentVariantIdx = typeof activeSec.variantIndex === "number" ? activeSec.variantIndex : 0;
-      nextIdx = (currentVariantIdx + 1) % matchingTemplates.length;
+      // Current section not in list — jump to default (index 0)
+      nextIdx = 0;
     }
 
     const nextTpl = matchingTemplates[nextIdx]!;
@@ -2904,9 +2922,13 @@ export function EditorStudio({
       })
     );
 
-    showToastNotification(`Swapped to variant ${nextIdx + 1} of ${matchingTemplates.length}: ${nextTpl.name}`);
+    // Show clear position indicator: e.g. "Variant 2/3: Hero Banner (Default)"
+    const label = nextIdx === 0 ? `${nextTpl.name} ✦ Default` : nextTpl.name;
+    showToastNotification(`${nextIdx + 1} / ${matchingTemplates.length}  —  ${label}`);
     void handlePersistWebsiteSave();
   };
+
+
 
   const handleDuplicateSection = () => {
     if (activeSectionIndex === null || sections.length === 0) return;
