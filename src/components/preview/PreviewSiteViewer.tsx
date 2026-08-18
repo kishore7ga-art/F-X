@@ -301,31 +301,52 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   const [loading, setLoading] = useState(true);
   const [previewWidth, setPreviewWidth] = useState<string>("100%");
 
-  // ─── Section CSS Injection ───────────────────────────────────────────────────
-  // Browsers IGNORE <style> tags injected via innerHTML / dangerouslySetInnerHTML.
-  // Fix: extract all <style> blocks from section codes and inject them into
-  // document.head with a unique ID per section. Clean up on unmount / section change.
+  // ─── Section CSS + Link Injection ────────────────────────────────────────────
+  // Browsers IGNORE <style> and <link> tags injected via innerHTML /
+  // dangerouslySetInnerHTML. Fix: extract all <style> blocks AND <link> tags
+  // (Google Fonts, external CSS) from section codes and inject into document.head.
   useEffect(() => {
-    // Remove any previously injected section styles
     document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
+    document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
 
     sections.forEach((sec) => {
       if (!sec.code) return;
+
+      // 1. Inject <style> blocks
       const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
       let m;
       let combined = "";
       while ((m = styleRegex.exec(sec.code)) !== null) {
         if (m[1]?.trim()) combined += m[1] + "\n";
       }
-      if (!combined.trim()) return;
-      const tag = document.createElement("style");
-      tag.setAttribute("data-xite-section", sec.id);
-      tag.textContent = combined;
-      document.head.appendChild(tag);
+      if (combined.trim()) {
+        const tag = document.createElement("style");
+        tag.setAttribute("data-xite-section", sec.id);
+        tag.textContent = combined;
+        document.head.appendChild(tag);
+      }
+
+      // 2. Inject <link> tags (Google Fonts, external CSS, preconnect)
+      const linkRegex = /<link([^>]+)>/gi;
+      while ((m = linkRegex.exec(sec.code)) !== null) {
+        const attrs = m[1] || "";
+        if (!/rel=["']?(stylesheet|preconnect|preload|dns-prefetch)/i.test(attrs)) continue;
+        const href = (attrs.match(/href=["']([^"']+)["']/i) || [])[1];
+        if (!href) continue;
+        if (document.querySelector(`link[href="${href}"]`)) continue;
+        const linkEl = document.createElement("link");
+        attrs.replace(/([\w-]+)=["']([^"']*)["']/gi, (_full: string, name: string, val: string) => {
+          linkEl.setAttribute(name, val);
+          return "";
+        });
+        linkEl.setAttribute("data-xite-section", sec.id);
+        document.head.appendChild(linkEl);
+      }
     });
 
     return () => {
       document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
+      document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
     };
   }, [sections]);
 
