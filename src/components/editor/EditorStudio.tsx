@@ -3316,54 +3316,55 @@ export function EditorStudio({
                         key={tpl.id || tpl.name}
                         onClick={(e) => {
                           e.stopPropagation();
+
                           const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null")
                             ? tpl.category
                             : "";
-                          const nameLower = (tpl.name || "").toLowerCase();
-                          // Match to a SECTION_CATEGORIES entry for proper position/dedup logic
-                          const matchedCat = SECTION_CATEGORIES.find((c) => {
-                            const cId = c.id.toLowerCase();
-                            const normC = normalizeCategory(cId);
-                            const tplCatLow = rawCat.toLowerCase();
-                            if (tplCatLow === cId || normalizeCategory(tplCatLow) === normC) return true;
-                            if (nameLower.includes(`[${cId}]`) || nameLower.includes(cId)) return true;
-                            return false;
-                          }) || SECTION_CATEGORIES.find((c) => nameLower.includes(c.name.toLowerCase()));
 
-                          if (matchedCat) {
-                            // Pass overrideCode so handleAddSectionFromCategory uses the exact
-                            // admin DB code — not a fallback template. This also handles all
-                            // dedup, header/hero/footer positioning, history, and save.
-                            void handleAddSectionFromCategory(
-                              { id: matchedCat.id, name: tpl.name },
-                              tpl.code,
-                              tpl.name
-                            );
-                          } else {
-                            // Unknown category fallback — use setSectionsWithHistory for undo/redo
-                            setSectionsWithHistory((prev) => {
-                              const newSection: SectionItem = {
-                                id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                                title: tpl.name,
-                                code: tpl.code,
-                                category: rawCat || "hero",
-                                variantIndex: 0,
-                              };
-                              const footerIdx = prev.findIndex((s) => {
-                                const sCat = (s.category || s.title || "").toLowerCase();
-                                return sCat.includes("footer") || normalizeCategory(sCat) === "footer";
-                              });
-                              if (footerIdx >= 0) {
-                                const copy = [...prev];
-                                copy.splice(footerIdx, 0, newSection);
-                                return copy;
-                              }
-                              return [...prev, newSection];
+                          // Admin DB templates ALWAYS add as a NEW separate section —
+                          // they never replace an existing section. This is intentional:
+                          // Built-in category grid = swap/replace existing section of same type
+                          // Admin DB template = add a new design variant (different section)
+                          const newSection: SectionItem = {
+                            id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                            title: tpl.name,
+                            code: tpl.code,
+                            category: rawCat || normalizeCategory((tpl.name || "").toLowerCase()) || "hero",
+                            variantIndex: 0,
+                          };
+
+                          setSectionsWithHistory((prev) => {
+                            const normNewCat = normalizeCategory(newSection.category || "");
+
+                            // Header/navbar → insert at position 0 (very top)
+                            if (normNewCat === "navbar" || normNewCat === "header") {
+                              return [newSection, ...prev];
+                            }
+
+                            // Footer → insert just before existing footer (or at end)
+                            const footerIdx = prev.findIndex((s) => {
+                              const sCat = normalizeCategory(s.category || s.title || "");
+                              return sCat === "footer";
                             });
-                            setActiveSectionIndex(sections.length);
-                            setShowAddSectionModal(false);
-                            void handlePersistWebsiteSave();
-                          }
+                            if (footerIdx >= 0) {
+                              const copy = [...prev];
+                              copy.splice(footerIdx, 0, newSection);
+                              return copy;
+                            }
+
+                            // Everything else → append at end
+                            return [...prev, newSection];
+                          });
+
+                          // Select the newly added section
+                          setActiveSectionIndex(
+                            normalizeCategory(newSection.category || "") === "navbar" ||
+                            normalizeCategory(newSection.category || "") === "header"
+                              ? 0
+                              : sections.length
+                          );
+                          setShowAddSectionModal(false);
+                          void handlePersistWebsiteSave();
                         }}
                         className="group flex items-center justify-between p-3.5 rounded-2xl bg-black/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-500 transition-all duration-200 cursor-pointer shadow-sm select-none"
                       >
