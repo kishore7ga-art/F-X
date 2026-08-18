@@ -1518,17 +1518,15 @@ export function EditorStudio({
     return clean;
   };
 
-  const deduplicateSections = (secs: SectionItem[], slug: string = "/home"): SectionItem[] => {
+  const deduplicateSections = (secs: SectionItem[]): SectionItem[] => {
     const seenIds = new Set<string>();
 
-    const clean = secs.filter((sec) => {
+    return secs.filter((sec) => {
       if (!sec || !sec.code) return false;
       if (seenIds.has(sec.id)) return false;
       seenIds.add(sec.id);
       return true;
     });
-
-    return ensureEssentialSections(clean, slug);
   };
 
   // Fetch sections for a given page slug from the per-college config.
@@ -1547,7 +1545,7 @@ export function EditorStudio({
           || myWebsiteConfig.pages.find((p) => p.slug === "/home")
           || myWebsiteConfig.pages[0];
         if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
-          const cleanSecs = deduplicateSections(targetPage.sections, slug);
+          const cleanSecs = deduplicateSections(targetPage.sections);
           setSections(cleanSecs);
           setActiveSectionIndex(0);
           setLoadingDb(false);
@@ -1589,7 +1587,7 @@ export function EditorStudio({
                 || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
                 || configWithSections.pages[0];
               if (targetPage && targetPage.sections.length > 0) {
-                const cleanSecs = deduplicateSections(targetPage.sections, slug);
+                const cleanSecs = deduplicateSections(targetPage.sections);
                 setSections(cleanSecs);
                 setActiveSectionIndex(0);
                 try {
@@ -1615,7 +1613,7 @@ export function EditorStudio({
                 defData.pages.find((p: any) => p.slug === "/home") ||
                 defData.pages[0];
               if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
-                const cleanSecs = deduplicateSections(targetPage.sections, slug);
+                const cleanSecs = deduplicateSections(targetPage.sections);
                 setSections(cleanSecs);
                 setActiveSectionIndex(0);
                 try {
@@ -1636,7 +1634,7 @@ export function EditorStudio({
           if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
             const parsedActive = JSON.parse(rawActive);
             if (Array.isArray(parsedActive) && parsedActive.length > 0) {
-              const cleanSecs = deduplicateSections(parsedActive, slug);
+              const cleanSecs = deduplicateSections(parsedActive);
               setSections(cleanSecs);
               setActiveSectionIndex(0);
               setLoadingDb(false);
@@ -1857,7 +1855,7 @@ export function EditorStudio({
               || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
               || configWithSections.pages[0];
             if (targetPage && targetPage.sections.length > 0) {
-              const cleanSecs = deduplicateSections(targetPage.sections, currentPage.slug);
+              const cleanSecs = deduplicateSections(targetPage.sections);
               setSections(cleanSecs);
               setActiveSectionIndex(0);
             }
@@ -1924,7 +1922,7 @@ export function EditorStudio({
     }
 
     if (targetSecs && targetSecs.length > 0) {
-      const cleanTarget = deduplicateSections(targetSecs, pageSlug);
+      const cleanTarget = deduplicateSections(targetSecs);
       setSections(cleanTarget);
       showToastNotification(`Switched to page: ${pageName}`);
     } else {
