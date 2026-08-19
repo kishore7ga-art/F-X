@@ -126,8 +126,12 @@ const HEALTH = `(root, limits) => {
     const cs = getComputedStyle(el);
     if (cs.visibility === "hidden" || cs.display === "none") continue;
 
+    // A fixed-position element parked off-canvas is a closed drawer, not an
+    // overflow: the real library builds mobile menus as fixed-position elements with a
+    // translate that holds them just outside the viewport until they open. The
+    // page-level check below is what catches genuine horizontal overflow.
     const overhang = Math.round(box.right - bounds.right);
-    if (overhang > 1 && !clipped(el)) {
+    if (overhang > 1 && cs.position !== "fixed" && !clipped(el)) {
       problems.push({ kind: "overflow", el: name(el), detail: overhang + "px past the canvas" });
     }
 
@@ -152,6 +156,13 @@ const HEALTH = `(root, limits) => {
       }
     }
   }
+
+  // The one that a visitor actually feels: can the page be dragged sideways?
+  const pageOverflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+  if (pageOverflow > 1) {
+    problems.push({ kind: "page", el: "document", detail: pageOverflow + "px of horizontal scroll" });
+  }
+
   return problems;
 }`;
 
