@@ -31,9 +31,14 @@ import {
   Footprints,
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
+import { remapDocumentSelectors, sectionRuntimeCss } from "@/lib/section-runtime";
+import { fenceCssToSection, placeBeforeTailwind } from "@/lib/section-css-fence";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
+
+/** The canvas element that stands in for `<body>` — the same scope the published site uses. */
+const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
 
 interface SectionItem {
   id: string;
@@ -995,116 +1000,52 @@ export function EditorStudio({
     document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
     document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
 
-    // ── Tailwind CDN for section canvas ──────────────────────────────────────
-    // Admin preset sections use Tailwind CSS classes (bg-slate-950, flex, grid-cols-3, etc.)
-    // Next.js Tailwind JIT only scans source files, so dynamically injected section HTML
-    // does NOT get Tailwind CSS generated for it. Fix: inject Tailwind CDN Play script
-    // configured with `important: ".section-canvas-box"` — this makes CDN Tailwind
-    // generate scoped CSS like `.section-canvas-box .bg-slate-950 { ... }` so it ONLY
-    // applies inside section canvases and never touches the editor's own UI.
-    if (!document.querySelector("script[data-xite-tailwind-cdn]")) {
-      // 1. Inject Tailwind config BEFORE the CDN script loads
-      const twConfig = document.createElement("script");
-      twConfig.setAttribute("data-xite-tailwind-cdn", "config");
-      twConfig.textContent = `
-        window.tailwind = window.tailwind || {};
-        tailwind.config = {
-          important: '.section-canvas-box',
-          theme: { extend: {} },
-          plugins: [],
-        };
-      `;
-      document.head.appendChild(twConfig);
-
-      // 2. Load the Tailwind CDN Play script — it reads window.tailwind.config
-      const twScript = document.createElement("script");
-      twScript.src = "https://cdn.tailwindcss.com";
-      twScript.setAttribute("data-xite-tailwind-cdn", "true");
-      document.head.appendChild(twScript);
-    }
-
-    // Inject base canvas layout protection stylesheet
+    // ── The section environment ──────────────────────────────────────────────
+    // Identical to the one the Admin previews sections in and the one the published
+    // site renders them in: `@/lib/section-runtime`, scoped to the canvas. What used
+    // to be here — a hand-written protection stylesheet, plus a `tailwind.config`
+    // assigned before the Play CDN script — did not do what it said. The CDN
+    // overwrites `window.tailwind` when it loads, so the `important: '.section-canvas-box'`
+    // scoping never applied; and appended from an effect the CDN generates no CSS at
+    // all, so sections written with Tailwind classes rendered unstyled here while
+    // looking right in the Admin. The script now ships in the page's HTML
+    // (`SectionRuntimeAssets`), which is the only way it works.
     const baseProtection = document.createElement("style");
     baseProtection.setAttribute("data-xite-canvas-protection", "true");
-    baseProtection.textContent = `
-      .section-canvas-box {
-        display: block !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        position: relative;
-        text-align: left;
-      }
-      .section-canvas-box * {
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box header {
-        width: 100% !important;
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box nav {
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box img,
-      .section-canvas-box video,
-      .section-canvas-box svg,
-      .section-canvas-box iframe {
-        max-width: 100%;
-        height: auto;
-      }
-      @media (min-width: 901px) {
-        .section-canvas-box .desktop-nav-links {
-          display: flex !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-        }
-        .section-canvas-box .desktop-apply-btn {
-          display: inline-flex !important;
-          visibility: visible !important;
-        }
-        .section-canvas-box .hamburger-toggle-btn {
-          display: none !important;
-        }
-        .section-canvas-box .mobile-drawer-menu:not(.active) {
-          display: none !important;
-        }
-      }
-      @media (max-width: 900px) {
-        .section-canvas-box .desktop-nav-links {
-          display: none !important;
-        }
-        .section-canvas-box .hamburger-toggle-btn {
-          display: inline-flex !important;
-        }
-        .section-canvas-box .mobile-drawer-menu.active {
-          display: block !important;
-        }
-      }
-    `;
     document.head.appendChild(baseProtection);
+
+    // In front of Tailwind's own stylesheet, which is where the Admin's document
+    // puts it — otherwise a section's `.title { font-size: 40px }` starts beating
+    // `class="text-2xl"` here and loses to it once published.
+    let twObserver: MutationObserver | null = null;
+    if (!placeBeforeTailwind(baseProtection)) {
+      twObserver = new MutationObserver(() => {
+        if (placeBeforeTailwind(baseProtection)) twObserver?.disconnect();
+      });
+      twObserver.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
+    // The environment, then every section's own CSS fenced to that section — one
+    // stylesheet, so its position in the cascade is fixed and knowable.
+    const cssParts = [sectionRuntimeCss(EDITOR_CANVAS_SCOPE)];
 
     sections.forEach((sec) => {
       if (!sec.code) return;
 
-      // 1. Inject <style> blocks
+      // 1. Collect <style> blocks
       const styleRegex = /<style([^>]*)>([\s\S]*?)<\/style>/gi;
       let m;
       let combined = "";
       while ((m = styleRegex.exec(sec.code)) !== null) {
         const styleContent = m[2] || "";
         if (styleContent?.trim()) {
-          // Remap 'body' and 'html' selectors in section styles to also target the section wrapper
-          const remapped = styleContent
-            .replace(/(^|[\s,{}])body\s*\{/gi, "$1body, .section-canvas-box, .xite-body-wrapper {")
-            .replace(/(^|[\s,{}])html\s*,\s*body\s*\{/gi, "$1html, body, .section-canvas-box, .xite-body-wrapper {")
-            .replace(/(^|[\s,{}])html\s*\{/gi, "$1html, .section-canvas-box, .xite-body-wrapper {");
-          combined += remapped + "\n";
+          // A section's `body { }` has to land on that section's own box: inline
+          // there is one real body, shared by every section on the page.
+          combined += `${remapDocumentSelectors(styleContent, ".section-canvas-box")}\n`;
         }
       }
       if (combined.trim()) {
-        const tag = document.createElement("style");
-        tag.setAttribute("data-xite-section", sec.id);
-        tag.textContent = combined;
-        document.head.appendChild(tag);
+        cssParts.push(fenceCssToSection(combined, sec.id));
       }
 
       // 2. Inject <link> tags (Google Fonts, external CSS, preconnect)
@@ -1125,7 +1066,10 @@ export function EditorStudio({
       }
     });
 
+    baseProtection.textContent = cssParts.join("\n\n");
+
     return () => {
+      twObserver?.disconnect();
       document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
       document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
       document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
@@ -1202,19 +1146,22 @@ export function EditorStudio({
 
     let cleanCode = code;
 
-    const bodyFullMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body>/i);
+    const bodyFullMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body\s*>/i);
     if (bodyFullMatch) {
       const bodyAttrs = bodyFullMatch[1] || "";
       const bodyContent = bodyFullMatch[2] || "";
-      const headMatch = code.match(/<head[\s\S]*?>([\s\S]*?)<\/head>/i);
+      const headMatch = code.match(/<head[^>]*>([\s\S]*?)<\/head\s*>/i);
       const styles = headMatch ? headMatch[1] : "";
       cleanCode = `${styles}\n<div class="xite-body-wrapper" ${bodyAttrs}>${bodyContent}</div>`;
     } else {
+      // `` on every tag name: `<head[\s\S]*?>` also matches `<header ...>` and
+      // `</head>` matches `</header>`, so this pass used to delete the wrapper of
+      // every navbar section — background, padding and all.
       cleanCode = code
         .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
-        .replace(/<\/?html[\s\S]*?>/gi, "")
-        .replace(/<\/?head[\s\S]*?>/gi, "")
-        .replace(/<\/?body[\s\S]*?>/gi, "");
+        .replace(/<\/?html[^>]*>/gi, "")
+        .replace(/<\/?head[^>]*>/gi, "")
+        .replace(/<\/?body[^>]*>/gi, "");
     }
 
     // Wrap in section-canvas-box — the CSS isolation reset targeting this class
@@ -2976,7 +2923,7 @@ export function EditorStudio({
         }`}
       >
         <div
-          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white max-w-full ${
+          className={`xite-site-canvas block transition-all duration-300 mx-auto max-w-full ${
             viewportWidth === "100%"
               ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
               : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 mt-0 mb-4"
@@ -3093,13 +3040,15 @@ export function EditorStudio({
                       }
                     }}
                     onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
+                    data-xite-section={sec.id}
                     style={{
                       zIndex: isHeader ? 40 : 20 - Math.min(idx, 15),
                       position: "relative",
                     }}
+                    // No clipping: `overflow: hidden` cut off every shadow, dropdown
+                    // and sticky element a section had, none of which the Admin's
+                    // iframe clips.
                     className={`w-full relative transition-all group section-wrapper-container ${
-                      isHeader ? "overflow-visible" : "overflow-hidden"
-                    } ${
                       activeSectionIndex === idx ? "ring-2 ring-cyan-500/80 ring-offset-2 ring-offset-slate-900 z-30" : "cursor-default"
                     }`}
                   >

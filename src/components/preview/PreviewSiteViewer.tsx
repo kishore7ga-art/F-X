@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Monitor, Tablet, Smartphone, Edit3 } from "lucide-react";
 
-interface SectionItem {
-  id: string;
-  title: string;
-  code: string;
-}
+import {
+  extractStylesAndBody,
+  remapDocumentSelectors,
+  sectionRuntimeCss,
+} from "@/lib/section-runtime";
+import { fenceCssToSection, placeBeforeTailwind } from "@/lib/section-css-fence";
+import { normalizeSections, pickSections, type SectionItem } from "@/lib/site-sections";
+
+
 
 const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
   {
@@ -296,179 +300,168 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
   },
 ];
 
-export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
-  const [sections, setSections] = useState<SectionItem[]>([]);
-  const [loading, setLoading] = useState(true);
+/**
+ * The published college website.
+ *
+ * Sections arrive as raw HTML strings and are rendered into this page — not into
+ * an iframe — so the page has to *become* the environment the Admin previews them
+ * in. That environment is defined once in `@/lib/section-runtime` and used by both
+ * apps; everything below is about applying it faithfully:
+ *
+ *   - the base stylesheet, scoped to the canvas rather than to `html, body`;
+ *   - Tailwind's Play CDN, because sections are authored with Tailwind classes
+ *     that a compiled build cannot know about;
+ *   - each section's own `<style>` and `<link>`, moved into `document.head`,
+ *     because a browser silently ignores both when they arrive via innerHTML.
+ *
+ * Cascade order is load-bearing. Tailwind's CDN appends its generated stylesheet
+ * to the end of `<head>` when it loads, so in the Admin's document it sits after
+ * the base and author CSS and wins ties against both. To reproduce that, this page
+ * keeps *one* style element, created before the CDN script is appended, and
+ * rewrites its contents in place — so it can never drift past Tailwind's and start
+ * winning fights that the Admin loses.
+ */
+
+/** The element that stands in for `<body>`, and the scope every runtime rule is written against. */
+const CANVAS_SCOPE = ".xite-site-canvas";
+const RUNTIME_STYLE_ID = "xite-section-runtime";
+/** The page behind the canvas, so a short site does not end in a band of the app's own colour. */
+const RUNTIME_PAGE_BG = "#09090b";
+
+export type PreviewSiteMode = "live" | "preview";
+
+export function PreviewSiteViewer({
+  subdomain,
+  mode = "preview",
+  initialSections = [],
+}: {
+  subdomain: string;
+  /**
+   * `live` is a visitor on the published site: no editor chrome, no polling.
+   * `preview` is somebody checking their work, and keeps the device dock.
+   *
+   * A prop rather than something read off `window.location`, because the published
+   * site reaches this component through a rewrite — the visitor's URL is
+   * `https://college.xite.co.in/`, never `/site/college` — so sniffing the path put
+   * the editor dock on live college websites.
+   */
+  mode?: PreviewSiteMode;
+  /** Rendered on the server, so the first paint is the site rather than a spinner. */
+  initialSections?: SectionItem[];
+}) {
+  const [sections, setSections] = useState<SectionItem[]>(initialSections);
+  const [loading, setLoading] = useState(initialSections.length === 0);
   const [previewWidth, setPreviewWidth] = useState<string>("100%");
+  const isLive = mode === "live";
 
-  // ─── Section CSS + Link Injection ────────────────────────────────────────────
-  // Browsers IGNORE <style> and <link> tags injected via innerHTML /
-  // dangerouslySetInnerHTML. Fix: extract all <style> blocks AND <link> tags
-  // (Google Fonts, external CSS) from section codes and inject into document.head.
+  // `sections` is replaced only when its contents actually change (see the fetch
+  // effect below), so the effects can depend on it directly: they re-run when the
+  // site changes, and not once every poll.
+
+  // ─── The section environment ────────────────────────────────────────────────
   useEffect(() => {
-    document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
-    document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
-    document.querySelectorAll("style[data-xite-preview-protection]").forEach((el) => el.remove());
-    // ── Tailwind CDN for section canvas ──────────────────────────────────────
-    // Admin preset sections use Tailwind CSS classes (bg-slate-950, flex, grid, etc.)
-    // These classes don't exist in Next.js compiled Tailwind (JIT only scans source files).
-    // Inject Tailwind CDN with `important: ".section-canvas-box"` so generated CSS is
-    // scoped: `.section-canvas-box .bg-slate-950 { ... }` — never touches the app UI.
-    if (!document.querySelector("script[data-xite-tailwind-cdn]")) {
-      const twConfig = document.createElement("script");
-      twConfig.setAttribute("data-xite-tailwind-cdn", "config");
-      twConfig.textContent = `
-        window.tailwind = window.tailwind || {};
-        tailwind.config = {
-          important: '.section-canvas-box',
-          theme: { extend: {} },
-          plugins: [],
-        };
-      `;
-      document.head.appendChild(twConfig);
+    const head = document.head;
 
-      const twScript = document.createElement("script");
-      twScript.src = "https://cdn.tailwindcss.com";
-      twScript.setAttribute("data-xite-tailwind-cdn", "true");
-      document.head.appendChild(twScript);
+    // One style element, created before Tailwind's script so that Tailwind's own
+    // stylesheet always lands after it, exactly as it does in the Admin iframe.
+    let runtimeStyle = document.getElementById(RUNTIME_STYLE_ID) as HTMLStyleElement | null;
+    if (!runtimeStyle) {
+      runtimeStyle = document.createElement("style");
+      runtimeStyle.id = RUNTIME_STYLE_ID;
+      head.appendChild(runtimeStyle);
     }
-    const baseProtection = document.createElement("style");
-    baseProtection.setAttribute("data-xite-preview-protection", "true");
-    baseProtection.textContent = `
-      .section-canvas-box {
-        display: block !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        position: relative;
-        text-align: left;
-      }
-      .section-canvas-box * {
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box header {
-        width: 100% !important;
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box nav {
-        box-sizing: border-box !important;
-      }
-      .section-canvas-box img,
-      .section-canvas-box video,
-      .section-canvas-box svg,
-      .section-canvas-box iframe {
-        max-width: 100%;
-        height: auto;
-      }
-      @media (min-width: 901px) {
-        .section-canvas-box .desktop-nav-links {
-          display: flex !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-        }
-        .section-canvas-box .desktop-apply-btn {
-          display: inline-flex !important;
-          visibility: visible !important;
-        }
-        .section-canvas-box .hamburger-toggle-btn {
-          display: none !important;
-        }
-        .section-canvas-box .mobile-drawer-menu:not(.active) {
-          display: none !important;
-        }
-      }
-      @media (max-width: 900px) {
-        .section-canvas-box .desktop-nav-links {
-          display: none !important;
-        }
-        .section-canvas-box .hamburger-toggle-btn {
-          display: inline-flex !important;
-        }
-        .section-canvas-box .mobile-drawer-menu.active {
-          display: block !important;
-        }
-      }
-    `;
-    document.head.appendChild(baseProtection);
+
+    // ...and immediately in front of Tailwind's own, which is where the Admin's
+    // document puts it. See `placeBeforeTailwind`.
+    const el = runtimeStyle;
+    let observer: MutationObserver | null = null;
+    if (!placeBeforeTailwind(el)) {
+      observer = new MutationObserver(() => {
+        if (placeBeforeTailwind(el)) observer?.disconnect();
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
+    // Tailwind's Play CDN and the environment's stylesheets are *not* injected
+    // from here. They ship in the server-rendered HTML (`SectionRuntimeAssets`)
+    // because the CDN is a compiler that has to be present while the document is
+    // parsed — appended from an effect it runs, defines `window.tailwind`, and
+    // silently generates nothing.
+
+    // Author CSS, fenced to the section it came from. In the Admin each section owns
+    // a document, so a bare `h2 { }` rule can only ever reach its own markup; inside
+    // one shared page it would reach every section on the site.
+    const parts = [sectionRuntimeCss(CANVAS_SCOPE)];
 
     sections.forEach((sec) => {
-      if (!sec.code) return;
+      const { headCss, headLinks } = extractStylesAndBody(sec.code || "");
 
-      // 1. Inject <style> blocks
-      const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-      let m;
-      let combined = "";
-      while ((m = styleRegex.exec(sec.code)) !== null) {
-        if (m[1]?.trim()) {
-          const remapped = m[1]
-            .replace(/(^|[\s,{}])body\s*\{/gi, "$1body, .section-canvas-box, .xite-body-wrapper {")
-            .replace(/(^|[\s,{}])html\s*,\s*body\s*\{/gi, "$1html, body, .section-canvas-box, .xite-body-wrapper {");
-          combined += remapped + "\n";
-        }
-      }
-      if (combined.trim()) {
-        const tag = document.createElement("style");
-        tag.setAttribute("data-xite-section", sec.id);
-        tag.textContent = combined;
-        document.head.appendChild(tag);
+      if (headCss.trim()) {
+        const remapped = remapDocumentSelectors(headCss, ".section-canvas-box");
+        parts.push(fenceCssToSection(remapped, sec.id));
       }
 
-      // 2. Inject <link> tags (Google Fonts, external CSS, preconnect)
+      // <link> tags are the one thing that cannot be scoped — a font is a font.
       const linkRegex = /<link([^>]+)>/gi;
-      while ((m = linkRegex.exec(sec.code)) !== null) {
+      let m: RegExpExecArray | null;
+      while ((m = linkRegex.exec(headLinks)) !== null) {
         const attrs = m[1] || "";
-        if (!/rel=["']?(stylesheet|preconnect|preload|dns-prefetch)/i.test(attrs)) continue;
         const href = (attrs.match(/href=["']([^"']+)["']/i) || [])[1];
-        if (!href) continue;
-        if (document.querySelector(`link[href="${href}"]`)) continue;
+        if (!href || document.querySelector(`link[href="${href}"]`)) continue;
         const linkEl = document.createElement("link");
         attrs.replace(/([\w-]+)=["']([^"']*)["']/gi, (_full: string, name: string, val: string) => {
           linkEl.setAttribute(name, val);
           return "";
         });
+        if (!linkEl.getAttribute("rel")) linkEl.setAttribute("rel", "stylesheet");
         linkEl.setAttribute("data-xite-section", sec.id);
-        document.head.appendChild(linkEl);
+        head.appendChild(linkEl);
       }
     });
 
+    runtimeStyle.textContent = parts.join("\n\n");
+
     return () => {
-      document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
-      document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
-      document.querySelectorAll("style[data-xite-preview-protection]").forEach((el) => el.remove());
+      observer?.disconnect();
+      document.querySelectorAll("link[data-xite-section]").forEach((node) => node.remove());
     };
   }, [sections]);
 
-  // Section script execution in preview
+  // ─── Section scripts ────────────────────────────────────────────────────────
+  // A browser will not run a <script> that arrives through innerHTML, so each
+  // section's scripts are re-created as real elements. Keyed on the section HTML
+  // rather than on every render: a poll that changed nothing used to bind a second
+  // copy of every handler.
   useEffect(() => {
     document.querySelectorAll("script[data-xite-preview-script]").forEach((el) => el.remove());
 
     const timer = setTimeout(() => {
-      document.querySelectorAll(".hamburger-toggle-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const header = btn.closest("header");
-          const menu = header?.querySelector(".mobile-drawer-menu");
-          if (menu) {
-            menu.classList.toggle("active");
-          }
-        });
-      });
-
       sections.forEach((sec) => {
         if (!sec.code) return;
         const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
-        let m;
+        let m: RegExpExecArray | null;
         while ((m = scriptRegex.exec(sec.code)) !== null) {
+          const attrs = m[1] || "";
           const inlineJs = m[2] || "";
-          if (inlineJs.trim()) {
-            const scriptEl = document.createElement("script");
-            scriptEl.setAttribute("data-xite-preview-script", sec.id);
+          const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
+
+          const scriptEl = document.createElement("script");
+          scriptEl.setAttribute("data-xite-preview-script", sec.id);
+
+          if (srcMatch && srcMatch[1]) {
+            scriptEl.src = srcMatch[1];
+          } else if (inlineJs.trim()) {
+            // The section is injected long after DOMContentLoaded has fired, so a
+            // handler waiting for it would never run. Unwrap it and run it now.
             const processed = inlineJs.replace(
               /(?:document|window)\.addEventListener\(\s*['"](?:DOMContentLoaded|load)['"]\s*,\s*(?:function\s*\([^)]*\)\s*|\([^)]*\)\s*=>\s*)\{([\s\S]*)\}\s*\);?/gi,
-              "$1"
+              "$1",
             );
-            scriptEl.textContent = `try { (function(){\n${processed}\n})(); } catch(e) { console.warn("Preview script error:", e); }`;
-            document.body.appendChild(scriptEl);
+            scriptEl.textContent = `try { (function(){\n${processed}\n})(); } catch(e) { console.warn("Section script error:", e); }`;
+          } else {
+            continue;
           }
+          document.body.appendChild(scriptEl);
         }
       });
     }, 120);
@@ -479,31 +472,45 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     };
   }, [sections]);
 
+  // ─── Mobile navigation ──────────────────────────────────────────────────────
+  // Delegated from the document so it survives the markup being replaced, and so a
+  // re-render cannot leave a second listener behind on the same button.
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const button = target?.closest?.(".hamburger-toggle-btn");
+      if (!button) return;
+      event.stopPropagation();
+      const menu = button.closest("header")?.querySelector(".mobile-drawer-menu");
+      menu?.classList.toggle("active");
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
+  // ─── Published sections ─────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
-    const checkLocalStorageFallback = () => {
-      if (typeof window === "undefined") return;
+    const readLocalFallback = (): SectionItem[] | null => {
+      if (typeof window === "undefined") return null;
       try {
         const keysToTry = [
           `xite_active_sections_${subdomain}_/home`,
           `xite_active_sections_${subdomain}_home`,
           `xite_active_sections_${subdomain}`,
         ];
-
         for (const key of keysToTry) {
           const savedActive = localStorage.getItem(key);
           if (savedActive && savedActive !== "undefined" && savedActive !== "null") {
             const parsed = JSON.parse(savedActive);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setSections(parsed);
-              return;
-            }
+            if (Array.isArray(parsed) && parsed.length > 0) return normalizeSections(parsed);
           }
         }
       } catch (err) {
         console.warn("Could not read localStorage fallback sections:", err);
       }
+      return null;
     };
 
     // Fetch live published site sections from DB by tenant subdomain (Source of Truth)
@@ -522,46 +529,53 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
           res = await fetch(`${apiBase}/api/v1/editor/${subdomain}`);
         }
 
-        let pageSecs: any[] = [];
+        let pageSecs: unknown[] = [];
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
-          pageSecs =
-            Array.isArray(data.sections) && data.sections.length > 0
-              ? data.sections
-              : Array.isArray(data.pages) && data.pages[0] && Array.isArray(data.pages[0].sections)
-              ? data.pages[0].sections
-              : [];
+          pageSecs = pickSections(data);
         }
 
         if (pageSecs.length === 0) {
           const defRes = await fetch(`${apiBase}/api/v1/default-website`);
           if (defRes.ok) {
             const defData = await defRes.json().catch(() => ({}));
-            if (defData && Array.isArray(defData.pages) && defData.pages[0] && Array.isArray(defData.pages[0].sections)) {
-              pageSecs = defData.pages[0].sections;
-            }
+            pageSecs = pickSections(defData);
           }
         }
 
-        if (!cancelled) {
-          const finalSecs = pageSecs.length > 0 ? pageSecs : DEFAULT_CLEAN_FULL_SECTIONS;
-          setSections(
-            finalSecs.map((sec: any, idx: number) => ({
-              id: sec.id || `sec-${idx}`,
-              title: sec.title || `Section ${idx + 1}`,
-              code: sec.code || "",
-              category: sec.category || sec.sectionType || (sec.title?.toLowerCase().includes("footer") ? "footer" : "navbar"),
-            }))
-          );
-        }
+        if (cancelled) return;
+
+        const finalSecs =
+          pageSecs.length > 0
+            ? normalizeSections(pageSecs)
+            : readLocalFallback() ??
+              (initialSections.length > 0 ? initialSections : DEFAULT_CLEAN_FULL_SECTIONS);
+
+        // Replace state only on a real change. An identical array restarts every
+        // effect above — re-injecting styles and re-running section scripts once
+        // per poll, which is what made the preview flicker every five seconds.
+        setSections((prev) => (sameSections(prev, finalSecs) ? prev : finalSecs));
       } catch (err) {
         console.warn("Could not load backend published site sections:", err);
+        if (!cancelled) {
+          const fallback = readLocalFallback();
+          if (fallback) setSections((prev) => (sameSections(prev, fallback) ? prev : fallback));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
     void fetchSiteSections();
+
+    // A visitor's page has nothing to poll for; an editor's preview does, so that an
+    // edit in the studio shows up here without a reload.
+    if (isLive) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const interval = setInterval(() => {
       void fetchSiteSections();
     }, 5000);
@@ -570,97 +584,7 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [subdomain]);
-
-  if (loading && sections.length === 0) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-mono text-slate-400">Loading published website preview...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Section Script Execution ───────────────────────────────────────────────
-  // Browsers ignore <script> tags inserted via dangerouslySetInnerHTML.
-  // Extract and execute inline and external scripts per section so interactive menus,
-  // dropdown toggles, drawers, modals, and tab scripts work exactly as in Admin preview.
-  useEffect(() => {
-    document.querySelectorAll("script[data-xite-preview-script]").forEach((el) => el.remove());
-
-    const timer = setTimeout(() => {
-      sections.forEach((sec) => {
-        if (!sec.code) return;
-        const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
-        let m;
-        while ((m = scriptRegex.exec(sec.code)) !== null) {
-          const attrs = m[1] || "";
-          const inlineJs = m[2] || "";
-          const srcMatch = attrs.match(/src=["']([^"']+)["']/i);
-
-          const scriptEl = document.createElement("script");
-          scriptEl.setAttribute("data-xite-preview-script", sec.id);
-
-          if (srcMatch && srcMatch[1]) {
-            scriptEl.src = srcMatch[1];
-          } else if (inlineJs.trim()) {
-            const processed = inlineJs.replace(
-              /(?:document|window)\.addEventListener\(\s*['"](?:DOMContentLoaded|load)['"]\s*,\s*(?:function\s*\([^)]*\)\s*|\([^)]*\)\s*=>\s*)\{([\s\S]*)\}\s*\);?/gi,
-              "$1"
-            );
-            scriptEl.textContent = `try { (function(){\n${processed}\n})(); } catch(e) { console.warn("Section script error:", e); }`;
-          }
-          document.body.appendChild(scriptEl);
-        }
-      });
-    }, 120);
-
-    return () => {
-      clearTimeout(timer);
-      document.querySelectorAll("script[data-xite-preview-script]").forEach((el) => el.remove());
-    };
-  }, [sections]);
-
-  const cleanFullWebCodeForCanvas = (code: string, _currentWidth: string): string => {
-    if (!code) return "";
-
-    let cleanCode = code;
-
-    const bodyFullMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body>/i);
-    if (bodyFullMatch) {
-      const bodyAttrs = bodyFullMatch[1] || "";
-      const bodyContent = bodyFullMatch[2] || "";
-      const headMatch = code.match(/<head[\s\S]*?>([\s\S]*?)<\/head>/i);
-      const styles = headMatch ? headMatch[1] : "";
-      cleanCode = `${styles}\n<div class="xite-body-wrapper" ${bodyAttrs}>${bodyContent}</div>`;
-    } else {
-      cleanCode = code
-        .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
-        .replace(/<\/?html[\s\S]*?>/gi, "")
-        .replace(/<\/?head[\s\S]*?>/gi, "")
-        .replace(/<\/?body[\s\S]*?>/gi, "");
-    }
-
-    return `<div class="section-canvas-box w-full block text-left relative">${cleanCode}</div>`;
-  };
-
-  const [isLive, setIsLive] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const pathname = window.location.pathname;
-      const search = window.location.search;
-      if (
-        pathname.startsWith("/site") ||
-        search.includes("live=true") ||
-        search.includes("mode=live")
-      ) {
-        setIsLive(true);
-      }
-    }
-  }, []);
+  }, [subdomain, isLive, initialSections]);
 
   const DESKTOP_WIDTHS = ["100%", "1200px", "1024px"];
   const TABLET_WIDTHS = ["768px", "640px"];
@@ -697,9 +621,25 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     }
   };
 
+  // Every hook above runs on every render. The loading branch below is deliberately
+  // the last thing in this component: React counts hooks per render, and returning
+  // early from the middle of the list — as this component used to — throws
+  // "Rendered more hooks than during the previous render" the moment sections
+  // arrive, which took the published site down to its error boundary.
+  if (loading && sections.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-mono text-slate-400">Loading published website preview...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full bg-white text-slate-900 font-sans relative">
-      
+    <div className="min-h-screen w-full font-sans relative" style={{ backgroundColor: RUNTIME_PAGE_BG }}>
+
       {/* Responsive Device Resolution Switcher Dock - Centered at bottom (Hidden in Live Mode) */}
       {!isLive && (
         <div
@@ -788,36 +728,63 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
       )}
 
       {/* Main Live Site View */}
-      <main className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
-        previewWidth === "100%" ? "p-0 m-0 bg-white pb-36" : "py-12 px-4 bg-slate-100/90 pb-36"
-      }`}>
+      <main
+        className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
+          previewWidth === "100%" ? "p-0 m-0" : "py-12 px-4 bg-slate-100/90"
+        } ${isLive ? "" : "pb-36"}`}
+      >
         <div
-          className={`transition-all duration-300 flex flex-col items-center justify-start mx-auto bg-white overflow-hidden max-w-full ${
+          className={`xite-site-canvas block transition-all duration-300 mx-auto max-w-full ${
             previewWidth === "100%"
               ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
-              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4"
+              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4 overflow-hidden"
           }`}
           style={{ width: previewWidth, maxWidth: "100%" }}
         >
           {sections.map((sec, idx) => {
-            const isHeader = idx === 0 || (sec.title || "").toLowerCase().includes("header") || (sec.title || "").toLowerCase().includes("nav");
+            const isHeader =
+              idx === 0 ||
+              (sec.title || "").toLowerCase().includes("header") ||
+              (sec.title || "").toLowerCase().includes("nav");
             return (
               <div
                 key={sec.id}
+                data-xite-section={sec.id}
                 style={{
+                  // A header that sticks has to sit above what follows it; the rest
+                  // stack in source order. No clipping — the Admin's iframe does not
+                  // clip either, and `overflow: hidden` here cut off every shadow,
+                  // dropdown and sticky element a section had.
                   zIndex: isHeader ? 40 : 20 - Math.min(idx, 15),
                   position: "relative",
                 }}
-                className={`w-full relative transition-all group section-wrapper-container ${
-                  isHeader ? "overflow-visible" : "overflow-hidden"
-                }`}
-                dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, previewWidth) }}
+                className="w-full relative transition-all group section-wrapper-container"
+                dangerouslySetInnerHTML={{ __html: sectionCanvasHtml(sec.code) }}
               />
             );
           })}
-          <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />
+          {!isLive && <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />}
         </div>
       </main>
     </div>
+  );
+}
+
+/**
+ * A section's markup, ready to inject.
+ *
+ * `<style>` and `<link>` come out because the browser ignores both when they arrive
+ * through innerHTML and the environment effect has already moved them into
+ * `document.head` — the same split the Admin's iframe makes when it builds `<head>`.
+ */
+function sectionCanvasHtml(code: string): string {
+  const { bodyHtml } = extractStylesAndBody(code || "");
+  return `<div class="section-canvas-box">${bodyHtml}</div>`;
+}
+
+function sameSections(a: SectionItem[], b: SectionItem[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every(
+    (sec, i) => sec.id === b[i]?.id && sec.code === b[i]?.code && sec.title === b[i]?.title,
   );
 }

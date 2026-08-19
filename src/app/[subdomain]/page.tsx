@@ -1,4 +1,6 @@
 import { PreviewSiteViewer } from "@/components/preview/PreviewSiteViewer";
+import { SectionRuntimeAssets } from "@/components/preview/SectionRuntimeAssets";
+import { loadSiteSections } from "@/lib/site-sections.server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,5 +15,11 @@ export default async function SubdomainRootPage({
   params: Promise<{ subdomain: string }>;
 }) {
   const { subdomain } = await params;
-  return <PreviewSiteViewer subdomain={subdomain} />;
+  const initialSections = await loadSiteSections(subdomain);
+  return (
+    <>
+      <SectionRuntimeAssets />
+      <PreviewSiteViewer subdomain={subdomain} mode="live" initialSections={initialSections} />
+    </>
+  );
 }
