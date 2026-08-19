@@ -2986,6 +2986,83 @@ export function EditorStudio({
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveSectionIndex(idx);
+
+                      const target = e.target as HTMLElement;
+                      if (!target) return;
+
+                      // Skip images, svgs, or hamburger toggles for inline text edit
+                      if (
+                        target.tagName === "IMG" ||
+                        target.tagName === "SVG" ||
+                        target.closest("button.hamburger-toggle-btn") ||
+                        target.getAttribute("data-logo") === "true"
+                      ) {
+                        return;
+                      }
+
+                      // Find editable text element (e.g. h1-h6, p, span, a, button, li, strong, em, b, i, td, th)
+                      const editableTarget =
+                        (target.closest("h1, h2, h3, h4, h5, h6, p, span, a, button, li, strong, em, b, i, td, th, label") as HTMLElement) ||
+                        (target.childNodes.length === 1 && target.childNodes[0]?.nodeType === Node.TEXT_NODE ? target : null);
+
+                      if (editableTarget && !editableTarget.isContentEditable) {
+                        editableTarget.contentEditable = "true";
+                        editableTarget.style.userSelect = "text";
+                        (editableTarget.style as any).webkitUserSelect = "text";
+                        editableTarget.style.outline = "2px solid #38bdf8";
+                        editableTarget.style.outlineOffset = "3px";
+                        editableTarget.style.borderRadius = "4px";
+                        editableTarget.style.cursor = "text";
+
+                        try {
+                          editableTarget.focus();
+                        } catch {}
+
+                        const handleBlur = () => {
+                          editableTarget.contentEditable = "false";
+                          editableTarget.style.outline = "";
+                          editableTarget.style.outlineOffset = "";
+                          editableTarget.style.borderRadius = "";
+                          editableTarget.style.cursor = "";
+                          editableTarget.style.userSelect = "";
+                          editableTarget.removeEventListener("blur", handleBlur);
+                          editableTarget.removeEventListener("keydown", handleKey);
+
+                          // Capture and save updated code
+                          const wrapper = editableTarget.closest(".section-wrapper-container") as HTMLElement;
+                          const canvasBox = (wrapper?.querySelector(".section-canvas-box") || wrapper) as HTMLElement;
+                          if (canvasBox) {
+                            const clone = canvasBox.cloneNode(true) as HTMLElement;
+                            clone.querySelectorAll("[contenteditable]").forEach((el) => {
+                              el.removeAttribute("contenteditable");
+                              (el as HTMLElement).style.outline = "";
+                              (el as HTMLElement).style.outlineOffset = "";
+                              (el as HTMLElement).style.borderRadius = "";
+                              (el as HTMLElement).style.cursor = "";
+                              (el as HTMLElement).style.userSelect = "";
+                            });
+                            const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
+                            if (newCode) {
+                              setSectionsWithHistory((prev) =>
+                                prev.map((s, i) => (i === idx ? { ...s, code: newCode } : s))
+                              );
+                            }
+                          }
+                        };
+
+                        const handleKey = (keyEvent: KeyboardEvent) => {
+                          if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
+                            const tag = editableTarget.tagName.toLowerCase();
+                            if (["h1", "h2", "h3", "h4", "h5", "h6", "a", "button", "span"].includes(tag)) {
+                              keyEvent.preventDefault();
+                              editableTarget.blur();
+                            }
+                          }
+                        };
+
+                        editableTarget.addEventListener("blur", handleBlur);
+                        editableTarget.addEventListener("keydown", handleKey);
+                      }
                     }}
                     onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
                     style={{
@@ -2995,7 +3072,7 @@ export function EditorStudio({
                     className={`w-full relative transition-all group section-wrapper-container ${
                       isHeader ? "overflow-visible" : "overflow-hidden"
                     } ${
-                      activeSectionIndex === idx ? "ring-2 ring-white ring-offset-2 ring-offset-black z-30" : "cursor-default"
+                      activeSectionIndex === idx ? "ring-2 ring-cyan-500/80 ring-offset-2 ring-offset-slate-900 z-30" : "cursor-default"
                     }`}
                   >
                     <div
