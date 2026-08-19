@@ -995,34 +995,136 @@ export function EditorStudio({
     document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
     document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
 
-    // Inject base canvas layout protection stylesheet
+    // Inject base canvas layout protection stylesheet.
+    // This is a comprehensive Tailwind/Next.js preflight REVERT layer so that sections
+    // render identically in the live editor to how they look in the Admin iframe preview.
+    // Tailwind v4 preflight resets h1-h6 sizes, margins, padding, font-size, line-height, etc.
+    // We use `all: revert` on all common HTML elements inside .section-canvas-box so that
+    // the browser's built-in default stylesheet takes over — exactly like an isolated <iframe>.
     const baseProtection = document.createElement("style");
     baseProtection.setAttribute("data-xite-canvas-protection", "true");
     baseProtection.textContent = `
+      /* ── XITE Section Canvas Isolation Layer ──────────────────────────────────
+         Goal: make .section-canvas-box render exactly like an isolated <iframe>
+         so the live editor and admin preview are pixel-identical.
+
+         Strategy: revert ALL Tailwind/Next.js preflight overrides back to the
+         browser's built-in UA stylesheet for every common HTML element.
+
+         NOTE on !important:
+         - Structural guards (width, overflow, header) use !important
+         - "all: revert" does NOT use !important so section <style> blocks
+           injected AFTER this tag can correctly override UA defaults
+         ─────────────────────────────────────────────────────────────────────── */
+
+      /* Container itself — must stay as a full-width block */
       .section-canvas-box {
         display: block !important;
         width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
         box-sizing: border-box !important;
-        position: relative;
-        text-align: left;
+        position: relative !important;
+        text-align: left !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: inherit;
+        line-height: normal;
+        font-size: 16px;
       }
-      .section-canvas-box * {
-        box-sizing: border-box !important;
+
+      /* Revert all common HTML elements inside the section canvas back to UA defaults.
+         NO !important — section <style> blocks injected after this tag in document.head
+         will correctly override these at the same specificity level. */
+      .section-canvas-box h1,
+      .section-canvas-box h2,
+      .section-canvas-box h3,
+      .section-canvas-box h4,
+      .section-canvas-box h5,
+      .section-canvas-box h6,
+      .section-canvas-box p,
+      .section-canvas-box ul,
+      .section-canvas-box ol,
+      .section-canvas-box li,
+      .section-canvas-box dl,
+      .section-canvas-box dt,
+      .section-canvas-box dd,
+      .section-canvas-box blockquote,
+      .section-canvas-box figure,
+      .section-canvas-box figcaption,
+      .section-canvas-box pre,
+      .section-canvas-box table,
+      .section-canvas-box thead,
+      .section-canvas-box tbody,
+      .section-canvas-box tfoot,
+      .section-canvas-box tr,
+      .section-canvas-box th,
+      .section-canvas-box td,
+      .section-canvas-box caption,
+      .section-canvas-box a,
+      .section-canvas-box abbr,
+      .section-canvas-box address,
+      .section-canvas-box article,
+      .section-canvas-box aside,
+      .section-canvas-box b,
+      .section-canvas-box strong,
+      .section-canvas-box cite,
+      .section-canvas-box code,
+      .section-canvas-box em,
+      .section-canvas-box footer,
+      .section-canvas-box form,
+      .section-canvas-box header,
+      .section-canvas-box hr,
+      .section-canvas-box i,
+      .section-canvas-box img,
+      .section-canvas-box input,
+      .section-canvas-box label,
+      .section-canvas-box legend,
+      .section-canvas-box main,
+      .section-canvas-box mark,
+      .section-canvas-box nav,
+      .section-canvas-box section,
+      .section-canvas-box select,
+      .section-canvas-box small,
+      .section-canvas-box span,
+      .section-canvas-box sub,
+      .section-canvas-box sup,
+      .section-canvas-box textarea,
+      .section-canvas-box button,
+      .section-canvas-box fieldset,
+      .section-canvas-box details,
+      .section-canvas-box summary,
+      .section-canvas-box dialog,
+      .section-canvas-box div,
+      .section-canvas-box video,
+      .section-canvas-box audio,
+      .section-canvas-box iframe,
+      .section-canvas-box svg,
+      .section-canvas-box canvas {
+        all: revert;
       }
-      .section-canvas-box header {
-        width: 100% !important;
-        box-sizing: border-box !important;
+
+      /* After revert, re-apply box-sizing so layouts using border-box still work */
+      .section-canvas-box *,
+      .section-canvas-box *::before,
+      .section-canvas-box *::after {
+        box-sizing: border-box;
       }
-      .section-canvas-box nav {
-        box-sizing: border-box !important;
-      }
+
+      /* Structural guards — enforced with !important */
       .section-canvas-box img,
       .section-canvas-box video,
       .section-canvas-box svg,
       .section-canvas-box iframe {
-        max-width: 100%;
-        height: auto;
+        max-width: 100% !important;
       }
+
+      /* Navbar / Header full-width guarantee */
+      .section-canvas-box header {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      /* ── Responsive nav helpers (hamburger menu logic) ── */
       @media (min-width: 901px) {
         .section-canvas-box .desktop-nav-links {
           display: flex !important;
