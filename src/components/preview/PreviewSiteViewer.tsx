@@ -308,6 +308,65 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
   useEffect(() => {
     document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
     document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
+    document.querySelectorAll("style[data-xite-preview-protection]").forEach((el) => el.remove());
+
+    const baseProtection = document.createElement("style");
+    baseProtection.setAttribute("data-xite-preview-protection", "true");
+    baseProtection.textContent = `
+      .section-canvas-box {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        position: relative;
+        text-align: left;
+      }
+      .section-canvas-box * {
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box header {
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box nav {
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box img,
+      .section-canvas-box video,
+      .section-canvas-box svg,
+      .section-canvas-box iframe {
+        max-width: 100%;
+        height: auto;
+      }
+      @media (min-width: 901px) {
+        .section-canvas-box .desktop-nav-links {
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        .section-canvas-box .desktop-apply-btn {
+          display: inline-flex !important;
+          visibility: visible !important;
+        }
+        .section-canvas-box .hamburger-toggle-btn {
+          display: none !important;
+        }
+        .section-canvas-box .mobile-drawer-menu:not(.active) {
+          display: none !important;
+        }
+      }
+      @media (max-width: 900px) {
+        .section-canvas-box .desktop-nav-links {
+          display: none !important;
+        }
+        .section-canvas-box .hamburger-toggle-btn {
+          display: inline-flex !important;
+        }
+        .section-canvas-box .mobile-drawer-menu.active {
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(baseProtection);
 
     sections.forEach((sec) => {
       if (!sec.code) return;
@@ -352,6 +411,49 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     return () => {
       document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
       document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
+      document.querySelectorAll("style[data-xite-preview-protection]").forEach((el) => el.remove());
+    };
+  }, [sections]);
+
+  // Section script execution in preview
+  useEffect(() => {
+    document.querySelectorAll("script[data-xite-preview-script]").forEach((el) => el.remove());
+
+    const timer = setTimeout(() => {
+      document.querySelectorAll(".hamburger-toggle-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const header = btn.closest("header");
+          const menu = header?.querySelector(".mobile-drawer-menu");
+          if (menu) {
+            menu.classList.toggle("active");
+          }
+        });
+      });
+
+      sections.forEach((sec) => {
+        if (!sec.code) return;
+        const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
+        let m;
+        while ((m = scriptRegex.exec(sec.code)) !== null) {
+          const inlineJs = m[2] || "";
+          if (inlineJs.trim()) {
+            const scriptEl = document.createElement("script");
+            scriptEl.setAttribute("data-xite-preview-script", sec.id);
+            const processed = inlineJs.replace(
+              /(?:document|window)\.addEventListener\(\s*['"](?:DOMContentLoaded|load)['"]\s*,\s*(?:function\s*\([^)]*\)\s*|\([^)]*\)\s*=>\s*)\{([\s\S]*)\}\s*\);?/gi,
+              "$1"
+            );
+            scriptEl.textContent = `try { (function(){\n${processed}\n})(); } catch(e) { console.warn("Preview script error:", e); }`;
+            document.body.appendChild(scriptEl);
+          }
+        }
+      });
+    }, 120);
+
+    return () => {
+      clearTimeout(timer);
+      document.querySelectorAll("script[data-xite-preview-script]").forEach((el) => el.remove());
     };
   }, [sections]);
 

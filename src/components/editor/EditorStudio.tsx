@@ -993,6 +993,66 @@ export function EditorStudio({
     // Remove any previously injected section styles and links
     document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
     document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
+    document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
+
+    // Inject base canvas layout protection stylesheet
+    const baseProtection = document.createElement("style");
+    baseProtection.setAttribute("data-xite-canvas-protection", "true");
+    baseProtection.textContent = `
+      .section-canvas-box {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        position: relative;
+        text-align: left;
+      }
+      .section-canvas-box * {
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box header {
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box nav {
+        box-sizing: border-box !important;
+      }
+      .section-canvas-box img,
+      .section-canvas-box video,
+      .section-canvas-box svg,
+      .section-canvas-box iframe {
+        max-width: 100%;
+        height: auto;
+      }
+      @media (min-width: 901px) {
+        .section-canvas-box .desktop-nav-links {
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        .section-canvas-box .desktop-apply-btn {
+          display: inline-flex !important;
+          visibility: visible !important;
+        }
+        .section-canvas-box .hamburger-toggle-btn {
+          display: none !important;
+        }
+        .section-canvas-box .mobile-drawer-menu:not(.active) {
+          display: none !important;
+        }
+      }
+      @media (max-width: 900px) {
+        .section-canvas-box .desktop-nav-links {
+          display: none !important;
+        }
+        .section-canvas-box .hamburger-toggle-btn {
+          display: inline-flex !important;
+        }
+        .section-canvas-box .mobile-drawer-menu.active {
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(baseProtection);
 
     sections.forEach((sec) => {
       if (!sec.code) return;
@@ -1005,7 +1065,6 @@ export function EditorStudio({
         const styleContent = m[2] || "";
         if (styleContent?.trim()) {
           // Remap 'body' and 'html' selectors in section styles to also target the section wrapper
-          // so background colors, font families, and text colors declared on 'body' apply to the section container!
           const remapped = styleContent
             .replace(/(^|[\s,{}])body\s*\{/gi, "$1body, .section-canvas-box, .xite-body-wrapper {")
             .replace(/(^|[\s,{}])html\s*,\s*body\s*\{/gi, "$1html, body, .section-canvas-box, .xite-body-wrapper {")
@@ -1041,6 +1100,7 @@ export function EditorStudio({
     return () => {
       document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
       document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
+      document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
     };
   }, [sections]);
 
@@ -1052,6 +1112,28 @@ export function EditorStudio({
     document.querySelectorAll("script[data-xite-section-script]").forEach((el) => el.remove());
 
     const timer = setTimeout(() => {
+      // Auto-attach hamburger toggle listener to all hamburger buttons in canvas
+      document.querySelectorAll(".hamburger-toggle-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const header = btn.closest("header");
+          const menu = header?.querySelector(".mobile-drawer-menu");
+          if (menu) {
+            menu.classList.toggle("active");
+          }
+        });
+      });
+
+      // Prevent link clicks from reloading page or changing URL inside editor
+      document.querySelectorAll(".section-canvas-box a").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          const href = (a as HTMLAnchorElement).getAttribute("href");
+          if (href && (href.startsWith("#") || href.startsWith("/") || href.startsWith("http"))) {
+            e.preventDefault();
+          }
+        });
+      });
+
       sections.forEach((sec) => {
         if (!sec.code) return;
         const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
