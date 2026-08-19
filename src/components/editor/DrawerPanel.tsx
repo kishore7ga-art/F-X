@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+
+import { api } from "@/lib/api-client";
 import {
   X,
   Home,
@@ -102,14 +104,30 @@ export function DrawerPanel({
 
     setIsGenerating(true);
     try {
-      const res = await fetch("http://localhost:4000/api/v1/ai/generate-section", {
+      /**
+       * Through the shared client, not a bare fetch.
+       *
+       * This called `http://localhost:4000` outright — an absolute URL to the
+       * *visitor's* machine, so in production the request left the browser and
+       * never arrived anywhere. The feature has never worked outside a
+       * developer's laptop, and it failed as "Failed to generate AI section",
+       * which reads like the model refusing rather than the call never landing.
+       *
+       * `api()` resolves NEXT_PUBLIC_API_BASE_URL and sends `credentials:
+       * "include"`, which this also lacked — and the endpoint now requires a
+       * session, so the cookie is no longer optional.
+       */
+      type GeneratedSection = {
+        id: string;
+        title: string;
+        sectionType: string;
+        code: string;
+      };
+      const data = await api<{ section?: GeneratedSection }>("/api/v1/ai/generate-section", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: aiPrompt, subdomain }),
+        body: { prompt: aiPrompt, subdomain },
       });
 
-      if (!res.ok) throw new Error("Generation failed");
-      const data = await res.json();
       if (data.section && onSectionAdd) {
         onSectionAdd(data.section);
         showNotification("AI Section generated & added to canvas!");
