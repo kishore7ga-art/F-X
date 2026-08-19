@@ -892,9 +892,6 @@ export function EditorStudio({
 
     let clean = rawCode;
 
-    // 0. Remove the canvas isolation reset style injected by cleanFullWebCodeForCanvas (never save this to DB)
-    clean = clean.replace(/<style\s+data-xite-canvas-reset="true">[\s\S]*?<\/style>/gi, "");
-
     // 1. Remove mobile drawer overlays & hamburger buttons injected dynamically
     clean = clean.replace(/<div[^>]*class="[^"]*mobile-drawer-menu[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
     clean = clean.replace(/<button[^>]*class="[^"]*hamburger-toggle-btn[^"]*"[^>]*>[\s\S]*?<\/button>/gi, "");
@@ -987,65 +984,6 @@ export function EditorStudio({
     // Toast popups completely removed
   };
 
-  // ─── Canvas CSS Isolation Reset (injected into document.head on mount) ────────
-  // Browsers IGNORE <style> tags inserted via innerHTML / dangerouslySetInnerHTML.
-  // This one-time effect injects the section canvas isolation CSS reset into
-  // document.head so it is actually applied, neutralising Tailwind preflight and
-  // host-page globals that would otherwise corrupt section rendering.
-  useEffect(() => {
-    const RESET_ID = "xite-canvas-isolation-reset";
-    if (document.getElementById(RESET_ID)) return; // already injected
-
-    const styleTag = document.createElement("style");
-    styleTag.id = RESET_ID;
-    styleTag.textContent = `
-  /* ── XITE Canvas Isolation Reset ───────────────────────────────────────────
-     Injected once on EditorStudio mount. Neutralises Tailwind CSS preflight
-     and host-page global styles that corrupt section canvas rendering.
-     Scoped to .section-canvas-box and .xite-body-wrapper only.
-  ── */
-  .section-canvas-box,
-  .xite-body-wrapper {
-    display: block !important;
-    width: 100% !important;
-    text-align: left !important;
-    position: relative !important;
-    scrollbar-width: auto !important;
-    -ms-overflow-style: auto !important;
-    overflow-x: hidden !important;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  }
-  /* Restore Tailwind-preflight-reset heading sizes back to browser defaults */
-  .section-canvas-box h1, .xite-body-wrapper h1 { all: revert; }
-  .section-canvas-box h2, .xite-body-wrapper h2 { all: revert; }
-  .section-canvas-box h3, .xite-body-wrapper h3 { all: revert; }
-  .section-canvas-box h4, .xite-body-wrapper h4 { all: revert; }
-  .section-canvas-box h5, .xite-body-wrapper h5 { all: revert; }
-  .section-canvas-box h6, .xite-body-wrapper h6 { all: revert; }
-  /* Restore paragraph, anchor, list, image defaults */
-  .section-canvas-box p,      .xite-body-wrapper p      { all: revert; }
-  .section-canvas-box a,      .xite-body-wrapper a      { all: revert; }
-  .section-canvas-box ul,     .xite-body-wrapper ul     { all: revert; }
-  .section-canvas-box ol,     .xite-body-wrapper ol     { all: revert; }
-  .section-canvas-box li,     .xite-body-wrapper li     { all: revert; }
-  .section-canvas-box img,    .xite-body-wrapper img    { display: revert !important; max-width: 100%; }
-  .section-canvas-box button, .xite-body-wrapper button { all: revert; cursor: pointer; }
-  .section-canvas-box table,  .xite-body-wrapper table  { all: revert; }
-  .section-canvas-box input,  .xite-body-wrapper input  { all: revert; }
-  /* Restore scrollbar visibility inside section child elements */
-  .section-canvas-box *,      .xite-body-wrapper * {
-    scrollbar-width: auto !important;
-    -ms-overflow-style: auto !important;
-    box-sizing: border-box;
-  }
-`;
-    document.head.appendChild(styleTag);
-
-    return () => {
-      // Keep the style on unmount — re-mounting should not flash unstyled sections
-    };
-  }, []);
-
   // ─── Section CSS + Link Injection ────────────────────────────────────────────
   // Browsers IGNORE <style> and <link> tags injected via innerHTML /
   // dangerouslySetInnerHTML. Fix: extract all <style> blocks AND <link> tags
@@ -1064,16 +1002,14 @@ export function EditorStudio({
       let m;
       let combined = "";
       while ((m = styleRegex.exec(sec.code)) !== null) {
-        const styleAttrs = m[1] || "";
         const styleContent = m[2] || "";
-        // Skip the canvas isolation reset style — it is injected inline by cleanFullWebCodeForCanvas
-        if (/data-xite-canvas-reset/.test(styleAttrs)) continue;
         if (styleContent?.trim()) {
           // Remap 'body' and 'html' selectors in section styles to also target the section wrapper
           // so background colors, font families, and text colors declared on 'body' apply to the section container!
           const remapped = styleContent
             .replace(/(^|[\s,{}])body\s*\{/gi, "$1body, .section-canvas-box, .xite-body-wrapper {")
-            .replace(/(^|[\s,{}])html\s*,\s*body\s*\{/gi, "$1html, body, .section-canvas-box, .xite-body-wrapper {");
+            .replace(/(^|[\s,{}])html\s*,\s*body\s*\{/gi, "$1html, body, .section-canvas-box, .xite-body-wrapper {")
+            .replace(/(^|[\s,{}])html\s*\{/gi, "$1html, .section-canvas-box, .xite-body-wrapper {");
           combined += remapped + "\n";
         }
       }
