@@ -9,6 +9,7 @@
  *
  * Browser-only: it borrows the browser's own CSS parser.
  */
+import { viewportMediaToContainer } from "./section-runtime";
 
 /** Escapes a section id for use inside an attribute selector. */
 export function cssEscape(value: string): string {
@@ -51,13 +52,16 @@ export function fenceCssToSection(css: string, sectionId: string): string {
     };
 
     walk(sheet.cssRules);
-    return Array.from(sheet.cssRules)
+    const fenced = Array.from(sheet.cssRules)
       .map((rule) => rule.cssText)
       .join("\n");
+    // The author's own breakpoints ask about the space the section is in, which
+    // is the container on every surface and the viewport on only one of them.
+    return viewportMediaToContainer(fenced);
   } catch {
     // CSS the browser will not parse is CSS the Admin could not have rendered
     // either. Pass it through rather than dropping the section's styling.
-    return css;
+    return viewportMediaToContainer(css);
   }
 }
 

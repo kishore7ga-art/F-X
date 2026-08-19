@@ -14,7 +14,8 @@
     "check:shared": "node scripts/check-shared-files.mjs",
     "prebuild": "node scripts/check-shared-files.mjs && node scripts/check-api-boundary.mjs",
     "check:boundary": "node scripts/check-api-boundary.mjs",
-    "audit:responsive": "node scripts/audit-responsive.mjs"
+    "audit:responsive": "node scripts/audit-responsive.mjs",
+    "audit:sections": "node scripts/audit-sections-responsive.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

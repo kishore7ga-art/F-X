@@ -3,12 +3,8 @@
 import { useEffect, useState } from "react";
 import { Monitor, Tablet, Smartphone, Edit3 } from "lucide-react";
 
-import {
-  extractStylesAndBody,
-  remapDocumentSelectors,
-  sectionRuntimeCss,
-} from "@/lib/section-runtime";
-import { fenceCssToSection, placeBeforeTailwind } from "@/lib/section-css-fence";
+import { useSectionRuntime } from "@/hooks/useSectionRuntime";
+import { extractStylesAndBody, sectionDeviceWidths } from "@/lib/section-runtime";
 import { normalizeSections, pickSections, type SectionItem } from "@/lib/site-sections";
 
 
@@ -324,7 +320,6 @@ const DEFAULT_CLEAN_FULL_SECTIONS: SectionItem[] = [
 
 /** The element that stands in for `<body>`, and the scope every runtime rule is written against. */
 const CANVAS_SCOPE = ".xite-site-canvas";
-const RUNTIME_STYLE_ID = "xite-section-runtime";
 /** The page behind the canvas, so a short site does not end in a band of the app's own colour. */
 const RUNTIME_PAGE_BG = "#09090b";
 
@@ -358,74 +353,10 @@ export function PreviewSiteViewer({
   // effect below), so the effects can depend on it directly: they re-run when the
   // site changes, and not once every poll.
 
-  // ─── The section environment ────────────────────────────────────────────────
-  useEffect(() => {
-    const head = document.head;
-
-    // One style element, created before Tailwind's script so that Tailwind's own
-    // stylesheet always lands after it, exactly as it does in the Admin iframe.
-    let runtimeStyle = document.getElementById(RUNTIME_STYLE_ID) as HTMLStyleElement | null;
-    if (!runtimeStyle) {
-      runtimeStyle = document.createElement("style");
-      runtimeStyle.id = RUNTIME_STYLE_ID;
-      head.appendChild(runtimeStyle);
-    }
-
-    // ...and immediately in front of Tailwind's own, which is where the Admin's
-    // document puts it. See `placeBeforeTailwind`.
-    const el = runtimeStyle;
-    let observer: MutationObserver | null = null;
-    if (!placeBeforeTailwind(el)) {
-      observer = new MutationObserver(() => {
-        if (placeBeforeTailwind(el)) observer?.disconnect();
-      });
-      observer.observe(document.documentElement, { childList: true, subtree: true });
-    }
-
-    // Tailwind's Play CDN and the environment's stylesheets are *not* injected
-    // from here. They ship in the server-rendered HTML (`SectionRuntimeAssets`)
-    // because the CDN is a compiler that has to be present while the document is
-    // parsed — appended from an effect it runs, defines `window.tailwind`, and
-    // silently generates nothing.
-
-    // Author CSS, fenced to the section it came from. In the Admin each section owns
-    // a document, so a bare `h2 { }` rule can only ever reach its own markup; inside
-    // one shared page it would reach every section on the site.
-    const parts = [sectionRuntimeCss(CANVAS_SCOPE)];
-
-    sections.forEach((sec) => {
-      const { headCss, headLinks } = extractStylesAndBody(sec.code || "");
-
-      if (headCss.trim()) {
-        const remapped = remapDocumentSelectors(headCss, ".section-canvas-box");
-        parts.push(fenceCssToSection(remapped, sec.id));
-      }
-
-      // <link> tags are the one thing that cannot be scoped — a font is a font.
-      const linkRegex = /<link([^>]+)>/gi;
-      let m: RegExpExecArray | null;
-      while ((m = linkRegex.exec(headLinks)) !== null) {
-        const attrs = m[1] || "";
-        const href = (attrs.match(/href=["']([^"']+)["']/i) || [])[1];
-        if (!href || document.querySelector(`link[href="${href}"]`)) continue;
-        const linkEl = document.createElement("link");
-        attrs.replace(/([\w-]+)=["']([^"']*)["']/gi, (_full: string, name: string, val: string) => {
-          linkEl.setAttribute(name, val);
-          return "";
-        });
-        if (!linkEl.getAttribute("rel")) linkEl.setAttribute("rel", "stylesheet");
-        linkEl.setAttribute("data-xite-section", sec.id);
-        head.appendChild(linkEl);
-      }
-    });
-
-    runtimeStyle.textContent = parts.join("\n\n");
-
-    return () => {
-      observer?.disconnect();
-      document.querySelectorAll("link[data-xite-section]").forEach((node) => node.remove());
-    };
-  }, [sections]);
+  // The environment, the responsive engine and every section's own CSS — shared
+  // with the editor canvas, and built from the same functions the Admin's iframe
+  // uses, so the three surfaces cannot drift apart.
+  useSectionRuntime({ sections, scope: CANVAS_SCOPE, simulatedWidth: previewWidth });
 
   // ─── Section scripts ────────────────────────────────────────────────────────
   // A browser will not run a <script> that arrives through innerHTML, so each
@@ -586,9 +517,11 @@ export function PreviewSiteViewer({
     };
   }, [subdomain, isLive, initialSections]);
 
-  const DESKTOP_WIDTHS = ["100%", "1200px", "1024px"];
-  const TABLET_WIDTHS = ["768px", "640px"];
-  const MOBILE_WIDTHS = ["375px", "425px"];
+  // One ladder, shared with the editor toolbar and the Admin preview, so "Tablet"
+  // is the same width wherever somebody checks a section.
+  const DESKTOP_WIDTHS = sectionDeviceWidths("desktop");
+  const TABLET_WIDTHS = sectionDeviceWidths("tablet");
+  const MOBILE_WIDTHS = sectionDeviceWidths("mobile");
 
   const isDesktop = DESKTOP_WIDTHS.includes(previewWidth);
   const isTablet = TABLET_WIDTHS.includes(previewWidth);
@@ -733,11 +666,25 @@ export function PreviewSiteViewer({
           previewWidth === "100%" ? "p-0 m-0" : "py-12 px-4 bg-slate-100/90"
         } ${isLive ? "" : "pb-36"}`}
       >
+        {/* The device frame is chrome, and it carries its own border — which would
+            otherwise come out of the canvas's content box and make a "375px"
+            preview report 373px to the container queries. Kept on a wrapper so
+            the canvas is exactly the width the label claims. */}
+        {/* The device frame is chrome and shrink-wraps the canvas. The width goes
+            on the canvas itself: a border on the element that carries the width
+            comes out of its content box, so a "375px" preview would be 373px to
+            the container queries — and at the 640px preset that is the mobile
+            breakpoint firing two pixels early. */}
         <div
-          className={`xite-site-canvas block transition-all duration-300 mx-auto max-w-full ${
+          className={`transition-all duration-300 mx-auto max-w-full ${
             previewWidth === "100%"
-              ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
-              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 my-4 overflow-hidden"
+              ? "w-full rounded-none border-none shadow-none m-0 p-0"
+              : "w-fit shadow-2xl rounded-2xl border border-slate-300 my-4 overflow-hidden"
+          }`}
+        >
+        <div
+          className={`xite-site-canvas block max-w-full ${
+            previewWidth === "100%" ? "w-full min-h-screen m-0 p-0" : "min-h-[75vh]"
           }`}
           style={{ width: previewWidth, maxWidth: "100%" }}
         >
@@ -764,6 +711,7 @@ export function PreviewSiteViewer({
             );
           })}
           {!isLive && <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />}
+        </div>
         </div>
       </main>
     </div>

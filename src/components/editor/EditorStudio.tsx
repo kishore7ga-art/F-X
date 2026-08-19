@@ -31,8 +31,7 @@ import {
   Footprints,
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
-import { remapDocumentSelectors, sectionRuntimeCss } from "@/lib/section-runtime";
-import { fenceCssToSection, placeBeforeTailwind } from "@/lib/section-css-fence";
+import { useSectionRuntime } from "@/hooks/useSectionRuntime";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -989,92 +988,15 @@ export function EditorStudio({
     // Toast popups completely removed
   };
 
-  // ─── Section CSS + Link Injection ────────────────────────────────────────────
-  // Browsers IGNORE <style> and <link> tags injected via innerHTML /
-  // dangerouslySetInnerHTML. Fix: extract all <style> blocks AND <link> tags
-  // (Google Fonts, external CSS) from section codes and inject them into
-  // document.head. Clean up on unmount / section change.
-  useEffect(() => {
-    // Remove any previously injected section styles and links
-    document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
-    document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
-    document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
-
-    // ── The section environment ──────────────────────────────────────────────
-    // Identical to the one the Admin previews sections in and the one the published
-    // site renders them in: `@/lib/section-runtime`, scoped to the canvas. What used
-    // to be here — a hand-written protection stylesheet, plus a `tailwind.config`
-    // assigned before the Play CDN script — did not do what it said. The CDN
-    // overwrites `window.tailwind` when it loads, so the `important: '.section-canvas-box'`
-    // scoping never applied; and appended from an effect the CDN generates no CSS at
-    // all, so sections written with Tailwind classes rendered unstyled here while
-    // looking right in the Admin. The script now ships in the page's HTML
-    // (`SectionRuntimeAssets`), which is the only way it works.
-    const baseProtection = document.createElement("style");
-    baseProtection.setAttribute("data-xite-canvas-protection", "true");
-    document.head.appendChild(baseProtection);
-
-    // In front of Tailwind's own stylesheet, which is where the Admin's document
-    // puts it — otherwise a section's `.title { font-size: 40px }` starts beating
-    // `class="text-2xl"` here and loses to it once published.
-    let twObserver: MutationObserver | null = null;
-    if (!placeBeforeTailwind(baseProtection)) {
-      twObserver = new MutationObserver(() => {
-        if (placeBeforeTailwind(baseProtection)) twObserver?.disconnect();
-      });
-      twObserver.observe(document.documentElement, { childList: true, subtree: true });
-    }
-
-    // The environment, then every section's own CSS fenced to that section — one
-    // stylesheet, so its position in the cascade is fixed and knowable.
-    const cssParts = [sectionRuntimeCss(EDITOR_CANVAS_SCOPE)];
-
-    sections.forEach((sec) => {
-      if (!sec.code) return;
-
-      // 1. Collect <style> blocks
-      const styleRegex = /<style([^>]*)>([\s\S]*?)<\/style>/gi;
-      let m;
-      let combined = "";
-      while ((m = styleRegex.exec(sec.code)) !== null) {
-        const styleContent = m[2] || "";
-        if (styleContent?.trim()) {
-          // A section's `body { }` has to land on that section's own box: inline
-          // there is one real body, shared by every section on the page.
-          combined += `${remapDocumentSelectors(styleContent, ".section-canvas-box")}\n`;
-        }
-      }
-      if (combined.trim()) {
-        cssParts.push(fenceCssToSection(combined, sec.id));
-      }
-
-      // 2. Inject <link> tags (Google Fonts, external CSS, preconnect)
-      const linkRegex = /<link([^>]+)>/gi;
-      while ((m = linkRegex.exec(sec.code)) !== null) {
-        const attrs = m[1] || "";
-        if (!/rel=["']?(stylesheet|preconnect|preload|dns-prefetch)/i.test(attrs)) continue;
-        const href = (attrs.match(/href=["']([^"']+)["']/i) || [])[1];
-        if (!href) continue;
-        if (document.querySelector(`link[href="${href}"]`)) continue;
-        const linkEl = document.createElement("link");
-        attrs.replace(/([\w-]+)=["']([^"']*)["']/gi, (_full: string, name: string, val: string) => {
-          linkEl.setAttribute(name, val);
-          return "";
-        });
-        linkEl.setAttribute("data-xite-section", sec.id);
-        document.head.appendChild(linkEl);
-      }
-    });
-
-    baseProtection.textContent = cssParts.join("\n\n");
-
-    return () => {
-      twObserver?.disconnect();
-      document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
-      document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
-      document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
-    };
-  }, [sections]);
+  // ─── The section environment ────────────────────────────────────────────────
+  // The environment, the responsive engine and every section's own CSS. Shared
+  // with the published site, and built from the same functions the Admin's iframe
+  // uses — so what is edited here is what ships, at every width.
+  useSectionRuntime({
+    sections,
+    scope: EDITOR_CANVAS_SCOPE,
+    simulatedWidth: viewportWidth,
+  });
 
   // ─── Section Script Execution ───────────────────────────────────────────────
   // Browsers ignore <script> tags inserted via dangerouslySetInnerHTML.
@@ -2922,11 +2844,22 @@ export function EditorStudio({
           viewportWidth === "100%" ? "bg-white p-0 m-0" : "bg-slate-100/90 px-4 sm:px-8 pt-0 pb-12 mt-0"
         }`}
       >
+        {/* Device-frame chrome on its own element: its border would otherwise come
+            out of the canvas's content box, so a "375px" preview would measure
+            373px to the container queries the sections are written against. */}
+        {/* Chrome shrink-wraps the canvas; the width goes on the canvas itself, or
+            its own border would come out of the content box the sections are
+            measured against. */}
         <div
-          className={`xite-site-canvas block transition-all duration-300 mx-auto max-w-full ${
+          className={`transition-all duration-300 mx-auto max-w-full ${
             viewportWidth === "100%"
-              ? "w-full min-h-screen rounded-none border-none shadow-none m-0 p-0"
-              : "min-h-[75vh] shadow-2xl rounded-2xl border border-slate-300 mt-0 mb-4"
+              ? "w-full rounded-none border-none shadow-none m-0 p-0"
+              : "w-fit shadow-2xl rounded-2xl border border-slate-300 mt-0 mb-4"
+          }`}
+        >
+        <div
+          className={`xite-site-canvas block max-w-full ${
+            viewportWidth === "100%" ? "w-full min-h-screen m-0 p-0" : "min-h-[75vh]"
           }`}
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
@@ -3064,6 +2997,7 @@ export function EditorStudio({
               <div className="w-full h-48 bg-transparent pointer-events-none shrink-0" />
             </div>
           )}
+        </div>
         </div>
       </main>
 

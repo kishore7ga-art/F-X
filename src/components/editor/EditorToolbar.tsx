@@ -20,6 +20,7 @@ import {
   Layers,
   Type,
 } from "lucide-react";
+import { SECTION_DEVICE_PRESETS } from "@/lib/section-runtime";
 
 interface EditorToolbarProps {
   subdomain?: string;
@@ -213,21 +214,12 @@ export function EditorToolbar({
     }
   };
 
-  const MOBILE_SIZES = [
-    { label: "Mobile M", width: "375px" },
-    { label: "Mobile L", width: "425px" },
-  ];
-
-  const TABLET_SIZES = [
-    { label: "Tablet", width: "768px" },
-    { label: "Tablet Mini", width: "640px" },
-  ];
-
-  const DESKTOP_SIZES = [
-    { label: "Full Width (100%)", width: "100%" },
-    { label: "Desktop Widescreen", width: "1200px" },
-    { label: "Desktop Compact", width: "1024px" },
-  ];
+  // From the one device ladder in `@/lib/section-runtime`, shared with the site
+  // preview and the Admin. Three switchers offering three different notions of
+  // "Tablet" is how a section passes review at a width nobody ships.
+  const MOBILE_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "mobile");
+  const TABLET_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "tablet");
+  const DESKTOP_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "desktop");
 
   const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
   const activeTablet = TABLET_SIZES.find((s) => s.width === viewportWidth);
