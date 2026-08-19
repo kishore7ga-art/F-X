@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Globe, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Globe, ShieldCheck, Sparkles } from "lucide-react";
 
 import { loginAction } from "@/app/actions/auth";
 
@@ -94,7 +94,7 @@ export function CredentialsForm({
           <div className="relative z-10 max-w-lg my-auto">
             {/* Colorful Human Avatar Photo */}
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80"
+              src="/user_avatar.jpg"
               alt="Ilaya Bharathi Profile Picture"
               className="mb-8 h-16 w-16 rounded-full object-cover shadow-md border-2 border-white ring-4 ring-indigo-500/20"
             />
@@ -127,7 +127,7 @@ export function CredentialsForm({
             {/* Top-Left Brand Logo */}
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white font-extrabold text-xs shadow-xs shrink-0">
-                
+                <Sparkles className="h-4.5 w-4.5" />
               </div>
               <span className="font-black text-2xl tracking-tight text-slate-900 leading-none">
                 XITE

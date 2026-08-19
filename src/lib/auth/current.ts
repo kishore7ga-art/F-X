@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import type { CollegePayload } from "@/lib/api-contract";
 import { serverApi, ServerApiError } from "@/lib/api/server";
+import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
 
 /**
  * The signed-in college, fetched from the backend.
@@ -20,6 +21,27 @@ import { serverApi, ServerApiError } from "@/lib/api/server";
  */
 export type CurrentCollege = CollegePayload;
 
+/** The API's shape, from whichever source answered. */
+function toPayload(college: {
+  id: string; name: string; subdomain: string; customDomain: string | null;
+  templateId: string | null; themePaletteId: string | null; themeFontId: string | null;
+  collegeType: string | null; status: string; isDemo: boolean; createdAt: Date;
+}): CurrentCollege {
+  return {
+    id: college.id,
+    name: college.name,
+    subdomain: college.subdomain,
+    customDomain: college.customDomain,
+    templateId: college.templateId,
+    themePaletteId: college.themePaletteId,
+    themeFontId: college.themeFontId,
+    collegeType: college.collegeType,
+    status: college.status,
+    isDemo: college.isDemo,
+    createdAt: college.createdAt.toISOString(),
+  } as CurrentCollege;
+}
+
 export async function getCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege | null> {
   try {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
@@ -30,48 +52,31 @@ export async function getCurrentCollege(targetSubdomain?: string): Promise<Curre
     }
   }
 
-  // Fallback to open access / local database college so auth never gets stuck in redirect loop
-  const openCollege = await openAccessCollege(targetSubdomain);
-  if (openCollege) {
-    return {
-      id: openCollege.id,
-      name: openCollege.name,
-      subdomain: openCollege.subdomain,
-      customDomain: openCollege.customDomain,
-      templateId: openCollege.templateId,
-      themePaletteId: openCollege.themePaletteId,
-      themeFontId: openCollege.themeFontId,
-      collegeType: openCollege.collegeType,
-      status: openCollege.status,
-      isDemo: openCollege.isDemo,
-      createdAt: openCollege.createdAt.toISOString(),
-    };
+  /**
+   * Open access is a mode, not a consolation prize.
+   *
+   * This used to fall through to the shared college whenever the backend said
+   * 401 — which is the backend saying "this person is not signed in". The result
+   * was that signing out, or presenting an expired cookie, or presenting no
+   * cookie at all, still returned a college; every guarded page then rendered,
+   * and route protection existed only on paper. It answers now only when the
+   * deployment has deliberately been opened.
+   */
+  if (AUTH_DISABLED) {
+    const openCollege = await openAccessCollege(targetSubdomain);
+    if (openCollege) return toPayload(openCollege);
   }
 
   return null;
 }
 
-/** Same, but sends signed-out visitors to the login screen. */
-import { AUTH_DISABLED, openAccessCollege } from "@/lib/auth/open-access";
-
 export async function requireCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege> {
   const college = await getCurrentCollege(targetSubdomain);
   if (college) return college;
 
-  const openCollege = await openAccessCollege(targetSubdomain);
-  return {
-    id: openCollege.id,
-    name: openCollege.name,
-    subdomain: openCollege.subdomain,
-    customDomain: openCollege.customDomain,
-    templateId: openCollege.templateId,
-    themePaletteId: openCollege.themePaletteId,
-    themeFontId: openCollege.themeFontId,
-    collegeType: openCollege.collegeType,
-    status: openCollege.status,
-    isDemo: openCollege.isDemo,
-    createdAt: openCollege.createdAt.toISOString(),
-  };
+  // Was: return the open-access college regardless, so this function never
+  // required anything. A guard that cannot refuse is not a guard.
+  redirect("/login");
 }
 
 /**
