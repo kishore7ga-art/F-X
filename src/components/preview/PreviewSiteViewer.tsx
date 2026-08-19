@@ -309,7 +309,29 @@ export function PreviewSiteViewer({ subdomain }: { subdomain: string }) {
     document.querySelectorAll("style[data-xite-section]").forEach((el) => el.remove());
     document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
     document.querySelectorAll("style[data-xite-preview-protection]").forEach((el) => el.remove());
+    // ── Tailwind CDN for section canvas ──────────────────────────────────────
+    // Admin preset sections use Tailwind CSS classes (bg-slate-950, flex, grid, etc.)
+    // These classes don't exist in Next.js compiled Tailwind (JIT only scans source files).
+    // Inject Tailwind CDN with `important: ".section-canvas-box"` so generated CSS is
+    // scoped: `.section-canvas-box .bg-slate-950 { ... }` — never touches the app UI.
+    if (!document.querySelector("script[data-xite-tailwind-cdn]")) {
+      const twConfig = document.createElement("script");
+      twConfig.setAttribute("data-xite-tailwind-cdn", "config");
+      twConfig.textContent = `
+        window.tailwind = window.tailwind || {};
+        tailwind.config = {
+          important: '.section-canvas-box',
+          theme: { extend: {} },
+          plugins: [],
+        };
+      `;
+      document.head.appendChild(twConfig);
 
+      const twScript = document.createElement("script");
+      twScript.src = "https://cdn.tailwindcss.com";
+      twScript.setAttribute("data-xite-tailwind-cdn", "true");
+      document.head.appendChild(twScript);
+    }
     const baseProtection = document.createElement("style");
     baseProtection.setAttribute("data-xite-preview-protection", "true");
     baseProtection.textContent = `

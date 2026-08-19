@@ -995,6 +995,34 @@ export function EditorStudio({
     document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
     document.querySelectorAll("style[data-xite-canvas-protection]").forEach((el) => el.remove());
 
+    // ── Tailwind CDN for section canvas ──────────────────────────────────────
+    // Admin preset sections use Tailwind CSS classes (bg-slate-950, flex, grid-cols-3, etc.)
+    // Next.js Tailwind JIT only scans source files, so dynamically injected section HTML
+    // does NOT get Tailwind CSS generated for it. Fix: inject Tailwind CDN Play script
+    // configured with `important: ".section-canvas-box"` — this makes CDN Tailwind
+    // generate scoped CSS like `.section-canvas-box .bg-slate-950 { ... }` so it ONLY
+    // applies inside section canvases and never touches the editor's own UI.
+    if (!document.querySelector("script[data-xite-tailwind-cdn]")) {
+      // 1. Inject Tailwind config BEFORE the CDN script loads
+      const twConfig = document.createElement("script");
+      twConfig.setAttribute("data-xite-tailwind-cdn", "config");
+      twConfig.textContent = `
+        window.tailwind = window.tailwind || {};
+        tailwind.config = {
+          important: '.section-canvas-box',
+          theme: { extend: {} },
+          plugins: [],
+        };
+      `;
+      document.head.appendChild(twConfig);
+
+      // 2. Load the Tailwind CDN Play script — it reads window.tailwind.config
+      const twScript = document.createElement("script");
+      twScript.src = "https://cdn.tailwindcss.com";
+      twScript.setAttribute("data-xite-tailwind-cdn", "true");
+      document.head.appendChild(twScript);
+    }
+
     // Inject base canvas layout protection stylesheet
     const baseProtection = document.createElement("style");
     baseProtection.setAttribute("data-xite-canvas-protection", "true");
