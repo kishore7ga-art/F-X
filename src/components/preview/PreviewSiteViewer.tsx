@@ -702,7 +702,13 @@ export function PreviewSiteViewer({
                   // stack in source order. No clipping — the Admin's iframe does not
                   // clip either, and `overflow: hidden` here cut off every shadow,
                   // dropdown and sticky element a section had.
-                  zIndex: isHeader ? 40 : 20 - Math.min(idx, 15),
+                  //
+                  // The rest carried a descending z-index, which stacked every
+                  // section above the one after it — the reverse of how HTML paints,
+                  // so an overlapping decoration rendered over its neighbour instead
+                  // of under it. Natural order is both correct and what the Admin
+                  // shows.
+                  ...(isHeader ? { zIndex: 40 } : null),
                   position: "relative",
                 }}
                 className="w-full relative transition-all group section-wrapper-container"

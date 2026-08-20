@@ -2926,6 +2926,55 @@ export function EditorStudio({
                           editableTarget.focus();
                         } catch {}
 
+                        /**
+                         * Commit while typing, not on the way out.
+                         *
+                         * Blur fires on the mousedown that begins the *next*
+                         * click. Committing there re-rendered the canvas in the
+                         * middle of that gesture — `dangerouslySetInnerHTML`
+                         * replaced the subtree, mouseup landed on a node that was
+                         * not the mousedown target, and the browser therefore
+                         * never dispatched the click. Clicking into a heading and
+                         * then clicking another section silently did nothing; it
+                         * took a second click to select anything.
+                         *
+                         * Debounced `input` also fixes a quieter problem. The
+                         * capture serialises the DOM, and the browser's
+                         * serialiser normalises attribute order, quoting and
+                         * whitespace — so the "new" code differed from the
+                         * authored HTML even when nothing was typed. Every click
+                         * into text rewrote the section, pushed an undo entry and
+                         * triggered an autosave for an edit nobody made. No typing
+                         * now means no `input`, which means no write.
+                         */
+                        const commit = () => {
+                          const wrapper = editableTarget.closest(".section-wrapper-container") as HTMLElement;
+                          const canvasBox = (wrapper?.querySelector(".section-canvas-box") || wrapper) as HTMLElement;
+                          if (!canvasBox) return;
+
+                          const clone = canvasBox.cloneNode(true) as HTMLElement;
+                          clone.querySelectorAll("[contenteditable]").forEach((el) => {
+                            el.removeAttribute("contenteditable");
+                            (el as HTMLElement).style.outline = "";
+                            (el as HTMLElement).style.outlineOffset = "";
+                            (el as HTMLElement).style.borderRadius = "";
+                            (el as HTMLElement).style.cursor = "";
+                            (el as HTMLElement).style.userSelect = "";
+                          });
+
+                          const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
+                          setSectionsWithHistory((prev) => {
+                            if (!newCode || prev[idx]?.code === newCode) return prev;
+                            return prev.map((s, i) => (i === idx ? { ...s, code: newCode } : s));
+                          });
+                        };
+
+                        let commitTimer: ReturnType<typeof setTimeout> | null = null;
+                        const handleInput = () => {
+                          if (commitTimer) clearTimeout(commitTimer);
+                          commitTimer = setTimeout(commit, 400);
+                        };
+
                         const handleBlur = () => {
                           editableTarget.contentEditable = "false";
                           editableTarget.style.outline = "";
@@ -2935,26 +2984,15 @@ export function EditorStudio({
                           editableTarget.style.userSelect = "";
                           editableTarget.removeEventListener("blur", handleBlur);
                           editableTarget.removeEventListener("keydown", handleKey);
+                          editableTarget.removeEventListener("input", handleInput);
 
-                          // Capture and save updated code
-                          const wrapper = editableTarget.closest(".section-wrapper-container") as HTMLElement;
-                          const canvasBox = (wrapper?.querySelector(".section-canvas-box") || wrapper) as HTMLElement;
-                          if (canvasBox) {
-                            const clone = canvasBox.cloneNode(true) as HTMLElement;
-                            clone.querySelectorAll("[contenteditable]").forEach((el) => {
-                              el.removeAttribute("contenteditable");
-                              (el as HTMLElement).style.outline = "";
-                              (el as HTMLElement).style.outlineOffset = "";
-                              (el as HTMLElement).style.borderRadius = "";
-                              (el as HTMLElement).style.cursor = "";
-                              (el as HTMLElement).style.userSelect = "";
-                            });
-                            const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
-                            if (newCode) {
-                              setSectionsWithHistory((prev) =>
-                                prev.map((s, i) => (i === idx ? { ...s, code: newCode } : s))
-                              );
-                            }
+                          // A pending keystroke must not be lost, but it must also
+                          // not land inside this click. The frame after mouseup is
+                          // late enough for the click to have been dispatched.
+                          if (commitTimer) {
+                            clearTimeout(commitTimer);
+                            commitTimer = null;
+                            requestAnimationFrame(() => requestAnimationFrame(commit));
                           }
                         };
 
@@ -2970,19 +3008,33 @@ export function EditorStudio({
 
                         editableTarget.addEventListener("blur", handleBlur);
                         editableTarget.addEventListener("keydown", handleKey);
+                        editableTarget.addEventListener("input", handleInput);
                       }
                     }}
                     onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
                     data-xite-section={sec.id}
                     style={{
-                      zIndex: isHeader ? 40 : 20 - Math.min(idx, 15),
+                      // Only the header is lifted, and only because a sticky one
+                      // has to stay above what follows it. Everything else keeps
+                      // natural document order.
+                      //
+                      // This used to descend — `20 - idx` — which put every
+                      // section *above* the one after it, the exact reverse of how
+                      // HTML stacks. Any section whose content leaves its box (an
+                      // overlapping card, a wave divider, a decoration hanging off
+                      // the bottom) then covered the top of its neighbour and took
+                      // the clicks meant for it: clicking one section selected the
+                      // previous one. Reproduced with a 70px overhang — the click
+                      // landed on `#overhang` and selected the hero instead of the
+                      // section actually under the cursor.
+                      ...(isHeader ? { zIndex: 40 } : null),
                       position: "relative",
                     }}
                     // No clipping: `overflow: hidden` cut off every shadow, dropdown
                     // and sticky element a section had, none of which the Admin's
                     // iframe clips.
                     className={`w-full relative transition-all group section-wrapper-container ${
-                      activeSectionIndex === idx ? "ring-2 ring-cyan-500/80 ring-offset-2 ring-offset-slate-900 z-30" : "cursor-default"
+                      activeSectionIndex === idx ? "ring-2 ring-cyan-500/80 ring-offset-2 ring-offset-slate-900" : "cursor-default"
                     }`}
                   >
                     <div
