@@ -2883,8 +2883,15 @@ export function EditorStudio({
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
           {sections.length === 0 ? (
-            /* Empty Canvas State */
-            <div className="my-16 text-center space-y-4 max-w-md p-8 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm">
+            /* Empty Canvas State
+               Wrapped in its own centring box rather than relying on the canvas
+               to centre it. The canvas used to be a flex column with
+               `items-center`; it is a plain block now, because it stands in for
+               `<body>` and has to lay sections out the way a document does. This
+               card is editor chrome, not content, so it does its own centring
+               instead of dictating how sections are laid out. */
+            <div className="w-full min-h-[60vh] flex items-center justify-center p-6">
+            <div className="text-center space-y-4 max-w-md w-full p-8 bg-slate-50 border border-slate-200 rounded-2xl shadow-lg">
               <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-700">
                 <Layout className="w-8 h-8" />
               </div>
@@ -2901,6 +2908,7 @@ export function EditorStudio({
                   label="Add Section"
                 />
               </div>
+            </div>
             </div>
           ) : (
             /* Pure Section Rendering for Current Page */
