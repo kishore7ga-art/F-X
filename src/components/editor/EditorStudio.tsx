@@ -1094,16 +1094,35 @@ export function EditorStudio({
   // Active Page State
   const [currentPage, setCurrentPage] = useState({ name: "Home", slug: "/home" });
 
+  /**
+   * Where the editor keeps work between page switches and reloads.
+   *
+   * Scoped to the college. The key used to be a bare, unscoped string — one slot
+   * shared by every tenant that had ever used this browser — and it is read
+   * *before* the database, so whoever signed in next was shown the previous
+   * tenant's sections as their own. That is how a college opens its editor and
+   * finds another brand's section at the top of its page, still there after the
+   * original tenant has been deleted outright, because the copy lives in the
+   * browser rather than in the database.
+   *
+   * The sibling key xite_active_sections_<subdomain>_<page> was already scoped
+   * this way; this one had been missed.
+   *
+   * Deliberately no migration from the old key: its contents cannot be
+   * attributed to any college, so importing them would repeat the bug.
+   */
+  const pageStoreKey = `xite_saved_pages_${subdomain}`;
+
   // Per-Page Persistent Auto-Save Store
   const [pageStore, setPageStore] = useState<Record<string, SectionItem[]>>(() => {
     if (typeof window !== "undefined") {
       try {
-        const saved = localStorage.getItem("xite_saved_pages");
+        const saved = localStorage.getItem(`xite_saved_pages_${subdomain}`);
         if (saved && saved !== "undefined" && saved !== "null") {
           return JSON.parse(saved);
         }
       } catch (e) {
-        console.warn("Could not parse xite_saved_pages from localStorage:", e);
+        console.warn("Could not parse saved pages from localStorage:", e);
       }
     }
     return {};
@@ -1117,7 +1136,7 @@ export function EditorStudio({
         const updated = { ...prev, [currentPage.slug]: sections };
         if (typeof window !== "undefined") {
           try {
-            localStorage.setItem("xite_saved_pages", JSON.stringify(updated));
+            localStorage.setItem(pageStoreKey, JSON.stringify(updated));
             localStorage.setItem(`xite_active_sections_${subdomain}_${pageKey}`, JSON.stringify(sections));
           } catch {}
         }
@@ -1617,7 +1636,7 @@ export function EditorStudio({
       const updated = { ...prev, [currentPage.slug]: sections };
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("xite_saved_pages", JSON.stringify(updated));
+          localStorage.setItem(pageStoreKey, JSON.stringify(updated));
           localStorage.setItem(`xite_active_sections_${subdomain}_${currentSlugKey}`, JSON.stringify(sections));
         } catch {}
       }
@@ -1666,7 +1685,7 @@ export function EditorStudio({
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem(`xite_active_sections_${subdomain}_${currentSlugKey}`, JSON.stringify(sections));
-        localStorage.setItem("xite_saved_pages", JSON.stringify(updatedPageStore));
+        localStorage.setItem(pageStoreKey, JSON.stringify(updatedPageStore));
         setPageStore(updatedPageStore);
       } catch (err) {
         console.warn("Could not write to localStorage:", err);
