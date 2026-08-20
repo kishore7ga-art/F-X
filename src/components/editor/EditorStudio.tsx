@@ -2877,8 +2877,22 @@ export function EditorStudio({
           }`}
         >
         <div
+          /**
+           * The canvas hugs its sections; it does not reserve a screenful.
+           *
+           * `min-h-screen` is right on the published site — a short page should
+           * still fill the viewport with the site's own background rather than
+           * ending in a band of nothing. In the editor it produced the opposite
+           * impression: a tenant whose only section is a 102px header got that
+           * header and then a full screen of flat black, which reads as a page
+           * that failed to load rather than a site with one section in it.
+           *
+           * Sizing to content puts the editor's own surface directly under the
+           * last section, so what is dark on screen is a section, and what is
+           * not a section does not pretend to be one.
+           */
           className={`xite-site-canvas block max-w-full ${
-            viewportWidth === "100%" ? "w-full min-h-screen m-0 p-0" : "min-h-[75vh]"
+            viewportWidth === "100%" ? "w-full m-0 p-0" : "min-h-[40vh]"
           }`}
           style={{ width: viewportWidth, maxWidth: "100%" }}
         >
@@ -3072,11 +3086,15 @@ export function EditorStudio({
                 );
               })}
 
-              {/* Bottom Clearance Spacer for Floating Dock */}
-              <div className="w-full h-48 bg-transparent pointer-events-none shrink-0" />
             </div>
           )}
         </div>
+
+        {/* Clearance for the floating dock. Outside the canvas: it is editor
+            chrome, and inside it the canvas painted 192px of its own background
+            below the last section — which on a site with one short header read
+            as a broken page rather than as space. */}
+        <div className="w-full h-48 shrink-0 pointer-events-none" />
         </div>
       </main>
 
