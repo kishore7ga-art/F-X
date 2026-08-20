@@ -3295,7 +3295,13 @@ export function EditorStudio({
           onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
           viewportWidth={viewportWidth}
           setViewportWidth={setViewportWidth}
-          activeSectionTitle={activeSectionIndex !== null && sections[activeSectionIndex] ? sections[activeSectionIndex]?.title : "Hero"}
+          /* Empty when nothing is selected, so the toolbar can say so. This
+             passed the literal string "Hero" instead: clicking blank canvas
+             deselects — correctly — and the toolbar then named a section that
+             was neither selected nor, on most sites, even present. */
+          activeSectionTitle={
+            activeSectionIndex !== null ? sections[activeSectionIndex]?.title ?? "" : ""
+          }
           hasSections={sections.length > 0}
           isSectionSelected={activeSectionIndex !== null}
           onAddSection={() => setShowAddSectionModal(true)}

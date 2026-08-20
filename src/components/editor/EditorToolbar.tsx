@@ -54,7 +54,10 @@ export function EditorToolbar({
   isSettingsOpen = false,
   viewportWidth,
   setViewportWidth,
-  activeSectionTitle = "Hero 2",
+  // Empty, not a sample section name. The fallback below already says
+  // "Select a section"; defaulting to "Hero 2" meant an omitted prop rendered
+  // as a confident label for a section nobody had chosen.
+  activeSectionTitle = "",
   hasSections = true,
   isSectionSelected = true,
   onDuplicateSection,
