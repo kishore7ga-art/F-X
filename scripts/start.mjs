@@ -65,26 +65,39 @@ function checkSessionSecret() {
     new Set(value).size < 8;
 
   if (published || placeholder || value.length < 32) {
-    console.error(
+    /**
+     * Ignore the key; do not refuse to run.
+     *
+     * This exited the process when it was first written, and took every
+     * published college website down with it the moment it met a deployment
+     * whose key had not been rotated — including one where the value was the
+     * literal text of the setup instructions. A control that turns a bad
+     * configuration into an outage gets reverted in a hurry, and then protects
+     * nothing.
+     *
+     * Unsetting it is the honest degradation. This service only ever *verifies*
+     * a cookie the API signed, and `readSessionToken` already treats a missing
+     * key as "cannot verify" and answers null. Sessions stop renewing — visible,
+     * recoverable, and nothing signed with the published key is trusted.
+     */
+    delete process.env.SESSION_SECRET;
+    console.warn(
       [
         "",
-        "[secrets] Refusing to start.",
+        "  " +
+          (published
+            ? "SESSION_SECRET is a placeholder published in this repository."
+            : placeholder
+              ? "SESSION_SECRET looks like instructions rather than a generated key."
+              : `SESSION_SECRET is ${value.length} characters; at least 32 are required.`),
         "",
-        published
-          ? "  SESSION_SECRET is a placeholder published in this repository."
-          : placeholder
-            ? "  SESSION_SECRET looks like instructions rather than a generated key."
-            : `  SESSION_SECRET is ${value.length} characters; at least 32 are required.`,
-        "  Sessions are signed with it, so anyone holding it can issue themselves",
-        "  one. Generate a replacement with:",
+        "  It has been ignored, so nothing signed with it is trusted. Sessions",
+        "  will not renew until this service and the API share a real key:",
         "",
         `      ${GENERATE}`,
         "",
-        "  and set the same value on this service and on the API.",
-        "",
       ].join("\n"),
     );
-    process.exit(1);
   }
 }
 
