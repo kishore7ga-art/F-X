@@ -46,11 +46,25 @@ function checkSessionSecret() {
     return;
   }
 
-  const published = PUBLISHED_SECRETS.some(
-    (known) => value.toLowerCase() === known.toLowerCase(),
-  );
+  const lower = value.toLowerCase();
+  const published = PUBLISHED_SECRETS.some((known) => lower === known.toLowerCase());
 
-  if (published || value.length < 32) {
+  /**
+   * Instructions pasted where a value belongs.
+   *
+   * The first attempt at setting this in production was the literal string
+   * "<the exact same value you set on XITE-B>" — forty characters, not on any
+   * published list, and therefore accepted by the check as originally written.
+   * It would have booted and verified every session against a sentence.
+   */
+  const placeholder =
+    /[<>]/.test(value) ||
+    ["your-", "example", "placeholder", "local-dev", "replace-with", "same value", "generated"].some(
+      (marker) => lower.includes(marker),
+    ) ||
+    new Set(value).size < 8;
+
+  if (published || placeholder || value.length < 32) {
     console.error(
       [
         "",
@@ -58,7 +72,9 @@ function checkSessionSecret() {
         "",
         published
           ? "  SESSION_SECRET is a placeholder published in this repository."
-          : `  SESSION_SECRET is ${value.length} characters; at least 32 are required.`,
+          : placeholder
+            ? "  SESSION_SECRET looks like instructions rather than a generated key."
+            : `  SESSION_SECRET is ${value.length} characters; at least 32 are required.`,
         "  Sessions are signed with it, so anyone holding it can issue themselves",
         "  one. Generate a replacement with:",
         "",
