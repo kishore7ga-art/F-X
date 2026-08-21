@@ -92,6 +92,8 @@ export function DomainSettingsModal({
   const [domains, setDomains] = useState<Domain[]>([]);
   const [domainBusy, setDomainBusy] = useState(false);
   const [publishStatusState, setPublishStatusState] = useState<PublishStatus | null>(null);
+  /** Non-null when the last load failed. Rendered above every tab. */
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Security State
@@ -133,36 +135,67 @@ export function DomainSettingsModal({
   };
 
   /**
-   * Loads the real publish status and domain list.
+   * Loads everything this screen shows, and says so when it cannot.
    *
    * On open rather than on mount: this panel is rendered by the editor whether
-   * or not it is showing, and two requests on every editor load for a screen
-   * nobody opened is two requests wasted.
+   * or not it is showing, and five requests on every editor load for a screen
+   * nobody opened is five requests wasted.
+   *
+   * The first version of this swallowed every failure — each call carried its
+   * own `.catch(() => null)` — so an expired session or a backend restart
+   * produced a screen showing indexing on, no domains, no invoices and no
+   * cards, with nothing anywhere saying a single request had failed. That is
+   * indistinguishable from a tenant who genuinely has none of those things,
+   * and it is the worst possible way for this screen to fail: it looks like an
+   * answer. Failures are collected and shown now.
    */
   const refresh = useCallback(async () => {
-    const [status, domainList, siteSettings, invoiceList, methods] = await Promise.all([
-      getPublishStatus().catch(() => null),
-      listDomains().catch(() => [] as Domain[]),
-      getSiteSettings().catch(() => null),
-      listInvoices().catch(() => [] as Invoice[]),
-      listPaymentMethods().catch(() => null),
+    setLoadError(null);
+
+    const results = await Promise.allSettled([
+      getPublishStatus(),
+      listDomains(),
+      getSiteSettings(),
+      listInvoices(),
+      listPaymentMethods(),
     ]);
-    if (siteSettings) {
-      setSettings(siteSettings);
-      setHeaderScript(siteSettings.customCode.headHtml ?? "");
+
+    const [status, domainList, siteSettings, invoiceList, methods] = results;
+
+    if (siteSettings.status === "fulfilled") {
+      setSettings(siteSettings.value);
+      setHeaderScript(siteSettings.value.customCode.headHtml ?? "");
     }
-    setInvoices(invoiceList);
-    if (methods) {
-      setPaymentMethods(methods.paymentMethods);
-      setPaymentProviderName(methods.provider);
+    if (invoiceList.status === "fulfilled") setInvoices(invoiceList.value);
+    if (methods.status === "fulfilled") {
+      setPaymentMethods(methods.value.paymentMethods);
+      setPaymentProviderName(methods.value.provider);
     }
-    if (status) {
-      setPublishStatusState(status);
-      setLastDeployedTime(formatWhen(status.publishedAt));
+    if (status.status === "fulfilled") {
+      setPublishStatusState(status.value);
+      setLastDeployedTime(formatWhen(status.value.publishedAt));
     }
-    setDomains(domainList);
-    const primary = domainList.find((d) => d.isPrimary) ?? domainList[0];
-    if (primary) setSavedDomain(primary.hostname);
+    if (domainList.status === "fulfilled") {
+      setDomains(domainList.value);
+      const primary = domainList.value.find((d) => d.isPrimary) ?? domainList.value[0];
+      if (primary) setSavedDomain(primary.hostname);
+    }
+
+    const failures = results.filter((r) => r.status === "rejected");
+    if (failures.length === 0) return;
+
+    // A 401 across the board means one thing and has one fix, so it is worth
+    // saying rather than reporting five failures that all mean "sign in".
+    const unauthorised = failures.some(
+      (f) => (f as PromiseRejectedResult).reason instanceof ApiError &&
+        ((f as PromiseRejectedResult).reason as ApiError).status === 401,
+    );
+
+    setLoadError(
+      unauthorised
+        ? "Your session has expired. Sign in again to manage these settings."
+        : `Could not load ${failures.length === results.length ? "these settings" : "some of these settings"}. Check your connection and try again.`,
+    );
   }, []);
 
   useEffect(() => {
@@ -718,6 +751,46 @@ export function DomainSettingsModal({
         }}
         className="max-md:!p-4 max-md:!h-auto"
       >
+
+        {/* Sits above every tab, because a failure to load affects all of them
+            and a tenant should not have to guess why a screen is empty. */}
+        {loadError && (
+          <div
+            role="alert"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "16px",
+              flexWrap: "wrap",
+              borderRadius: "12px",
+              border: "1px solid #FECACA",
+              backgroundColor: "#FEF2F2",
+              color: "#B91C1C",
+              padding: "12px 16px",
+              fontSize: "13px",
+              fontWeight: 600,
+            }}
+          >
+            <span>{loadError}</span>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              style={{
+                borderRadius: "8px",
+                border: "1px solid #FECACA",
+                backgroundColor: "#FFFFFF",
+                color: "#B91C1C",
+                padding: "6px 14px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* ========================================================= */}
         {/* TAB 4: ADVANCED SETTINGS & CUSTOM CODE */}
