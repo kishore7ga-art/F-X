@@ -6,14 +6,24 @@ import { createPortal } from "react-dom";
 import { ApiError } from "@/lib/api-client";
 import {
   addDomain,
+  changePassword,
   describeDomain,
+  detachPaymentMethod,
   disconnectDomain,
   getPublishStatus,
+  getSiteSettings,
   listDomains,
+  listInvoices,
+  listPaymentMethods,
   publishSite,
+  updateSiteSettings,
   verifyDomain,
   type Domain,
+  type Invoice,
+  type PaymentMethod,
   type PublishStatus,
+  type SiteSettings,
+  type SiteSettingsPatch,
 } from "@/lib/publishing-client";
 import {
   Globe,
@@ -90,18 +100,26 @@ export function DomainSettingsModal({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
 
-  // Advanced State
-  const [seoIndexing, setSeoIndexing] = useState(true);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [headerScript, setHeaderScript] = useState(
-    '<!-- Google Analytics / Tag Manager -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=G-XITE12345"></script>'
-  );
+  // Site settings, loaded from the server. These were three `useState`
+  // defaults — indexing on, maintenance off, a Google Tag snippet — that no
+  // endpoint had ever seen and nothing downstream read.
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [settingsBusy, setSettingsBusy] = useState(false);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentProviderName, setPaymentProviderName] = useState<string | null>(null);
 
-  // Payment Method Form State
-  const [cardHolder, setCardHolder] = useState("Kishore");
-  const [cardNumber, setCardNumber] = useState("•••• •••• •••• 4242");
-  const [cardExpiry, setCardExpiry] = useState("08/29");
-  const [cardCvc, setCardCvc] = useState("•••");
+  const seoIndexing = settings?.seo.indexingEnabled ?? true;
+  const maintenanceMode = settings?.maintenance.enabled ?? false;
+  // Empty, not a pre-filled Google tag with an invented measurement ID. The
+  // placeholder read as configuration the platform had already done.
+  const [headerScript, setHeaderScript] = useState("");
+
+  // No card fields. A card number or CVC held here is one form submission away
+  // from being sent to a server that must never receive it — this platform is
+  // not in PCI-DSS scope and storing a PAN would put it there. Cards are held
+  // by a payment provider; XITE keeps a reference, and there is no provider
+  // connected yet.
 
   // "Never" until the server says otherwise. This defaulted to a hardcoded
   // "Aug 8, 2026 at 11:30 PM", so a site that had never been published claimed
@@ -122,10 +140,22 @@ export function DomainSettingsModal({
    * nobody opened is two requests wasted.
    */
   const refresh = useCallback(async () => {
-    const [status, domainList] = await Promise.all([
+    const [status, domainList, siteSettings, invoiceList, methods] = await Promise.all([
       getPublishStatus().catch(() => null),
       listDomains().catch(() => [] as Domain[]),
+      getSiteSettings().catch(() => null),
+      listInvoices().catch(() => [] as Invoice[]),
+      listPaymentMethods().catch(() => null),
     ]);
+    if (siteSettings) {
+      setSettings(siteSettings);
+      setHeaderScript(siteSettings.customCode.headHtml ?? "");
+    }
+    setInvoices(invoiceList);
+    if (methods) {
+      setPaymentMethods(methods.paymentMethods);
+      setPaymentProviderName(methods.provider);
+    }
     if (status) {
       setPublishStatusState(status);
       setLastDeployedTime(formatWhen(status.publishedAt));
@@ -217,6 +247,86 @@ export function DomainSettingsModal({
     }
   };
 
+  /**
+   * Persists one card's worth of settings.
+   *
+   * A patch, so the SEO card and the maintenance card cannot overwrite each
+   * other. The server is the source of the value that ends up on screen: an
+   * optimistic toggle that the server then rejects leaves the tenant looking at
+   * a state their site is not in.
+   */
+  const saveSettings = async (patch: SiteSettingsPatch, describe: (s: SiteSettings) => string) => {
+    setSettingsBusy(true);
+    try {
+      const updated = await updateSiteSettings(patch);
+      setSettings(updated);
+      setHeaderScript(updated.customCode.headHtml ?? "");
+      showToast(describe(updated));
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Could not save that setting.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  };
+
+  const handleToggleSeo = () =>
+    saveSettings(
+      { seo: { indexingEnabled: !seoIndexing } },
+      (s) =>
+        s.seo.indexingEnabled
+          ? "Search engines may now index this site."
+          : "Search engines are now asked not to index this site.",
+    );
+
+  const handleToggleMaintenance = () =>
+    saveSettings(
+      { maintenance: { enabled: !maintenanceMode } },
+      (s) =>
+        s.maintenance.enabled
+          ? "Maintenance mode is on — visitors now see the maintenance page."
+          : "Maintenance mode is off — the site is serving normally again.",
+    );
+
+  const handleSaveCustomCode = () =>
+    saveSettings({ customCode: { headHtml: headerScript } }, (s) =>
+      s.customCodeExecutes
+        ? "Custom code saved and will run on your domain."
+        : "Custom code saved. Scripts run once you connect your own domain.",
+    );
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast("The two new passwords do not match.");
+      return;
+    }
+    setSettingsBusy(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      showToast("Password changed.");
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Could not change your password.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  };
+
+  const handleRemovePaymentMethod = async (id: string) => {
+    setSettingsBusy(true);
+    try {
+      await detachPaymentMethod(id);
+      setPaymentMethods((prev) => prev.filter((m) => m.id !== id));
+      showToast("Payment method removed.");
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Could not remove that card.");
+    } finally {
+      setSettingsBusy(false);
+    }
+  };
+
   const handleDisconnectDomain = async (id: string) => {
     setDomainBusy(true);
     try {
@@ -230,22 +340,10 @@ export function DomainSettingsModal({
     }
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      showToast("New passwords do not match!");
-      return;
-    }
-    showToast("Password updated successfully! 🔒");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
-
-  const handleAddCard = (e: React.FormEvent) => {
-    e.preventDefault();
-    showToast("Payment method updated successfully! 💳");
-  };
+  // The fake versions of these lived here: one compared two fields in React and
+  // announced "Password updated successfully!" without touching the account,
+  // the other announced "Payment method updated successfully!" and did nothing
+  // at all. The real implementations are above.
 
   useEffect(() => {
     setMounted(true);
@@ -644,10 +742,8 @@ export function DomainSettingsModal({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSeoIndexing(!seoIndexing);
-                    showToast(`SEO indexing ${!seoIndexing ? "enabled" : "disabled"}!`);
-                  }}
+                  disabled={settingsBusy}
+                  onClick={() => void handleToggleSeo()}
                   style={{
                     width: "48px",
                     height: "26px",
@@ -675,10 +771,8 @@ export function DomainSettingsModal({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setMaintenanceMode(!maintenanceMode);
-                    showToast(`Maintenance mode ${!maintenanceMode ? "activated" : "deactivated"}!`);
-                  }}
+                  disabled={settingsBusy}
+                  onClick={() => void handleToggleMaintenance()}
                   style={{
                     width: "48px",
                     height: "26px",
@@ -702,7 +796,15 @@ export function DomainSettingsModal({
             <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Custom &lt;head&gt; Code Injection</h4>
-                <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>Inject custom Google Analytics tags, Facebook Pixel, or third-party chat widgets.</p>
+                <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>Inject analytics tags, verification meta tags, or third-party widgets into your published site.</p>
+                {/* The one thing a tenant must know before pasting a script
+                    here: on a xite.co.in address it is saved but not executed,
+                    because that address shares a domain with the platform. */}
+                {settings && !settings.customCodeExecutes && settings.customCodeNotice && (
+                  <p style={{ fontSize: "12px", color: "#B45309", backgroundColor: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", padding: "10px 12px", margin: "6px 0 0", lineHeight: 1.6 }}>
+                    {settings.customCodeNotice}
+                  </p>
+                )}
               </div>
 
               <textarea
@@ -726,7 +828,8 @@ export function DomainSettingsModal({
 
               <button
                 type="button"
-                onClick={() => showToast("Custom header code saved successfully! 💾")}
+                onClick={() => void handleSaveCustomCode()}
+                disabled={settingsBusy}
                 style={{
                   borderRadius: "8px",
                   backgroundColor: "#171717",
@@ -740,7 +843,7 @@ export function DomainSettingsModal({
                   transition: "all 150ms ease",
                 }}
               >
-                Save Code
+                {settingsBusy ? "Saving..." : "Save Code"}
               </button>
             </div>
           </div>
@@ -857,32 +960,50 @@ export function DomainSettingsModal({
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {[
-                  { id: "INV-2026-089", date: "Aug 1, 2026", desc: "XITE Pro University License (Annual)", amount: "$990.00", status: "Paid" },
-                  { id: "INV-2025-088", date: "Aug 1, 2025", desc: "XITE Pro University License (Annual)", amount: "$990.00", status: "Paid" },
-                  { id: "INV-2024-042", date: "Aug 1, 2024", desc: "XITE Starter Subscription", amount: "$290.00", status: "Paid" },
-                ].map((inv) => (
-                  <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderRadius: "10px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                      <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#171717" }}>{inv.id}</span>
-                      <span style={{ color: "#737373" }}>{inv.date}</span>
-                      <span style={{ fontWeight: 600, color: "#171717" }}>{inv.desc}</span>
-                    </div>
+                {/* Real rows, or an honest empty state. These were three
+                    invoice numbers written into the JSX — the same three for
+                    every tenant on the platform, all marked Paid, for amounts
+                    nobody had been charged. */}
+                {invoices.length === 0 ? (
+                  <p style={{ fontSize: "12px", color: "#737373", margin: 0, padding: "16px 0", lineHeight: 1.6 }}>
+                    No invoices yet. XITE does not currently raise invoices or take payments,
+                    so nothing has been billed to this institution.
+                  </p>
+                ) : (
+                  invoices.map((inv) => {
+                    const paid = inv.status === "PAID";
+                    return (
+                      <div key={inv.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", padding: "12px 16px", borderRadius: "10px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px", flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0, flexWrap: "wrap" }}>
+                          <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#171717" }}>{inv.number}</span>
+                          <span style={{ color: "#737373" }}>{formatWhen(inv.issuedAt)}</span>
+                          <span style={{ fontWeight: 600, color: "#171717" }}>{inv.description}</span>
+                        </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                      <span style={{ fontWeight: 700, color: "#171717" }}>{inv.amount}</span>
-                      <span style={{ color: "#047857", backgroundColor: "#ECFDF5", padding: "2px 8px", borderRadius: "10px", fontWeight: 600 }}>● {inv.status}</span>
-                      <button
-                        type="button"
-                        onClick={() => showToast(`Downloaded invoice ${inv.id}.pdf 📄`)}
-                        style={{ display: "flex", alignItems: "center", gap: "4px", background: "transparent", border: "none", color: "#737373", cursor: "pointer", fontWeight: 600 }}
-                      >
-                        <Download style={{ width: "13px", height: "13px" }} />
-                        <span>PDF</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                          <span style={{ fontWeight: 700, color: "#171717" }}>{inv.amountDisplay}</span>
+                          <span style={{ color: paid ? "#047857" : "#B45309", backgroundColor: paid ? "#ECFDF5" : "#FFFBEB", padding: "2px 8px", borderRadius: "10px", fontWeight: 600 }}>
+                            {inv.status}
+                          </span>
+                          {/* Only offered when a document actually exists. The
+                              old button showed "Downloaded invoice X.pdf" for a
+                              file that was never generated. */}
+                          {inv.documentUrl && (
+                            <a
+                              href={inv.documentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ display: "flex", alignItems: "center", gap: "4px", color: "#737373", fontWeight: 600, textDecoration: "none" }}
+                            >
+                              <Download style={{ width: "13px", height: "13px" }} />
+                              <span>PDF</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -903,89 +1024,69 @@ export function DomainSettingsModal({
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }} className="max-lg:!grid-cols-1">
-              {/* Saved Payment Card */}
+              {/* Cards on file. There is no card form: card details go to a
+                  payment provider, never to XITE, and none is connected yet. */}
               <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
-                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Active Cards on File</h4>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Cards on file</h4>
 
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderRadius: "12px", backgroundColor: "#171717", color: "#FFFFFF" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <span style={{ fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.06em" }}>Primary Card</span>
-                    <span style={{ fontFamily: "monospace", fontSize: "15px", fontWeight: 700, letterSpacing: "0.1em" }}>Visa •••• 4242</span>
-                    <span style={{ fontSize: "11px", color: "#A3A3A3" }}>Expires 08/29 • Kishore</span>
-                  </div>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#10B981", backgroundColor: "rgba(16,185,129,0.15)", padding: "4px 8px", borderRadius: "8px" }}>
-                    DEFAULT
-                  </span>
-                </div>
+                {paymentMethods.length === 0 ? (
+                  <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>
+                    {paymentProviderName
+                      ? "No card saved yet."
+                      : "No payment provider is connected to XITE yet, so cards cannot be saved. Nothing is being charged."}
+                  </p>
+                ) : (
+                  paymentMethods.map((method) => (
+                    <div key={method.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "14px 18px", borderRadius: "12px", backgroundColor: "#171717", color: "#FFFFFF" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <span style={{ fontSize: "11px", color: "#A3A3A3", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          {method.provider}
+                        </span>
+                        <span style={{ fontFamily: "monospace", fontSize: "15px", fontWeight: 700, letterSpacing: "0.1em" }}>
+                          {method.brand || "Card"} &bull;&bull;&bull;&bull; {method.last4 || "----"}
+                        </span>
+                        {method.expMonth && method.expYear && (
+                          <span style={{ fontSize: "11px", color: "#A3A3A3" }}>
+                            Expires {String(method.expMonth).padStart(2, "0")}/{method.expYear}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        {method.isDefault && (
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: "#10B981", backgroundColor: "rgba(16,185,129,0.15)", padding: "4px 8px", borderRadius: "8px" }}>
+                            DEFAULT
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => void handleRemovePaymentMethod(method.id)}
+                          disabled={settingsBusy}
+                          style={{ background: "transparent", border: "none", color: "#FCA5A5", cursor: settingsBusy ? "not-allowed" : "pointer", fontSize: "11px", fontWeight: 600 }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
-              {/* Add New Card Form */}
-              <form onSubmit={handleAddCard} style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
-                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Add New Payment Method</h4>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>Cardholder Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={cardHolder}
-                    onChange={(e) => setCardHolder(e.target.value)}
-                    style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none" }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>Card Number</label>
-                  <input
-                    type="text"
-                    required
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none", fontFamily: "monospace" }}
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>Expiry</label>
-                    <input
-                      type="text"
-                      required
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none" }}
-                    />
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#525252" }}>CVC</label>
-                    <input
-                      type="text"
-                      required
-                      value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value)}
-                      style={{ backgroundColor: "#FAFAFA", border: "1px solid #E5E5E5", borderRadius: "8px", padding: "8px 12px", fontSize: "13px", outline: "none" }}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  style={{
-                    borderRadius: "8px",
-                    backgroundColor: "#171717",
-                    color: "#FFFFFF",
-                    padding: "9px 18px",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    alignSelf: "flex-start",
-                    marginTop: "4px",
-                  }}
-                >
-                  Save Card
-                </button>
-              </form>
+              {/* Where a card form used to be.
+                  It collected a card number, an expiry and a CVC into React
+                  state and submitted them nowhere. Collecting a PAN puts this
+                  platform inside PCI-DSS scope, and retaining a CVC after
+                  authorisation is prohibited outright — so the fix is not a
+                  better form, it is no form. When a provider is integrated, its
+                  own hosted field goes here and XITE stores only the token it
+                  hands back. */}
+              <div style={{ borderRadius: "14px", border: "1px dashed #E5E5E5", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Adding a card</h4>
+                <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>
+                  Card details are never entered into XITE. Once a payment provider is connected,
+                  their secure form appears here and XITE stores only a reference to the card &mdash;
+                  the brand and last four digits, so you can tell your cards apart.
+                </p>
+              </div>
             </div>
           </div>
         )}

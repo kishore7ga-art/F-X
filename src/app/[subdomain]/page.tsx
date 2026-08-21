@@ -1,13 +1,27 @@
-import { PreviewSiteViewer } from "@/components/preview/PreviewSiteViewer";
-import { SectionRuntimeAssets } from "@/components/preview/SectionRuntimeAssets";
-import { loadSiteSections } from "@/lib/site-sections.server";
+import type { Metadata } from "next";
+
+import { PublishedSite, publishedSiteMetadata } from "@/components/preview/PublishedSite";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const metadata = {
-  title: "Official Campus Portal — Powered by XITE",
-};
+/**
+ * The same site as `/site/[subdomain]`, reached at the bare root — this is where
+ * the proxy's subdomain and custom-domain rewrites land.
+ *
+ * Both routes render one component. They used to be two copies of the same
+ * fetch-and-render, which is where a rule like the maintenance check gets added
+ * to one and not the other, leaving a tenant who switched their site off still
+ * serving it at one of its two addresses.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ subdomain: string }>;
+}): Promise<Metadata> {
+  const { subdomain } = await params;
+  return publishedSiteMetadata(subdomain);
+}
 
 export default async function SubdomainRootPage({
   params,
@@ -15,11 +29,5 @@ export default async function SubdomainRootPage({
   params: Promise<{ subdomain: string }>;
 }) {
   const { subdomain } = await params;
-  const initialSections = await loadSiteSections(subdomain);
-  return (
-    <>
-      <SectionRuntimeAssets />
-      <PreviewSiteViewer subdomain={subdomain} mode="live" initialSections={initialSections} />
-    </>
-  );
+  return <PublishedSite subdomain={subdomain} />;
 }

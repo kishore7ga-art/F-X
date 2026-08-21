@@ -1,13 +1,23 @@
-import { PreviewSiteViewer } from "@/components/preview/PreviewSiteViewer";
-import { SectionRuntimeAssets } from "@/components/preview/SectionRuntimeAssets";
-import { loadSiteSections } from "@/lib/site-sections.server";
+import type { Metadata } from "next";
+
+import { PublishedSite, publishedSiteMetadata } from "@/components/preview/PublishedSite";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const metadata = {
-  title: "Official Campus Portal — Powered by XITE",
-};
+/**
+ * Title, description and robots come from the tenant's own SEO settings rather
+ * than a constant. The constant was the same for every site on the platform,
+ * and it ignored the indexing toggle entirely.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ subdomain: string }>;
+}): Promise<Metadata> {
+  const { subdomain } = await params;
+  return publishedSiteMetadata(subdomain);
+}
 
 export default async function SitePage({
   params,
@@ -15,14 +25,8 @@ export default async function SitePage({
   params: Promise<{ subdomain: string }>;
 }) {
   const { subdomain } = await params;
-  // Fetched here rather than in the browser so the first paint is the college's
-  // own site. Rendering a spinner and filling it in afterwards meant every
-  // visitor saw a flash of the platform before the site they asked for.
-  const initialSections = await loadSiteSections(subdomain);
-  return (
-    <>
-      <SectionRuntimeAssets />
-      <PreviewSiteViewer subdomain={subdomain} mode="live" initialSections={initialSections} />
-    </>
-  );
+  // Fetched during the render rather than in the browser, so the first paint is
+  // the college's own site rather than a spinner — and so maintenance mode is
+  // decided before any of it is sent.
+  return <PublishedSite subdomain={subdomain} />;
 }

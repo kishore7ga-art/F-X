@@ -115,3 +115,80 @@ export function describeDomain(domain: Domain): {
     tone: "pending",
   };
 }
+
+/* ── Site settings ───────────────────────────────────────────────────────── */
+
+export type SiteSettings = {
+  seo: { indexingEnabled: boolean; title: string | null; description: string | null };
+  maintenance: { enabled: boolean; message: string | null };
+  customCode: { headHtml: string | null; bodyEndHtml: string | null };
+  updatedAt: string | null;
+  /** Whether script in `customCode` will actually run, and why not if it will not. */
+  customCodeExecutes: boolean;
+  customCodeNotice: string | null;
+};
+
+/** A partial patch. Three independent cards edit this, so one must not clobber another. */
+export type SiteSettingsPatch = {
+  seo?: Partial<SiteSettings["seo"]>;
+  maintenance?: Partial<SiteSettings["maintenance"]>;
+  customCode?: Partial<SiteSettings["customCode"]>;
+};
+
+export const getSiteSettings = () => api<SiteSettings>("/api/v1/site-settings");
+
+export const updateSiteSettings = (patch: SiteSettingsPatch) =>
+  api<SiteSettings>("/api/v1/site-settings", { method: "PATCH", body: patch });
+
+/* ── Account ─────────────────────────────────────────────────────────────── */
+
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  api<void>("/api/v1/account/password", {
+    method: "POST",
+    body: { currentPassword, newPassword },
+  });
+
+/* ── Billing ─────────────────────────────────────────────────────────────── */
+
+export type Invoice = {
+  id: string;
+  number: string;
+  description: string;
+  amountMinor: number;
+  currency: string;
+  amountDisplay: string;
+  status: string;
+  issuedAt: string;
+  dueAt: string | null;
+  paidAt: string | null;
+  documentUrl: string | null;
+};
+
+export type PaymentMethod = {
+  id: string;
+  provider: string;
+  brand: string | null;
+  last4: string | null;
+  expMonth: number | null;
+  expYear: number | null;
+  isDefault: boolean;
+};
+
+export const listInvoices = () =>
+  api<{ invoices: Invoice[] }>("/api/v1/billing/invoices").then((r) => r.invoices);
+
+/**
+ * Saved cards, and which provider holds them.
+ *
+ * `provider` is null when no payment provider is connected to the platform,
+ * which is currently always. The screen shows that plainly instead of a card
+ * form that cannot submit anywhere — it previously rendered a saved card ending
+ * 4242 that belonged to nobody.
+ */
+export const listPaymentMethods = () =>
+  api<{ provider: string | null; paymentMethods: PaymentMethod[] }>(
+    "/api/v1/billing/payment-methods",
+  );
+
+export const detachPaymentMethod = (id: string) =>
+  api<void>(`/api/v1/billing/payment-methods/${encodeURIComponent(id)}`, { method: "DELETE" });

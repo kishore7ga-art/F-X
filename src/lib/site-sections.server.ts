@@ -17,8 +17,51 @@ import { serverApi } from "./api/server";
  * is briefly unreachable at render time costs a flash rather than a blank site.
  */
 export async function loadSiteSections(subdomain: string): Promise<SectionItem[]> {
+  return (await loadSiteView(subdomain)).sections;
+}
+
+/**
+ * The settings a published page has to honour before it renders anything.
+ *
+ * Defaults are the safe ones: indexing on (so an existing site is not
+ * de-indexed by a field arriving), maintenance off (so nobody's site is taken
+ * down by a failed lookup), and no custom code (so a backend that cannot be
+ * reached cannot cause markup to be emitted).
+ */
+export type SiteSettings = {
+  indexingEnabled: boolean;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  maintenanceEnabled: boolean;
+  maintenanceMessage: string | null;
+  headHtml: string;
+  bodyEndHtml: string;
+};
+
+export const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  indexingEnabled: true,
+  seoTitle: null,
+  seoDescription: null,
+  maintenanceEnabled: false,
+  maintenanceMessage: null,
+  headHtml: "",
+  bodyEndHtml: "",
+};
+
+export type SiteView = { sections: SectionItem[]; settings: SiteSettings };
+
+/**
+ * Sections and settings in one pass.
+ *
+ * `host` is forwarded so the backend can decide whether this tenant's custom
+ * code is being served on their own domain, which is what determines whether
+ * script in it is emitted or stripped. The decision is made there, not here:
+ * the renderer is the party that would benefit from getting it wrong.
+ */
+export async function loadSiteView(subdomain: string, host?: string): Promise<SiteView> {
+  const query = host ? `?host=${encodeURIComponent(host)}` : "";
   const paths = [
-    `/api/v1/public/site/${encodeURIComponent(subdomain)}`,
+    `/api/v1/public/site/${encodeURIComponent(subdomain)}${query}`,
     `/api/v1/editor/${encodeURIComponent(subdomain)}`,
     "/api/v1/default-website",
   ];
@@ -27,13 +70,20 @@ export async function loadSiteSections(subdomain: string): Promise<SectionItem[]
     try {
       const data = await serverApi<unknown>(path);
       if (!data) continue;
+
       const sections = pickSections(data);
-      if (sections.length > 0) return normalizeSections(sections);
+      if (sections.length === 0) continue;
+
+      const raw = (data as { settings?: Partial<SiteSettings> })?.settings;
+      return {
+        sections: normalizeSections(sections),
+        settings: raw ? { ...DEFAULT_SITE_SETTINGS, ...raw } : DEFAULT_SITE_SETTINGS,
+      };
     } catch {
       // Unreachable or erroring backend: fall through to the next source, and to
       // the client if none of them answer.
     }
   }
 
-  return [];
+  return { sections: [], settings: DEFAULT_SITE_SETTINGS };
 }
