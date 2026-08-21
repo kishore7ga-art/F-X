@@ -1,7 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+
+import { ApiError } from "@/lib/api-client";
+import {
+  addDomain,
+  describeDomain,
+  disconnectDomain,
+  getPublishStatus,
+  listDomains,
+  publishSite,
+  verifyDomain,
+  type Domain,
+  type PublishStatus,
+} from "@/lib/publishing-client";
 import {
   Globe,
   Rocket,
@@ -37,6 +50,18 @@ interface DomainSettingsModalProps {
   initialTab?: string;
 }
 
+/** A server timestamp, in the tenant's own locale. */
+function formatWhen(iso: string | null | undefined): string {
+  if (!iso) return "Never";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Never";
+  return `${date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })} at ${date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 export function DomainSettingsModal({
   isOpen,
   onClose,
@@ -48,9 +73,15 @@ export function DomainSettingsModal({
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const [customDomain, setCustomDomain] = useState(`${subdomain}.edu.in`);
-  const [savedDomain, setSavedDomain] = useState(`${subdomain}.edu.in`);
+  // Empty, not a plausible-looking guess. `${subdomain}.edu.in` was pre-filled
+  // into the field, which reads as a domain the platform has already set up —
+  // for a name the tenant may not own and that nothing had ever checked.
+  const [customDomain, setCustomDomain] = useState("");
+  const [savedDomain, setSavedDomain] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [domainBusy, setDomainBusy] = useState(false);
+  const [publishStatusState, setPublishStatusState] = useState<PublishStatus | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Security State
@@ -72,20 +103,41 @@ export function DomainSettingsModal({
   const [cardExpiry, setCardExpiry] = useState("08/29");
   const [cardCvc, setCardCvc] = useState("•••");
 
-  const [lastDeployedTime, setLastDeployedTime] = useState(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("xite_last_published_time");
-        if (saved) return saved;
-      } catch {}
-    }
-    return "Aug 8, 2026 at 11:30 PM";
-  });
+  // "Never" until the server says otherwise. This defaulted to a hardcoded
+  // "Aug 8, 2026 at 11:30 PM", so a site that had never been published claimed
+  // a deployment, and the localStorage key it fell back to was written by the
+  // fake publish button rather than by any deployment.
+  const [lastDeployedTime, setLastDeployedTime] = useState("Never");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+    setTimeout(() => setToastMessage(null), 4000);
   };
+
+  /**
+   * Loads the real publish status and domain list.
+   *
+   * On open rather than on mount: this panel is rendered by the editor whether
+   * or not it is showing, and two requests on every editor load for a screen
+   * nobody opened is two requests wasted.
+   */
+  const refresh = useCallback(async () => {
+    const [status, domainList] = await Promise.all([
+      getPublishStatus().catch(() => null),
+      listDomains().catch(() => [] as Domain[]),
+    ]);
+    if (status) {
+      setPublishStatusState(status);
+      setLastDeployedTime(formatWhen(status.publishedAt));
+    }
+    setDomains(domainList);
+    const primary = domainList.find((d) => d.isPrimary) ?? domainList[0];
+    if (primary) setSavedDomain(primary.hostname);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) void refresh();
+  }, [isOpen, refresh]);
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -94,33 +146,88 @@ export function DomainSettingsModal({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handlePublish = () => {
+  /**
+   * Publishes the draft.
+   *
+   * This was a 1.2-second `setTimeout` that set a localStorage key and showed
+   * "Website published successfully to production live!". It called no
+   * endpoint, and there was no endpoint to call: the editor's autosave wrote
+   * straight to the field the public site read, so everything was already live
+   * and the button had nothing left to do.
+   *
+   * It now copies the draft over the published config on the server, and
+   * reports what the server said — including when it refuses, which it does for
+   * an empty draft rather than taking a working site down.
+   */
+  const handlePublish = async () => {
     setPublishing(true);
-    const nowStr =
-      new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }) +
-      " at " +
-      new Date().toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-
-    setTimeout(() => {
+    try {
+      const result = await publishSite();
+      const status = await getPublishStatus().catch(() => null);
+      if (status) setPublishStatusState(status);
+      setLastDeployedTime(formatWhen(result.publishedAt));
+      showToast(
+        `Published v${result.publishedVersion} — ${result.sections} section${result.sections === 1 ? "" : "s"} across ${result.pages} page${result.pages === 1 ? "" : "s"}.`,
+      );
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Could not publish. Please try again.");
+    } finally {
       setPublishing(false);
-      setLastDeployedTime(nowStr);
-      try {
-        localStorage.setItem("xite_last_published_time", nowStr);
-      } catch {}
-      showToast("Website published successfully to production live! 🚀");
-    }, 1200);
+    }
   };
 
-  const handleSaveDomain = () => {
-    setSavedDomain(customDomain);
-    showToast(`Custom domain updated to https://${customDomain}`);
+  /**
+   * Connects a domain the tenant owns.
+   *
+   * The previous version of this function was `setSavedDomain(customDomain)`
+   * followed by a toast reading "Custom domain updated to https://…". Nothing
+   * was stored, nothing was verified, and no request was made — a tenant could
+   * believe their domain was connected while every part of the platform was
+   * unaware of it.
+   */
+  const handleAddDomain = async () => {
+    const hostname = customDomain.trim();
+    if (!hostname) return;
+
+    setDomainBusy(true);
+    try {
+      const created = await addDomain(hostname);
+      setDomains((prev) => [...prev.filter((d) => d.id !== created.id), created]);
+      setSavedDomain(created.hostname);
+      showToast(`${created.hostname} added. Create the TXT record below, then press Check.`);
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Could not add that domain.");
+    } finally {
+      setDomainBusy(false);
+    }
+  };
+
+  /** Runs the real DNS and HTTPS checks and shows exactly what they found. */
+  const handleVerifyDomain = async (id: string) => {
+    setDomainBusy(true);
+    try {
+      const checked = await verifyDomain(id);
+      setDomains((prev) => prev.map((d) => (d.id === checked.id ? checked : d)));
+      const { label, detail } = describeDomain(checked);
+      showToast(`${checked.hostname}: ${label}. ${detail}`);
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Could not check that domain.");
+    } finally {
+      setDomainBusy(false);
+    }
+  };
+
+  const handleDisconnectDomain = async (id: string) => {
+    setDomainBusy(true);
+    try {
+      await disconnectDomain(id);
+      setDomains((prev) => prev.filter((d) => d.id !== id));
+      showToast("Domain disconnected.");
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Could not disconnect that domain.");
+    } finally {
+      setDomainBusy(false);
+    }
   };
 
   const handleUpdatePassword = (e: React.FormEvent) => {
@@ -897,20 +1004,21 @@ export function DomainSettingsModal({
               </h1>
             </div>
 
+            {/* Add a domain. Nothing is claimed about it until it is checked. */}
             <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Primary Custom Domain</h4>
-                <span style={{ fontSize: "11px", fontWeight: 600, color: "#047857", backgroundColor: "#ECFDF5", padding: "2px 8px", borderRadius: "12px" }}>
-                  ● SSL Active &amp; Connected
-                </span>
-              </div>
+              <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Connect a domain you own</h4>
+              <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>
+                Your site is always reachable at{" "}
+                <span style={{ fontFamily: "monospace", color: "#171717" }}>{subdomain}.xite.co.in</span>.
+                Adding your own domain does not replace that address.
+              </p>
 
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <input
                   type="text"
                   value={customDomain}
                   onChange={(e) => setCustomDomain(e.target.value)}
-                  placeholder="e.g. kishore7ga-college.edu.in"
+                  placeholder="www.yourcollege.edu"
                   style={{
                     flex: 1,
                     backgroundColor: "#FAFAFA",
@@ -926,52 +1034,125 @@ export function DomainSettingsModal({
                 />
                 <button
                   type="button"
-                  onClick={handleSaveDomain}
+                  onClick={() => void handleAddDomain()}
+                  disabled={domainBusy || !customDomain.trim()}
                   style={{
                     borderRadius: "8px",
-                    backgroundColor: "#171717",
+                    backgroundColor: domainBusy || !customDomain.trim() ? "#A3A3A3" : "#171717",
                     color: "#FFFFFF",
                     padding: "10px 18px",
                     fontSize: "12px",
                     fontWeight: 600,
                     border: "none",
-                    cursor: "pointer",
+                    cursor: domainBusy || !customDomain.trim() ? "not-allowed" : "pointer",
                   }}
                 >
-                  Save Domain
+                  {domainBusy ? "Working..." : "Add domain"}
                 </button>
               </div>
             </div>
 
-            <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
-              <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>DNS Configuration Records</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {[
-                  { type: "A Record", host: "@", value: "76.76.21.21", status: "Active" },
-                  { type: "CNAME", host: "www", value: "cname.xite.co.in", status: "Active" },
-                  { type: "TXT Challenge", host: "_xite-challenge", value: "xite-auth-token-9884", status: "Active" },
-                ].map((rec) => (
-                  <div key={rec.type} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: "8px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span style={{ fontWeight: 700, color: "#171717", width: "100px" }}>{rec.type}</span>
-                      <span style={{ fontFamily: "monospace", color: "#737373" }}>{rec.host}</span>
-                      <span style={{ fontFamily: "monospace", fontWeight: 600, color: "#171717" }}>{rec.value}</span>
+            {/* One card per domain, showing what was actually observed. */}
+            {domains.length === 0 ? (
+              <div style={{ borderRadius: "14px", border: "1px dashed #E5E5E5", padding: "24px 28px", fontSize: "12px", color: "#737373", textAlign: "center" }}>
+                No custom domains connected yet.
+              </div>
+            ) : (
+              domains.map((domain) => {
+                const described = describeDomain(domain);
+                const tone =
+                  described.tone === "live"
+                    ? { fg: "#047857", bg: "#ECFDF5" }
+                    : described.tone === "error"
+                      ? { fg: "#B91C1C", bg: "#FEF2F2" }
+                      : described.tone === "progress"
+                        ? { fg: "#B45309", bg: "#FFFBEB" }
+                        : { fg: "#525252", bg: "#F5F5F5" };
+
+                return (
+                  <div key={domain.id} style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: "#171717", fontFamily: "monospace" }}>
+                        {domain.hostname}
+                        {domain.isPrimary && (
+                          <span style={{ marginLeft: "8px", fontSize: "10px", fontWeight: 700, color: "#525252", backgroundColor: "#F5F5F5", padding: "2px 8px", borderRadius: "12px", fontFamily: "system-ui" }}>
+                            PRIMARY
+                          </span>
+                        )}
+                      </span>
+                      <span style={{ fontSize: "11px", fontWeight: 600, color: tone.fg, backgroundColor: tone.bg, padding: "3px 10px", borderRadius: "12px" }}>
+                        {described.label}
+                      </span>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span style={{ color: "#047857", fontWeight: 600 }}>● {rec.status}</span>
+                    <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>{described.detail}</p>
+
+                    {/* SSL is reported separately, because a domain can be
+                        verified while no certificate exists yet — and telling a
+                        tenant otherwise is a lie they find by visiting the site. */}
+                    <div style={{ display: "flex", gap: "18px", fontSize: "11px", color: "#737373", flexWrap: "wrap" }}>
+                      <span>
+                        HTTPS certificate:{" "}
+                        <b style={{ color: "#171717" }}>
+                          {domain.sslStatus === "ACTIVE"
+                            ? "Issued"
+                            : domain.sslStatus === "PENDING"
+                              ? "Being issued"
+                              : domain.sslStatus === "ERROR"
+                                ? "Problem"
+                                : "Not yet"}
+                        </b>
+                      </span>
+                      <span>
+                        Last checked: <b style={{ color: "#171717" }}>{formatWhen(domain.verificationCheckedAt)}</b>
+                      </span>
+                    </div>
+
+                    {/* Exactly the records this tenant must create, generated
+                        per domain — not the fixed A/CNAME/TXT trio that used to
+                        be printed here with an invented token and a Vercel IP. */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {[domain.dnsInstructions.verification, domain.dnsInstructions.routing].map((rec) => (
+                        <div key={rec.type + "-" + rec.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "10px 14px", borderRadius: "8px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px", overflowX: "auto" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                            <span style={{ fontWeight: 700, color: "#171717", width: "58px", flexShrink: 0 }}>{rec.type}</span>
+                            <span style={{ fontFamily: "monospace", color: "#737373", whiteSpace: "nowrap" }}>{rec.name}</span>
+                            <span style={{ fontFamily: "monospace", fontWeight: 600, color: "#171717", whiteSpace: "nowrap" }}>{rec.value}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => copyToClipboard(rec.value, domain.id + "-" + rec.type)}
+                            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#737373", flexShrink: 0 }}
+                            title="Copy value"
+                          >
+                            <Copy style={{ width: "13px", height: "13px" }} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(rec.value, rec.type)}
-                        style={{ background: "transparent", border: "none", cursor: "pointer", color: "#737373" }}
+                        onClick={() => void handleVerifyDomain(domain.id)}
+                        disabled={domainBusy}
+                        style={{ borderRadius: "8px", backgroundColor: "#171717", color: "#FFFFFF", padding: "8px 16px", fontSize: "12px", fontWeight: 600, border: "none", cursor: domainBusy ? "not-allowed" : "pointer", opacity: domainBusy ? 0.6 : 1 }}
                       >
-                        <Copy style={{ width: "13px", height: "13px" }} />
+                        {domainBusy ? "Checking..." : "Check DNS"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleDisconnectDomain(domain.id)}
+                        disabled={domainBusy}
+                        style={{ borderRadius: "8px", backgroundColor: "#FFFFFF", color: "#B91C1C", padding: "8px 16px", fontSize: "12px", fontWeight: 600, border: "1px solid #FECACA", cursor: domainBusy ? "not-allowed" : "pointer" }}
+                      >
+                        Disconnect
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                );
+              })
+            )}
           </div>
         )}
 

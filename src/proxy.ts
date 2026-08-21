@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import {
+  parseHost,
+  platformSubdomainOf,
+  resolveCustomHost,
+  rootDomain,
+} from "@/lib/host-routing";
+import {
   COOKIE_NAME,
   createSessionToken,
   dueForRenewal,
@@ -32,28 +38,36 @@ import {
  */
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
-  const hostname = request.headers.get("host") || "";
+  const host = parseHost(request.headers.get("host"));
 
-  // Handle clean subdomain mapping (e.g. kishore7ga-college.xite.co.in -> /site/kishore7ga-college)
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || "";
-  const isCustomSubdomain =
-    (hostname.includes(".xite.co.in") ||
-      (rootDomain && hostname.includes(`.${rootDomain}`)) ||
-      hostname.includes(".localhost")) &&
-    !hostname.startsWith("admin.") &&
-    !hostname.startsWith("api.") &&
-    !hostname.startsWith("www.") &&
-    !hostname.startsWith("xite.") &&
-    hostname !== "xite.co.in" &&
-    (rootDomain ? hostname !== rootDomain : true) &&
-    hostname !== "localhost:3000" &&
-    hostname !== "localhost";
+  // Platform routes and framework internals are never a tenant's site, whatever
+  // host they arrive on. Checked before any host handling so a forged header
+  // cannot reach them through a rewrite.
+  const isSiteEligiblePath =
+    !url.pathname.startsWith("/api") && !url.pathname.startsWith("/_next");
 
-  if (isCustomSubdomain) {
-    const subdomain = hostname.split(".")[0];
-    if (subdomain && !url.pathname.startsWith("/api") && !url.pathname.startsWith("/_next")) {
+  if (isSiteEligiblePath && host) {
+    // 1. A platform subdomain: <tenant>.xite.co.in. Suffix-matched on a parsed
+    //    hostname, so a domain merely *containing* the root cannot match — this
+    //    previously used `includes()`, and `xite.co.in.attacker.com` passed it.
+    const subdomain = platformSubdomainOf(host);
+    if (subdomain) {
       url.pathname = `/site/${subdomain}${url.pathname === "/" ? "" : url.pathname}`;
       return NextResponse.rewrite(url);
+    }
+
+    // 2. A custom domain the tenant proved they own and that is serving. The
+    //    lookup is cached, and answers only for ACTIVE domains — a hostname
+    //    that has merely been added to the settings screen routes nowhere.
+    //
+    //    Only consulted for hosts that are not ours, so the common case costs
+    //    nothing: every platform host has already returned above.
+    if (host !== rootDomain() && host !== "localhost") {
+      const custom = await resolveCustomHost(host);
+      if (custom) {
+        url.pathname = `/site/${custom}${url.pathname === "/" ? "" : url.pathname}`;
+        return NextResponse.rewrite(url);
+      }
     }
   }
 
