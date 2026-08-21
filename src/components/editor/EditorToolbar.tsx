@@ -20,7 +20,11 @@ import {
   Layers,
   Type,
 } from "lucide-react";
-import { SECTION_DEVICE_PRESETS } from "@/lib/section-runtime";
+import {
+  SECTION_DEVICE_PRESETS,
+  nextSectionDeviceWidth,
+  type SectionDevicePreset,
+} from "@/lib/section-runtime";
 
 interface EditorToolbarProps {
   subdomain?: string;
@@ -228,39 +232,25 @@ export function EditorToolbar({
   const activeTablet = TABLET_SIZES.find((s) => s.width === viewportWidth);
   const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth);
 
-  const handleMobileClick = () => {
-    let nextIdx = 0;
-    if (viewportWidth === "375px") nextIdx = 1;
-    else if (viewportWidth === "425px") nextIdx = 0;
-    else nextIdx = 0;
-
-    const target = MOBILE_SIZES[nextIdx]!;
-    setViewportWidth(target.width);
-    showToast(`${target.label} (${target.width})`);
+  /**
+   * One press of one device button.
+   *
+   * The three handlers were three hand-written index tables — `if (width ===
+   * "1200px") nextIdx = 2` — which had to be kept in step with the preset list
+   * by hand, and with the site preview's own copy of the same idea by review.
+   * `nextSectionDeviceWidth` is that rule, stated once, beside the ladder it
+   * walks.
+   */
+  const cycleDevice = (group: SectionDevicePreset["group"]) => {
+    const width = nextSectionDeviceWidth(group, viewportWidth);
+    const preset = SECTION_DEVICE_PRESETS.find((p) => p.width === width);
+    setViewportWidth(width);
+    showToast(preset ? `${preset.label} (${preset.width})` : width);
   };
 
-  const handleTabletClick = () => {
-    let nextIdx = 0;
-    if (viewportWidth === "768px") nextIdx = 1;
-    else if (viewportWidth === "640px") nextIdx = 0;
-    else nextIdx = 0;
-
-    const target = TABLET_SIZES[nextIdx]!;
-    setViewportWidth(target.width);
-    showToast(`${target.label} (${target.width})`);
-  };
-
-  const handleDesktopClick = () => {
-    let nextIdx = 0;
-    if (viewportWidth === "100%") nextIdx = 1;
-    else if (viewportWidth === "1200px") nextIdx = 2;
-    else if (viewportWidth === "1024px") nextIdx = 0;
-    else nextIdx = 0;
-
-    const target = DESKTOP_SIZES[nextIdx]!;
-    setViewportWidth(target.width);
-    showToast(`${target.label} (${target.width})`);
-  };
+  const handleMobileClick = () => cycleDevice("mobile");
+  const handleTabletClick = () => cycleDevice("tablet");
+  const handleDesktopClick = () => cycleDevice("desktop");
 
   const buttonHoverStyle = {
     transition: "all 0.15s ease",

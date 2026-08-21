@@ -69,659 +69,6 @@ const SECTION_CATEGORIES = [
   { id: "footer", name: "Footer", description: "Bottom copyright, quick links & social icons", icon: Footprints },
 ];
 
-const ALL_19_SECTION_TEMPLATES: Record<string, string> = {
-  navbar: `<header style="background: rgba(9, 14, 26, 0.95); backdrop-filter: blur(12px); color: #ffffff; padding: 14px 40px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.12); position: sticky; top: 0; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-    <div style="max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-      <div style="display: flex; align-items: center; gap: 14px; flex-shrink: 0;">
-        <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="University Logo" data-logo="true" style="width: 44px; height: 44px; object-fit: cover; border-radius: 50%; background: #ffffff; padding: 2px; border: 2px solid rgba(255,255,255,0.3); cursor: pointer;" title="Right-click to edit university logo!" />
-        <div>
-          <span style="font-size: 18px; font-weight: 900; color: #ffffff; letter-spacing: 0.03em; display: block; line-height: 1.1;">UNIVERSAL COLLEGE OF ENGINEERING</span>
-          <span style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;">AUTONOMOUS INSTITUTION</span>
-        </div>
-      </div>
-
-      <nav class="desktop-nav-links" style="display: flex; align-items: center; gap: clamp(10px, 1.6vw, 24px); font-size: 13px; font-weight: 800; flex-wrap: nowrap;">
-        <a href="#home" style="color: #ffffff; text-decoration: none; padding: 6px 0; white-space: nowrap;">Home</a>
-        <a href="#about" style="color: #e2e8f0; text-decoration: none; padding: 6px 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">About <span style="font-size: 9px; opacity: 0.7;">▾</span></a>
-        <a href="#courses" style="color: #e2e8f0; text-decoration: none; padding: 6px 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">Academics <span style="font-size: 9px; opacity: 0.7;">▾</span></a>
-        <a href="#admissions" style="color: #e2e8f0; text-decoration: none; padding: 6px 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">Admissions <span style="font-size: 9px; opacity: 0.7;">▾</span></a>
-        <a href="#placements" style="color: #e2e8f0; text-decoration: none; padding: 6px 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">Career Development <span style="font-size: 9px; opacity: 0.7;">▾</span></a>
-        <a href="#research" style="color: #e2e8f0; text-decoration: none; padding: 6px 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">Research <span style="font-size: 9px; opacity: 0.7;">▾</span></a>
-        <a href="#gallery" style="color: #e2e8f0; text-decoration: none; padding: 6px 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">Campus Life <span style="font-size: 9px; opacity: 0.7;">▾</span></a>
-      </nav>
-
-      <a href="#contact" class="desktop-apply-btn" style="background: #2563eb; color: #ffffff; padding: 9px 22px; border-radius: 8px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; flex-shrink: 0; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">Apply 2026</a>
-
-      <button class="hamburger-toggle-btn" style="display: none; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 8px 14px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center;" aria-label="Toggle Navigation Menu">
-        ☰
-      </button>
-    </div>
-
-    <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #090e1a; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <nav style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 800;">
-        <a href="#home" style="color: #ffffff; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Home</a>
-        <a href="#about" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">About Institution</a>
-        <a href="#courses" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Academics & Specializations</a>
-        <a href="#admissions" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Admissions 2026</a>
-        <a href="#placements" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Career Development & Placements</a>
-        <a href="#research" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Research & Innovation</a>
-        <a href="#gallery" style="color: #cbd5e1; text-decoration: none; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">Campus Life & Facilities</a>
-        <a href="#contact" style="color: #38bdf8; text-decoration: none; padding: 10px 0;">Contact Helpdesk</a>
-      </nav>
-    </div>
-
-    <script>
-      document.querySelector('.hamburger-toggle-btn').onclick = function() {
-        document.querySelector('.mobile-drawer-menu').classList.toggle('active');
-      };
-    </script>
-
-    <style>
-      @media (max-width: 900px) {
-        .desktop-nav-links { display: none !important; }
-        .desktop-apply-btn { display: inline-flex !important; font-size: 12px !important; padding: 6px 12px !important; margin-left: auto !important; }
-        .hamburger-toggle-btn { display: inline-flex !important; font-size: 18px !important; padding: 6px 10px !important; margin-left: 4px !important; }
-        .mobile-drawer-menu.active { display: block !important; width: 100% !important; }
-      }
-      @media (min-width: 901px) {
-        .hamburger-toggle-btn, .mobile-drawer-menu { display: none !important; }
-        .desktop-nav-links { display: flex !important; }
-        .desktop-apply-btn { display: inline-block !important; }
-      }
-    </style>
-  </header>`,
-
-  hero: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px 60px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid #e2e8f0;">
-    <div style="max-width: 960px; margin: 0 auto;">
-      <span style="background: #ffe4e6; border: 1px solid #f43f5e; color: #e11d48; padding: 6px 20px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;">ADMISSIONS OPEN 2026–2027</span>
-      <h1 style="font-size: 56px; font-weight: 900; margin-top: 24px; line-height: 1.15; color: #0f172a; letter-spacing: -0.02em;">Empowering Minds, Shaping Tomorrow's Leaders</h1>
-      <p style="font-size: 18px; color: #64748b; margin-top: 20px; line-height: 1.6; max-width: 840px; margin-left: auto; margin-right: auto; font-weight: 500;">Join a world-class academic community dedicated to innovation, groundbreaking research, and personal growth. Discover over 120 undergraduate and graduate programs tailored for your future.</p>
-      <div style="margin-top: 36px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
-        <a href="#admissions" style="background: #ef4444; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 800; text-decoration: none; box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4); display: inline-block;">Apply Now</a>
-        <a href="#courses" style="background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 800; text-decoration: none; display: inline-block;">Explore Programs</a>
-      </div>
-      <div style="margin-top: 60px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; border-top: 1px solid #e2e8f0; padding-top: 32px;">
-        <div>
-          <div style="font-size: 28px; font-weight: 900; color: #0f172a;">#12</div>
-          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">NATIONAL RANK</div>
-        </div>
-        <div>
-          <div style="font-size: 28px; font-weight: 900; color: #0f172a;">120+</div>
-          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">ACADEMIC MAJORS</div>
-        </div>
-        <div>
-          <div style="font-size: 28px; font-weight: 900; color: #0f172a;">96%</div>
-          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">GRADUATE PLACEMENT</div>
-        </div>
-        <div>
-          <div style="font-size: 28px; font-weight: 900; color: #0f172a;">10:1</div>
-          <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">STUDENT-FACULTY RATIO</div>
-        </div>
-      </div>
-    </div>
-  </section>`,
-
-  highlights: `<section style="background: #0f172a; color: #ffffff; padding: 60px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: center;">
-      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">#15</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">NIRF National Rank</p></div>
-      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">98.4%</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Placement Record</p></div>
-      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">500+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Top Recruiters</p></div>
-      <div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">15,000+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Active Students</p></div>
-    </div>
-  </section>`,
-
-  about: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;">
-      <div>
-        <span style="color: #2563eb; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em;">OUR HERITAGE</span>
-        <h2 style="font-size: 36px; font-weight: 900; margin-top: 12px; color: #0f172a;">Building Tomorrow's Global Tech Leaders</h2>
-        <p style="font-size: 15px; color: #475569; margin-top: 16px; line-height: 1.7;">Established in 1985, Greenfield University has been at the forefront of academic excellence, technological innovation, and societal advancement for over four decades.</p>
-      </div>
-      <div style="background: #f1f5f9; padding: 32px; border-radius: 24px; border: 1px solid #e2e8f0;">
-        <h4 style="font-size: 18px; font-weight: 900; color: #0f172a; margin: 0;">Key Accreditations</h4>
-        <ul style="margin-top: 16px; padding-left: 20px; color: #334155; font-size: 14px; font-weight: 600; line-height: 1.8;">
-          <li>NAAC A++ Grade Accreditation</li>
-          <li>AICTE & UGC Approved University</li>
-          <li>NIRF Top 20 Engineering Institutions</li>
-        </ul>
-      </div>
-    </div>
-  </section>`,
-
-  vision: `<section style="background: #f8fafc; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
-      <h2 style="font-size: 36px; font-weight: 900; color: #0f172a;">Vision & Mission Statement</h2>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 40px;">
-        <div style="background: #ffffff; padding: 36px; border-radius: 20px; border: 1px solid #e2e8f0; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
-          <div style="font-size: 28px; margin-bottom: 12px;">🎯</div>
-          <h3 style="font-size: 20px; font-weight: 900; color: #0f172a;">Institutional Vision</h3>
-          <p style="font-size: 14px; color: #475569; margin-top: 10px; line-height: 1.7;">To be a globally recognized center of academic excellence and research that produces visionary leaders and ethical global citizens.</p>
-        </div>
-        <div style="background: #ffffff; padding: 36px; border-radius: 20px; border: 1px solid #e2e8f0; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.03);">
-          <div style="font-size: 28px; margin-bottom: 12px;">🚀</div>
-          <h3 style="font-size: 20px; font-weight: 900; color: #0f172a;">Core Mission</h3>
-          <p style="font-size: 14px; color: #475569; margin-top: 10px; line-height: 1.7;">To impart high-quality education, foster innovative research, and nurture industry-ready talent through holistic experiential learning.</p>
-        </div>
-      </div>
-    </div>
-  </section>`,
-
-  courses: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto;">
-      <div style="text-align: center; max-width: 700px; margin: 0 auto;">
-        <span style="color: #2563eb; font-size: 12px; font-weight: 900; text-transform: uppercase;">ACADEMIC DEGREES</span>
-        <h2 style="font-size: 36px; font-weight: 900; margin-top: 8px;">Explore Our Degree Programs</h2>
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px;">
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 28px; border-radius: 20px;"><h3 style="font-size: 18px; font-weight: 900; color: #0f172a;">B.Tech Computer Science</h3><p style="font-size: 13px; color: #64748b; margin-top: 8px;">4 Years Undergraduate Degree in AI, ML & Software Systems.</p><a href="#apply" style="color: #2563eb; font-size: 13px; font-weight: 800; text-decoration: none; display: inline-block; margin-top: 16px;">View Curriculum →</a></div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 28px; border-radius: 20px;"><h3 style="font-size: 18px; font-weight: 900; color: #0f172a;">M.Tech Data Science</h3><p style="font-size: 13px; color: #64748b; margin-top: 8px;">2 Years Postgraduate Specialization in Big Data Analytics.</p><a href="#apply" style="color: #2563eb; font-size: 13px; font-weight: 800; text-decoration: none; display: inline-block; margin-top: 16px;">View Curriculum →</a></div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 28px; border-radius: 20px;"><h3 style="font-size: 18px; font-weight: 900; color: #0f172a;">MBA Business Analytics</h3><p style="font-size: 13px; color: #64748b; margin-top: 8px;">2 Years Management Program in Finance, Marketing & Operations.</p><a href="#apply" style="color: #2563eb; font-size: 13px; font-weight: 800; text-decoration: none; display: inline-block; margin-top: 16px;">View Curriculum →</a></div>
-      </div>
-    </div>
-  </section>`,
-
-  departments: `<section style="background: #f1f5f9; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto;">
-      <h2 style="font-size: 32px; font-weight: 900; text-align: center;">Academic Departments</h2>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px;">
-        <div style="background: #ffffff; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;"><h4 style="font-size: 16px; font-weight: 900;">School of Engineering</h4><p style="font-size: 13px; color: #64748b; margin-top: 6px;">CSE, ECE, Mechanical, Civil & AI Labs</p></div>
-        <div style="background: #ffffff; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;"><h4 style="font-size: 16px; font-weight: 900;">School of Management</h4><p style="font-size: 13px; color: #64748b; margin-top: 6px;">MBA, BBA, Finance & HR Specializations</p></div>
-        <div style="background: #ffffff; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;"><h4 style="font-size: 16px; font-weight: 900;">School of Basic Sciences</h4><p style="font-size: 13px; color: #64748b; margin-top: 6px;">Physics, Chemistry & Applied Mathematics</p></div>
-      </div>
-    </div>
-  </section>`,
-
-  admissions: `<section style="background: #0f172a; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 900px; margin: 0 auto; text-align: center;">
-      <span style="background: #2563eb; color: #ffffff; padding: 4px 16px; border-radius: 9999px; font-size: 11px; font-weight: 900;">ADMISSIONS 2026-27 OPEN</span>
-      <h2 style="font-size: 38px; font-weight: 900; margin-top: 16px;">Begin Your Journey With Us</h2>
-      <p style="font-size: 15px; color: #94a3b8; margin-top: 12px;">Applications are open for UG & PG academic sessions. Merit scholarship applications closing soon.</p>
-      <div style="margin-top: 32px; display: flex; justify-content: center; gap: 16px;">
-        <a href="#apply" style="background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Apply Online Now</a>
-        <a href="#prospectus" style="background: #1e293b; color: #ffffff; border: 1px solid #334155; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Download Prospectus PDF</a>
-      </div>
-    </div>
-  </section>`,
-
-  placements: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
-      <h2 style="font-size: 36px; font-weight: 900;">Placement & Top Recruiters</h2>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 36px;">
-        <div style="background: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;"><h3 style="font-size: 32px; font-weight: 900; color: #2563eb; margin: 0;">₹52 LPA</h3><p style="font-size: 13px; color: #64748b; font-weight: 700;">Highest National Package</p></div>
-        <div style="background: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;"><h3 style="font-size: 32px; font-weight: 900; color: #2563eb; margin: 0;">₹12.4 LPA</h3><p style="font-size: 13px; color: #64748b; font-weight: 700;">Average Campus Salary</p></div>
-        <div style="background: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #e2e8f0;"><h3 style="font-size: 32px; font-weight: 900; color: #2563eb; margin: 0;">450+</h3><p style="font-size: 13px; color: #64748b; font-weight: 700;">Recruiting Partners</p></div>
-      </div>
-    </div>
-  </section>`,
-
-  facilities: `<section style="background: #f8fafc; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
-      <h2 style="font-size: 32px; font-weight: 900;">World-Class Campus Infrastructure</h2>
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 36px;">
-        <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0;"><div style="font-size: 24px;">📚</div><h4 style="font-size: 15px; font-weight: 900; margin-top: 8px;">Digital Library</h4></div>
-        <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0;"><div style="font-size: 24px;">🏢</div><h4 style="font-size: 15px; font-weight: 900; margin-top: 8px;">Modern Hostels</h4></div>
-        <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0;"><div style="font-size: 24px;">⚽</div><h4 style="font-size: 15px; font-weight: 900; margin-top: 8px;">Sports Complex</h4></div>
-        <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0;"><div style="font-size: 24px;">🔬</div><h4 style="font-size: 15px; font-weight: 900; margin-top: 8px;">Advanced Research Labs</h4></div>
-      </div>
-    </div>
-  </section>`,
-
-  research: `<section style="background: #0d1527; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
-      <span style="color: #38bdf8; font-size: 12px; font-weight: 900; text-transform: uppercase;">PATENTS & R&D</span>
-      <h2 style="font-size: 36px; font-weight: 900; margin-top: 10px;">Pioneering Research & Innovation Labs</h2>
-      <p style="font-size: 15px; color: #94a3b8; margin-top: 14px; max-width: 700px; margin-left: auto; margin-right: auto;">Over 120+ published research papers and 35 national patents filed in AI, Robotics, Renewable Energy & Semiconductor Design.</p>
-    </div>
-  </section>`,
-
-  news: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto;">
-      <h2 style="font-size: 32px; font-weight: 900; text-align: center;">News & Official Circulars</h2>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 36px;">
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px;"><span style="font-size: 11px; font-weight: 800; color: #2563eb;">AUG 10, 2026</span><h4 style="font-size: 15px; font-weight: 900; margin-top: 6px;">End-Semester Examination Schedule Released</h4></div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px;"><span style="font-size: 11px; font-weight: 800; color: #2563eb;">AUG 15, 2026</span><h4 style="font-size: 15px; font-weight: 900; margin-top: 6px;">79th Independence Day Celebration Convocation</h4></div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px;"><span style="font-size: 11px; font-weight: 800; color: #2563eb;">SEP 01, 2026</span><h4 style="font-size: 15px; font-weight: 900; margin-top: 6px;">International Student Exchange Orientation</h4></div>
-      </div>
-    </div>
-  </section>`,
-
-  events: `<section style="background: #f1f5f9; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1000px; margin: 0 auto;">
-      <h2 style="font-size: 32px; font-weight: 900; text-align: center;">Upcoming Campus Events</h2>
-      <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 36px;">
-        <div style="background: #ffffff; padding: 20px 28px; border-radius: 16px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;"><div style="display: flex; align-items: center; gap: 20px;"><div style="background: #0f172a; color: #ffffff; padding: 10px 16px; border-radius: 12px; font-weight: 900; text-align: center;"><span style="font-size: 18px; display: block;">24</span><span style="font-size: 11px;">AUG</span></div><div><h4 style="font-size: 16px; font-weight: 900; margin: 0;">Global Tech Hackathon 2026</h4><p style="font-size: 13px; color: #64748b; margin-top: 4px;">48-Hour Inter-College Coding Competition</p></div></div><a href="#register" style="background: #2563eb; color: #ffffff; padding: 8px 20px; border-radius: 10px; font-size: 12px; font-weight: 800; text-decoration: none;">Register Now</a></div>
-      </div>
-    </div>
-  </section>`,
-
-  gallery: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
-      <h2 style="font-size: 32px; font-weight: 900;">Vibrant Campus Life & Infrastructure</h2>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 36px;">
-        <div style="height: 200px; background: #e2e8f0; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #64748b;">Central Auditorium</div>
-        <div style="height: 200px; background: #cbd5e1; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #334155;">Sports Arena</div>
-        <div style="height: 200px; background: #94a3b8; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #ffffff;">Robotics Research Lab</div>
-      </div>
-    </div>
-  </section>`,
-
-  testimonials: `<section style="background: #0f172a; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1000px; margin: 0 auto; text-align: center;">
-      <h2 style="font-size: 32px; font-weight: 900;">What Our Students & Alumni Say</h2>
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 36px; text-align: left;">
-        <div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">"The hands-on coding labs and mentor support at Greenfield helped me secure a Software Engineer role at Google."</p><span style="font-size: 13px; font-weight: 900; color: #38bdf8; display: block; margin-top: 16px;">— Rahul Sharma (B.Tech CSE '25)</span></div>
-        <div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">"World-class faculty, vibrant campus events, and incredible placement opportunities made my university years unforgettable."</p><span style="font-size: 13px; font-weight: 900; color: #38bdf8; display: block; margin-top: 16px;">— Priya Sundaram (MBA '24)</span></div>
-      </div>
-    </div>
-  </section>`,
-
-  achievements: `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
-      <h2 style="font-size: 32px; font-weight: 900;">Awards & Recognitions</h2>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 36px;">
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 16px;"><div style="font-size: 28px;">🏆</div><h4 style="font-size: 16px; font-weight: 900; margin-top: 8px;">Best Green Campus Award 2025</h4></div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 16px;"><div style="font-size: 28px;">🎖️</div><h4 style="font-size: 16px; font-weight: 900; margin-top: 8px;">Top 10 Private Engineering University</h4></div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 24px; border-radius: 16px;"><div style="font-size: 28px;">🌟</div><h4 style="font-size: 16px; font-weight: 900; margin-top: 8px;">National Patent Excellence Citation</h4></div>
-      </div>
-    </div>
-  </section>`,
-
-  contact: `<section style="background: #f8fafc; color: #0f172a; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 800px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
-      <h2 style="font-size: 28px; font-weight: 900; text-align: center;">Admissions & Enquiry Form</h2>
-      <form style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px;">
-        <input type="text" placeholder="Full Name *" style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13px;" />
-        <input type="email" placeholder="Email Address *" style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13px;" />
-        <input type="tel" placeholder="Mobile Number *" style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13px;" />
-        <select style="height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 13px; color: #475569;"><option>Select Preferred Course</option><option>B.Tech CSE</option><option>M.Tech AI</option><option>MBA</option></select>
-        <button type="submit" style="grid-column: span 2; height: 48px; background: #2563eb; color: #ffffff; border-radius: 12px; border: none; font-size: 14px; font-weight: 900; cursor: pointer; margin-top: 8px;">Submit Enquiry</button>
-      </form>
-    </div>
-  </section>`,
-
-  map: `<section style="background: #090e1a; color: #ffffff; padding: 70px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
-    <div style="max-width: 1140px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;">
-      <div style="background: #0f172a; border: 1px solid #1e293b; padding: 32px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
-        <span style="color: #38bdf8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; display: block;">MAIN CAMPUS LOCATION</span>
-        <h3 style="font-size: 24px; font-weight: 900; color: #ffffff; margin-top: 8px;">VELLORE INSTITUTE OF TECHNOLOGY</h3>
-        <p style="font-size: 13px; color: #94a3b8; margin-top: 8px; line-height: 1.6;">Katpadi - Thiruvalam Rd, Vellore, Tamil Nadu 632014</p>
-        <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
-          <div style="background: #1e293b; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; font-size: 12px; color: #e2e8f0; font-weight: 700;">✈️ Airport: Chennai International Airport (approx 2.5 hrs)</div>
-          <div style="background: #1e293b; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; font-size: 12px; color: #e2e8f0; font-weight: 700;">🚆 Railway Station: Katpadi Junction (3 km away)</div>
-        </div>
-        <a href="https://maps.google.com/?q=Vellore+Institute+of+Technology" target="_blank" class="desktop-apply-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 24px; width: 100%; background: #2563eb; color: #ffffff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 800; text-decoration: none; box-shadow: 0 4px 14px rgba(37,99,235,0.4);">GET DIRECTIONS ON GOOGLE MAPS →</a>
-      </div>
-      <div style="width: 100%; height: 380px; border-radius: 24px; overflow: hidden; border: 1px solid #1e293b; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
-        <iframe src="https://maps.google.com/maps?q=Vellore%20Institute%20of%20Technology&t=&z=14&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-      </div>
-    </div>
-  </section>`,
-
-  footer: `<footer style="background: #090d16; color: #94a3b8; padding: 40px 40px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid #1e293b; text-align: center;">
-    <p style="font-size: 13px; font-weight: 700; color: #cbd5e1; margin: 0;">© 2026 Greenfield University. All Rights Reserved.</p>
-    <p style="font-size: 12px; color: #64748b; margin-top: 8px;">Approved by AICTE, UGC & Accredited by NAAC A++ Grade.</p>
-  </footer>`,
-};
-
-const DEFAULT_STARTER_CODE = `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px 60px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid #e2e8f0;">
-  <div style="max-width: 960px; margin: 0 auto;">
-    <span style="background: #ffe4e6; border: 1px solid #f43f5e; color: #e11d48; padding: 6px 20px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;">ADMISSIONS OPEN 2026–2027</span>
-    <h1 style="font-size: 56px; font-weight: 900; margin-top: 24px; line-height: 1.15; color: #0f172a; letter-spacing: -0.02em;">Empowering Minds, Shaping Tomorrow's Leaders</h1>
-    <p style="font-size: 18px; color: #64748b; margin-top: 20px; line-height: 1.6; max-width: 840px; margin-left: auto; margin-right: auto; font-weight: 500;">Join a world-class academic community dedicated to innovation, groundbreaking research, and personal growth. Discover over 120 undergraduate and graduate programs tailored for your future.</p>
-    <div style="margin-top: 36px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
-      <a href="#admissions" style="background: #ef4444; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 800; text-decoration: none; box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4); display: inline-block;">Apply Now</a>
-      <a href="#courses" style="background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 800; text-decoration: none; display: inline-block;">Explore Programs</a>
-    </div>
-    <div style="margin-top: 60px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; border-top: 1px solid #e2e8f0; padding-top: 32px;">
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">#12</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">NATIONAL RANK</div>
-      </div>
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">120+</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">ACADEMIC MAJORS</div>
-      </div>
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">96%</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">GRADUATE PLACEMENT</div>
-      </div>
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">10:1</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">STUDENT-FACULTY RATIO</div>
-      </div>
-    </div>
-  </div>
-</section>`;
-
-const PAGE_SECTION_TEMPLATES: Record<string, string> = {
-  "/home": `<section style="background: #ffffff; color: #0f172a; padding: 80px 24px 60px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid #e2e8f0;">
-  <div style="max-width: 960px; margin: 0 auto;">
-    <span style="background: #ffe4e6; border: 1px solid #f43f5e; color: #e11d48; padding: 6px 20px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;">ADMISSIONS OPEN 2026–2027</span>
-    <h1 style="font-size: 56px; font-weight: 900; margin-top: 24px; line-height: 1.15; color: #0f172a; letter-spacing: -0.02em;">Empowering Minds, Shaping Tomorrow's Leaders</h1>
-    <p style="font-size: 18px; color: #64748b; margin-top: 20px; line-height: 1.6; max-width: 840px; margin-left: auto; margin-right: auto; font-weight: 500;">Join a world-class academic community dedicated to innovation, groundbreaking research, and personal growth. Discover over 120 undergraduate and graduate programs tailored for your future.</p>
-    <div style="margin-top: 36px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
-      <a href="#admissions" style="background: #ef4444; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 800; text-decoration: none; box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4); display: inline-block;">Apply Now</a>
-      <a href="#courses" style="background: #f1f5f9; color: #0f172a; border: 1px solid #cbd5e1; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 800; text-decoration: none; display: inline-block;">Explore Programs</a>
-    </div>
-    <div style="margin-top: 60px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; border-top: 1px solid #e2e8f0; padding-top: 32px;">
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">#12</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">NATIONAL RANK</div>
-      </div>
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">120+</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">ACADEMIC MAJORS</div>
-      </div>
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">96%</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">GRADUATE PLACEMENT</div>
-      </div>
-      <div>
-        <div style="font-size: 28px; font-weight: 900; color: #0f172a;">10:1</div>
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.05em;">STUDENT-FACULTY RATIO</div>
-      </div>
-    </div>
-  </div>
-</section>`,
-
-  "/about": `<!-- About Us Page Section -->
-<section style="background: #0f172a; color: #ffffff; padding: 80px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box;">
-  <div style="max-width: 900px; margin: 0 auto; text-align: center;">
-    <span style="color: #38bdf8; font-size: 12px; font-weight: 800; uppercase; tracking: 0.1em;">OUR HERITAGE & VISION</span>
-    <h2 style="font-size: 40px; font-weight: 900; margin-top: 16px; color: #ffffff;">About Our Institution</h2>
-    <p style="font-size: 16px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">
-      Founded with a commitment to academic rigor and societal advancement, our university nurtures critical thinkers, groundbreaking researchers, and compassionate leaders.
-    </p>
-  </div>
-</section>`,
-};
-
-const DEFAULT_FULL_HOME_SECTIONS: SectionItem[] = [
-  {
-    id: "home-hero",
-    title: "Home Banner",
-    code: PAGE_SECTION_TEMPLATES["/home"],
-    variantIndex: 0,
-  },
-  {
-    id: "home-features",
-    title: "Key Features & Academic Highlights",
-    code: `<section style="background: #0d1117; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08);">
-  <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
-    <span style="background: rgba(37,99,235,0.15); color: #60a5fa; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; border: 1px solid rgba(59,130,246,0.3); text-transform: uppercase;">
-      WHY CHOOSE OUR INSTITUTION
-    </span>
-    <h2 style="font-size: 38px; font-weight: 900; margin-top: 18px; color: #ffffff;">World-Class Education & Excellence</h2>
-    <p style="font-size: 15px; color: #94a3b8; max-width: 650px; margin: 12px auto 0 auto; line-height: 1.6;">
-      Providing global opportunities, cutting-edge research laboratories, and industry-aligned curricula for tomorrow's leaders.
-    </p>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-top: 48px; text-align: left;">
-      <div style="background: #161b22; padding: 32px; border-radius: 20px; border: 1px solid #30363d;">
-        <div style="width: 48px; height: 48px; background: #1f6feb; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px;">🎓</div>
-        <h3 style="font-size: 20px; font-weight: 800; margin-top: 18px; color: #ffffff;">Global Accreditation</h3>
-        <p style="font-size: 14px; color: #8b949e; margin-top: 8px; line-height: 1.6;">NAAC A++ Grade, NIRF Top Ranked Institution with worldwide degree recognition.</p>
-      </div>
-
-      <div style="background: #161b22; padding: 32px; border-radius: 20px; border: 1px solid #30363d;">
-        <div style="width: 48px; height: 48px; background: #238636; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px;">🔬</div>
-        <h3 style="font-size: 20px; font-weight: 800; margin-top: 18px; color: #ffffff;">Advanced R&D Labs</h3>
-        <p style="font-size: 14px; color: #8b949e; margin-top: 8px; line-height: 1.6;">State-of-the-art incubation centres, AI research facilities, and robotics hubs.</p>
-      </div>
-
-      <div style="background: #161b22; padding: 32px; border-radius: 20px; border: 1px solid #30363d;">
-        <div style="width: 48px; height: 48px; background: #8957e5; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px;">💼</div>
-        <h3 style="font-size: 20px; font-weight: 800; margin-top: 18px; color: #ffffff;">98%+ Placement Rate</h3>
-        <p style="font-size: 14px; color: #8b949e; margin-top: 8px; line-height: 1.6;">Top MNC recruiters including Fortune 500 companies hiring every year.</p>
-      </div>
-    </div>
-  </div>
-</section>`,
-    variantIndex: 0,
-  },
-  {
-    id: "home-stats",
-    title: "Campus Stats & Impact Numbers",
-    code: `<section style="background: #090d16; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08);">
-  <div style="max-width: 1100px; margin: 0 auto;">
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; text-align: center;">
-      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-        <h3 style="font-size: 46px; font-weight: 900; color: #38bdf8; margin: 0;">15,000+</h3>
-        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Active Students</p>
-      </div>
-      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-        <h3 style="font-size: 46px; font-weight: 900; color: #4ade80; margin: 0;">450+</h3>
-        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Expert Faculty</p>
-      </div>
-      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-        <h3 style="font-size: 46px; font-weight: 900; color: #fbbf24; margin: 0;">120+</h3>
-        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Global Programs</p>
-      </div>
-      <div style="padding: 24px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05);">
-        <h3 style="font-size: 46px; font-weight: 900; color: #f472b6; margin: 0;">50,000+</h3>
-        <p style="font-size: 14px; font-weight: 700; color: #94a3b8; margin-top: 6px; text-transform: uppercase;">Global Alumni</p>
-      </div>
-    </div>
-  </div>
-</section>`,
-    variantIndex: 0,
-  },
-  {
-    id: "home-programs",
-    title: "Featured Academic Programs",
-    code: `<section style="background: #0d1117; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08);">
-  <div style="max-width: 1100px; margin: 0 auto;">
-    <div style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
-      <div>
-        <span style="background: rgba(168,85,247,0.15); color: #c084fc; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; border: 1px solid rgba(168,85,247,0.3); text-transform: uppercase;">
-          ACADEMIC DEPARTMENTS
-        </span>
-        <h2 style="font-size: 38px; font-weight: 900; margin-top: 16px; color: #ffffff;">Explore Programs & Courses</h2>
-      </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 40px;">
-      <div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;">
-        <span style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase;">UNDERGRADUATE</span>
-        <h3 style="font-size: 22px; font-weight: 800; margin-top: 8px; color: #ffffff;">B.Tech Computer Science & AI</h3>
-        <p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Full 4-year degree covering machine learning, data engineering, and software architecture.</p>
-        <button style="margin-top: 20px; padding: 10px 20px; background: #238636; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer;">Learn More ➔</button>
-      </div>
-
-      <div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;">
-        <span style="font-size: 11px; font-weight: 800; color: #a855f7; text-transform: uppercase;">POSTGRADUATE</span>
-        <h3 style="font-size: 22px; font-weight: 800; margin-top: 8px; color: #ffffff;">MBA International Business</h3>
-        <p style="font-size: 14px; color: #8b949e; margin-top: 8px;">2-year executive program with global immersion trips and industry mentorship.</p>
-        <button style="margin-top: 20px; padding: 10px 20px; background: #8957e5; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer;">Learn More ➔</button>
-      </div>
-
-      <div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;">
-        <span style="font-size: 11px; font-weight: 800; color: #f59e0b; text-transform: uppercase;">RESEARCH / PHD</span>
-        <h3 style="font-size: 22px; font-weight: 800; margin-top: 8px; color: #ffffff;">Doctoral Fellowships</h3>
-        <p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Fully funded research positions with monthly stipends and international publication support.</p>
-        <button style="margin-top: 20px; padding: 10px 20px; background: #d97706; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer;">Learn More ➔</button>
-      </div>
-    </div>
-  </div>
-</section>`,
-    variantIndex: 0,
-  },
-  {
-    id: "home-footer",
-    title: "Footer & Contact Information",
-    code: `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
-  <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px;">
-    <div>
-      <h3 style="font-size: 20px; font-weight: 900; color: #ffffff; margin: 0;">Greenfield University</h3>
-      <p style="font-size: 13px; color: #64748b; margin-top: 12px; line-height: 1.6;">Empowering future leaders through education, innovation, and global collaboration.</p>
-    </div>
-    <div>
-      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Quick Links</h4>
-      <ul style="list-style: none; padding: 0; margin: 12px 0 0 0; font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 8px;">
-        <li><a href="/home" style="color: #cbd5e1; text-decoration: none;">Home</a></li>
-        <li><a href="/about" style="color: #cbd5e1; text-decoration: none;">About Us</a></li>
-        <li><a href="/academics" style="color: #cbd5e1; text-decoration: none;">Academics</a></li>
-        <li><a href="/admissions" style="color: #cbd5e1; text-decoration: none;">Admissions</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Contact Campus</h4>
-      <p style="font-size: 13px; color: #cbd5e1; margin-top: 12px; line-height: 1.6;">
-        📍 Main Campus, University Road<br />
-        ✉️ admissions@greenfield.edu.in<br />
-        📞 +91 (080) 2345-6789
-      </p>
-    </div>
-  </div>
-  <div style="max-width: 1100px; margin: 40px auto 0 auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 12px; color: #64748b;">
-    © 2026 Greenfield University. Powered by XITE Website Builder.
-  </div>
-</footer>`,
-    variantIndex: 0,
-  },
-];
-
-const getSharedHeader = (collegeName: string = "MEC ENGINEERING COLLEGE") => `<header style="background: #0d1527; color: #ffffff; padding: 16px 24px; font-family: system-ui, -apple-system, sans-serif; width: 100%; box-sizing: border-box; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative; z-index: 100;">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-      <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
-        <img src="https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80" alt="College Emblem" data-logo="true" style="width: 42px; height: 42px; object-fit: cover; border-radius: 10px; background: #ffffff; padding: 2px; border: 1px solid rgba(255,255,255,0.2); cursor: pointer;" title="Right-click to change logo image!" />
-        <div>
-          <span style="font-size: 18px; font-weight: 900; color: #ffffff; display: block; line-height: 1.2; white-space: nowrap;">${collegeName.toUpperCase()}</span>
-          <span style="font-size: 11px; font-weight: 600; color: #94a3b8; white-space: nowrap;">Autonomous • NAAC A++ Accredited</span>
-        </div>
-      </div>
-
-      <nav class="desktop-nav-links" style="display: flex; align-items: center; gap: clamp(8px, 1.8vw, 24px); font-size: 14px; font-weight: 700; flex-wrap: nowrap;">
-        <a href="/home" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Home</a>
-        <a href="/about" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">About Us</a>
-        <a href="/academics" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Academics & Courses</a>
-        <a href="/admissions" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Admissions</a>
-        <a href="/placements" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Placements & Careers</a>
-        <a href="/contact" style="color: #cbd5e1; text-decoration: none; white-space: nowrap;">Contact Helpdesk</a>
-      </nav>
-
-      <a href="/admissions" class="desktop-apply-btn" style="background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; white-space: nowrap; flex-shrink: 0;">Apply Now</a>
-
-      <button class="hamburger-toggle-btn" style="display: none; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ffffff; padding: 8px 14px; border-radius: 8px; font-size: 20px; cursor: pointer; align-items: center; justify-content: center;" aria-label="Toggle Navigation Menu">
-        ☰
-      </button>
-    </div>
-
-    <div class="mobile-drawer-menu" style="display: none; width: 100%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.1); padding: 16px 20px; margin-top: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-      <nav style="display: flex; flex-direction: column; gap: 8px; font-size: 15px; font-weight: 700;">
-        <a href="/home" style="color: #ffffff; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Home</a>
-        <a href="/about" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">About Us</a>
-        <a href="/academics" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Academics & Courses</a>
-        <a href="/admissions" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Admissions</a>
-        <a href="/placements" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Placements & Careers</a>
-        <a href="/contact" style="color: #cbd5e1; text-decoration: none; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">Contact Helpdesk</a>
-      </nav>
-    </div>
-
-    <style>
-      @media (max-width: 900px) {
-        .desktop-nav-links { display: none !important; }
-        .desktop-apply-btn { display: inline-flex !important; font-size: 12px !important; padding: 6px 12px !important; margin-left: auto !important; }
-        .hamburger-toggle-btn { display: inline-flex !important; font-size: 18px !important; padding: 6px 10px !important; margin-left: 4px !important; }
-        .mobile-drawer-menu.active { display: block !important; width: 100% !important; }
-      }
-      @media (min-width: 901px) {
-        .hamburger-toggle-btn, .mobile-drawer-menu { display: none !important; }
-        .desktop-nav-links { display: flex !important; }
-        .desktop-apply-btn { display: inline-block !important; }
-      }
-    </style>
-  </header>`;
-
-const getSharedFooter = (collegeName: string = "MEC ENGINEERING COLLEGE") => `<footer style="background: #050810; color: #ffffff; padding: 60px 24px 40px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.1);">
-  <div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 40px;">
-    <div>
-      <h3 style="font-size: 20px; font-weight: 900; color: #ffffff; margin: 0;">${collegeName}</h3>
-      <p style="font-size: 13px; color: #64748b; margin-top: 12px; line-height: 1.6;">Empowering future leaders through education, innovation, and global collaboration.</p>
-    </div>
-    <div>
-      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Quick Links</h4>
-      <ul style="list-style: none; padding: 0; margin: 12px 0 0 0; font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 8px;">
-        <li><a href="/home" style="color: #cbd5e1; text-decoration: none;">Home</a></li>
-        <li><a href="/about" style="color: #cbd5e1; text-decoration: none;">About Us</a></li>
-        <li><a href="/academics" style="color: #cbd5e1; text-decoration: none;">Academics</a></li>
-        <li><a href="/admissions" style="color: #cbd5e1; text-decoration: none;">Admissions</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4 style="font-size: 14px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin: 0;">Contact Campus</h4>
-      <p style="font-size: 13px; color: #cbd5e1; margin-top: 12px; line-height: 1.6;">
-        📍 Main Campus, College Road<br />
-        ✉️ admissions@mec.edu.in<br />
-        📞 +91 (044) 2345-6789
-      </p>
-    </div>
-  </div>
-  <div style="max-width: 1100px; margin: 40px auto 0 auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.06); text-align: center; font-size: 12px; color: #64748b;">
-    © 2026 ${collegeName}. All Rights Reserved.
-  </div>
-</footer>`;
-
-const getFullPageSections = (slug: string, pageName: string = "Home", collegeName: string = "MEC ENGINEERING COLLEGE"): SectionItem[] => {
-  const cleanSlug = slug.replace(/^\//, "").toLowerCase();
-  const sharedHeader = getSharedHeader(collegeName);
-  const sharedFooter = getSharedFooter(collegeName);
-
-  if (cleanSlug === "about") {
-    return [
-      { id: "about-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
-      { id: "about-hero", title: "About Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">OUR HERITAGE & VISION</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">About ${collegeName}</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Founded with a commitment to academic rigor, technological innovation, and societal impact for over 4 decades.</p></div></section>`, variantIndex: 0 },
-      { id: "about-heritage", title: "Key Accreditations & Heritage", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px;"><div style="background: #1e293b; padding: 32px; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; color: #38bdf8;">NIRF Top 20</h3><p style="font-size: 14px; color: #94a3b8; margin-top: 10px;">Consistently ranked among the top engineering institutions nationwide.</p></div><div style="background: #1e293b; padding: 32px; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; color: #4ade80;">NAAC A++ Grade</h3><p style="font-size: 14px; color: #94a3b8; margin-top: 10px;">Highest national accreditation grade for infrastructure & quality education.</p></div><div style="background: #1e293b; padding: 32px; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; color: #c084fc;">100+ Global MOUs</h3><p style="font-size: 14px; color: #94a3b8; margin-top: 10px;">International student exchange and joint research partnerships with top foreign universities.</p></div></div></section>`, variantIndex: 0 },
-      { id: "about-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
-    ];
-  }
-
-  if (cleanSlug === "academics" || cleanSlug === "courses") {
-    return [
-      { id: "academics-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
-      { id: "academics-hero", title: "Academics Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(168,85,247,0.15); color: #c084fc; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">ACADEMIC EXCELLENCE</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Degree Programs & Courses</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Offering industry-aligned Undergraduate, Postgraduate, and PhD degrees designed for global careers.</p></div></section>`, variantIndex: 0 },
-      { id: "academics-list", title: "Offered Programs", code: `<section style="background: #0d1117; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;"><div style="background: #161b22; border-radius: 20px; padding: 32px; border: 1px solid #30363d;"><h3 style="font-size: 24px; font-weight: 900; color: #38bdf8;">B.Tech Computer Science & AI</h3><p style="font-size: 14px; color: #8b949e; margin-top: 10px;">4-year degree covering AI/ML algorithms, cloud computing, and software development.</p></div><div style="background: #161b22; border-radius: 20px; padding: 32px; border: 1px solid #30363d;"><h3 style="font-size: 24px; font-weight: 900; color: #a855f7;">B.Tech Electronics & Robotics</h3><p style="font-size: 14px; color: #8b949e; margin-top: 10px;">Specialized training in embedded systems, IoT sensors, and autonomous robotics.</p></div><div style="background: #161b22; border-radius: 20px; padding: 32px; border: 1px solid #30363d;"><h3 style="font-size: 24px; font-weight: 900; color: #f59e0b;">MBA Tech Management</h3><p style="font-size: 14px; color: #8b949e; margin-top: 10px;">2-year postgraduate program blending technology leadership and business strategy.</p></div></div></section>`, variantIndex: 0 },
-      { id: "academics-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
-    ];
-  }
-
-  if (cleanSlug === "admissions") {
-    return [
-      { id: "admissions-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
-      { id: "admissions-hero", title: "Admissions Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(37,99,235,0.2); color: #60a5fa; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">ADMISSIONS OPEN 2026</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Join ${collegeName}</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Step into a world of innovation, research, and top-tier global placement opportunities.</p><div style="margin-top: 28px;"><a href="#apply" style="background: #2563eb; color: #ffffff; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 900; text-decoration: none;">Submit Application</a></div></div></section>`, variantIndex: 0 },
-      { id: "admissions-steps", title: "Application Process", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; text-align: center;"><div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><div style="font-size: 32px; font-weight: 900; color: #38bdf8;">1</div><h4 style="font-size: 18px; font-weight: 800; margin-top: 10px;">Fill Online Form</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Register online and enter your academic details.</p></div><div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><div style="font-size: 32px; font-weight: 900; color: #38bdf8;">2</div><h4 style="font-size: 18px; font-weight: 800; margin-top: 10px;">Entrance Test</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Appear for national or university entrance exam.</p></div><div style="background: #1e293b; padding: 28px; border-radius: 20px; border: 1px solid #334155;"><div style="font-size: 32px; font-weight: 900; color: #38bdf8;">3</div><h4 style="font-size: 18px; font-weight: 800; margin-top: 10px;">Counseling & Seat</h4><p style="font-size: 13px; color: #94a3b8; margin-top: 6px;">Attend counseling session and confirm enrollment.</p></div></div></section>`, variantIndex: 0 },
-      { id: "admissions-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
-    ];
-  }
-
-  if (cleanSlug === "placements") {
-    return [
-      { id: "placements-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
-      { id: "placements-hero", title: "Placements Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(34,197,94,0.2); color: #4ade80; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">98.4% PLACEMENT RECORD</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Placements & Career Opportunities</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px; line-height: 1.7;">Highest Package: 50 LPA+ | 300+ Fortune 500 Recruiters Visiting Annually</p></div></section>`, variantIndex: 0 },
-      { id: "placements-stats", title: "Placement Statistics", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; text-align: center;"><div style="padding: 28px; background: #1e293b; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 42px; font-weight: 900; color: #4ade80; margin: 0;">50 LPA</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Highest Package</p></div><div style="padding: 28px; background: #1e293b; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 42px; font-weight: 900; color: #38bdf8; margin: 0;">12.5 LPA</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Average Package</p></div><div style="padding: 28px; background: #1e293b; border-radius: 20px; border: 1px solid #334155;"><h3 style="font-size: 42px; font-weight: 900; color: #fbbf24; margin: 0;">300+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Recruiting MNCs</p></div></div></section>`, variantIndex: 0 },
-      { id: "placements-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
-    ];
-  }
-
-  if (cleanSlug === "contact") {
-    return [
-      { id: "contact-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
-      { id: "contact-hero", title: "Contact Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 80px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 900px; margin: 0 auto;"><span style="background: rgba(37,99,235,0.2); color: #60a5fa; padding: 6px 18px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">CAMPUS HELPDESK</span><h1 style="font-size: 48px; font-weight: 900; margin-top: 20px;">Contact ${collegeName}</h1><p style="font-size: 17px; color: #94a3b8; margin-top: 16px;">Have questions? Reach out to our admissions team or visit our main campus.</p></div></section>`, variantIndex: 0 },
-      { id: "contact-form", title: "Enquiry Form & Campus Details", code: `<section style="background: #0f172a; color: #ffffff; padding: 70px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px;"><div style="background: #1e293b; padding: 36px; border-radius: 24px; border: 1px solid #334155;"><h3 style="font-size: 22px; font-weight: 900; margin-top: 0;">Send Us a Message</h3><div style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;"><input type="text" placeholder="Your Full Name" style="width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 14px;" /><input type="email" placeholder="Your Email Address" style="width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 14px;" /><textarea placeholder="Your Message or Admission Query" rows="4" style="width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 14px;"></textarea><button style="background: #2563eb; color: #ffffff; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 14px; border: none; cursor: pointer;">Submit Inquiry</button></div></div><div style="display: flex; flex-direction: column; justify-content: center; gap: 24px;"><div><h4 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0;">📍 Campus Address</h4><p style="font-size: 14px; color: #94a3b8; margin-top: 6px; line-height: 1.6;">Main Institutional Campus, University Road, Tech City, Pin: 600028</p></div><div><h4 style="font-size: 16px; font-weight: 800; color: #38bdf8; margin: 0;">📞 Helpline & Email</h4><p style="font-size: 14px; color: #94a3b8; margin-top: 6px; line-height: 1.6;">Phone: +91 (044) 2345-6789<br />Email: admissions@mec.edu.in</p></div></div></div></section>`, variantIndex: 0 },
-      { id: "contact-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
-    ];
-  }
-
-  // Default Home Page (Full 5-Section Web Page)
-  return [
-    { id: "home-header", title: "Navbar / Header", code: sharedHeader, variantIndex: 0 },
-    { id: "home-hero", title: "Home Banner", code: `<section style="background: #090d16; color: #ffffff; padding: 90px 24px; text-align: center; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 950px; margin: 0 auto;"><span style="background: rgba(37,99,235,0.2); border: 1px solid #2563eb; color: #60a5fa; padding: 6px 20px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">Admission Portal 2026 • NEW</span><h1 style="font-size: 52px; font-weight: 900; margin-top: 24px; line-height: 1.1; color: #ffffff;">Build Your Career at ${collegeName}</h1><p style="font-size: 18px; color: #94a3b8; margin-top: 18px; line-height: 1.6; max-width: 720px; margin-left: auto; margin-right: auto;">Experience world-class technological education with advanced AI/ML research labs, top-tier global faculty, and 100% placement assurance with industry leaders.</p><div style="margin-top: 36px; display: flex; justify-content: center; gap: 16px;"><a href="/admissions" style="background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Apply For Admission ➔</a><a href="/contact" style="background: transparent; border: 1px solid #334155; color: #ffffff; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 900; text-decoration: none;">Campus Video</a></div></div></section>`, variantIndex: 0 },
-    { id: "home-stats", title: "Campus Highlights & Stats", code: `<section style="background: #0f172a; color: #ffffff; padding: 60px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; text-align: center;"><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #38bdf8; margin: 0;">50 LPA+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Highest CTC Offered</p></div><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #4ade80; margin: 0;">300+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Hiring Companies</p></div><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #fbbf24; margin: 0;">NAAC A++</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Grade Accreditation</p></div><div style="padding: 24px; background: #1e293b; border-radius: 16px; border: 1px solid #334155;"><h3 style="font-size: 36px; font-weight: 900; color: #f472b6; margin: 0;">15,000+</h3><p style="font-size: 13px; color: #94a3b8; font-weight: 700; margin-top: 6px;">Active Students</p></div></div></section>`, variantIndex: 0 },
-    { id: "home-programs", title: "Featured Programs", code: `<section style="background: #0d1117; color: #ffffff; padding: 80px 24px; font-family: system-ui, sans-serif; width: 100%; box-sizing: border-box;"><div style="max-width: 1100px; margin: 0 auto;"><div style="text-align: center;"><span style="background: rgba(168,85,247,0.15); color: #c084fc; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase;">ACADEMIC DEPARTMENTS</span><h2 style="font-size: 38px; font-weight: 900; margin-top: 16px; color: #ffffff;">Explore Degrees & Courses</h2></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-top: 40px;"><div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;"><h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">B.Tech Computer Science & AI</h3><p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Full 4-year degree covering machine learning, data engineering, and software architecture.</p></div><div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;"><h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">MBA International Business</h3><p style="font-size: 14px; color: #8b949e; margin-top: 8px;">2-year executive program with global immersion trips and industry mentorship.</p></div><div style="background: #161b22; border-radius: 20px; padding: 28px; border: 1px solid #30363d;"><h3 style="font-size: 22px; font-weight: 800; color: #ffffff;">Doctoral Fellowships</h3><p style="font-size: 14px; color: #8b949e; margin-top: 8px;">Fully funded research positions with monthly stipends and international publication support.</p></div></div></div></section>`, variantIndex: 0 },
-    { id: "home-footer", title: "Footer", code: sharedFooter, variantIndex: 0 }
-  ];
-};
-
 interface EditorStudioProps {
   subdomain?: string;
   collegeName?: string;
@@ -1187,73 +534,6 @@ export function EditorStudio({
 
   // Live Admin templates map state
   const [liveAdminTemplatesMap, setLiveAdminTemplatesMap] = useState<Record<string, string>>({});
-
-  // Sanitizer to guarantee valid header layout code
-  const sanitizeHeaderCode = (code: string): string => {
-    if (!code || (!code.includes("<header") && !code.includes("<nav") && !code.toLowerCase().includes("header"))) {
-      return ALL_19_SECTION_TEMPLATES.navbar;
-    }
-    return code;
-  };
-
-  const getAll19DefaultSections = (slug: string = "/home"): SectionItem[] => {
-    const cleanSlug = slug.replace(/^\//, "").toLowerCase() || "home";
-    return SECTION_CATEGORIES.map((cat, idx) => {
-      const normCat = normalizeCategory(cat.id);
-      const liveCode =
-        liveAdminTemplatesMap[cat.id.toLowerCase()] ||
-        liveAdminTemplatesMap[normCat] ||
-        liveAdminTemplatesMap[`def-${cat.id}`.toLowerCase()] ||
-        ALL_19_SECTION_TEMPLATES[cat.id] ||
-        ALL_19_SECTION_TEMPLATES[normCat] ||
-        DEFAULT_STARTER_CODE;
-      return {
-        id: `${cleanSlug}-${cat.id}-${idx}`,
-        title: cat.name,
-        code: liveCode,
-        variantIndex: 0,
-        category: cat.id,
-      };
-    });
-  };
-
-  const ensureEssentialSections = (secs: SectionItem[], slug: string = "/home"): SectionItem[] => {
-    const clean = secs.filter((sec) => sec && sec.code);
-
-    // 1. Ensure Header (Navbar) exists at Index 0 (Top edge) for all pages
-    const headerIdx = clean.findIndex((s) => {
-      const cat = (s.category || s.title || "").toLowerCase();
-      return cat.includes("header") || cat.includes("navbar") || normalizeCategory(cat) === "navbar";
-    });
-
-    const activeHeaderCode = liveAdminTemplatesMap["navbar"] || liveAdminTemplatesMap["header"] || ALL_19_SECTION_TEMPLATES["navbar"] || ALL_19_SECTION_TEMPLATES["header"];
-
-    if (headerIdx < 0) {
-      clean.unshift({
-        id: `sec-header-${Date.now()}`,
-        title: "Header Navigation",
-        code: activeHeaderCode,
-        category: "navbar",
-        variantIndex: 0,
-      });
-    } else {
-      if (headerIdx > 0) {
-        const [h] = clean.splice(headerIdx, 1);
-        clean.unshift(h!);
-      }
-      // Force update header code using sanitizeHeaderCode
-      if (clean[0]) {
-        clean[0] = {
-          ...clean[0],
-          title: "Header Navigation",
-          code: sanitizeHeaderCode(clean[0].code),
-          category: "navbar",
-        };
-      }
-    }
-
-    return clean;
-  };
 
   const deduplicateSections = (secs: SectionItem[]): SectionItem[] => {
     const seenIds = new Set<string>();
@@ -2348,18 +1628,27 @@ export function EditorStudio({
     setLinkPopup(null);
   };
 
-  // Add a section from predefined categories
-  const handleAddSectionFromCategory = async (cat: { id: string; name: string }, overrideCode?: string, overrideTitle?: string) => {
-    // Reuse already-loaded templates from state — no additional network request needed.
-    // Templates are loaded once on mount via loadAdminTemplates() and kept in adminDbTemplates.
-    const templatesList: any[] = adminDbTemplates.length > 0 ? adminDbTemplates : [];
-
-    // Filter admin-added templates matching selected category tag ONLY
+  /**
+   * The templates the Admin Studio holds for one category.
+   *
+   * The modal and the add handler both need this answer and have to agree about
+   * it: the grid used its own, looser name-only test, so a category whose only
+   * template was tagged by `category` rather than named for it showed as
+   * unavailable while the handler found it — and, before that, a category the
+   * grid *did* offer could still come up empty in the handler and get a
+   * fabricated section instead. One function, one answer.
+   *
+   * Reads `adminDbTemplates`, which `loadAdminTemplates()` fills once on mount,
+   * so this costs nothing to call per card while the modal renders.
+   */
+  const libraryTemplatesFor = (cat: { id: string; name: string }): any[] => {
     const catIdLower = cat.id.toLowerCase();
     const catNameLower = cat.name.toLowerCase();
     const normCat = normalizeCategory(cat.id);
 
-    const matchingTemplates = templatesList.filter((tpl) => {
+    return adminDbTemplates.filter((tpl) => {
+      if (!tpl || !(tpl.code || tpl.html || tpl.content)) return false;
+
       const nameLower = (tpl.name || tpl.title || "").toLowerCase();
       const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null") ? tpl.category : "";
       const tplCatLower = (rawCat || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
@@ -2370,6 +1659,17 @@ export function EditorStudio({
       if (nameLower.includes(`[${catIdLower}]`) || nameLower.includes(catIdLower) || nameLower.includes(catNameLower) || (normCat && nameLower.includes(normCat))) return true;
       return false;
     });
+  };
+
+  /** Whether anything in the library — or the Super Admin's default website — covers this category. */
+  const hasLibrarySection = (cat: { id: string; name: string }): boolean =>
+    libraryTemplatesFor(cat).length > 0 ||
+    Boolean(liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normalizeCategory(cat.id)]);
+
+  // Add a section from predefined categories
+  const handleAddSectionFromCategory = async (cat: { id: string; name: string }, overrideCode?: string, overrideTitle?: string) => {
+    const normCat = normalizeCategory(cat.id);
+    const matchingTemplates = libraryTemplatesFor(cat);
 
     let newCode = "";
     let newTitle = cat.name;
@@ -2379,10 +1679,32 @@ export function EditorStudio({
       newCode = overrideCode;
       newTitle = overrideTitle || cat.name;
     } else if (matchingTemplates.length > 0) {
-      newCode = matchingTemplates[0]!.code;
-      newTitle = matchingTemplates[0]!.name || cat.name;
+      const tpl = matchingTemplates[0]!;
+      newCode = tpl.code || tpl.html || tpl.content;
+      newTitle = tpl.name || cat.name;
     } else {
-      newCode = liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normCat] || ALL_19_SECTION_TEMPLATES[cat.id] || DEFAULT_STARTER_CODE;
+      // The Admin Studio's own library, then the platform default website the
+      // Super Admin maintains. Both are real sections somebody authored.
+      newCode = liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normCat] || "";
+    }
+
+    // Nothing in the library covers this category.
+    //
+    // This used to fall back to a built-in constant: a fabricated section for a
+    // university that does not exist, complete with invented NIRF ranks,
+    // placement percentages and student numbers. It went onto the page looking
+    // exactly like a real one, so the only way to discover it was fiction was to
+    // read it — and an institution that did not read it published it.
+    //
+    // The grid disables these categories, so this is a guard rather than a path
+    // anyone should reach. It stays because the alternative to reaching it is
+    // inserting a section with no content at all. There is no toast: popups are
+    // switched off in this editor by request, and a message nobody sees is worse
+    // than the disabled card that explains itself.
+    if (!newCode) {
+      console.warn(`No "${cat.name}" section in the Admin Studio library — nothing to add.`);
+      setShowAddSectionModal(false);
+      return;
     }
 
     // 1. Header MUST ALWAYS be placed at index 0 (the very top of the page)
@@ -3210,42 +2532,65 @@ export function EditorStudio({
                 </div>
               )}
 
-              {/* Built-in Category Grid */}
+              {/* Section Category Grid — every card resolves to a section the
+                  Admin Studio actually holds. A category the library does not
+                  cover is shown, but disabled: hiding it would leave no trace of
+                  what the platform supports, and enabling it used to insert a
+                  fabricated section for a college that does not exist. */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between border-b border-zinc-800/60 pb-1.5">
                   <h4 className="text-[10px] font-black text-zinc-400 tracking-wider uppercase">
-                    All Built-in Categories (19)
+                    Section Categories ({SECTION_CATEGORIES.length})
                   </h4>
-                  <span className="text-[10px] font-mono font-bold text-zinc-500">Standard Templates</span>
+                  <span className="text-[10px] font-mono font-bold text-zinc-500">From Admin Studio</span>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   {SECTION_CATEGORIES.map((cat) => {
                     const Icon = cat.icon;
-                    const hasAdminTemplate = adminDbTemplates.some((tpl) => {
-                      const nameLower = (tpl.name || "").toLowerCase();
-                      return nameLower.includes(`[${cat.id}]`) || nameLower.includes(cat.id) || nameLower.includes(cat.name.toLowerCase());
-                    });
+                    const available = hasLibrarySection(cat);
 
                     return (
                       <div
                         key={cat.id}
-                        onClick={() => handleAddSectionFromCategory(cat)}
-                        className="group relative flex items-center gap-3.5 p-3.5 rounded-2xl bg-black/90 hover:bg-zinc-900 border border-zinc-800/80 hover:border-zinc-500 transition-all duration-200 cursor-pointer select-none overflow-hidden shadow-sm hover:shadow-md"
+                        onClick={available ? () => handleAddSectionFromCategory(cat) : undefined}
+                        aria-disabled={!available}
+                        title={
+                          available
+                            ? `Add a ${cat.name} section`
+                            : `No ${cat.name} section in the Admin Studio library yet`
+                        }
+                        className={`group relative flex items-center gap-3.5 p-3.5 rounded-2xl border transition-all duration-200 select-none overflow-hidden shadow-sm ${
+                          available
+                            ? "bg-black/90 hover:bg-zinc-900 border-zinc-800/80 hover:border-zinc-500 cursor-pointer hover:shadow-md"
+                            : "bg-black/40 border-zinc-900 cursor-not-allowed opacity-45"
+                        }`}
                       >
-                        <div className="w-9 h-9 rounded-xl bg-zinc-900 group-hover:bg-white text-white group-hover:text-black border border-zinc-800 group-hover:border-white transition-all flex items-center justify-center shrink-0 shadow-sm">
+                        <div
+                          className={`w-9 h-9 rounded-xl border transition-all flex items-center justify-center shrink-0 shadow-sm ${
+                            available
+                              ? "bg-zinc-900 group-hover:bg-white text-white group-hover:text-black border-zinc-800 group-hover:border-white"
+                              : "bg-zinc-950 text-zinc-600 border-zinc-900"
+                          }`}
+                        >
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="flex-1 min-w-0 pr-1">
                           <div className="flex items-center justify-between gap-2">
-                            <h4 className="text-xs font-black text-white group-hover:text-white truncate tracking-tight">{cat.name}</h4>
-                            {hasAdminTemplate && (
-                              <span className="text-[9px] font-mono font-extrabold text-zinc-300 bg-zinc-800/90 px-2.5 py-0.5 rounded-full border border-zinc-700 shrink-0">
-                                Admin
-                              </span>
-                            )}
+                            <h4 className={`text-xs font-black truncate tracking-tight ${available ? "text-white" : "text-zinc-500"}`}>
+                              {cat.name}
+                            </h4>
+                            <span
+                              className={`text-[9px] font-mono font-extrabold px-2.5 py-0.5 rounded-full border shrink-0 ${
+                                available
+                                  ? "text-zinc-300 bg-zinc-800/90 border-zinc-700"
+                                  : "text-zinc-600 bg-transparent border-zinc-800"
+                              }`}
+                            >
+                              {available ? "In library" : "Not in library"}
+                            </span>
                           </div>
-                          <p className="text-[11px] text-zinc-400 group-hover:text-zinc-300 mt-0.5 font-medium truncate leading-normal">
+                          <p className={`text-[11px] mt-0.5 font-medium truncate leading-normal ${available ? "text-zinc-400 group-hover:text-zinc-300" : "text-zinc-600"}`}>
                             {cat.description}
                           </p>
                         </div>
