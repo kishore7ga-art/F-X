@@ -28,6 +28,8 @@ interface DrawerPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onPageSelect?: (pageName: string, pageSlug: string) => void;
+  /** Fired once, for a page the user has just created and that has no sections yet. */
+  onPageCreate?: (pageName: string, pageSlug: string) => void;
   onPaletteSelect?: (paletteId: string) => void;
   onFontSelect?: (fontId: string) => void;
   onSectionAdd?: (section: { id: string; title: string; sectionType: string; code: string }) => void;
@@ -73,6 +75,7 @@ export function DrawerPanel({
   isOpen,
   onClose,
   onPageSelect,
+  onPageCreate,
   onPaletteSelect,
   onFontSelect,
   onSectionAdd,
@@ -162,6 +165,13 @@ export function DrawerPanel({
     setSelectedPageSlug(slug);
     setNewPageName("");
     setShowNewPageModal(false);
+
+    // Announced before the page is selected, so the editor knows this slug is
+    // new and must not be filled from anywhere — a page the user just made
+    // starts empty, and stays empty until they ask for sections.
+    if (onPageCreate) onPageCreate(newPage.name, slug);
+    if (onPageSelect) onPageSelect(newPage.name, slug);
+
     showNotification(`Created new page: "${newPage.name}"`);
   };
 

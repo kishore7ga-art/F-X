@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import {
@@ -68,6 +68,64 @@ const SECTION_CATEGORIES = [
   { id: "map", name: "Map & Location", description: "Interactive campus map, directions & transportation", icon: MapPin },
   { id: "footer", name: "Footer", description: "Bottom copyright, quick links & social icons", icon: Footprints },
 ];
+
+/**
+ * A unique id for a newly added section.
+ *
+ * At module scope rather than inline in the handler: `react-hooks/purity`
+ * flags `Date.now()` and `Math.random()` anywhere inside a component, because
+ * it cannot tell an event handler from a render path. Reading the clock in a
+ * handler is fine; moving the call out here says so without an eslint-disable,
+ * and gives the four other places that build an id this way somewhere to move.
+ */
+function newSectionId(prefix = "sec"): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+}
+
+/**
+ * The seam between two sections, and the way a section is added at a position.
+ *
+ * Collapsed to a few pixels and invisible until the pointer is over it, so the
+ * canvas still reads as the page it is rather than as a form with a control
+ * between every block. It expands on hover because a 4px target is not one.
+ *
+ * `stopPropagation` matters here: the section wrappers on either side select
+ * themselves on click, and without it pressing the seam would select a section
+ * and open the picker at the same time.
+ */
+function SectionInsertPoint({
+  index,
+  onInsert,
+}: {
+  index: number;
+  onInsert: (index: number) => void;
+}) {
+  return (
+    <div
+      className="group/insert relative z-20 flex h-2 w-full items-center justify-center transition-all duration-150 hover:h-11"
+      data-xite-insert-at={index}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-cyan-400/70 opacity-0 transition-opacity duration-150 group-hover/insert:opacity-100"
+      />
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onInsert(index);
+        }}
+        title={`Add a section here (position ${index + 1})`}
+        aria-label={`Add a section at position ${index + 1}`}
+        className="relative inline-flex items-center gap-1.5 rounded-full border border-cyan-400/60 bg-slate-900 px-3 py-1 text-[10px] font-extrabold tracking-tight text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/insert:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        style={{ fontFamily: "'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif" }}
+      >
+        <Plus className="h-3 w-3 stroke-[3] text-cyan-300" />
+        Add Section
+      </button>
+    </div>
+  );
+}
 
 interface EditorStudioProps {
   subdomain?: string;
@@ -178,6 +236,50 @@ export function EditorStudio({
 
   // Section Selector Modal
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
+
+  /**
+   * Where the section the user is about to pick should land.
+   *
+   * `null` means the modal was opened from the toolbar, which has no position
+   * in mind — that path keeps its existing placement rules (a navbar goes to
+   * the top, a hero directly under it, anything else replaces its own kind or
+   * slots in above the footer). A number means the user pressed a specific
+   * insertion point on the canvas, and the only correct answer is the index
+   * they pressed.
+   */
+  const [pendingInsertIndex, setPendingInsertIndex] = useState<number | null>(null);
+
+  /**
+   * Pages the user created in this session that have never held a section.
+   *
+   * A brand-new page must open empty. Without this, `fetchDbSections` finds no
+   * entry for the slug and falls through to the platform default, so creating
+   * "Admissions" silently filled it with the default home page — which then
+   * autosaved, making the copy permanent.
+   *
+   * A ref, not state: nothing renders from it, and `fetchDbSections` reads it
+   * from inside an effect that must not re-run when it changes.
+   */
+  const freshPageSlugsRef = useRef<Set<string>>(new Set());
+
+  /** Opens the picker for a specific slot on the canvas. */
+  const openAddSectionModalAt = (index: number) => {
+    setPendingInsertIndex(index);
+    setShowAddSectionModal(true);
+  };
+
+  /**
+   * Closes the picker and forgets the slot.
+   *
+   * Every dismissal goes through here — the close button, the backdrop, and
+   * each branch that finishes adding a section. A `pendingInsertIndex` left
+   * behind by a cancelled press would silently redirect the *next* section the
+   * user adds from the toolbar to wherever they last pointed.
+   */
+  const closeAddSectionModal = () => {
+    setShowAddSectionModal(false);
+    setPendingInsertIndex(null);
+  };
 
   // Right-Click Link / Button Navigation Popup State
   const [linkPopup, setLinkPopup] = useState<{
@@ -546,21 +648,37 @@ export function EditorStudio({
     });
   };
 
-  // Fetch sections for a given page slug from the per-college config.
-  // Priority order:
-  //   1. myWebsiteConfig already loaded in state (avoid redundant API calls)
-  //   2. /api/v1/my-website (per-college, DB-persisted)
-  //   3. localStorage fast cache
-  //   4. Built-in default sections as final fallback
+  /**
+   * The sections for one page slug, from the college's own saved config.
+   *
+   * Sources, in order: the config already in state, `/api/v1/my-website`, the
+   * platform default, then the localStorage cache. An empty page is a real
+   * answer at the end of that list.
+   *
+   * Every lookup is now *exact* on the slug. Each of the three config sources
+   * used to fall back to `/home`, and then to `pages[0]`, when the requested
+   * slug was missing — so any page the college had not saved yet rendered the
+   * home page's sections under its own name, and the editor's autosave then
+   * wrote that copy to the database. Asking for a page that does not exist
+   * yields nothing, which is what an empty page is.
+   */
   const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
     setLoadingDb(true);
     const cleanSlug = (slug || "/home").replace(/\//g, "_") || "home";
+
+    // A page created moments ago has nothing to load and nothing to seed from.
+    // It opens empty, and stays that way until the user presses Add Section.
+    if (freshPageSlugsRef.current.has(slug)) {
+      setSections([]);
+      setActiveSectionIndex(null);
+      setLoadingDb(false);
+      return;
+    }
+
     try {
       // 1. If we already have the full config in state and not forceSync, switch active page sections
       if (!forceSync && myWebsiteConfig && myWebsiteConfig.pages) {
-        const targetPage = myWebsiteConfig.pages.find((p) => p.slug === slug)
-          || myWebsiteConfig.pages.find((p) => p.slug === "/home")
-          || myWebsiteConfig.pages[0];
+        const targetPage = myWebsiteConfig.pages.find((p) => p.slug === slug);
         if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
           const cleanSecs = deduplicateSections(targetPage.sections);
           setSections(cleanSecs);
@@ -600,9 +718,9 @@ export function EditorStudio({
               configWithSections.pages.forEach((p: { slug: string; title: string; sections: SectionItem[] }) => { newPageStore[p.slug] = p.sections; });
               setPageStore((prev) => ({ ...prev, ...newPageStore }));
 
-              const targetPage = configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === slug)
-                || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
-                || configWithSections.pages[0];
+              const targetPage = configWithSections.pages.find(
+                (p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === slug,
+              );
               if (targetPage && targetPage.sections.length > 0) {
                 const cleanSecs = deduplicateSections(targetPage.sections);
                 setSections(cleanSecs);
@@ -625,10 +743,7 @@ export function EditorStudio({
           if (defRes.ok) {
             const defData = await defRes.json().catch(() => ({}));
             if (defData && Array.isArray(defData.pages)) {
-              const targetPage =
-                defData.pages.find((p: any) => p.slug === slug) ||
-                defData.pages.find((p: any) => p.slug === "/home") ||
-                defData.pages[0];
+              const targetPage = defData.pages.find((p: any) => p.slug === slug);
               if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
                 const cleanSecs = deduplicateSections(targetPage.sections);
                 setSections(cleanSecs);
@@ -845,51 +960,74 @@ export function EditorStudio({
     void loadAdminTemplates();
   }, [currentPage.slug]);
 
-  const fetchAllDefaultSectionsFromAdminDb = async () => {
-    // Re-fetch the user's own config from the server and reload the current page sections.
-    // This is called when the user clicks a "Reload from saved" action.
+  /**
+   * Fills an empty page with the section set the Admin Studio has configured.
+   *
+   * This is what the Add Section button on an empty canvas does, and it is the
+   * one moment a page is populated without the user choosing each piece.
+   *
+   * It reads `/api/v1/default-website` — the Super Admin's default website —
+   * and takes every section of the matching page, in the order the backend
+   * returns them, which is now `sortOrder`. All of them, not the first: a page
+   * seeded with a header and nothing else is not a starting point.
+   *
+   * The function it replaces was named for this but did something else
+   * entirely: it re-read `/api/v1/my-website`, the college's *own* saved
+   * config, and then fell back to the home page when the current slug was not
+   * in it. On a page the user had just created that meant the button copied the
+   * home page onto it. It never touched the admin defaults at all.
+   *
+   * If the admin has no page at this slug, the home page's set is used — that
+   * is what "the default sections" means for a page the platform has no
+   * specific opinion about. If there is nothing to seed from, the picker opens
+   * so the button still does something.
+   */
+  const seedPageFromAdminDefaults = async () => {
     setLoadingDb(true);
+
     for (const baseUrl of getApiBases()) {
       try {
-        const res = await fetch(`${baseUrl}/api/v1/my-website`, { credentials: "include" });
-        if (res.ok) {
-          const data = await res.json().catch(() => ({}));
-          if (data && Array.isArray(data.pages) && data.pages.length > 0) {
-            const configWithSections = {
-              pages: data.pages.map((p: any) => ({
-                slug: p.slug,
-                title: p.title,
-                sections: Array.isArray(p.sections)
-                  ? p.sections.map((s: any, idx: number) => ({
-                      id: s.id || `sec-${idx}`,
-                      title: s.title || s.name || "Section",
-                      code: s.code || s.html || s.content || "",
-                      category: normalizeCategory(s.sectionType || s.category || s.type || ""),
-                      variantIndex: 0,
-                    }))
-                  : [],
-              })),
-            };
-            setMyWebsiteConfig(configWithSections);
-            const newPageStore: Record<string, SectionItem[]> = {};
-            configWithSections.pages.forEach((p: { slug: string; title: string; sections: SectionItem[] }) => { newPageStore[p.slug] = p.sections; });
-            setPageStore((prev) => ({ ...prev, ...newPageStore }));
+        const res = await fetch(`${baseUrl}/api/v1/default-website`);
+        if (!res.ok) continue;
 
-            const targetPage = configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === currentPage.slug)
-              || configWithSections.pages.find((p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === "/home")
-              || configWithSections.pages[0];
-            if (targetPage && targetPage.sections.length > 0) {
-              const cleanSecs = deduplicateSections(targetPage.sections);
-              setSections(cleanSecs);
-              setActiveSectionIndex(0);
-            }
-            setLoadingDb(false);
-            return;
-          }
-        }
-      } catch (e) {}
+        const data = await res.json().catch(() => ({}));
+        if (!data || !Array.isArray(data.pages)) continue;
+
+        const targetPage =
+          data.pages.find((p: any) => p.slug === currentPage.slug) ||
+          data.pages.find((p: any) => p.slug === "/home");
+
+        const rawSections = Array.isArray(targetPage?.sections) ? targetPage.sections : [];
+        // Order is the backend's; nothing is re-sorted here. Two clients each
+        // deciding what "in order" means is how the editor and the published
+        // site end up disagreeing about a page.
+        const seeded: SectionItem[] = rawSections
+          .map((s: any, idx: number) => ({
+            id: `sec-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+            title: s.title || s.name || "Section",
+            code: s.code || s.html || s.content || "",
+            category: normalizeCategory(s.sectionType || s.category || s.type || ""),
+            variantIndex: 0,
+          }))
+          .filter((s: SectionItem) => Boolean(s.code));
+
+        if (seeded.length === 0) continue;
+
+        // Through the history stack, so the whole seed is one undo.
+        setSectionsWithHistory(() => seeded);
+        setActiveSectionIndex(0);
+        freshPageSlugsRef.current.delete(currentPage.slug);
+        setLoadingDb(false);
+        // No explicit save here: `sections` is still the old empty array inside
+        // this closure, so persisting now would write the state we are
+        // replacing. The debounced autosave watching `sections` fires with the
+        // seeded list a moment later, which is the one that should be stored.
+        return;
+      } catch {
+        // Try the next base, then fall through to the picker.
+      }
     }
-    // Fallback: open add section modal
+
     setShowAddSectionModal(true);
     setLoadingDb(false);
   };
@@ -1703,7 +1841,33 @@ export function EditorStudio({
     // than the disabled card that explains itself.
     if (!newCode) {
       console.warn(`No "${cat.name}" section in the Admin Studio library — nothing to add.`);
-      setShowAddSectionModal(false);
+      closeAddSectionModal();
+      return;
+    }
+
+    // ── Chosen for a specific slot ──────────────────────────────────────────
+    // The user pressed an insertion point between two sections, so where it
+    // goes is already decided and none of the placement rules below apply.
+    // They exist to guess a sensible position when nobody said; overriding an
+    // explicit choice with a guess is the one thing they must not do.
+    if (pendingInsertIndex !== null) {
+      const at = pendingInsertIndex;
+      const newSection: SectionItem = {
+        id: newSectionId(),
+        title: newTitle,
+        code: newCode,
+        category: cat.id,
+        variantIndex: 0,
+      };
+
+      setSectionsWithHistory((prev) => {
+        const copy = [...prev];
+        copy.splice(Math.max(0, Math.min(at, copy.length)), 0, newSection);
+        return copy;
+      });
+      setActiveSectionIndex(Math.max(0, Math.min(at, sections.length)));
+      closeAddSectionModal();
+      void handlePersistWebsiteSave();
       return;
     }
 
@@ -1726,7 +1890,7 @@ export function EditorStudio({
       });
       setActiveSectionIndex(0);
       showToastNotification(`Set Header Navigation at top of page`);
-      setShowAddSectionModal(false);
+      closeAddSectionModal();
       void handlePersistWebsiteSave();
       return;
     }
@@ -1755,7 +1919,7 @@ export function EditorStudio({
       });
       setActiveSectionIndex(1);
       showToastNotification(`Set Hero Banner directly under Header`);
-      setShowAddSectionModal(false);
+      closeAddSectionModal();
       void handlePersistWebsiteSave();
       return;
     }
@@ -1807,7 +1971,7 @@ export function EditorStudio({
       setActiveSectionIndex(sections.length);
       showToastNotification(`Added ${newTitle} to page`);
     }
-    setShowAddSectionModal(false);
+    closeAddSectionModal();
     void handlePersistWebsiteSave();
   };
 
@@ -2239,7 +2403,7 @@ export function EditorStudio({
                 <AddSectionButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    fetchAllDefaultSectionsFromAdminDb();
+                    void seedPageFromAdminDefaults();
                   }}
                   label="Add Section"
                 />
@@ -2252,8 +2416,9 @@ export function EditorStudio({
               {sections.map((sec, idx) => {
                 const isHeader = idx === 0 || sec.category === "navbar" || sec.category === "header" || (sec.title || "").toLowerCase().includes("header") || (sec.title || "").toLowerCase().includes("navbar");
                 return (
+                  <React.Fragment key={sec.id}>
+                  <SectionInsertPoint index={idx} onInsert={openAddSectionModalAt} />
                   <div
-                    key={sec.id}
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveSectionIndex(idx);
@@ -2405,8 +2570,12 @@ export function EditorStudio({
                       className="w-full block p-0 m-0 text-left"
                     />
                   </div>
+                  </React.Fragment>
                 );
               })}
+
+              {/* The slot under the last section. */}
+              <SectionInsertPoint index={sections.length} onInsert={openAddSectionModalAt} />
 
             </div>
           )}
@@ -2423,7 +2592,7 @@ export function EditorStudio({
       {/* Select Section Category Modal */}
       {showAddSectionModal && (
         <div
-          onClick={() => setShowAddSectionModal(false)}
+          onClick={closeAddSectionModal}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-200 cursor-pointer"
         >
           <div
@@ -2441,7 +2610,7 @@ export function EditorStudio({
                 </p>
               </div>
               <button
-                onClick={() => setShowAddSectionModal(false)}
+                onClick={closeAddSectionModal}
                 className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all font-black text-sm cursor-pointer"
               >
                 ✕
@@ -2484,7 +2653,17 @@ export function EditorStudio({
                             variantIndex: 0,
                           };
 
+                          const slot = pendingInsertIndex;
+
                           setSectionsWithHistory((prev) => {
+                            // An insertion point was pressed: that index is the
+                            // answer, and the guesses below do not get a vote.
+                            if (slot !== null) {
+                              const copy = [...prev];
+                              copy.splice(Math.max(0, Math.min(slot, copy.length)), 0, newSection);
+                              return copy;
+                            }
+
                             const normNewCat = normalizeCategory(newSection.category || "");
 
                             // Header/navbar → insert at position 0 (very top)
@@ -2509,12 +2688,14 @@ export function EditorStudio({
 
                           // Select the newly added section
                           setActiveSectionIndex(
-                            normalizeCategory(newSection.category || "") === "navbar" ||
-                            normalizeCategory(newSection.category || "") === "header"
-                              ? 0
-                              : sections.length
+                            slot !== null
+                              ? Math.max(0, Math.min(slot, sections.length))
+                              : normalizeCategory(newSection.category || "") === "navbar" ||
+                                normalizeCategory(newSection.category || "") === "header"
+                                ? 0
+                                : sections.length
                           );
-                          setShowAddSectionModal(false);
+                          closeAddSectionModal();
                           void handlePersistWebsiteSave();
                         }}
                         className="group flex items-center justify-between p-3.5 rounded-2xl bg-black/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-500 transition-all duration-200 cursor-pointer shadow-sm select-none"
@@ -2609,6 +2790,11 @@ export function EditorStudio({
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onPageSelect={handlePageChange}
+        onPageCreate={(_name, slug) => {
+          // Remembered before the page is switched to, so `fetchDbSections`
+          // sees the flag on the very first load and leaves the canvas empty.
+          freshPageSlugsRef.current.add(slug);
+        }}
         onPaletteSelect={handlePaletteSelect}
         onFontSelect={handleFontSelect}
         onSectionAdd={(sec) => {
