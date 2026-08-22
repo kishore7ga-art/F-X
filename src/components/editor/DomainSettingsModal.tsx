@@ -50,6 +50,7 @@ import {
   Trash2,
   Calendar,
 } from "lucide-react";
+import { rootDomain } from "@/lib/host-routing";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -871,7 +872,7 @@ export function DomainSettingsModal({
                 <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Custom &lt;head&gt; Code Injection</h4>
                 <p style={{ fontSize: "12px", color: "#737373", margin: 0 }}>Inject analytics tags, verification meta tags, or third-party widgets into your published site.</p>
                 {/* The one thing a tenant must know before pasting a script
-                    here: on a xite.co.in address it is saved but not executed,
+                    here: on a platform address it is saved but not executed,
                     because that address shares a domain with the platform. */}
                 {settings && !settings.customCodeExecutes && settings.customCodeNotice && (
                   <p style={{ fontSize: "12px", color: "#B45309", backgroundColor: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", padding: "10px 12px", margin: "6px 0 0", lineHeight: 1.6 }}>
@@ -1183,7 +1184,7 @@ export function DomainSettingsModal({
               <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Connect a domain you own</h4>
               <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>
                 Your site is always reachable at{" "}
-                <span style={{ fontFamily: "monospace", color: "#171717" }}>{subdomain}.xite.co.in</span>.
+                <span style={{ fontFamily: "monospace", color: "#171717" }}>{subdomain}.{rootDomain()}</span>.
                 Adding your own domain does not replace that address.
               </p>
 

@@ -806,7 +806,7 @@ export function EditorStudio({
     }
 
     // 3. Hardcoded production backend (final fallback)
-    bases.push("https://api.xite.co.in");
+    bases.push("https://api.webxite.org");
 
     return Array.from(new Set(bases.filter((b) => b !== undefined && b !== null && b !== "").map((b) => b.replace(/\/+$/, ""))));
   };

@@ -54,7 +54,7 @@ export function PreviewSiteViewer({
    *
    * A prop rather than something read off `window.location`, because the published
    * site reaches this component through a rewrite — the visitor's URL is
-   * `https://college.xite.co.in/`, never `/site/college` — so sniffing the path put
+   * `https://college.webxite.org/`, never `/site/college` — so sniffing the path put
    * the editor dock on live college websites.
    */
   mode?: PreviewSiteMode;
@@ -180,7 +180,7 @@ export function PreviewSiteViewer({
      *
      * Every request goes through `api()`, which is the one place that knows
      * where the backend is. This used to build its own base URL by sniffing
-     * `window.location.hostname` and hard-coding `https://api.xite.co.in` for
+     * `window.location.hostname` and hard-coding `https://api.webxite.org` for
      * anything that was not localhost — so a deployment that serves the API on
      * its own origin through the rewrites in `next.config.ts` was bypassed
      * entirely, and any host other than the two it knew about got a

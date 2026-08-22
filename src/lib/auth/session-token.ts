@@ -122,7 +122,7 @@ export function sessionCookieAttributes() {
    * Keyed off the Domain, exactly as `cookieOptions()` in the backend is.
    *
    * SameSite is about *site*, not origin: localhost:3000 → localhost:4000 and
-   * xite.co.in → api.xite.co.in are both same-site, and `lax` is sent on both.
+   * webxite.org → api.webxite.org are both same-site, and `lax` is sent on both.
    * `none` drags `secure` along with it, so deciding this from the API's origin
    * made local development write a Secure cookie over plain http.
    */

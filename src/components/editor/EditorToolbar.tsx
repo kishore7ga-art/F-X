@@ -25,6 +25,7 @@ import {
   nextSectionDeviceWidth,
   type SectionDevicePreset,
 } from "@/lib/section-runtime";
+import { rootDomain } from "@/lib/host-routing";
 
 interface EditorToolbarProps {
   subdomain?: string;
@@ -167,9 +168,11 @@ export function EditorToolbar({
     const origin = window.location.origin;
     const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
     
-    // Clean Live Website Public URL
+    // Clean Live Website Public URL. The host comes from NEXT_PUBLIC_ROOT_DOMAIN
+    // rather than a literal, so moving the platform's domain does not leave a
+    // share button handing out links to the previous one.
     const publicWebsiteUrl = isProd
-      ? `https://xite.co.in/site/${sub}`
+      ? `https://${rootDomain()}/site/${sub}`
       : `${origin}/site/${sub}`;
 
     setShareUrl(publicWebsiteUrl);
@@ -194,7 +197,7 @@ export function EditorToolbar({
       const sub = subdomain || "greenfield";
       const origin = window.location.origin;
       const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-      const previewTargetUrl = isProd ? `https://xite.co.in/site/${sub}` : `${origin}/site/${sub}`;
+      const previewTargetUrl = isProd ? `https://${rootDomain()}/site/${sub}` : `${origin}/site/${sub}`;
       
       window.open(previewTargetUrl, "_blank");
     }

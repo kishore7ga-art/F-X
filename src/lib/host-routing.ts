@@ -4,7 +4,7 @@
  * Two rules, and the first one is the whole reason this file exists.
  *
  * **Suffix, never substring.** The proxy used to ask
- * `hostname.includes(".xite.co.in")`, so `xite.co.in.attacker.com` matched: the
+ * `hostname.includes(".webxite.org")`, so `webxite.org.attacker.com` matched: the
  * string contains the root domain. The first label was then taken as the
  * subdomain, and a tenant's site was served on a hostname anybody could
  * register. It is the same mistake `isAllowedOrigin` in the backend already
@@ -22,8 +22,21 @@
 /** Hostnames the platform keeps for itself; never a tenant. */
 const RESERVED_LABELS = new Set(["admin", "api", "www", "app", "mail", "static", "assets"]);
 
+/**
+ * The platform's domain, and the one it was migrated away from.
+ *
+ * `xite.co.in` was production until the move to `webxite.org`. It survives here
+ * only so that a tenant site already published at `<subdomain>.xite.co.in`
+ * keeps rendering while the old domain still resolves to us. It is not
+ * canonical, no link is generated pointing at it, and it goes when the edge
+ * redirect `xite.co.in/* -> webxite.org/*` has replaced it. Mirrors the pair in
+ * xite-B's server.ts — grep LEGACY_ROOT to find every survivor.
+ */
+export const PLATFORM_ROOT = "webxite.org";
+export const LEGACY_ROOT = "xite.co.in";
+
 export function rootDomain(): string {
-  return (process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || "xite.co.in")
+  return (process.env.NEXT_PUBLIC_ROOT_DOMAIN || process.env.ROOT_DOMAIN || PLATFORM_ROOT)
     .toLowerCase()
     .trim();
 }
@@ -50,21 +63,21 @@ export function parseHost(raw: string | null | undefined): string {
 /**
  * The tenant subdomain of a platform host, or null.
  *
- * Exact suffix match against the configured root and against `xite.co.in`, plus
- * `.localhost` for development. A host that merely contains the root domain
- * returns null, which is the fix.
+ * Exact suffix match against the configured root, the platform root and the
+ * legacy root, plus `.localhost` for development. A host that merely contains
+ * the root domain returns null, which is the fix.
  */
 export function platformSubdomainOf(host: string): string | null {
   if (!host) return null;
 
-  const roots = [rootDomain(), "xite.co.in", "localhost"].filter(Boolean);
+  const roots = [rootDomain(), PLATFORM_ROOT, LEGACY_ROOT, "localhost"].filter(Boolean);
 
   for (const root of roots) {
     if (host === root) return null; // the apex is the marketing site, not a tenant
     if (!host.endsWith(`.${root}`)) continue;
 
     const prefix = host.slice(0, -(root.length + 1));
-    // Only a single label is a tenant. `a.b.xite.co.in` is not one, and
+    // Only a single label is a tenant. `a.b.webxite.org` is not one, and
     // treating it as `a` would let one tenant be reached at another's name.
     if (!prefix || prefix.includes(".")) return null;
     if (RESERVED_LABELS.has(prefix)) return null;

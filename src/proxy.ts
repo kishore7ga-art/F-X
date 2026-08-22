@@ -47,9 +47,9 @@ export async function proxy(request: NextRequest) {
     !url.pathname.startsWith("/api") && !url.pathname.startsWith("/_next");
 
   if (isSiteEligiblePath && host) {
-    // 1. A platform subdomain: <tenant>.xite.co.in. Suffix-matched on a parsed
+    // 1. A platform subdomain: <tenant>.webxite.org. Suffix-matched on a parsed
     //    hostname, so a domain merely *containing* the root cannot match — this
-    //    previously used `includes()`, and `xite.co.in.attacker.com` passed it.
+    //    previously used `includes()`, and `webxite.org.attacker.com` passed it.
     const subdomain = platformSubdomainOf(host);
     if (subdomain) {
       url.pathname = `/site/${subdomain}${url.pathname === "/" ? "" : url.pathname}`;

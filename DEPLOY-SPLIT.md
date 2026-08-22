@@ -82,7 +82,7 @@ Add **one** domain, pointed at the **frontend**:
 
 | Field | Value |
 |---|---|
-| Host | `xite.co.in` |
+| Host | `webxite.org` |
 | Service Name | `frontend` |
 | Container Port | `3000` |
 
@@ -107,7 +107,7 @@ If you see the migration line twice, the frontend is missing
 ## Verifying it
 
 ```bash
-curl https://xite.co.in/api/health
+curl https://webxite.org/api/health
 ```
 
 Expect `{"status":"ok","database":"connected","host":"db:5432"}`.
@@ -129,20 +129,20 @@ opaque payload with no readable endpoint.
 
 Only worth it if something outside this app needs the API.
 
-1. Dokploy → Domains → add `api.xite.co.in` → service `backend`, port `3000`.
-2. Set on the **frontend**: `NEXT_PUBLIC_API_BASE_URL=https://api.xite.co.in`
+1. Dokploy → Domains → add `api.webxite.org` → service `backend`, port `3000`.
+2. Set on the **frontend**: `NEXT_PUBLIC_API_BASE_URL=https://api.webxite.org`
 3. The browser now calls the backend directly, so it is cross-origin. The API
-   must return, for `https://xite.co.in` specifically (not `*`, which browsers
+   must return, for `https://webxite.org` specifically (not `*`, which browsers
    reject alongside credentials):
 
 ```
-Access-Control-Allow-Origin: https://xite.co.in
+Access-Control-Allow-Origin: https://webxite.org
 Access-Control-Allow-Credentials: true
 ```
 
 4. The session cookie must be sendable cross-site: `SameSite=None; Secure`.
    Until that is changed in `src/lib/auth/session.ts`, every authenticated call
-   from the browser to `api.xite.co.in` arrives signed out.
+   from the browser to `api.webxite.org` arrives signed out.
 
 Leave `NEXT_PUBLIC_API_BASE_URL` unset for same-origin, and none of that
 applies.

@@ -65,7 +65,7 @@ export default function AccountDetailsPage() {
                     <CheckCircle2 className="w-3.5 h-3.5" /> Verified Owner
                   </span>
                 </div>
-                <p className="text-sm text-slate-400 font-medium">kishore@xite.co.in</p>
+                <p className="text-sm text-slate-400 font-medium">kishore@webxite.org</p>
               </div>
             </div>
 
@@ -86,7 +86,7 @@ export default function AccountDetailsPage() {
             </div>
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">SUBDOMAIN</span>
-              <p className="text-sm font-extrabold text-blue-400 mt-1">greenfield.xite.co.in</p>
+              <p className="text-sm font-extrabold text-blue-400 mt-1">greenfield.webxite.org</p>
             </div>
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">ACCOUNT STATUS</span>
