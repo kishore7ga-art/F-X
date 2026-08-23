@@ -31,10 +31,23 @@ export const dynamic = "force-dynamic";
  *    at the callback holding nothing that can match.
  */
 export async function GET(request: Request) {
-  // In local dev/demo mode or if Google client credentials are test values,
-  // directly route to callback handler to mint valid session without external Google OAuth errors.
-  if (process.env.NODE_ENV !== "production" || !googleEnabled) {
-    return NextResponse.redirect(new URL("/api/auth/google/callback", appOrigin(request)), {
+  /**
+   * Unconfigured means unavailable, not "skip the checks".
+   *
+   * This used to redirect straight to the callback whenever `NODE_ENV` was not
+   * production *or* Google was not configured — no code, no state, nothing for
+   * the callback to verify. That was harmless only because the callback then
+   * fabricated an identity rather than refusing; with that gone, this shortcut
+   * exists purely to send somebody to a page that will reject them.
+   *
+   * The honest answer is the sign-in page, saying why. Development now takes the
+   * same path as production, which is also the only way the state check and the
+   * code exchange are ever exercised before a deploy.
+   */
+  if (!googleEnabled) {
+    const url = new URL("/login", appOrigin(request));
+    url.searchParams.set("error", "Google sign-in is not configured");
+    return NextResponse.redirect(url, {
       headers: { "Cache-Control": "no-store, must-revalidate" },
     });
   }

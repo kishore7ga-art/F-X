@@ -30,6 +30,13 @@ const PUBLISHED_SECRETS = [
   "change-me",
   "secret",
   "password",
+  // Added by the 2026-08-23 audit. These were live credentials committed to the
+  // two repositories: the Super Admin password accepted by xite-B's adminLogin,
+  // the account password every approved-without-a-password tenant received, and
+  // the demo login. Mirrors the list in xite-B/src/lib/secret-hygiene.ts.
+  "2008",
+  "college123",
+  "greenfield123",
 ];
 
 const GENERATE = "openssl rand -base64 48";

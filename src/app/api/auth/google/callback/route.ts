@@ -112,20 +112,51 @@ export async function GET(request: Request) {
   const store = await cookies();
   const expected = store.get(STATE_COOKIE)?.value;
 
+  /**
+   * A failed exchange is a failed sign-in.
+   *
+   * What was here caught a missing code, a missing or mismatched `state`, and
+   * any error out of `exchangeCode` — and answered all of them by substituting a
+   * hardcoded identity, `google.demo@greenfield.edu.in`, which then fell through
+   * to the sign-in path below and was issued a real session cookie. A bare
+   * `GET /api/auth/google/callback` with no query string at all took that
+   * branch, so the whole of authentication was one unauthenticated request to a
+   * public URL: no code, no token, no password, no Google account.
+   *
+   * Worse than the demo address itself was what followed it. The lookup falls
+   * back to `admin@greenfield.edu.in`, and failing that *creates* a user against
+   * the first college in the database — so the fallback did not merely sign
+   * somebody in as a demo user, it signed them in as whoever that college's
+   * account happened to be.
+   *
+   * The CSRF check is the other half. `state` exists so that a callback URL
+   * carrying an attacker's authorization code cannot sign a victim into the
+   * attacker's account; catching the mismatch and proceeding anyway removed it
+   * as a control while leaving the code that computes it in place.
+   *
+   * Both are refusals now. There is no identity here that Google did not sign.
+   */
+  if (!code || !state || !expected || expected !== state) {
+    console.error("[google] callback rejected: state or code missing/mismatched");
+    return back(request, "Sign-in expired. Please try again.");
+  }
+
   let identity: { email: string; name: string | null; emailVerified: boolean; idToken: string };
   try {
-    if (!code || !state || !expected || expected !== state) {
-      throw new Error("State or code missing/mismatched");
-    }
     identity = await exchangeCode(request, code);
   } catch (error) {
-    console.error("[google] exchange/state fallback:", (error as Error).message);
-    identity = {
-      email: "google.demo@greenfield.edu.in",
-      name: "Google User",
-      emailVerified: true,
-      idToken: "",
-    };
+    console.error("[google] exchange failed:", (error as Error).message);
+    return back(request, "Could not complete sign-in with Google");
+  }
+
+  /**
+   * Google sets `email_verified` false for some Workspace configurations, and
+   * the difference matters: it is "this person controls this mailbox" versus
+   * "this person typed this into a profile". Every account below is keyed on
+   * the address, so an unverified one is an account takeover primitive.
+   */
+  if (!identity.emailVerified) {
+    return back(request, "That Google account has an unverified email address");
   }
 
   /**
@@ -147,38 +178,37 @@ export async function GET(request: Request) {
   }
 
   try {
-    let user = await prisma.user.findUnique({
+    /**
+     * Google sign-in signs an existing account in. It does not create one.
+     *
+     * Three things used to happen here when the address was unknown, and each
+     * handed the caller somebody else's tenant:
+     *
+     *   - fall back to `admin@greenfield.edu.in`, a named account, and issue a
+     *     session for it;
+     *   - failing that, create a user with an empty password hash attached to
+     *     `prisma.college.findFirst()` — whichever college happened to be first;
+     *   - either way, mint a full session.
+     *
+     * The way an account comes into existence on this platform is the access
+     * request queue: a Super Admin approves, an invite is issued, and activation
+     * redeems it. A sign-in route that provisions accounts walks around all of
+     * it, which is the same reason `POST /api/v1/auth/signup` was deleted.
+     */
+    const user = await prisma.user.findUnique({
       where: { email: identity.email },
       select: { id: true, collegeId: true, status: true },
     });
 
-    // Retrieve active college user or Greenfield admin
     if (!user) {
-      user = await prisma.user.findFirst({
-        where: { email: "admin@greenfield.edu.in", status: "ACTIVE" },
-        select: { id: true, collegeId: true, status: true },
-      });
+      return back(
+        request,
+        "No XITE account is linked to that Google address. Request access first.",
+      );
     }
 
-    if (!user) {
-      const demoCollege = await prisma.college.findFirst({
-        select: { id: true, subdomain: true },
-      });
-      if (demoCollege) {
-        user = await prisma.user.create({
-          data: {
-            email: identity.email,
-            passwordHash: "",
-            collegeId: demoCollege.id,
-            status: "ACTIVE",
-          },
-          select: { id: true, collegeId: true, status: true },
-        });
-      }
-    }
-
-    if (!user) {
-      return back(request, "Could not initialize account");
+    if (user.status !== "ACTIVE") {
+      return back(request, "This account has been deactivated. Contact your administrator.");
     }
 
     const college = await prisma.college.findUnique({
