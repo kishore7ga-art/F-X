@@ -7,6 +7,10 @@ shape is recoverable without reading five commits.
 Companion report (same content, formatted): the artifact published alongside
 this work.
 
+**Adding a section, a variant, or a surface that renders sections?** Read
+[SECTION-ARCHITECTURE.md](./SECTION-ARCHITECTURE.md) first. This file is the
+record of what was broken; that one is the contract for not breaking it again.
+
 ---
 
 ## Summary
