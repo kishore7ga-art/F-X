@@ -246,6 +246,61 @@ export function EditorStudio({
    * tenant in production. That single fact is what made both the Add Section
    * picker and Swap Variant appear broken.
    */
+  /**
+   * Sections that take up space on the canvas and show nothing.
+   *
+   * A section can render empty for reasons that are invisible from the markup —
+   * most often because its content is *built* by a script that was stripped on
+   * save, which leaves its background and padding behind as a coloured band with
+   * nothing in it. From the canvas that is indistinguishable from a gap between
+   * sections, and the first thing anyone asks is why the editor has put a black
+   * rectangle in their page.
+   *
+   * Measured from the rendered DOM rather than guessed from the code, because
+   * whether a section *looks* empty depends on CSS, container queries and images
+   * that only the browser has resolved.
+   */
+  const [emptySectionIds, setEmptySectionIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // After layout and after the section scripts have had their 120ms window.
+    const timer = setTimeout(() => {
+      const flagged = new Set<string>();
+
+      document.querySelectorAll<HTMLElement>("[data-xite-section]").forEach((wrapper) => {
+        const id = wrapper.getAttribute("data-xite-section");
+        if (!id) return;
+
+        // Too short to read as a void; a thin divider is not a broken section.
+        if (wrapper.getBoundingClientRect().height < 64) return;
+
+        const box = wrapper.querySelector<HTMLElement>(".section-canvas-box");
+        if (!box) return;
+
+        if ((box.innerText || "").trim().length > 0) return;
+        if (box.querySelector("img, svg, video, iframe, canvas, picture, input, button")) return;
+
+        // A background image is content, even with no text in front of it.
+        const painted = Array.from(box.querySelectorAll<HTMLElement>("*")).some((el) => {
+          const image = window.getComputedStyle(el).backgroundImage;
+          return Boolean(image) && image !== "none";
+        });
+        if (painted) return;
+
+        flagged.add(id);
+      });
+
+      setEmptySectionIds((previous) => {
+        if (previous.size === flagged.size && [...flagged].every((id) => previous.has(id))) {
+          return previous;
+        }
+        return flagged;
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [sections, viewportWidth]);
+
   /** Which category's variant strip is open in the picker. One at a time. */
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
@@ -1823,6 +1878,25 @@ export function EditorStudio({
                       dangerouslySetInnerHTML={{ __html: canvasHtml(sec.code) }}
                       className="w-full block p-0 m-0 text-left"
                     />
+
+                    {/* This section occupies space and shows nothing.
+                        Said out loud rather than left as an unexplained coloured
+                        band, which is what it looks like otherwise — and which
+                        reads as the editor having inserted a gap rather than as
+                        a section that failed to render. */}
+                    {emptySectionIds.has(sec.id) && (
+                      <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-6">
+                        <div className="pointer-events-auto max-w-md rounded-xl border border-amber-400/40 bg-amber-950/85 px-4 py-3 text-center shadow-lg backdrop-blur-sm">
+                          <p className="text-[11px] font-black tracking-tight text-amber-200">
+                            &ldquo;{sec.title}&rdquo; is rendering empty
+                          </p>
+                          <p className="mt-1 text-[10px] font-medium leading-relaxed text-amber-100/70">
+                            It takes up space but shows nothing. Usually its content is built by a
+                            script. Try Swap to another layout, or delete it.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   </React.Fragment>
                 );
