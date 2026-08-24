@@ -11,6 +11,8 @@ import {
   sectionDeviceWidths,
 } from "@/lib/section-runtime";
 import { normalizeSections, pickSections, type SectionItem } from "@/lib/site-sections";
+import { tokenizeSectionHtml } from "@/lib/editor-themes";
+import { resolveCategory } from "@/lib/sections/categories";
 
 
 /**
@@ -46,6 +48,8 @@ export function PreviewSiteViewer({
   subdomain,
   mode = "preview",
   initialSections = [],
+  themeId = null,
+  fontId = null,
 }: {
   subdomain: string;
   /**
@@ -60,6 +64,15 @@ export function PreviewSiteViewer({
   mode?: PreviewSiteMode;
   /** Rendered on the server, so the first paint is the site rather than a spinner. */
   initialSections?: SectionItem[];
+  /**
+   * The tenant's theme, resolved on the server.
+   *
+   * Ids, not colours: the tokens for all four themes are already in the
+   * document, so applying one is an attribute and the published markup stays
+   * exactly as it was authored.
+   */
+  themeId?: string | null;
+  fontId?: string | null;
 }) {
   const [sections, setSections] = useState<SectionItem[]>(initialSections);
   const [loading, setLoading] = useState(initialSections.length === 0);
@@ -141,36 +154,6 @@ export function PreviewSiteViewer({
     let cancelled = false;
 
     /**
-     * The editor's unsaved draft, from the browser that made it.
-     *
-     * Only ever read in `preview` mode. On a published site this is the wrong
-     * answer by construction: the cache exists in exactly one person's browser,
-     * so the owner would be served their local draft while every other visitor
-     * got the database — the same URL rendering two different websites, with no
-     * way to tell which one you were looking at.
-     */
-    const readEditorDraft = (): SectionItem[] | null => {
-      if (isLive || typeof window === "undefined") return null;
-      try {
-        const keysToTry = [
-          `xite_active_sections_${subdomain}_/home`,
-          `xite_active_sections_${subdomain}_home`,
-          `xite_active_sections_${subdomain}`,
-        ];
-        for (const key of keysToTry) {
-          const savedActive = localStorage.getItem(key);
-          if (savedActive && savedActive !== "undefined" && savedActive !== "null") {
-            const parsed = JSON.parse(savedActive);
-            if (Array.isArray(parsed) && parsed.length > 0) return normalizeSections(parsed);
-          }
-        }
-      } catch (err) {
-        console.warn("Could not read the editor draft cache:", err);
-      }
-      return null;
-    };
-
-    /**
      * The site's sections, from the database.
      *
      * The same three sources the server render tries, in the same order, so the
@@ -210,21 +193,22 @@ export function PreviewSiteViewer({
 
         if (cancelled) return;
 
-        const finalSecs =
-          pageSecs.length > 0
-            ? normalizeSections(pageSecs)
-            : readEditorDraft() ?? initialSections;
+        /* The database, or whatever the server render already put on the page.
+           There used to be a third source here: a localStorage draft cache the
+           editor wrote on every keystroke. The editor no longer writes it — the
+           database is the only store — so reading it could only ever serve a
+           copy from before that change, forever, with nothing to invalidate it.
+           A stale answer is worse than the server's. */
+        const finalSecs = pageSecs.length > 0 ? normalizeSections(pageSecs) : initialSections;
 
         // Replace state only on a real change. An identical array restarts every
         // effect above — re-injecting styles and re-running section scripts once
         // per poll, which is what made the preview flicker every five seconds.
         setSections((prev) => (sameSections(prev, finalSecs) ? prev : finalSecs));
       } catch (err) {
+        // Keep what the server render put on the page rather than replacing a
+        // correct site with a cached guess.
         console.warn("Could not load the published site sections:", err);
-        if (!cancelled) {
-          const draft = readEditorDraft();
-          if (draft) setSections((prev) => (sameSections(prev, draft) ? prev : draft));
-        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -425,16 +409,23 @@ export function PreviewSiteViewer({
           }`}
         >
         <div
+          /* The tenant's theme, applied by attribute. Every theme's tokens are
+             already in the stylesheet `SectionRuntimeAssets` emitted, so this
+             costs nothing and cannot flash: the correct colours are resolved on
+             the first paint of the server-rendered HTML. */
+          data-xite-theme={themeId ?? undefined}
+          data-xite-font={fontId ?? undefined}
           className={`xite-site-canvas block max-w-full ${
             previewWidth === "100%" ? "w-full min-h-screen m-0 p-0" : "min-h-[75vh]"
           }`}
           style={{ width: previewWidth, maxWidth: "100%" }}
         >
           {sections.map((sec, idx) => {
-            const isHeader =
-              idx === 0 ||
-              (sec.title || "").toLowerCase().includes("header") ||
-              (sec.title || "").toLowerCase().includes("nav");
+            // The navbar, by what it actually is. `idx === 0` was one of the
+            // tests, so on a site with no navbar the first section — whatever it
+            // happened to be — was given the sticky header's z-index.
+            const isHeader = resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
+            void idx;
             return (
               <div
                 key={sec.id}
@@ -454,7 +445,7 @@ export function PreviewSiteViewer({
                   position: "relative",
                 }}
                 className="w-full relative transition-all group section-wrapper-container"
-                dangerouslySetInnerHTML={{ __html: sectionCanvasHtml(sec.code) }}
+                dangerouslySetInnerHTML={{ __html: tokenizeSectionHtml(sectionCanvasHtml(sec.code)) }}
               />
             );
           })}

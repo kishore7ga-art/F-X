@@ -48,7 +48,12 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   bodyEndHtml: "",
 };
 
-export type SiteView = { sections: SectionItem[]; settings: SiteSettings };
+/** The theme ids a published site renders in. Null means the default. */
+export type SiteTheme = { themeId: string | null; fontId: string | null };
+
+export const DEFAULT_SITE_THEME: SiteTheme = { themeId: null, fontId: null };
+
+export type SiteView = { sections: SectionItem[]; settings: SiteSettings; theme: SiteTheme };
 
 /**
  * Sections and settings in one pass.
@@ -75,9 +80,11 @@ export async function loadSiteView(subdomain: string, host?: string): Promise<Si
       if (sections.length === 0) continue;
 
       const raw = (data as { settings?: Partial<SiteSettings> })?.settings;
+      const theme = (data as { theme?: Partial<SiteTheme> })?.theme;
       return {
         sections: normalizeSections(sections),
         settings: raw ? { ...DEFAULT_SITE_SETTINGS, ...raw } : DEFAULT_SITE_SETTINGS,
+        theme: theme ? { ...DEFAULT_SITE_THEME, ...theme } : DEFAULT_SITE_THEME,
       };
     } catch {
       // Unreachable or erroring backend: fall through to the next source, and to
@@ -85,5 +92,5 @@ export async function loadSiteView(subdomain: string, host?: string): Promise<Si
     }
   }
 
-  return { sections: [], settings: DEFAULT_SITE_SETTINGS };
+  return { sections: [], settings: DEFAULT_SITE_SETTINGS, theme: DEFAULT_SITE_THEME };
 }

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 import { PreviewSiteViewer } from "@/components/preview/PreviewSiteViewer";
 import { SectionRuntimeAssets } from "@/components/preview/SectionRuntimeAssets";
-import { loadSiteView, type SiteSettings } from "@/lib/site-sections.server";
+import { loadSiteView } from "@/lib/site-sections.server";
 
 /**
  * A published tenant site, with its settings applied.
@@ -88,8 +88,7 @@ function CustomCode({ html, id }: { html: string; id: string }) {
 
 export async function PublishedSite({ subdomain }: { subdomain: string }) {
   const host = await requestHost();
-  const { sections, settings }: { sections: unknown[]; settings: SiteSettings } =
-    await loadSiteView(subdomain, host);
+  const { sections, settings, theme } = await loadSiteView(subdomain, host);
 
   // Checked before anything else renders. A maintenance page that appears below
   // the site it is replacing is not a maintenance page.
@@ -105,6 +104,8 @@ export async function PublishedSite({ subdomain }: { subdomain: string }) {
         subdomain={subdomain}
         mode="live"
         initialSections={sections as never}
+        themeId={theme.themeId}
+        fontId={theme.fontId}
       />
       <CustomCode html={settings.bodyEndHtml} id="body-end" />
     </>

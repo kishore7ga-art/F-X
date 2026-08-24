@@ -1,13 +1,10 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import Link from "next/link";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import {
   Plus,
-  Eye,
   Layout,
-  RefreshCw,
   X,
   Info,
   GraduationCap,
@@ -32,6 +29,35 @@ import {
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
+import { canonicalSlug, useEditorPages } from "@/hooks/useEditorPages";
+import type { SectionCategoryId } from "@/lib/sections/categories";
+import {
+  fetchDefaultWebsite,
+  fetchSectionLibrary,
+  fetchTheme,
+  saveTheme,
+  type EditorPage,
+  type EditorSection,
+  type LibrarySection,
+  type SectionLibrary,
+} from "@/lib/editor-api";
+import {
+  moveSection,
+  placementIndex,
+  sectionFromTemplate,
+  swapVariant,
+  variantsFor,
+} from "@/lib/section-variants";
+import {
+  DEFAULT_FONT_ID,
+  DEFAULT_THEME_ID,
+  detokenizeSectionHtml,
+  themeFontsHref,
+  themeStylesheet,
+  tokenizeSectionHtml,
+  type EditorFontId,
+  type EditorThemeId,
+} from "@/lib/editor-themes";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -39,15 +65,33 @@ import { UserProfileMenu } from "./UserProfileMenu";
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
 const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
 
-interface SectionItem {
-  id: string;
-  title: string;
-  code: string;
-  variantIndex: number;
-  category?: string;
-}
+/**
+ * A section, as the editor holds it.
+ *
+ * Aliased to the shape the API layer defines rather than declared again here.
+ * The two used to differ — the local one had an optional `category` and no
+ * `templateId` — so every value crossing the boundary was cast, and a section
+ * could reach the canvas with no category at all. Its category is the only
+ * thing that decides which variants it can swap between, so "optional" meant
+ * "sometimes unswappable for reasons nothing reports".
+ */
+type SectionItem = EditorSection;
 
-const SECTION_CATEGORIES = [
+/**
+ * The nineteen categories, with the icon and copy the picker shows.
+ *
+ * The ids are `SECTION_CATEGORY_IDS` from the shared module — the same strings
+ * the server files templates under — and the `satisfies` below fails the build
+ * if this list and that one ever disagree. They did: this file spelled the top
+ * bar `navbar` in some places and `header` in others, and a card whose id was
+ * `header` matched no template because the resolver only ever emits `navbar`.
+ */
+const SECTION_CATEGORIES: ReadonlyArray<{
+  id: SectionCategoryId;
+  name: string;
+  description: string;
+  icon: typeof Compass;
+}> = [
   { id: "navbar", name: "Navbar / Header", description: "Top navigation bar with logo, menu links & action buttons", icon: Compass },
   { id: "hero", name: "Hero Banner", description: "Lead banner, masthead & title headline", icon: Layout },
   { id: "highlights", name: "College Highlights", description: "Key stats, NIRF rankings & accreditation badges", icon: Award },
@@ -127,6 +171,43 @@ function SectionInsertPoint({
   );
 }
 
+/**
+ * A section's markup, wrapped for the canvas.
+ *
+ * At module scope: it reads nothing from the component, and being declared
+ * below its own caller meant every render captured a fresh closure over
+ * nothing. Preserves 100% of the author's HTML, body styles, attributes and
+ * colours — the same bytes the Admin's iframe renders.
+ */
+function cleanFullWebCodeForCanvas(code: string): string {
+  if (!code) return "";
+
+  let cleanCode = code;
+
+  const bodyFullMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body\s*>/i);
+  if (bodyFullMatch) {
+    const bodyAttrs = bodyFullMatch[1] || "";
+    const bodyContent = bodyFullMatch[2] || "";
+    const headMatch = code.match(/<head[^>]*>([\s\S]*?)<\/head\s*>/i);
+    const styles = headMatch ? headMatch[1] : "";
+    cleanCode = `${styles}\n<div class="xite-body-wrapper" ${bodyAttrs}>${bodyContent}</div>`;
+  } else {
+    // The word boundary on every tag name is load-bearing: `<head[\s\S]*?>`
+    // also matches `<header ...>` and `</head>` matches `</header>`, so this
+    // pass used to delete the wrapper element of every navbar section —
+    // background, padding and all.
+    cleanCode = code
+      .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+      .replace(/<\/?html[^>]*>/gi, "")
+      .replace(/<\/?head[^>]*>/gi, "")
+      .replace(/<\/?body[^>]*>/gi, "");
+  }
+
+  // The CSS isolation reset targeting `.section-canvas-box` is injected once on
+  // mount by the section runtime.
+  return `<div class="section-canvas-box w-full block text-left relative">${cleanCode}</div>`;
+}
+
 interface EditorStudioProps {
   subdomain?: string;
   collegeName?: string;
@@ -140,14 +221,128 @@ export function EditorStudio({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>("domain");
-  const [sections, setSections] = useState<SectionItem[]>([]);
-  const [historyStack, setHistoryStack] = useState<SectionItem[][]>([]);
-  const [redoStack, setRedoStack] = useState<SectionItem[][]>([]);
-  const [adminDbTemplates, setAdminDbTemplates] = useState<any[]>([]);
-  const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(0);
-  const [loadingDb, setLoadingDb] = useState(true);
-  // Full multi-page config loaded from /api/v1/my-website (per-college, DB-persisted)
-  const [myWebsiteConfig, setMyWebsiteConfig] = useState<{ pages: Array<{ slug: string; title: string; sections: SectionItem[] }> } | null>(null);
+  /**
+   * Every page's sections, keyed by page, with its own load and save lifecycle.
+   *
+   * This replaces five overlapping stores — `sections`, `pageStore`,
+   * `myWebsiteConfig` and two localStorage keys — and the four effects that
+   * wrote between them without ever naming the page they were writing for. See
+   * `useEditorPages` for what that combination did to a site with more than one
+   * page; the short version is that opening About and then editing Home wrote
+   * Home's sections into About.
+   *
+   * localStorage is gone from the section path entirely. It was read *before*
+   * the database on the offline fallback, which is how a stale copy of a page
+   * could outlive a save and then be re-persisted over it. The database is the
+   * only store; a failed load leaves a page untouched rather than replacing it
+   * with whatever the browser last cached.
+   */
+  const editor = useEditorPages("/home");
+
+  const sections = editor.activePage.sections;
+  const activeSectionIndex = editor.activeSectionIndex;
+  const setActiveSectionIndex = editor.selectSection;
+  const currentPage = useMemo(
+    () => ({ name: editor.activePage.title, slug: editor.activePage.slug }),
+    [editor.activePage.title, editor.activePage.slug],
+  );
+  const loadingDb = editor.booting || editor.activePage.status === "loading";
+
+  /**
+   * A section mutation, recorded for undo.
+   *
+   * Keeps the call shape the rest of this file already uses so the twenty-odd
+   * existing mutation sites did not each need rewriting, but the page id is
+   * captured inside `mutateSections` at call time rather than read at apply
+   * time — which is the property that makes a mutation dispatched moments
+   * before a page switch land on the page it was made for.
+   */
+  const setSectionsWithHistory = useCallback(
+    (action: SectionItem[] | ((prev: SectionItem[]) => SectionItem[])) => {
+      editor.mutateSections(typeof action === "function" ? action : () => action);
+    },
+    [editor],
+  );
+
+  /** The same, without an undo entry. For programmatic corrections only. */
+  const setSections = useCallback(
+    (action: SectionItem[] | ((prev: SectionItem[]) => SectionItem[])) => {
+      editor.mutateSections(typeof action === "function" ? action : () => action, { record: false });
+    },
+    [editor],
+  );
+
+  /**
+   * The section library — every template a tenant may use, grouped by category.
+   *
+   * One fetch, from `/api/v1/section-library`. The editor previously made two
+   * fetches per category resolution against `/api/v1/admin/templates`, an
+   * admin-only route that returns 401 to a college session; the failure was
+   * swallowed by an empty `catch`, so the library was silently empty for every
+   * tenant in production. That single fact is what made both the Add Section
+   * picker and Swap Variant appear broken.
+   */
+  /** Which category's variant strip is open in the picker. One at a time. */
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+
+  /**
+   * What just happened, in one line, above the toolbar.
+   *
+   * The editor had `showToastNotification`, which was deliberately wired to do
+   * nothing — every call set the message to `null`. So "Only 1 variant", "No
+   * section variants found" and every save failure were written, called, and
+   * discarded. The user pressed Swap, nothing moved, and nothing said why.
+   *
+   * This is not a toast: it is a status line that replaces its own previous
+   * message and clears itself, so it can report a failure without interrupting.
+   */
+  const [swapNotice, setSwapNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!swapNotice) return;
+    const timer = setTimeout(() => setSwapNotice(null), 3200);
+    return () => clearTimeout(timer);
+  }, [swapNotice]);
+
+  const [library, setLibrary] = useState<SectionLibrary>({ sections: [], byCategory: {} });
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const next = await fetchSectionLibrary();
+      if (cancelled) return;
+      setLibrary(next);
+      setLibraryLoaded(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * A section's markup, ready for the canvas.
+   *
+   * Tokenising happens here — at render — and never on the way to the database.
+   * `sec.code` on disk stays exactly as its author wrote it, so the theme is
+   * reversible and a section renders identically with no theme applied: every
+   * `var(--xite-…)` carries the original colour as its fallback.
+   */
+  const canvasHtml = useCallback(
+    (code: string) => tokenizeSectionHtml(cleanFullWebCodeForCanvas(code)),
+    [],
+  );
+
+  /** The three theme font families, loaded once for the whole editor. */
+  useEffect(() => {
+    const id = "xite-editor-theme-fonts";
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = themeFontsHref();
+    document.head.appendChild(link);
+  }, []);
 
   // Active inline text editing state tracking
   const activeEditingElemRef = useRef<HTMLElement | null>(null);
@@ -163,50 +358,27 @@ export function EditorStudio({
     }
   }, []);
 
-  // Helper to record history snapshot before mutating sections state
-  const setSectionsWithHistory: React.Dispatch<React.SetStateAction<SectionItem[]>> = (action) => {
-    setSections((prevSections) => {
-      const nextSections = typeof action === "function" ? action(prevSections) : action;
-      if (JSON.stringify(prevSections) !== JSON.stringify(nextSections)) {
-        setHistoryStack((history) => [...history.slice(-49), prevSections]);
-        setRedoStack([]);
-      }
-      return nextSections;
-    });
-  };
-
-  // Undo & Redo History Stack Handlers (Applies to Text Edits & Page Sections)
-  const handleUndo = () => {
+  /**
+   * Undo and redo, per page.
+   *
+   * Both stacks live in the store, keyed by page id, so switching to About and
+   * back does not discard Home's history — the old pair of component-level
+   * arrays were shared across every page, which meant an undo after a page
+   * switch applied the *previous page's* section list to the current one.
+   */
+  const handleUndo = useCallback(() => {
     if (typeof document !== "undefined" && document.activeElement) {
       (document.activeElement as HTMLElement).blur();
     }
+    editor.undo();
+  }, [editor]);
 
-    if (historyStack.length === 0) {
-      showToastNotification("ℹ️ At initial state (No earlier history)");
-      return;
-    }
-    const previousState = historyStack[historyStack.length - 1]!;
-    setRedoStack((prev) => [...prev, sections]);
-    setHistoryStack((prev) => prev.slice(0, prev.length - 1));
-    setSections(previousState);
-    showToastNotification("↩️ Undo performed!");
-  };
-
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
     if (typeof document !== "undefined" && document.activeElement) {
       (document.activeElement as HTMLElement).blur();
     }
-
-    if (redoStack.length === 0) {
-      showToastNotification("ℹ️ At latest state (No redo history)");
-      return;
-    }
-    const nextState = redoStack[redoStack.length - 1]!;
-    setHistoryStack((prev) => [...prev, sections]);
-    setRedoStack((prev) => prev.slice(0, prev.length - 1));
-    setSections(nextState);
-    showToastNotification("↪️ Redo performed!");
-  };
+    editor.redo();
+  }, [editor]);
 
   // Global Keyboard Shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
   useEffect(() => {
@@ -232,7 +404,7 @@ export function EditorStudio({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [historyStack, redoStack, sections]);
+  }, [handleUndo, handleRedo]);
 
   // Section Selector Modal
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
@@ -248,19 +420,6 @@ export function EditorStudio({
    * they pressed.
    */
   const [pendingInsertIndex, setPendingInsertIndex] = useState<number | null>(null);
-
-  /**
-   * Pages the user created in this session that have never held a section.
-   *
-   * A brand-new page must open empty. Without this, `fetchDbSections` finds no
-   * entry for the slug and falls through to the platform default, so creating
-   * "Admissions" silently filled it with the default home page — which then
-   * autosaved, making the copy permanent.
-   *
-   * A ref, not state: nothing renders from it, and `fetchDbSections` reads it
-   * from inside an effect that must not re-run when it changes.
-   */
-  const freshPageSlugsRef = useRef<Set<string>>(new Set());
 
   /** Opens the picker for a specific slot on the canvas. */
   const openAddSectionModalAt = (index: number) => {
@@ -291,13 +450,18 @@ export function EditorStudio({
     isNewTab: boolean;
   } | null>(null);
 
-  // Dynamic Toast Notification State (Disabled per user request)
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  const showToastNotification = (_msg: string) => {
-    // Popups completely disabled per user request
-    setToastMessage(null);
-  };
+  /**
+   * Report something, in the status line above the toolbar.
+   *
+   * This used to be `setToastMessage(null)` — every call, unconditionally,
+   * with a comment saying popups were disabled. The calls stayed, so eleven
+   * places in this file described what had just happened to nobody. Popups
+   * genuinely are gone; this is a single non-blocking status line that
+   * replaces its own message.
+   */
+  const showToastNotification = useCallback((message: string) => {
+    setSwapNotice(message || null);
+  }, []);
 
   // Right-Click Image, Logo & Background Editor Modal State
   const [imagePopup, setImagePopup] = useState<{
@@ -336,102 +500,108 @@ export function EditorStudio({
     setImagePopup((prev) => (prev ? { ...prev, ...val } : val));
   };
 
-  const [_activePalette, setActivePalette] = useState("academic-blue");
-  const [_activeFont, setActiveFont] = useState("inter");
-
-  // Strip out canvas wrapper divs and html entity pollution while preserving section CSS & style tags
-  const cleanCanvasWrapperFromCode = (rawCode: string): string => {
+  /**
+   * Strips the wrappers the canvas adds, so what is saved is the section.
+   *
+   * Only the two wrapper classes this file injects, and only when they are the
+   * outermost element. Section CSS and `<style>` blocks are preserved: they are
+   * part of the section, and an earlier version of this stripped them.
+   */
+  const cleanCanvasWrapperFromCode = useCallback((rawCode: string): string => {
     if (!rawCode) return "";
 
-    let clean = rawCode;
+    /**
+     * Theme variables resolved back to the colours the section was authored in.
+     *
+     * This function's input is markup read back out of the live DOM — that is
+     * how inline text editing captures an edit — and what is in the DOM is the
+     * tokenised copy. Without this, editing one word would write
+     * `var(--xite-accent, …)` into the stored markup, and a section carrying
+     * theme variables renders in whatever theme it is later shown under rather
+     * than in its author's colours.
+     *
+     * Tokens exist between the store and the screen, and nowhere else.
+     */
+    let clean = detokenizeSectionHtml(rawCode);
 
-    // 1. Remove mobile drawer overlays & hamburger buttons injected dynamically
+    // Overlays and toggles the canvas injects at runtime, which are not content.
     clean = clean.replace(/<div[^>]*class="[^"]*mobile-drawer-menu[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
     clean = clean.replace(/<button[^>]*class="[^"]*hamburger-toggle-btn[^"]*"[^>]*>[\s\S]*?<\/button>/gi, "");
-
-    // 2. Un-escape HTML entities if present (&lt;, &gt;, &amp;)
     clean = clean.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
-
-    // 3. Strip outer wrapper divs injected by canvas (.section-canvas-box, .section-wrapper-container)
-    clean = clean.replace(/^<div[^>]*class="[^"]*(?:section-canvas-box|section-wrapper-container)[^"]*"[^>]*>([\s\S]*)<\/div>$/i, (_match, inner) => {
-      return inner ? inner.trim() : _match;
-    });
+    clean = clean.replace(
+      /^<div[^>]*class="[^"]*(?:section-canvas-box|section-wrapper-container)[^"]*"[^>]*>([\s\S]*)<\/div>$/i,
+      (_match, inner) => (inner ? inner.trim() : _match),
+    );
 
     return clean.trim();
-  };
+  }, []);
 
-  // Handle full-page Color Theme Palette Switch across ALL sections
-  const handlePaletteSelect = (paletteId: string) => {
-    setActivePalette(paletteId);
+  /* ── Themes ──────────────────────────────────────────────────────────────
+   *
+   * A theme is an id, and applying it writes one attribute onto the canvas.
+   * Nothing else happens: no section markup is read, rewritten or saved, so
+   * every section on every page retints in the same frame, the change is
+   * instant with no reload, and switching back is exact.
+   *
+   * The previous implementation ran a find-and-replace over `sec.code` for a
+   * dozen hardcoded hex values and autosaved the result. That made a theme a
+   * one-way, lossy migration of the tenant's own markup — `#2563eb` became
+   * `#f59e0b`, and switching back turned every `#f59e0b` blue, including the
+   * ones the section was authored with. It also only ever touched the page
+   * currently open, so a multi-page site ended up half one theme and half
+   * another. See `lib/editor-themes.ts`.
+   */
+  const [themeId, setThemeId] = useState<EditorThemeId>(DEFAULT_THEME_ID);
+  const [fontId, setFontId] = useState<EditorFontId>(DEFAULT_FONT_ID);
 
-    const PALETTES_MAP: Record<string, { primary: string; secondary: string; accent: string; headerBg: string; textAccent: string }> = {
-      "academic-blue": { primary: "#0f172a", secondary: "#1e293b", accent: "#2563eb", headerBg: "#0d1527", textAccent: "#38bdf8" },
-      "emerald-gold": { primary: "#022c22", secondary: "#064e3b", accent: "#f59e0b", headerBg: "#022c22", textAccent: "#fbbf24" },
-      "crimson-slate": { primary: "#4c0519", secondary: "#881337", accent: "#f43f5e", headerBg: "#4c0519", textAccent: "#fb7185" },
-      "midnight-purple": { primary: "#0d0418", secondary: "#180828", accent: "#a855f7", headerBg: "#0d0418", textAccent: "#c084fc" },
-      "sunset-amber": { primary: "#18181b", secondary: "#27272a", accent: "#f59e0b", headerBg: "#09090b", textAccent: "#fbbf24" },
-      "modern-dark": { primary: "#0b1329", secondary: "#1e293b", accent: "#38bdf8", headerBg: "#0b1329", textAccent: "#7dd3fc" },
-      "crimson-gold": { primary: "#3b0764", secondary: "#581c87", accent: "#eab308", headerBg: "#3b0764", textAccent: "#fde047" },
-      "cyber-neon": { primary: "#050814", secondary: "#0f172a", accent: "#06b6d4", headerBg: "#050814", textAccent: "#22d3ee" },
-      "rose-quartz": { primary: "#1f1924", secondary: "#2d2336", accent: "#f472b6", headerBg: "#1f1924", textAccent: "#f472b6" },
-      "light-minimal": { primary: "#ffffff", secondary: "#f8fafc", accent: "#2563eb", headerBg: "#0f172a", textAccent: "#2563eb" },
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const stored = await fetchTheme();
+      if (cancelled) return;
+      if (stored.themeId) setThemeId(stored.themeId as EditorThemeId);
+      if (stored.fontId) setFontId(stored.fontId as EditorFontId);
+    })();
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    const target = PALETTES_MAP[paletteId] || PALETTES_MAP["academic-blue"]!;
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(`xite_theme_palette_${subdomain}`, paletteId);
-      }
-    } catch {}
+  /**
+   * All four themes, as one stylesheet, injected once.
+   *
+   * Every theme's tokens are present at all times; the `data-xite-theme`
+   * attribute selects between them. That is why switching costs an attribute
+   * write rather than a stylesheet rebuild, and why it cannot race a re-render.
+   */
+  useEffect(() => {
+    const id = "xite-editor-theme-tokens";
+    let style = document.getElementById(id) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement("style");
+      style.id = id;
+      // Before the section runtime sheet, so a section's own CSS still wins
+      // where it is specific about a colour the theme has an opinion about.
+      document.head.prepend(style);
+    }
+    style.textContent = themeStylesheet(EDITOR_CANVAS_SCOPE);
+  }, []);
 
-    // Transform color scheme across ALL sections (Buttons, Cards, Accents, Headers, Footers, Badges)
-    setSectionsWithHistory((prevSections) =>
-      prevSections.map((sec) => {
-        let code = sec.code;
-        // Swap button background colors, accent badges & highlights
-        code = code
-          .replace(/background:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b|06b6d4|eab308|f472b6|f43f5e)/gi, `background: ${target.accent}`)
-          .replace(/background-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b|06b6d4|eab308|f472b6|f43f5e)/gi, `background-color: ${target.accent}`)
-          .replace(/border-color:\s*#(2563eb|ef4444|000000|0f172a|881337|064e3b|a855f7|f59e0b|06b6d4|eab308|f472b6|f43f5e)/gi, `border-color: ${target.accent}`)
-          .replace(/color:\s*#(38bdf8|4ade80|fbbf24|c084fc|22d3ee|7dd3fc|fde047|f472b6|60a5fa)/gi, `color: ${target.textAccent}`)
-          .replace(/<header style="background:\s*[^;]+;/gi, `<header style="background: ${target.headerBg};`)
-          .replace(/<footer style="background:\s*[^;]+;/gi, `<footer style="background: ${target.primary};`);
+  const handlePaletteSelect = useCallback((next: string) => {
+    setThemeId(next as EditorThemeId);
+    // Fire-and-forget: the theme is already applied on screen, and a failed
+    // write is reported by `saveTheme` rather than reverting what the user sees.
+    void saveTheme({ themeId: next }).catch((error) => {
+      console.error("[editor] could not save the theme selection:", error);
+    });
+  }, []);
 
-        return { ...sec, code };
-      })
-    );
-  };
-
-  // Handle full-page Font Family Switch across ALL sections
-  const handleFontSelect = (fontId: string) => {
-    setActiveFont(fontId);
-
-    const FONT_MAP: Record<string, string> = {
-      inter: "'Inter', system-ui, -apple-system, sans-serif",
-      outfit: "'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif",
-      serif: "'Playfair Display', Georgia, serif",
-      cormorant: "'Cormorant Garamond', Georgia, serif",
-      roboto: "'Roboto', system-ui, sans-serif",
-      "space-grotesk": "'Space Grotesk', system-ui, sans-serif",
-      "plus-jakarta": "'Plus Jakarta Sans', system-ui, sans-serif",
-    };
-
-    const targetFont = FONT_MAP[fontId] || FONT_MAP["inter"]!;
-    try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(`xite_theme_font_${subdomain}`, fontId);
-      }
-    } catch {}
-
-    // Update font-family style attribute across ALL sections and inner elements
-    setSectionsWithHistory((prevSections) =>
-      prevSections.map((sec) => {
-        let code = sec.code;
-        code = code.replace(/font-family:\s*[^;]+;/gi, `font-family: ${targetFont};`);
-        return { ...sec, code };
-      })
-    );
-  };
+  const handleFontSelect = useCallback((next: string) => {
+    setFontId(next as EditorFontId);
+    void saveTheme({ fontId: next }).catch((error) => {
+      console.error("[editor] could not save the font selection:", error);
+    });
+  }, []);
 
   const showToast = (_msg?: string) => {
     // Toast popups completely removed
@@ -510,701 +680,65 @@ export function EditorStudio({
     };
   }, [sections]);
 
-  // Non-destructive canvas HTML processor
-  // Preserves 100% of user-defined HTML, body styles, attributes, and colors exactly as in Admin
-  const cleanFullWebCodeForCanvas = (code: string, _width: string): string => {
-    if (!code) return "";
 
-    let cleanCode = code;
+  /* ── Page navigation ─────────────────────────────────────────────────────
+   *
+   * Everything that used to live between here and the inline-editor — five
+   * hundred lines of `fetchDbSections`, `getApiBases`, `loadAdminTemplates`,
+   * `seedPageFromAdminDefaults`, `handlePageChange`, `handlePersistWebsiteSave`
+   * and a `pageStore` mirrored into two localStorage keys — is now
+   * `useEditorPages` and `editor-api.ts`. What is left here is the wiring.
+   *
+   * Three specific behaviours changed, and each was a reported bug:
+   *
+   *  - Switching pages made exactly one request. It used to make two —
+   *    `handlePageChange` called `fetchDbSections`, and an effect on
+   *    `[currentPage.slug]` called it again — which raced, and whichever
+   *    resolved last won.
+   *  - A save writes one page. It used to reconstruct and PUT every page's full
+   *    markup on every debounce, so a page held stale in this tab was rewritten
+   *    from that stale copy.
+   *  - A reorder persists on the click, not 2 seconds later.
+   */
 
-    const bodyFullMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body\s*>/i);
-    if (bodyFullMatch) {
-      const bodyAttrs = bodyFullMatch[1] || "";
-      const bodyContent = bodyFullMatch[2] || "";
-      const headMatch = code.match(/<head[^>]*>([\s\S]*?)<\/head\s*>/i);
-      const styles = headMatch ? headMatch[1] : "";
-      cleanCode = `${styles}\n<div class="xite-body-wrapper" ${bodyAttrs}>${bodyContent}</div>`;
-    } else {
-      // `` on every tag name: `<head[\s\S]*?>` also matches `<header ...>` and
-      // `</head>` matches `</header>`, so this pass used to delete the wrapper of
-      // every navbar section — background, padding and all.
-      cleanCode = code
-        .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
-        .replace(/<\/?html[^>]*>/gi, "")
-        .replace(/<\/?head[^>]*>/gi, "")
-        .replace(/<\/?body[^>]*>/gi, "");
-    }
+  const handlePageChange = useCallback(
+    (pageName: string, pageSlug: string) => {
+      editor.selectPage(pageSlug, pageName);
+    },
+    [editor],
+  );
 
-    // Wrap in section-canvas-box — the CSS isolation reset targeting this class
-    // is injected into document.head once on mount (see the Canvas Isolation useEffect above).
-    return `<div class="section-canvas-box w-full block text-left relative">${cleanCode}</div>`;
-  };
-
-  // Active Page State
-  const [currentPage, setCurrentPage] = useState({ name: "Home", slug: "/home" });
+  /** Explicit Save. The debounced autosave already covers ordinary editing. */
+  const handlePersistWebsiteSave = useCallback(() => {
+    editor.flush(editor.activePage.id);
+  }, [editor]);
 
   /**
-   * Where the editor keeps work between page switches and reloads.
+   * Fills an empty page from the Super Admin's default website.
    *
-   * Scoped to the college. The key used to be a bare, unscoped string — one slot
-   * shared by every tenant that had ever used this browser — and it is read
-   * *before* the database, so whoever signed in next was shown the previous
-   * tenant's sections as their own. That is how a college opens its editor and
-   * finds another brand's section at the top of its page, still there after the
-   * original tenant has been deleted outright, because the copy lives in the
-   * browser rather than in the database.
-   *
-   * The sibling key xite_active_sections_<subdomain>_<page> was already scoped
-   * this way; this one had been missed.
-   *
-   * Deliberately no migration from the old key: its contents cannot be
-   * attributed to any college, so importing them would repeat the bug.
+   * Only from the admin's page at this exact slug. There is deliberately no
+   * fallback to `/home`: the version this replaces fell back to the home page
+   * when the slug was missing, so pressing Add Section on a page the user had
+   * just created copied the entire home page onto it — and the autosave then
+   * made that permanent. A slug the admin has no opinion about opens the
+   * picker, which is the honest answer.
    */
-  const pageStoreKey = `xite_saved_pages_${subdomain}`;
+  const seedPageFromAdminDefaults = useCallback(async () => {
+    const defaults = await fetchDefaultWebsite();
+    const match = defaults.find((page: EditorPage) => canonicalSlug(page.slug) === editor.activePage.id);
 
-  // Per-Page Persistent Auto-Save Store
-  const [pageStore, setPageStore] = useState<Record<string, SectionItem[]>>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(`xite_saved_pages_${subdomain}`);
-        if (saved && saved !== "undefined" && saved !== "null") {
-          return JSON.parse(saved);
-        }
-      } catch (e) {
-        console.warn("Could not parse saved pages from localStorage:", e);
-      }
-    }
-    return {};
-  });
-
-  // Auto-save active sections to pageStore & localStorage whenever sections update
-  useEffect(() => {
-    if (sections.length > 0 && currentPage.slug) {
-      const pageKey = (currentPage.slug || "/home").replace(/\//g, "_") || "home";
-      setPageStore((prev) => {
-        const updated = { ...prev, [currentPage.slug]: sections };
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(pageStoreKey, JSON.stringify(updated));
-            localStorage.setItem(`xite_active_sections_${subdomain}_${pageKey}`, JSON.stringify(sections));
-          } catch {}
-        }
-        return updated;
-      });
-    }
-  }, [sections, currentPage.slug, subdomain]);
-
-  // Debounced autosave to /api/v1/my-website (per-college DB) whenever sections change.
-  // 2s debounce: fires after user stops editing, not on every keystroke.
-  useEffect(() => {
-    if (sections.length === 0 || !currentPage.slug || loadingDb) return;
-
-    const timer = setTimeout(() => {
-      // Fire-and-forget: errors are non-fatal (localStorage is the fallback)
-      void handlePersistWebsiteSave();
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sections]);
-
-  // Helper to normalize category key aliases across Admin DB templates & Editor categories
-  const normalizeCategory = (cat?: string): string => {
-    if (!cat) return "";
-    const c = cat.toLowerCase().trim();
-    if (c.includes("header") || c.includes("navbar") || c === "nav") return "navbar";
-    if (c.includes("hero") || c.includes("banner") || c.includes("masthead")) return "hero";
-    if (c.includes("admission") || c.includes("apply") || c.includes("eligibility")) return "admissions";
-    if (c.includes("highlight") || c.includes("stat") || c.includes("metric")) return "highlights";
-    if (c.includes("about")) return "about";
-    if (c.includes("vision") || (c.includes("mission") && !c.includes("admission")) || c.includes("principle")) return "vision";
-    if (c.includes("course") || c.includes("program") || c.includes("degree")) return "courses";
-    if (c.includes("department") || c.includes("faculty") || c.includes("school")) return "departments";
-    if (c.includes("placement") || c.includes("recruiter") || c.includes("career")) return "placements";
-    if (c.includes("facilit") || c.includes("infrastruct") || c.includes("hostel") || c.includes("library")) return "facilities";
-    if (c.includes("research") || c.includes("patent") || c.includes("r&d") || c.includes("lab")) return "research";
-    if (c.includes("news") || c.includes("circular") || c.includes("announc") || c.includes("notice")) return "news";
-    if (c.includes("event") || c.includes("calendar") || c.includes("fest")) return "events";
-    if (c.includes("gallery") || c.includes("campus life") || c.includes("photo")) return "gallery";
-    if (c.includes("testimonial") || c.includes("alumni") || c.includes("review")) return "testimonials";
-    if (c.includes("award") || c.includes("achievement") || c.includes("rank") || c.includes("trophy")) return "achievements";
-    if (c.includes("contact") || c.includes("enquir") || c.includes("inquir") || c.includes("helpdesk")) return "contact";
-    if (c.includes("map") || c.includes("location") || c.includes("direction")) return "map";
-    if (c.includes("footer") || c.includes("copyright")) return "footer";
-    return c;
-  };
-
-  // Live Admin templates map state
-  const [liveAdminTemplatesMap, setLiveAdminTemplatesMap] = useState<Record<string, string>>({});
-
-  const deduplicateSections = (secs: SectionItem[]): SectionItem[] => {
-    const seenIds = new Set<string>();
-
-    return secs.filter((sec) => {
-      if (!sec || !sec.code) return false;
-      if (seenIds.has(sec.id)) return false;
-      seenIds.add(sec.id);
-      return true;
-    });
-  };
-
-  /**
-   * The sections for one page slug, from the college's own saved config.
-   *
-   * Sources, in order: the config already in state, `/api/v1/my-website`, the
-   * platform default, then the localStorage cache. An empty page is a real
-   * answer at the end of that list.
-   *
-   * Every lookup is now *exact* on the slug. Each of the three config sources
-   * used to fall back to `/home`, and then to `pages[0]`, when the requested
-   * slug was missing — so any page the college had not saved yet rendered the
-   * home page's sections under its own name, and the editor's autosave then
-   * wrote that copy to the database. Asking for a page that does not exist
-   * yields nothing, which is what an empty page is.
-   */
-  const fetchDbSections = async (slug: string = "/home", forceSync: boolean = false) => {
-    setLoadingDb(true);
-    const cleanSlug = (slug || "/home").replace(/\//g, "_") || "home";
-
-    // A page created moments ago has nothing to load and nothing to seed from.
-    // It opens empty, and stays that way until the user presses Add Section.
-    if (freshPageSlugsRef.current.has(slug)) {
-      setSections([]);
-      setActiveSectionIndex(null);
-      setLoadingDb(false);
+    if (!match || match.sections.length === 0) {
+      setShowAddSectionModal(true);
       return;
     }
 
-    try {
-      // 1. If we already have the full config in state and not forceSync, switch active page sections
-      if (!forceSync && myWebsiteConfig && myWebsiteConfig.pages) {
-        const targetPage = myWebsiteConfig.pages.find((p) => p.slug === slug);
-        if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
-          const cleanSecs = deduplicateSections(targetPage.sections);
-          setSections(cleanSecs);
-          setActiveSectionIndex(0);
-          setLoadingDb(false);
-          return;
-        }
-      }
-
-      // 2. Primary Source: Fetch from /api/v1/my-website (per-college, authenticated DB)
-      for (const baseUrl of getApiBases()) {
-        try {
-          const res = await fetch(`${baseUrl}/api/v1/my-website`, { credentials: "include" });
-          if (res.ok) {
-            const data = await res.json().catch(() => ({}));
-            if (data && Array.isArray(data.pages) && data.pages.length > 0) {
-              // Store full config for later cross-page saves
-              const configWithSections = {
-                pages: data.pages.map((p: any) => ({
-                  slug: p.slug,
-                  title: p.title,
-                  sections: Array.isArray(p.sections)
-                    ? p.sections.map((s: any, idx: number) => ({
-                        id: s.id || `sec-${idx}`,
-                        title: s.title || s.name || "Section",
-                        code: s.code || s.html || s.content || "",
-                        category: normalizeCategory(s.sectionType || s.category || s.type || ""),
-                        variantIndex: 0,
-                      }))
-                    : [],
-                })),
-              };
-              setMyWebsiteConfig(configWithSections);
-
-              // Also update pageStore for cross-page navigation
-              const newPageStore: Record<string, SectionItem[]> = {};
-              configWithSections.pages.forEach((p: { slug: string; title: string; sections: SectionItem[] }) => { newPageStore[p.slug] = p.sections; });
-              setPageStore((prev) => ({ ...prev, ...newPageStore }));
-
-              const targetPage = configWithSections.pages.find(
-                (p: { slug: string; title: string; sections: SectionItem[] }) => p.slug === slug,
-              );
-              if (targetPage && targetPage.sections.length > 0) {
-                const cleanSecs = deduplicateSections(targetPage.sections);
-                setSections(cleanSecs);
-                setActiveSectionIndex(0);
-                try {
-                  localStorage.setItem(`xite_active_sections_${subdomain}_${cleanSlug}`, JSON.stringify(cleanSecs));
-                } catch {}
-                setLoadingDb(false);
-                return;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
-      // 3. Fallback: Super Admin Default Website Config (/api/v1/default-website)
-      for (const baseUrl of getApiBases()) {
-        try {
-          const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
-          if (defRes.ok) {
-            const defData = await defRes.json().catch(() => ({}));
-            if (defData && Array.isArray(defData.pages)) {
-              const targetPage = defData.pages.find((p: any) => p.slug === slug);
-              if (targetPage && Array.isArray(targetPage.sections) && targetPage.sections.length > 0) {
-                const cleanSecs = deduplicateSections(targetPage.sections);
-                setSections(cleanSecs);
-                setActiveSectionIndex(0);
-                try {
-                  localStorage.setItem(`xite_active_sections_${subdomain}_${cleanSlug}`, JSON.stringify(cleanSecs));
-                } catch {}
-                setLoadingDb(false);
-                return;
-              }
-            }
-          }
-        } catch (e) {}
-      }
-
-      // 4. Fallback: localStorage cache if DB offline
-      if (typeof window !== "undefined") {
-        try {
-          const rawActive = localStorage.getItem(`xite_active_sections_${subdomain}_${cleanSlug}`);
-          if (rawActive && rawActive !== "undefined" && rawActive !== "null") {
-            const parsedActive = JSON.parse(rawActive);
-            if (Array.isArray(parsedActive) && parsedActive.length > 0) {
-              const cleanSecs = deduplicateSections(parsedActive);
-              setSections(cleanSecs);
-              setActiveSectionIndex(0);
-              setLoadingDb(false);
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn("Could not load sections from localStorage:", err);
-        }
-      }
-
-      setSections([]);
-      setActiveSectionIndex(null);
-    } finally {
-      setLoadingDb(false);
-    }
-  };
-
-  // Returns only valid absolute backend URLs — NEVER empty string (which causes
-  // relative requests to broken Next.js routes like /admin/templates that previously
-  // resolved to the legacy meetkishore.in domain).
-  const getApiBases = (): string[] => {
-    const bases: string[] = [];
-
-    // 1. Env-configured API base (highest priority)
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) bases.push(process.env.NEXT_PUBLIC_API_BASE_URL);
-    if (process.env.NEXT_PUBLIC_API_URL) bases.push(process.env.NEXT_PUBLIC_API_URL);
-
-    // 2. Localhost dev fallback (only when running locally)
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      if (hostname === "localhost" || hostname === "127.0.0.1") {
-        bases.push("http://localhost:4000");
-      }
-      // NOTE: Do NOT push "" (empty string) here — it creates relative requests
-      // to Next.js routes that have no backend handler and cause cascading 404s
-    }
-
-    // 3. Hardcoded production backend (final fallback)
-    bases.push("https://api.webxite.org");
-
-    return Array.from(new Set(bases.filter((b) => b !== undefined && b !== null && b !== "").map((b) => b.replace(/\/+$/, ""))));
-  };
-
-  const loadAdminTemplates = async () => {
-    const dbTemplates: any[] = [];
-    const freshMap: Record<string, string> = {};
-    const seenIds = new Set<string>();
-
-    // ONLY use the canonical admin templates endpoint — do NOT fallback to
-    // /admin/templates or /api/admin/templates which have no backend route
-    // and previously caused requests to leak to meetkishore.in
-    for (const baseUrl of getApiBases()) {
-      try {
-        let res = await fetch(`${baseUrl}/api/v1/admin/templates`).catch(() => null);
-        if (!res || !res.ok) {
-          res = await fetch(`${baseUrl}/api/v1/admin/templates`, { credentials: "include" }).catch(() => null);
-        }
-
-        if (res && res.ok) {
-          const data = await res.json().catch(() => ({}));
-          const rawList = Array.isArray(data) ? data : data?.templates || data?.data || [];
-
-          if (Array.isArray(rawList) && rawList.length > 0) {
-            rawList.forEach((t: any) => {
-              if (t && (t.code || t.html || t.content)) {
-                const tId = t.id || t._id?.toString?.() || `tpl-${t.name || Math.random()}`;
-                if (!seenIds.has(tId)) {
-                  seenIds.add(tId);
-                  dbTemplates.push(t);
-                }
-              }
-            });
-            break; // Stop after first successful base URL
-          }
-        }
-      } catch (e) {}
-    }
-
-    // Map all Admin DB templates into freshMap
-    if (Array.isArray(dbTemplates) && dbTemplates.length > 0) {
-      dbTemplates.forEach((t: any) => {
-        const code = t.code || t.html || t.content;
-        if (!code) return;
-
-        // Parse category from t.category or t.name [bracket] notation
-        const rawCat = (t.category && t.category !== "undefined" && t.category !== "null") ? t.category : "";
-        let parsedCat = (rawCat || t.sectionType || t.type || "").toLowerCase();
-        if (parsedCat === "undefined" || parsedCat === "null") parsedCat = "";
-
-        if (!parsedCat && t.name) {
-          const match = t.name.match(/\[(.*?)\]/);
-          if (match && match[1]) {
-            parsedCat = match[1].toLowerCase().trim();
-          }
-        }
-        if (!parsedCat && t.name) {
-          const nameLower = t.name.toLowerCase();
-          if (nameLower.includes("header") || nameLower.includes("nav")) parsedCat = "header";
-          else if (nameLower.includes("hero") || nameLower.includes("banner")) parsedCat = "hero";
-          else if (nameLower.includes("stat") || nameLower.includes("highlight")) parsedCat = "highlights";
-          else if (nameLower.includes("about")) parsedCat = "about";
-          else if (nameLower.includes("vision") || nameLower.includes("mission")) parsedCat = "vision";
-          else if (nameLower.includes("course") || nameLower.includes("program")) parsedCat = "courses";
-          else if (nameLower.includes("department")) parsedCat = "departments";
-          else if (nameLower.includes("admission") || nameLower.includes("apply")) parsedCat = "admissions";
-          else if (nameLower.includes("placement") || nameLower.includes("recruiter")) parsedCat = "placements";
-          else if (nameLower.includes("facility") || nameLower.includes("hostel")) parsedCat = "facilities";
-          else if (nameLower.includes("research") || nameLower.includes("innovation")) parsedCat = "research";
-          else if (nameLower.includes("news") || nameLower.includes("notice")) parsedCat = "news";
-          else if (nameLower.includes("event")) parsedCat = "events";
-          else if (nameLower.includes("gallery") || nameLower.includes("campus")) parsedCat = "gallery";
-          else if (nameLower.includes("testimonial") || nameLower.includes("alumni")) parsedCat = "testimonials";
-          else if (nameLower.includes("achievement") || nameLower.includes("award")) parsedCat = "achievements";
-          else if (nameLower.includes("contact") || nameLower.includes("enquiry")) parsedCat = "contact";
-          else if (nameLower.includes("map") || nameLower.includes("location")) parsedCat = "map";
-          else if (nameLower.includes("footer")) parsedCat = "footer";
-        }
-
-        // Auto-detect header or footer from HTML tags if category is still unknown
-        if (!parsedCat && typeof code === "string") {
-          const codeLower = code.toLowerCase();
-          if (codeLower.includes("<header") || codeLower.includes("<nav")) parsedCat = "header";
-          else if (codeLower.includes("<footer")) parsedCat = "footer";
-        }
-
-        t.category = parsedCat || t.category || "hero";
-        const normCat = normalizeCategory(parsedCat);
-
-        if (parsedCat) freshMap[parsedCat] = code;
-        if (normCat) freshMap[normCat] = code;
-        if (parsedCat.includes("header") || parsedCat.includes("nav") || (t.name || "").toLowerCase().includes("header") || (t.name || "").toLowerCase().includes("nav")) {
-          freshMap["header"] = code;
-          freshMap["navbar"] = code;
-        }
-      });
-    }
-
-    // Fetch live Admin DB default website sections (/api/v1/default-website) configured by Super Admin
-    const defaultSecsFromAdminDb: SectionItem[] = [];
-    for (const baseUrl of getApiBases()) {
-      try {
-        const defRes = await fetch(`${baseUrl}/api/v1/default-website`);
-        if (defRes.ok) {
-          const defData = await defRes.json().catch(() => ({}));
-          if (defData && Array.isArray(defData.pages)) {
-            const targetPage = defData.pages.find((p: any) => p.slug === currentPage.slug) || defData.pages.find((p: any) => p.slug === "/home");
-            if (targetPage && Array.isArray(targetPage.sections)) {
-              targetPage.sections.forEach((s: any, idx: number) => {
-                const code = s.code || s.html || s.content;
-                if (s && code) {
-                  const rawType = s.sectionType || s.category || s.type || s.id || "";
-                  const normType = normalizeCategory(rawType);
-                  defaultSecsFromAdminDb.push({
-                    id: s.id || `admin-def-sec-${idx}`,
-                    title: s.title || s.name || "Section",
-                    code: code,
-                    category: normType || rawType,
-                    variantIndex: 0,
-                  });
-                }
-              });
-            }
-
-            defData.pages.forEach((p: any) => {
-              if (Array.isArray(p.sections)) {
-                p.sections.forEach((s: any) => {
-                  const code = s.code || s.html || s.content;
-                  const rawType = s.sectionType || s.category || s.type || s.id || "";
-                  const normType = normalizeCategory(rawType);
-                  if (rawType && !freshMap[rawType.toLowerCase()]) freshMap[rawType.toLowerCase()] = code;
-                  if (normType && !freshMap[normType]) freshMap[normType] = code;
-                });
-              }
-            });
-            if (defaultSecsFromAdminDb.length > 0) break;
-          }
-        }
-      } catch (e) {}
-    }
-
-    setAdminDbTemplates(dbTemplates);
-    setLiveAdminTemplatesMap((prev) => ({ ...prev, ...freshMap }));
-    // Note: intentionally NOT setting sections here.
-    // Admin DB templates are only used in the Add Section picker UI.
-    // User sections are loaded exclusively from /api/v1/my-website.
-  };
-
-  useEffect(() => {
-    void fetchDbSections(currentPage.slug);
-    void loadAdminTemplates();
-  }, [currentPage.slug]);
-
-  /**
-   * Fills an empty page with the section set the Admin Studio has configured.
-   *
-   * This is what the Add Section button on an empty canvas does, and it is the
-   * one moment a page is populated without the user choosing each piece.
-   *
-   * It reads `/api/v1/default-website` — the Super Admin's default website —
-   * and takes every section of the matching page, in the order the backend
-   * returns them, which is now `sortOrder`. All of them, not the first: a page
-   * seeded with a header and nothing else is not a starting point.
-   *
-   * The function it replaces was named for this but did something else
-   * entirely: it re-read `/api/v1/my-website`, the college's *own* saved
-   * config, and then fell back to the home page when the current slug was not
-   * in it. On a page the user had just created that meant the button copied the
-   * home page onto it. It never touched the admin defaults at all.
-   *
-   * If the admin has no page at this slug, the home page's set is used — that
-   * is what "the default sections" means for a page the platform has no
-   * specific opinion about. If there is nothing to seed from, the picker opens
-   * so the button still does something.
-   */
-  const seedPageFromAdminDefaults = async () => {
-    setLoadingDb(true);
-
-    for (const baseUrl of getApiBases()) {
-      try {
-        const res = await fetch(`${baseUrl}/api/v1/default-website`);
-        if (!res.ok) continue;
-
-        const data = await res.json().catch(() => ({}));
-        if (!data || !Array.isArray(data.pages)) continue;
-
-        const targetPage =
-          data.pages.find((p: any) => p.slug === currentPage.slug) ||
-          data.pages.find((p: any) => p.slug === "/home");
-
-        const rawSections = Array.isArray(targetPage?.sections) ? targetPage.sections : [];
-        // Order is the backend's; nothing is re-sorted here. Two clients each
-        // deciding what "in order" means is how the editor and the published
-        // site end up disagreeing about a page.
-        const seeded: SectionItem[] = rawSections
-          .map((s: any, idx: number) => ({
-            id: `sec-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
-            title: s.title || s.name || "Section",
-            code: s.code || s.html || s.content || "",
-            category: normalizeCategory(s.sectionType || s.category || s.type || ""),
-            variantIndex: 0,
-          }))
-          .filter((s: SectionItem) => Boolean(s.code));
-
-        if (seeded.length === 0) continue;
-
-        // Through the history stack, so the whole seed is one undo.
-        setSectionsWithHistory(() => seeded);
-        setActiveSectionIndex(0);
-        freshPageSlugsRef.current.delete(currentPage.slug);
-        setLoadingDb(false);
-        // No explicit save here: `sections` is still the old empty array inside
-        // this closure, so persisting now would write the state we are
-        // replacing. The debounced autosave watching `sections` fires with the
-        // seeded list a moment later, which is the one that should be stored.
-        return;
-      } catch {
-        // Try the next base, then fall through to the picker.
-      }
-    }
-
-    setShowAddSectionModal(true);
-    setLoadingDb(false);
-  };
-
-  // Fetch admin UI templates (for the add-section picker UI only — does NOT override user sections)
-  useEffect(() => {
-    void loadAdminTemplates();
-    const handleFocus = () => {
-      // Refresh template picker on window focus but do NOT push into user's sections
-      if (!activeEditingElemRef.current) {
-        void loadAdminTemplates();
-      }
-    };
-    window.addEventListener("focus", handleFocus);
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, []);
-
-  const handlePageChange = (pageName: string, pageSlug: string) => {
-    // 1. Auto-save current page sections first to pageStore & page-specific localStorage
-    const currentSlugKey = (currentPage.slug || "/home").replace(/\//g, "_") || "home";
-    setPageStore((prev) => {
-      const updated = { ...prev, [currentPage.slug]: sections };
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(pageStoreKey, JSON.stringify(updated));
-          localStorage.setItem(`xite_active_sections_${subdomain}_${currentSlugKey}`, JSON.stringify(sections));
-        } catch {}
-      }
-      return updated;
-    });
-
-    // 2. Set new active page context
-    setCurrentPage({ name: pageName, slug: pageSlug });
+    // Fresh ids: these are this college's sections now, not references to the
+    // platform default. Sharing ids with the default is what let a later admin
+    // edit appear to reach into a tenant's page.
+    const seeded = match.sections.map((section: EditorSection) => ({ ...section, id: newSectionId() }));
+    setSectionsWithHistory(() => seeded);
     setActiveSectionIndex(0);
-
-    // 3. Load saved sections for target page if already in pageStore or target page-specific localStorage
-    const targetSlugKey = (pageSlug || "/home").replace(/\//g, "_") || "home";
-    let targetSecs: SectionItem[] | null = null;
-
-    if (pageStore[pageSlug] && pageStore[pageSlug].length > 0) {
-      targetSecs = pageStore[pageSlug];
-    } else if (typeof window !== "undefined") {
-      try {
-        const rawTargetActive = localStorage.getItem(`xite_active_sections_${subdomain}_${targetSlugKey}`);
-        if (rawTargetActive && rawTargetActive !== "undefined" && rawTargetActive !== "null") {
-          const parsed = JSON.parse(rawTargetActive);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            targetSecs = parsed;
-          }
-        }
-      } catch {}
-    }
-
-    if (targetSecs && targetSecs.length > 0) {
-      const cleanTarget = deduplicateSections(targetSecs);
-      setSections(cleanTarget);
-      showToastNotification(`Switched to page: ${pageName}`);
-    } else {
-      // 4. Fetch/Load sections for target page
-      void fetchDbSections(pageSlug, true);
-      showToastNotification(`Switched to page: ${pageName}`);
-    }
-  };
-
-  const handlePersistWebsiteSave = async () => {
-    // Build the full multi-page config from the current page sections + all other pages in state
-    const updatedPageStore = { ...pageStore, [currentPage.slug]: sections };
-    const currentSlugKey = (currentPage.slug || "/home").replace(/\//g, "_") || "home";
-
-    // Update localStorage cache
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(`xite_active_sections_${subdomain}_${currentSlugKey}`, JSON.stringify(sections));
-        localStorage.setItem(pageStoreKey, JSON.stringify(updatedPageStore));
-        setPageStore(updatedPageStore);
-      } catch (err) {
-        console.warn("Could not write to localStorage:", err);
-      }
-    }
-
-    // Build the full pages config from all pages we know about
-    const knownPages = myWebsiteConfig?.pages ?? [];
-    const pageSlugSet = new Set(knownPages.map((p) => p.slug));
-
-    // Merge: update sections for pages we have in state, keep rest from server config
-    const mergedPages = knownPages.map((p) => ({
-      slug: p.slug,
-      title: p.title,
-      sections: updatedPageStore[p.slug]
-        ? updatedPageStore[p.slug].map((sec, idx) => ({
-            id: sec.id || `sec-${idx}`,
-            title: sec.title || `Section #${idx + 1}`,
-            sectionType: sec.category || "hero",
-            code: sec.code,
-            sortOrder: idx,
-          }))
-        : (p.sections as any[]).map((s, idx) => ({
-            id: s.id || `sec-${idx}`,
-            title: s.title || `Section #${idx + 1}`,
-            sectionType: s.category || s.sectionType || "hero",
-            code: s.code || s.html || s.content || "",
-            sortOrder: idx,
-          })),
-    }));
-
-    // Add any pages that are only in pageStore but not yet in the server config
-    Object.entries(updatedPageStore).forEach(([slug, secs]) => {
-      if (!pageSlugSet.has(slug) && secs && secs.length > 0) {
-        mergedPages.push({
-          slug,
-          title: slug.replace(/^\//, "").replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase()) || "Page",
-          sections: secs.map((sec, idx) => ({
-            id: sec.id || `sec-${idx}`,
-            title: sec.title || `Section #${idx + 1}`,
-            sectionType: sec.category || "hero",
-            code: sec.code,
-            sortOrder: idx,
-          })) as any,
-        });
-      }
-    });
-
-    // If config is empty (no known pages yet), just save the current page
-    if (mergedPages.length === 0) {
-      mergedPages.push({
-        slug: currentPage.slug || "/home",
-        title: currentPage.name || "Home",
-        sections: sections.map((sec, idx) => ({
-          id: sec.id || `sec-${idx}`,
-          title: sec.title || `Section #${idx + 1}`,
-          sectionType: sec.category || "hero",
-          code: sec.code,
-          sortOrder: idx,
-        })) as any,
-      });
-    }
-
-    const fullConfig = { pages: mergedPages };
-
-    // Save to /api/v1/my-website (per-college, authenticated)
-    for (const baseUrl of getApiBases()) {
-      try {
-        const res = await fetch(`${baseUrl}/api/v1/my-website`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(fullConfig),
-        });
-        if (res.ok) {
-          // Update the local full-config state so subsequent saves are incremental
-          const saved = await res.json().catch(() => fullConfig);
-          if (saved && Array.isArray(saved.pages)) {
-            setMyWebsiteConfig({
-              pages: saved.pages.map((p: any) => ({
-                slug: p.slug,
-                title: p.title,
-                sections: Array.isArray(p.sections)
-                  ? p.sections.map((s: any, idx: number) => ({
-                      id: s.id || `sec-${idx}`,
-                      title: s.title || "Section",
-                      code: s.code || s.html || s.content || "",
-                      category: normalizeCategory(s.sectionType || s.category || ""),
-                      variantIndex: 0,
-                    }))
-                  : [],
-              })),
-            });
-          }
-          break; // saved successfully, stop trying other bases
-        }
-      } catch (err) {
-        console.warn("Could not save to /api/v1/my-website:", err);
-      }
-    }
-  };
+  }, [editor.activePage.id, setSectionsWithHistory, setActiveSectionIndex]);
 
   // Save active inline text edit and update section code in state when clicking outside
   const finishInlineTextEditing = useCallback(() => {
@@ -1248,7 +782,7 @@ export function EditorStudio({
       );
       showToastNotification("Text content updated!");
     }
-  }, []);
+  }, [cleanCanvasWrapperFromCode, setSectionsWithHistory, showToastNotification]);
 
   // Global document click handler to finish inline text editing when clicking outside
   useEffect(() => {
@@ -1767,499 +1301,216 @@ export function EditorStudio({
   };
 
   /**
-   * The templates the Admin Studio holds for one category.
+   * The library templates for one category.
    *
-   * The modal and the add handler both need this answer and have to agree about
-   * it: the grid used its own, looser name-only test, so a category whose only
-   * template was tagged by `category` rather than named for it showed as
-   * unavailable while the handler found it — and, before that, a category the
-   * grid *did* offer could still come up empty in the handler and get a
-   * fabricated section instead. One function, one answer.
-   *
-   * Reads `adminDbTemplates`, which `loadAdminTemplates()` fills once on mount,
-   * so this costs nothing to call per card while the modal renders.
+   * One lookup in a map the server built, not a filter with five fuzzy string
+   * tests. The picker grid and the add handler read the same array, so a
+   * category cannot show as available and then come up empty — or the reverse,
+   * which is what the old pair of disagreeing predicates produced.
    */
-  const libraryTemplatesFor = (cat: { id: string; name: string }): any[] => {
-    const catIdLower = cat.id.toLowerCase();
-    const catNameLower = cat.name.toLowerCase();
-    const normCat = normalizeCategory(cat.id);
+  const libraryTemplatesFor = useCallback(
+    (categoryId: string): LibrarySection[] => library.byCategory[categoryId] ?? [],
+    [library],
+  );
 
-    return adminDbTemplates.filter((tpl) => {
-      if (!tpl || !(tpl.code || tpl.html || tpl.content)) return false;
+  /** Whether the library holds anything at all for this category. */
+  const hasLibrarySection = useCallback(
+    (categoryId: string): boolean => libraryTemplatesFor(categoryId).length > 0,
+    [libraryTemplatesFor],
+  );
 
-      const nameLower = (tpl.name || tpl.title || "").toLowerCase();
-      const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null") ? tpl.category : "";
-      const tplCatLower = (rawCat || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
-      const normTplCat = normalizeCategory(tplCatLower) || normalizeCategory(nameLower);
+  /**
+   * Add a section.
+   *
+   * `template` is the specific variant the user picked from the category's
+   * strip; without one, the category's first template is used. Placement is
+   * `placementIndex`'s call — navbar first, footer last, everything else where
+   * the user pointed or above the footer.
+   *
+   * What this no longer does: replace an existing section of the same category.
+   * Adding a second Courses section used to silently overwrite the first,
+   * because the toolbar path searched for a section of that category and
+   * rewrote it in place. A page may hold two of anything except a navbar and a
+   * footer, and those two are enforced by position rather than by deletion.
+   */
+  const handleAddSectionFromCategory = useCallback(
+    (categoryId: string, template?: LibrarySection) => {
+      const chosen = template ?? libraryTemplatesFor(categoryId)[0];
 
-      if (normTplCat && (normTplCat === normCat || normTplCat === catIdLower)) return true;
-      if (tplCatLower === catIdLower) return true;
-      if (nameLower.includes(`[${catIdLower}]`) || nameLower.includes(catIdLower) || nameLower.includes(catNameLower) || (normCat && nameLower.includes(normCat))) return true;
-      return false;
-    });
-  };
+      if (!chosen) {
+        // The grid disables these cards, so this is a guard rather than a path
+        // anyone should reach. It emphatically does not fall back to a built-in
+        // constant: the version that did inserted a fabricated section for a
+        // university that does not exist — invented NIRF ranks, placement
+        // percentages and student numbers — that looked exactly like a real one,
+        // so the only way to discover it was fiction was to read it.
+        console.warn(`[editor] no "${categoryId}" template in the section library.`);
+        setSwapNotice(`No ${categoryId} layout in the library`);
+        closeAddSectionModal();
+        return;
+      }
 
-  /** Whether anything in the library — or the Super Admin's default website — covers this category. */
-  const hasLibrarySection = (cat: { id: string; name: string }): boolean =>
-    libraryTemplatesFor(cat).length > 0 ||
-    Boolean(liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normalizeCategory(cat.id)]);
+      const newSection = sectionFromTemplate(chosen, newSectionId());
+      const slot = pendingInsertIndex;
 
-  // Add a section from predefined categories
-  const handleAddSectionFromCategory = async (cat: { id: string; name: string }, overrideCode?: string, overrideTitle?: string) => {
-    const normCat = normalizeCategory(cat.id);
-    const matchingTemplates = libraryTemplatesFor(cat);
+      // A navbar and a footer are singular: adding a second replaces the first,
+      // because two navbars is not a layout anyone means to build. Everything
+      // else stacks — adding a second Courses section used to silently destroy
+      // the first, which is not what "add" means.
+      const singular = newSection.category === "navbar" || newSection.category === "footer";
+      const base = singular ? sections.filter((sec) => sec.category !== newSection.category) : sections;
 
-    let newCode = "";
-    let newTitle = cat.name;
+      // Computed once, from the list the section is actually going into. Doing
+      // it against the pre-filter list is what made the selection land on the
+      // wrong section when a navbar was replaced.
+      const at = placementIndex(base, newSection.category, slot);
 
-    // overrideCode/overrideTitle take priority — used when an Admin DB card passes its exact code
-    if (overrideCode) {
-      newCode = overrideCode;
-      newTitle = overrideTitle || cat.name;
-    } else if (matchingTemplates.length > 0) {
-      const tpl = matchingTemplates[0]!;
-      newCode = tpl.code || tpl.html || tpl.content;
-      newTitle = tpl.name || cat.name;
-    } else {
-      // The Admin Studio's own library, then the platform default website the
-      // Super Admin maintains. Both are real sections somebody authored.
-      newCode = liveAdminTemplatesMap[cat.id] || liveAdminTemplatesMap[normCat] || "";
-    }
+      const next = [...base];
+      next.splice(at, 0, newSection);
 
-    // Nothing in the library covers this category.
-    //
-    // This used to fall back to a built-in constant: a fabricated section for a
-    // university that does not exist, complete with invented NIRF ranks,
-    // placement percentages and student numbers. It went onto the page looking
-    // exactly like a real one, so the only way to discover it was fiction was to
-    // read it — and an institution that did not read it published it.
-    //
-    // The grid disables these categories, so this is a guard rather than a path
-    // anyone should reach. It stays because the alternative to reaching it is
-    // inserting a section with no content at all. There is no toast: popups are
-    // switched off in this editor by request, and a message nobody sees is worse
-    // than the disabled card that explains itself.
-    if (!newCode) {
-      console.warn(`No "${cat.name}" section in the Admin Studio library — nothing to add.`);
+      setSectionsWithHistory(() => next);
+      setActiveSectionIndex(at);
       closeAddSectionModal();
-      return;
-    }
+      setSwapNotice(`Added ${newSection.title}`);
+    },
+    [libraryTemplatesFor, pendingInsertIndex, sections, setSectionsWithHistory, setActiveSectionIndex],
+  );
 
-    // ── Chosen for a specific slot ──────────────────────────────────────────
-    // The user pressed an insertion point between two sections, so where it
-    // goes is already decided and none of the placement rules below apply.
-    // They exist to guess a sensible position when nobody said; overriding an
-    // explicit choice with a guess is the one thing they must not do.
-    if (pendingInsertIndex !== null) {
-      const at = pendingInsertIndex;
-      const newSection: SectionItem = {
-        id: newSectionId(),
-        title: newTitle,
-        code: newCode,
-        category: cat.id,
-        variantIndex: 0,
-      };
+  /**
+   * Swap the selected section for the next variant of its own category.
+   *
+   * The decision is `swapVariant`'s — a pure function over the section and the
+   * library — so it is testable, and so the button, a shortcut and a test all
+   * take the same path. See `lib/section-variants.ts` for the three separate
+   * reasons the previous 200-line version could not work.
+   */
+  const handleSwapVariant = useCallback(
+    (direction: 1 | -1 = 1) => {
+      if (activeSectionIndex === null) return;
+      const active = sections[activeSectionIndex];
+      if (!active) return;
 
-      setSectionsWithHistory((prev) => {
-        const copy = [...prev];
-        copy.splice(Math.max(0, Math.min(at, copy.length)), 0, newSection);
-        return copy;
-      });
-      setActiveSectionIndex(Math.max(0, Math.min(at, sections.length)));
-      closeAddSectionModal();
-      void handlePersistWebsiteSave();
-      return;
-    }
+      const result = swapVariant(active, library, direction);
+      if (!result.ok) {
+        // Reported, because "nothing happened" is the failure mode that cost
+        // the most time here: an empty library and a genuinely single-variant
+        // category are indistinguishable on the canvas.
+        console.info(
+          result.reason === "no-variants"
+            ? `[editor] no variants for "${active.category}" — nothing in the section library covers it.`
+            : `[editor] "${active.category}" has one variant. Add more in Admin › Templates.`,
+        );
+        setSwapNotice(
+          result.reason === "no-variants"
+            ? `No ${active.category} layouts in the library yet`
+            : `Only one ${active.category} layout available`,
+        );
+        return;
+      }
 
-    // 1. Header MUST ALWAYS be placed at index 0 (the very top of the page)
-    if (cat.id === "navbar" || cat.id === "header" || normCat === "navbar") {
-      const newHeaderSection: SectionItem = {
-        id: `sec-header-${Date.now()}`,
-        title: newTitle || "Header Navigation",
-        code: newCode,
-        category: "navbar",
-        variantIndex: 0,
-      };
-
-      setSectionsWithHistory((prev) => {
-        const filtered = prev.filter((s) => {
-          const sCat = (s.category || s.title || "").toLowerCase();
-          return !sCat.includes("header") && !sCat.includes("navbar") && normalizeCategory(sCat) !== "navbar";
-        });
-        return [newHeaderSection, ...filtered];
-      });
-      setActiveSectionIndex(0);
-      showToastNotification(`Set Header Navigation at top of page`);
-      closeAddSectionModal();
-      void handlePersistWebsiteSave();
-      return;
-    }
-
-    // 2. Hero MUST ALWAYS be placed at index 1 (directly below Header)
-    if (cat.id === "hero" || normCat === "hero") {
-      const newHeroSection: SectionItem = {
-        id: `sec-hero-${Date.now()}`,
-        title: newTitle || "Hero Banner",
-        code: newCode,
-        category: "hero",
-        variantIndex: 0,
-      };
-
-      setSectionsWithHistory((prev) => {
-        const filtered = prev.filter((s) => {
-          const sCat = (s.category || s.title || "").toLowerCase();
-          return !sCat.includes("hero") && !sCat.includes("banner") && normalizeCategory(sCat) !== "hero";
-        });
-        const headerSec = filtered.find((s) => {
-          const sCat = (s.category || s.title || "").toLowerCase();
-          return sCat.includes("header") || sCat.includes("navbar") || normalizeCategory(sCat) === "navbar";
-        });
-        const rest = filtered.filter((s) => s !== headerSec);
-        return headerSec ? [headerSec, newHeroSection, ...rest] : [newHeroSection, ...rest];
-      });
-      setActiveSectionIndex(1);
-      showToastNotification(`Set Hero Banner directly under Header`);
-      closeAddSectionModal();
-      void handlePersistWebsiteSave();
-      return;
-    }
-
-    // 3. For any other section: Replace in-place if exists, otherwise insert before Footer or append in sequence
-    const existingIndex = sections.findIndex((s) => {
-      const sCat = (s.category || s.title || "").toLowerCase();
-      const normSCat = normalizeCategory(sCat) || sCat;
-      return sCat === cat.id.toLowerCase() || normSCat === normCat;
-    });
-
-    if (existingIndex >= 0) {
       setSectionsWithHistory((prev) =>
-        prev.map((sec, idx) => {
-          if (idx !== existingIndex) return sec;
-          return {
-            ...sec,
-            title: newTitle,
-            code: newCode,
-            category: cat.id,
-            variantIndex: 0,
-          };
-        })
+        prev.map((sec, idx) => (idx === activeSectionIndex ? result.section : sec)),
       );
-      setActiveSectionIndex(existingIndex);
-      showToastNotification(`Updated ${newTitle} layout`);
-    } else {
-      const newSection: SectionItem = {
-        id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        title: newTitle,
-        code: newCode,
-        category: cat.id,
-        variantIndex: 0,
-      };
+      setSwapNotice(`Layout ${result.position} of ${result.total} — ${result.section.title}`);
+    },
+    [activeSectionIndex, sections, library, setSectionsWithHistory],
+  );
 
-      setSectionsWithHistory((prev) => {
-        // Insert before footer if footer exists at the bottom
-        const footerIdx = prev.findIndex((s) => {
-          const sCat = (s.category || s.title || "").toLowerCase();
-          return sCat.includes("footer") || normalizeCategory(sCat) === "footer";
-        });
-        if (footerIdx >= 0) {
-          const copy = [...prev];
-          copy.splice(footerIdx, 0, newSection);
-          return copy;
-        }
-        return [...prev, newSection];
-      });
-      setActiveSectionIndex(sections.length);
-      showToastNotification(`Added ${newTitle} to page`);
-    }
-    closeAddSectionModal();
-    void handlePersistWebsiteSave();
-  };
+  /** How many variants the selected section could swap between. For the toolbar. */
+  const activeVariantCount = useMemo(() => {
+    if (activeSectionIndex === null) return 0;
+    const active = sections[activeSectionIndex];
+    return active ? variantsFor(active, library).length : 0;
+  }, [activeSectionIndex, sections, library]);
 
-  // Swap / Cycle between section variants for the ACTIVE category ONLY
-  const handleSwapVariant = async () => {
-    if (sections.length === 0) return;
-    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
-    const activeSec = sections[targetIndex];
-    if (!activeSec) return;
-    if (activeSectionIndex === null) {
-      setActiveSectionIndex(0);
-    }
-
-    // Reuse already-loaded templates from state — avoids duplicate network requests on every swap.
-    // Templates are fetched once on mount by loadAdminTemplates().
-    const templatesList: any[] = adminDbTemplates.length > 0 ? adminDbTemplates : [];
-
-    // 1. Accurately determine Category ID of the ACTIVE section
-    const titleLower = (activeSec.title || "").toLowerCase();
-    const codeLower = (activeSec.code || "").toLowerCase();
-    const idLower = (activeSec.id || "").toLowerCase();
-    const secCategoryLower = (activeSec.category || "").toLowerCase();
-
-    let catId = secCategoryLower;
-
-    if (!catId) {
-      if (titleLower.includes("nav") || titleLower.includes("header") || idLower.includes("nav") || idLower.includes("header") || (codeLower.includes("<header") && !codeLower.includes("admissions"))) {
-        catId = "navbar";
-      } else if (titleLower.includes("hero") || titleLower.includes("banner") || idLower.includes("hero") || idLower.includes("banner")) {
-        catId = "hero";
-      } else if (titleLower.includes("admission") || idLower.includes("admission")) {
-        catId = "admissions";
-      } else if (titleLower.includes("highlight") || titleLower.includes("stat") || titleLower.includes("metric") || idLower.includes("highlight") || idLower.includes("stat")) {
-        catId = "highlights";
-      } else if (titleLower.includes("about") || idLower.includes("about")) {
-        catId = "about";
-      } else if (titleLower.includes("vision") || (titleLower.includes("mission") && !titleLower.includes("admission")) || idLower.includes("vision")) {
-        catId = "vision";
-      } else if (titleLower.includes("course") || titleLower.includes("program") || titleLower.includes("academic") || idLower.includes("course") || idLower.includes("program")) {
-        catId = "courses";
-      } else if (titleLower.includes("department") || idLower.includes("department")) {
-        catId = "departments";
-      } else if (titleLower.includes("placement") || titleLower.includes("recruiter") || titleLower.includes("career") || idLower.includes("placement")) {
-        catId = "placements";
-      } else if (titleLower.includes("facilit") || titleLower.includes("infrastruct") || idLower.includes("facilit")) {
-        catId = "facilities";
-      } else if (titleLower.includes("research") || titleLower.includes("patent") || titleLower.includes("r&d") || idLower.includes("research")) {
-        catId = "research";
-      } else if (titleLower.includes("news") || titleLower.includes("circular") || titleLower.includes("announcement") || idLower.includes("news")) {
-        catId = "news";
-      } else if (titleLower.includes("event") || titleLower.includes("calendar") || titleLower.includes("event")) {
-        catId = "events";
-      } else if (titleLower.includes("gallery") || titleLower.includes("campus life") || idLower.includes("gallery")) {
-        catId = "gallery";
-      } else if (titleLower.includes("testimonial") || titleLower.includes("alumni") || titleLower.includes("say") || idLower.includes("testimonial")) {
-        catId = "testimonials";
-      } else if (titleLower.includes("achievement") || titleLower.includes("award") || titleLower.includes("recognition") || idLower.includes("achievement") || idLower.includes("award")) {
-        catId = "achievements";
-      } else if (titleLower.includes("contact") || titleLower.includes("enquiry") || titleLower.includes("inquiry") || idLower.includes("contact")) {
-        catId = "contact";
-      } else if (titleLower.includes("map") || titleLower.includes("location") || idLower.includes("map")) {
-        catId = "map";
-      } else if (titleLower.includes("footer") || idLower.includes("footer") || codeLower.includes("<footer")) {
-        catId = "footer";
-      } else {
-        const idParts = idLower.split("-");
-        catId = idParts.length >= 2 ? idParts[1]! : "custom";
-      }
-    }
-
-    const normCatId = normalizeCategory(catId);
-
-    // Clean up repeating suffixes from current title
-    const cleanBaseTitle = (activeSec.title || "")
-      .replace(/\s*\([^)]*\)/g, "")
-      .replace(/(\s*Layout\s*\d+)+$/gi, "")
-      .replace(/(\s*Variant\s*\d+)+$/gi, "")
-      .replace(/(\s*Default)+$/gi, "")
-      .trim() || catId.toUpperCase();
-
-    // 2. Collect ALL admin DB variants and built-in variants for this category
-    const adminDbMatches: { name: string; code: string }[] = [];
-    templatesList.forEach((tpl) => {
-      const nameLower = (tpl.name || tpl.title || "").toLowerCase();
-      const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null") ? tpl.category : "";
-      const tplCatLower = (rawCat || tpl.type || tpl.catId || tpl.sectionType || "").toLowerCase();
-      const codeStr = (tpl.code || tpl.html || tpl.content || tpl.templateCode || "").trim();
-      const normTplCat = normalizeCategory(tplCatLower) || normalizeCategory(nameLower);
-
-      if (!codeStr) return;
-
-      // STRICT SAFETY GUARD 1: Do NOT allow navbar/header code into non-navbar categories
-      const isHeaderTpl = codeStr.toLowerCase().includes("<header") || nameLower.startsWith("header") || nameLower.includes("header navigation");
-      if (normCatId !== "navbar" && isHeaderTpl) return;
-
-      // STRICT SAFETY GUARD 2: Do NOT allow footer code into non-footer categories
-      const isFooterTpl = codeStr.toLowerCase().includes("<footer") || nameLower.startsWith("footer");
-      if (normCatId !== "footer" && isFooterTpl) return;
-
-      let isMatch = false;
-
-      if (normTplCat && normTplCat === normCatId) {
-        isMatch = true;
-      } else if (normCatId === "navbar" || catId === "navbar" || catId === "header") {
-        isMatch = normTplCat === "navbar" || tplCatLower.includes("header") || tplCatLower.includes("nav") || nameLower.includes("header") || nameLower.includes("nav") || codeStr.toLowerCase().includes("<header");
-      } else if (normCatId === "footer" || catId === "footer") {
-        isMatch = normTplCat === "footer" || tplCatLower.includes("footer") || nameLower.includes("footer") || codeStr.toLowerCase().includes("<footer");
-      } else if (catId === "admissions" || catId === "admission") {
-        isMatch = normTplCat === "admissions" || tplCatLower === "admissions" || tplCatLower === "admission" || (nameLower.includes("admission") && !nameLower.includes("contact"));
-      } else if (catId === "contact") {
-        isMatch = normTplCat === "contact" || tplCatLower === "contact" || tplCatLower.includes("contact") || nameLower.includes("contact") || nameLower.includes("enquiry") || nameLower.includes("inquiry");
-      } else if (catId === "vision") {
-        isMatch = normTplCat === "vision" || (nameLower.includes("vision") || (nameLower.includes("mission") && !nameLower.includes("admission")));
-      } else if (catId === "events" || catId === "event") {
-        isMatch = normTplCat === "events" || tplCatLower === "events" || tplCatLower === "event" || tplCatLower.includes("event") || nameLower.includes("event");
-      } else if (catId === "hero") {
-        isMatch = (normTplCat === "hero" || tplCatLower.includes("hero") || nameLower.includes("hero") || nameLower.includes("banner")) && !nameLower.includes("header") && !nameLower.includes("nav");
-      } else {
-        isMatch = tplCatLower === catId || nameLower.includes(catId);
-      }
-
-      if (isMatch) {
-        const trimmedCode = codeStr.trim();
-        if (!adminDbMatches.some((m) => m.code.trim() === trimmedCode || cleanCanvasWrapperFromCode(m.code) === cleanCanvasWrapperFromCode(trimmedCode))) {
-          adminDbMatches.push({
-            name: (tpl.name || tpl.title || cleanBaseTitle).replace(/\s*\([^)]*\)/g, "").trim(),
-            code: trimmedCode,
-          });
-        }
-      }
-    });
-
-    // 3. Build the swap cycle list with a DETERMINISTIC, STABLE ORDER.
-    //    We NEVER prepend the active section dynamically, because doing so mutates the array
-    //    order on every click and causes alternating 2-item ping-pong behavior.
-    const stableCycle: { name: string; code: string }[] = [];
-    const seenCleanCodes = new Set<string>();
-
-    // Step A: Add all Admin DB variants for this category in their natural registered order
-    adminDbMatches.forEach((m) => {
-      const clean = cleanCanvasWrapperFromCode(m.code);
-      if (!seenCleanCodes.has(clean)) {
-        seenCleanCodes.add(clean);
-        stableCycle.push(m);
-      }
-    });
-
-    // Step B: If the current active section code is not in the list (e.g. built-in default or customized),
-    // append it to the cycle so the user can cycle back to it
-    const currentActiveCode = (activeSec.code || "").trim();
-    if (currentActiveCode) {
-      const cleanCurrent = cleanCanvasWrapperFromCode(currentActiveCode);
-      if (!seenCleanCodes.has(cleanCurrent)) {
-        seenCleanCodes.add(cleanCurrent);
-        stableCycle.unshift({
-          name: activeSec.title || cleanBaseTitle,
-          code: currentActiveCode,
-        });
-      }
-    }
-
-    // No variants at all
-    if (stableCycle.length === 0) {
-      showToastNotification("No section variants found — add sections in Admin › Templates");
-      return;
-    }
-
-    // Only 1 item = current section with no admin variants added yet
-    if (stableCycle.length <= 1) {
-      showToastNotification("Only 1 variant — add more sections in Admin › Templates to enable swapping");
-      return;
-    }
-
-    // 4. Find the current active section's index in the STABLE cycle
-    const currentClean = cleanCanvasWrapperFromCode(currentActiveCode);
-    const matchedIdx = stableCycle.findIndex(
-      (t) =>
-        t.code.trim() === currentActiveCode ||
-        cleanCanvasWrapperFromCode(t.code) === currentClean
-    );
-
-    // 5. Advance cleanly in circular order (0 -> 1 -> 2 -> ... -> N-1 -> 0)
-    let nextIdx: number;
-    if (matchedIdx >= 0) {
-      nextIdx = (matchedIdx + 1) % stableCycle.length;
-    } else {
-      nextIdx = 0;
-    }
-
-    const nextTpl = stableCycle[nextIdx]!;
-
-    setSectionsWithHistory((prev) =>
-      prev.map((sec, idx) => {
-        if (idx !== targetIndex) return sec;
-        return {
-          ...sec,
-          title: nextTpl.name || cleanBaseTitle,
-          code: nextTpl.code,
-          category: catId,
-          variantIndex: nextIdx,
-        };
-      })
-    );
-
-    // Toast: "3 / 3 — Navbar Variant 3"
-    showToastNotification(`${nextIdx + 1} / ${stableCycle.length}  —  ${nextTpl.name}`);
-    void handlePersistWebsiteSave();
-  };
-
-
-
-
-
-
-  const handleDuplicateSection = () => {
-    if (activeSectionIndex === null || sections.length === 0) return;
+  const handleDuplicateSection = useCallback(() => {
+    if (activeSectionIndex === null) return;
     const current = sections[activeSectionIndex];
     if (!current) return;
+
+    // A navbar or a footer is singular by position, so duplicating one would
+    // produce a section that can never be moved anywhere legal.
+    if (current.category === "navbar" || current.category === "footer") return;
+
     const duplicated: SectionItem = {
-      id: `sec-${Date.now()}`,
+      ...current,
+      // A new id, and the same `templateId`: the copy is the same variant of
+      // the same category, so it swaps through the same cycle. Carrying the id
+      // over instead — which the previous version did by omitting both fields —
+      // gave two sections one identity, and React then rendered one of them.
+      id: newSectionId(),
       title: `${current.title} (Copy)`,
-      code: current.code,
-      variantIndex: current.variantIndex,
     };
+
     setSectionsWithHistory((prev) => [
       ...prev.slice(0, activeSectionIndex + 1),
       duplicated,
       ...prev.slice(activeSectionIndex + 1),
     ]);
     setActiveSectionIndex(activeSectionIndex + 1);
-  };
+  }, [activeSectionIndex, sections, setSectionsWithHistory, setActiveSectionIndex]);
 
-  const handleDeleteSection = () => {
-    if (activeSectionIndex === null || sections.length === 0) return;
+  const handleDeleteSection = useCallback(() => {
+    if (activeSectionIndex === null) return;
+    const remaining = sections.length - 1;
     setSectionsWithHistory((prev) => prev.filter((_, idx) => idx !== activeSectionIndex));
-    setActiveSectionIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
-  };
+    setActiveSectionIndex(
+      remaining <= 0 ? null : Math.min(activeSectionIndex, remaining - 1),
+    );
+  }, [activeSectionIndex, sections.length, setSectionsWithHistory, setActiveSectionIndex]);
 
-  const handleMoveUp = () => {
-    if (sections.length <= 1) return;
-    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 1;
-    if (targetIndex <= 0) {
-      showToastNotification("Header is fixed at top edge");
-      return;
-    }
-    // Prevent moving section above top navbar (index 0) if index 0 is navbar
-    const isNavbarAtTop = sections[0] && (normalizeCategory(sections[0].category || "") === "navbar" || (sections[0].title || "").toLowerCase().includes("header"));
-    if (isNavbarAtTop && targetIndex <= 1) {
-      showToastNotification("Header Navigation remains fixed at top");
-      return;
-    }
+  /**
+   * Move the selected section one place, and persist the new order immediately.
+   *
+   * ── Why the order used to be lost ─────────────────────────────────────────
+   *
+   * The move itself worked; nothing saved it. `handleMoveUp` mutated state and
+   * returned, relying on a 2-second debounced autosave that re-serialised
+   * *every page's full markup* into one `PUT /api/v1/my-website`. Three ways
+   * that failed to persist a reorder:
+   *
+   *  - Every further click restarted the 2-second timer, so a user arranging
+   *    six sections never triggered a save at all until they stopped and waited.
+   *  - The payload was the whole site — hundreds of kilobytes of HTML to express
+   *    "these two swapped" — and the request rebuilt other pages from browser
+   *    state that could be stale.
+   *  - Nothing reported a failure. Every error path was `catch (e) {}`, so a
+   *    rejected save looked exactly like a successful one until the refresh.
+   *
+   * Now: the swap goes into state, and the new order goes to
+   * `PATCH /api/v1/my-website/pages/:slug/order` as a list of ids on the same
+   * tick. Small, synchronous, one page, and a failure is surfaced rather than
+   * swallowed.
+   *
+   * The guards are `canMove`'s, which asks whether these two particular
+   * sections may trade places. The old guards did index arithmetic against
+   * `sections.length` and refused to move index 1 upward on any page — including
+   * pages with no navbar at all, where index 0 is ordinary content.
+   */
+  const moveActiveSection = useCallback(
+    (direction: 1 | -1) => {
+      if (activeSectionIndex === null) return;
 
-    setSectionsWithHistory((prev) => {
-      const copy = [...prev];
-      const temp = copy[targetIndex];
-      copy[targetIndex] = copy[targetIndex - 1];
-      copy[targetIndex - 1] = temp;
-      return copy;
-    });
-    setActiveSectionIndex(targetIndex - 1);
-    showToastNotification(`Moved section up to position ${targetIndex}`);
-  };
+      const next = moveSection(sections, activeSectionIndex, direction);
+      if (next === sections) {
+        setSwapNotice(
+          direction === -1
+            ? "This section is already as high as it goes"
+            : "This section is already as low as it goes",
+        );
+        return;
+      }
 
-  const handleMoveDown = () => {
-    if (sections.length <= 1) return;
-    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
-    if (targetIndex >= sections.length - 1) {
-      showToastNotification("Section is already at bottom edge");
-      return;
-    }
-    // Prevent moving above footer or footer moving down
-    const lastIdx = sections.length - 1;
-    const isFooterAtBottom = sections[lastIdx] && (normalizeCategory(sections[lastIdx].category || "") === "footer" || (sections[lastIdx].title || "").toLowerCase().includes("footer"));
-    if (isFooterAtBottom && targetIndex >= lastIdx - 1) {
-      showToastNotification("Footer remains fixed at bottom");
-      return;
-    }
+      const pageId = editor.activePage.id;
+      setSectionsWithHistory(() => next);
+      setActiveSectionIndex(activeSectionIndex + direction);
+      void editor.persistOrder(pageId, next.map((sec) => sec.id));
+    },
+    [activeSectionIndex, sections, editor, setSectionsWithHistory, setActiveSectionIndex],
+  );
 
-    setSectionsWithHistory((prev) => {
-      const copy = [...prev];
-      const temp = copy[targetIndex];
-      copy[targetIndex] = copy[targetIndex + 1];
-      copy[targetIndex + 1] = temp;
-      return copy;
-    });
-    setActiveSectionIndex(targetIndex + 1);
-    showToastNotification(`Moved section down to position ${targetIndex + 2}`);
-  };
+  const handleMoveUp = useCallback(() => moveActiveSection(-1), [moveActiveSection]);
+  const handleMoveDown = useCallback(() => moveActiveSection(1), [moveActiveSection]);
 
   const handleEnableTextEditingForActiveSection = () => {
     const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
@@ -2377,6 +1628,13 @@ export function EditorStudio({
            * last section, so what is dark on screen is a section, and what is
            * not a section does not pretend to be one.
            */
+          /* The theme switch, in full. Every theme's tokens are already in the
+             injected stylesheet keyed on these two attributes, so changing one
+             retints every section under this element in the same frame — no
+             refetch, no section re-render, no reload, and identical behaviour
+             on every page because nothing here reads the page's sections. */
+          data-xite-theme={themeId}
+          data-xite-font={fontId}
           className={`xite-site-canvas block max-w-full ${
             viewportWidth === "100%" ? "w-full m-0 p-0" : "min-h-[40vh]"
           }`}
@@ -2414,7 +1672,10 @@ export function EditorStudio({
             /* Pure Section Rendering for Current Page */
             <div className="w-full">
               {sections.map((sec, idx) => {
-                const isHeader = idx === 0 || sec.category === "navbar" || sec.category === "header" || (sec.title || "").toLowerCase().includes("header") || (sec.title || "").toLowerCase().includes("navbar");
+                // The navbar, by its resolved category. Four overlapping string tests used
+                // to answer this, one of which was `idx === 0` — so on a page with no
+                // navbar the first section, whatever it was, got the navbar z-index.
+                const isHeader = sec.category === "navbar";
                 return (
                   <React.Fragment key={sec.id}>
                   <SectionInsertPoint index={idx} onInsert={openAddSectionModalAt} />
@@ -2566,7 +1827,7 @@ export function EditorStudio({
                     }`}
                   >
                     <div
-                      dangerouslySetInnerHTML={{ __html: cleanFullWebCodeForCanvas(sec.code, viewportWidth) }}
+                      dangerouslySetInnerHTML={{ __html: canvasHtml(sec.code) }}
                       className="w-full block p-0 m-0 text-left"
                     />
                   </div>
@@ -2621,95 +1882,18 @@ export function EditorStudio({
             <div className="flex-1 overflow-y-auto pr-2 space-y-6 pt-2 pb-2 custom-scrollbar">
 
 
-              {/* Admin DB Section Variants List */}
-              {adminDbTemplates.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-zinc-800/60 pb-1.5">
-                    <h4 className="text-[10px] font-black text-zinc-400 tracking-wider uppercase">
-                      Admin DB Section Variants ({adminDbTemplates.length})
-                    </h4>
-                    <span className="text-[10px] font-mono font-bold text-zinc-500">Live Backend Database</span>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {adminDbTemplates.map((tpl) => (
-                      <div
-                        key={tpl.id || tpl.name}
-                        onClick={(e) => {
-                          e.stopPropagation();
-
-                          const rawCat = (tpl.category && tpl.category !== "undefined" && tpl.category !== "null")
-                            ? tpl.category
-                            : "";
-
-                          // Admin DB templates ALWAYS add as a NEW separate section —
-                          // they never replace an existing section. This is intentional:
-                          // Built-in category grid = swap/replace existing section of same type
-                          // Admin DB template = add a new design variant (different section)
-                          const newSection: SectionItem = {
-                            id: `sec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                            title: tpl.name,
-                            code: tpl.code,
-                            category: rawCat || normalizeCategory((tpl.name || "").toLowerCase()) || "hero",
-                            variantIndex: 0,
-                          };
-
-                          const slot = pendingInsertIndex;
-
-                          setSectionsWithHistory((prev) => {
-                            // An insertion point was pressed: that index is the
-                            // answer, and the guesses below do not get a vote.
-                            if (slot !== null) {
-                              const copy = [...prev];
-                              copy.splice(Math.max(0, Math.min(slot, copy.length)), 0, newSection);
-                              return copy;
-                            }
-
-                            const normNewCat = normalizeCategory(newSection.category || "");
-
-                            // Header/navbar → insert at position 0 (very top)
-                            if (normNewCat === "navbar" || normNewCat === "header") {
-                              return [newSection, ...prev];
-                            }
-
-                            // Footer → insert just before existing footer (or at end)
-                            const footerIdx = prev.findIndex((s) => {
-                              const sCat = normalizeCategory(s.category || s.title || "");
-                              return sCat === "footer";
-                            });
-                            if (footerIdx >= 0) {
-                              const copy = [...prev];
-                              copy.splice(footerIdx, 0, newSection);
-                              return copy;
-                            }
-
-                            // Everything else → append at end
-                            return [...prev, newSection];
-                          });
-
-                          // Select the newly added section
-                          setActiveSectionIndex(
-                            slot !== null
-                              ? Math.max(0, Math.min(slot, sections.length))
-                              : normalizeCategory(newSection.category || "") === "navbar" ||
-                                normalizeCategory(newSection.category || "") === "header"
-                                ? 0
-                                : sections.length
-                          );
-                          closeAddSectionModal();
-                          void handlePersistWebsiteSave();
-                        }}
-                        className="group flex items-center justify-between p-3.5 rounded-2xl bg-black/80 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-500 transition-all duration-200 cursor-pointer shadow-sm select-none"
-                      >
-                        <div className="truncate pr-3">
-                          <h5 className="text-xs font-black text-white group-hover:text-white truncate tracking-tight">{tpl.name}</h5>
-                          <p className="text-[10px] text-zinc-400 font-mono font-bold mt-0.5">Live DB Template</p>
-                        </div>
-                        <span className="text-[10px] font-black bg-white text-black px-3.5 py-1.5 rounded-full shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                          + Add
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+              {/* Nothing in the library at all.
+                  Said plainly rather than shown as nineteen greyed-out cards:
+                  an empty library and an unreachable API produced the identical
+                  screen, and telling those apart was the whole difficulty of
+                  the "swap does not work" report. */}
+              {libraryLoaded && library.sections.length === 0 && (
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4">
+                  <h4 className="text-xs font-black text-amber-200">The section library is empty</h4>
+                  <p className="mt-1 text-[11px] font-medium leading-relaxed text-amber-100/70">
+                    No published sections are available to add. A Super Admin adds them in
+                    Admin&nbsp;&rsaquo;&nbsp;Templates; archived and unpublished drafts are not offered here.
+                  </p>
                 </div>
               )}
 
@@ -2729,52 +1913,116 @@ export function EditorStudio({
                 <div className="grid gap-3 sm:grid-cols-2">
                   {SECTION_CATEGORIES.map((cat) => {
                     const Icon = cat.icon;
-                    const available = hasLibrarySection(cat);
+                    const variants = libraryTemplatesFor(cat.id);
+                    const available = variants.length > 0;
+                    const expanded = expandedCategory === cat.id;
+
+                    /* One variant: add it. The extra click to choose from a list
+                       of one is just a click. More than one: show them, rather
+                       than silently taking the first — which is what the old
+                       handler did, so every category offered exactly one layout
+                       no matter how many the admin had published. */
+                    const activate = () => {
+                      if (!available) return;
+                      if (variants.length === 1) handleAddSectionFromCategory(cat.id, variants[0]);
+                      else setExpandedCategory(expanded ? null : cat.id);
+                    };
 
                     return (
-                      <div
-                        key={cat.id}
-                        onClick={available ? () => handleAddSectionFromCategory(cat) : undefined}
-                        aria-disabled={!available}
-                        title={
-                          available
-                            ? `Add a ${cat.name} section`
-                            : `No ${cat.name} section in the Admin Studio library yet`
-                        }
-                        className={`group relative flex items-center gap-3.5 p-3.5 rounded-2xl border transition-all duration-200 select-none overflow-hidden shadow-sm ${
-                          available
-                            ? "bg-black/90 hover:bg-zinc-900 border-zinc-800/80 hover:border-zinc-500 cursor-pointer hover:shadow-md"
-                            : "bg-black/40 border-zinc-900 cursor-not-allowed opacity-45"
-                        }`}
-                      >
+                      <div key={cat.id} className={expanded ? "sm:col-span-2" : undefined}>
                         <div
-                          className={`w-9 h-9 rounded-xl border transition-all flex items-center justify-center shrink-0 shadow-sm ${
+                          onClick={available ? activate : undefined}
+                          role={available ? "button" : undefined}
+                          tabIndex={available ? 0 : undefined}
+                          onKeyDown={
                             available
-                              ? "bg-zinc-900 group-hover:bg-white text-white group-hover:text-black border-zinc-800 group-hover:border-white"
-                              : "bg-zinc-950 text-zinc-600 border-zinc-900"
+                              ? (e) => {
+                                  if (e.key !== "Enter" && e.key !== " ") return;
+                                  e.preventDefault();
+                                  activate();
+                                }
+                              : undefined
+                          }
+                          aria-disabled={!available}
+                          aria-expanded={available && variants.length > 1 ? expanded : undefined}
+                          title={
+                            available
+                              ? `${variants.length} ${cat.name} layout${variants.length === 1 ? "" : "s"} available`
+                              : `No ${cat.name} section in the library yet`
+                          }
+                          className={`group relative flex items-center gap-3.5 p-3.5 rounded-2xl border transition-all duration-200 select-none overflow-hidden shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 ${
+                            available
+                              ? "bg-black/90 hover:bg-zinc-900 border-zinc-800/80 hover:border-zinc-500 cursor-pointer hover:shadow-md"
+                              : "bg-black/40 border-zinc-900 cursor-not-allowed opacity-45"
                           }`}
                         >
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1 min-w-0 pr-1">
-                          <div className="flex items-center justify-between gap-2">
-                            <h4 className={`text-xs font-black truncate tracking-tight ${available ? "text-white" : "text-zinc-500"}`}>
-                              {cat.name}
-                            </h4>
-                            <span
-                              className={`text-[9px] font-mono font-extrabold px-2.5 py-0.5 rounded-full border shrink-0 ${
-                                available
-                                  ? "text-zinc-300 bg-zinc-800/90 border-zinc-700"
-                                  : "text-zinc-600 bg-transparent border-zinc-800"
+                          <div
+                            className={`w-9 h-9 rounded-xl border transition-all flex items-center justify-center shrink-0 shadow-sm ${
+                              available
+                                ? "bg-zinc-900 group-hover:bg-white text-white group-hover:text-black border-zinc-800 group-hover:border-white"
+                                : "bg-zinc-950 text-zinc-600 border-zinc-900"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0 pr-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <h4
+                                className={`text-xs font-black truncate tracking-tight ${
+                                  available ? "text-white" : "text-zinc-500"
+                                }`}
+                              >
+                                {cat.name}
+                              </h4>
+                              <span
+                                className={`text-[9px] font-mono font-extrabold px-2.5 py-0.5 rounded-full border shrink-0 ${
+                                  available
+                                    ? "text-zinc-300 bg-zinc-800/90 border-zinc-700"
+                                    : "text-zinc-600 bg-transparent border-zinc-800"
+                                }`}
+                              >
+                                {available
+                                  ? `${variants.length} layout${variants.length === 1 ? "" : "s"}`
+                                  : "Not in library"}
+                              </span>
+                            </div>
+                            <p
+                              className={`text-[11px] mt-0.5 font-medium truncate leading-normal ${
+                                available ? "text-zinc-400 group-hover:text-zinc-300" : "text-zinc-600"
                               }`}
                             >
-                              {available ? "In library" : "Not in library"}
-                            </span>
+                              {cat.description}
+                            </p>
                           </div>
-                          <p className={`text-[11px] mt-0.5 font-medium truncate leading-normal ${available ? "text-zinc-400 group-hover:text-zinc-300" : "text-zinc-600"}`}>
-                            {cat.description}
-                          </p>
                         </div>
+
+                        {expanded && variants.length > 1 && (
+                          <div className="mt-2 grid gap-2 rounded-2xl border border-zinc-800 bg-black/60 p-2 sm:grid-cols-3">
+                            {variants.map((variant, index) => (
+                              <button
+                                key={variant.id}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddSectionFromCategory(cat.id, variant);
+                                }}
+                                className="flex flex-col items-start gap-1 rounded-xl border border-zinc-800 bg-zinc-950 p-2.5 text-left transition-all hover:border-cyan-500/70 hover:bg-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+                              >
+                                <span className="text-[9px] font-mono font-extrabold text-zinc-500">
+                                  Layout {index + 1}
+                                </span>
+                                <span className="w-full truncate text-[11px] font-black tracking-tight text-white">
+                                  {variant.name}
+                                </span>
+                                {variant.description && (
+                                  <span className="w-full truncate text-[10px] font-medium text-zinc-500">
+                                    {variant.description}
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -2790,23 +2038,20 @@ export function EditorStudio({
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onPageSelect={handlePageChange}
-        onPageCreate={(_name, slug) => {
-          // Remembered before the page is switched to, so `fetchDbSections`
-          // sees the flag on the very first load and leaves the canvas empty.
-          freshPageSlugsRef.current.add(slug);
+        onPageCreate={(name, slug) => {
+          /* A page created here is marked `fresh` in the store, which is what
+             makes it open empty. Without it the loader finds no entry for the
+             slug and seeds from the platform default — so creating "Admissions"
+             used to fill it with the home page, which the autosave then made
+             permanent. */
+          editor.createPage(slug, name);
         }}
         onPaletteSelect={handlePaletteSelect}
         onFontSelect={handleFontSelect}
-        onSectionAdd={(sec) => {
-          const newSection: SectionItem = {
-            id: sec.id || `ai-${Date.now()}`,
-            title: sec.title || "AI Generated Section",
-            code: sec.code,
-            variantIndex: 0,
-          };
-          setSections((prev) => [...prev, newSection]);
-        }}
-        subdomain={subdomain}
+        activePaletteId={themeId}
+        activeFontId={fontId}
+        pages={editor.pages.map((page) => ({ slug: page.slug, title: page.title }))}
+        activePageSlug={editor.activePage.slug}
       />
 
       {/* Domain Settings Modal */}
@@ -2816,6 +2061,30 @@ export function EditorStudio({
         subdomain={subdomain}
         initialTab={settingsTab}
       />
+
+      {/* What just happened.
+          The editor's `showToastNotification` was wired to set the message to
+          `null` on every call, so every "Only 1 variant", every "no variants
+          found" and every save failure was written, called and discarded — the
+          user pressed Swap, nothing moved, and nothing said why. This replaces
+          its own message rather than stacking, and clears itself. */}
+      {(swapNotice || editor.activePage.error) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed bottom-32 left-1/2 z-40 -translate-x-1/2"
+        >
+          <div
+            className={`rounded-full border px-4 py-2 text-[11px] font-black tracking-tight shadow-lg backdrop-blur ${
+              editor.activePage.error
+                ? "border-rose-500/40 bg-rose-950/90 text-rose-100"
+                : "border-zinc-700 bg-zinc-900/95 text-zinc-100"
+            }`}
+          >
+            {editor.activePage.error ? `Could not save: ${editor.activePage.error}` : swapNotice}
+          </div>
+        </div>
+      )}
 
       {/* Floating Bottom Toolbar Dock - Hidden when Settings Studio is open */}
       {!isSettingsOpen && (
@@ -2837,12 +2106,13 @@ export function EditorStudio({
           isSectionSelected={activeSectionIndex !== null}
           onAddSection={() => setShowAddSectionModal(true)}
           onDuplicateSection={handleDuplicateSection}
-          onSwapVariant={handleSwapVariant}
+          onSwapVariant={() => handleSwapVariant(1)}
+          variantCount={activeVariantCount}
           onEditText={handleEnableTextEditingForActiveSection}
           onUndo={handleUndo}
           onRedo={handleRedo}
-          canUndo={historyStack.length > 0}
-          canRedo={redoStack.length > 0}
+          canUndo={editor.canUndo}
+          canRedo={editor.canRedo}
           onMoveUp={handleMoveUp}
           onMoveDown={handleMoveDown}
           onDeleteSection={handleDeleteSection}

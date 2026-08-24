@@ -2,6 +2,10 @@ import {
   SECTION_RUNTIME_STYLESHEET_HREFS,
   SECTION_RUNTIME_TAILWIND_CDN_SRC,
 } from "@/lib/section-runtime";
+import { themeFontsHref, themeStylesheet } from "@/lib/editor-themes";
+
+/** The canvas element the theme tokens are scoped to, on every surface. */
+const CANVAS_SCOPE = ".xite-site-canvas";
 
 /**
  * The environment's external assets, in the server-rendered HTML.
@@ -27,6 +31,19 @@ export function SectionRuntimeAssets() {
       {SECTION_RUNTIME_STYLESHEET_HREFS.map((href) => (
         <link key={href} rel="stylesheet" href={href} />
       ))}
+      <link rel="stylesheet" href={themeFontsHref()} />
+      {/*
+        All four themes' tokens, in the first byte of HTML.
+        A `data-xite-theme` attribute on the canvas selects between them, so a
+        published site renders in its tenant's theme on the very first paint —
+        no flash of the default palette, and no client-side pass over the
+        section markup. The section HTML itself is exactly what was published:
+        the colours resolve through `var()` with the authored value as the
+        fallback, so a site with no theme set renders identically to before.
+      */}
+      {/* Generated from static constants in `editor-themes.ts`; no request
+          data reaches it. */}
+      <style dangerouslySetInnerHTML={{ __html: themeStylesheet(CANVAS_SCOPE) }} />
       {/* eslint-disable-next-line @next/next/no-sync-scripts -- parse-time execution is the point; see above. */}
       <script src={SECTION_RUNTIME_TAILWIND_CDN_SRC} />
     </>

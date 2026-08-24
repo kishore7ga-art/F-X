@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import { api } from "@/lib/api-client";
+import {
+  EDITOR_FONTS,
+  EDITOR_THEMES,
+  DEFAULT_FONT_ID,
+  DEFAULT_THEME_ID,
+} from "@/lib/editor-themes";
 import {
   X,
   Home,
@@ -21,7 +26,6 @@ import {
   Check,
   Trash2,
   FileText,
-  Sparkles,
 } from "lucide-react";
 
 interface DrawerPanelProps {
@@ -32,15 +36,26 @@ interface DrawerPanelProps {
   onPageCreate?: (pageName: string, pageSlug: string) => void;
   onPaletteSelect?: (paletteId: string) => void;
   onFontSelect?: (fontId: string) => void;
-  onSectionAdd?: (section: { id: string; title: string; sectionType: string; code: string }) => void;
-  subdomain?: string;
+  /**
+   * The theme and font currently applied.
+   *
+   * Passed in rather than held here. The drawer used to keep its own
+   * `selectedPalette`, so the tick moved when you clicked but reverted to
+   * "Academic Navy" the next time the drawer was opened — it had no idea what
+   * the canvas was actually showing, and the two disagreed after any reload.
+   */
+  activePaletteId?: string;
+  activeFontId?: string;
+  /** The pages that exist, from the editor's own store. */
+  pages?: { slug: string; title: string }[];
+  activePageSlug?: string;
 }
 
 interface PageItem {
   id: string;
   name: string;
   slug: string;
-  icon: any;
+  icon: typeof Home;
 }
 
 const INITIAL_PAGES: PageItem[] = [
@@ -57,20 +72,6 @@ const INITIAL_PAGES: PageItem[] = [
   { id: "11", name: "Scholarships & Grants", slug: "/scholarships", icon: Award },
 ];
 
-const PALETTES = [
-  { id: "academic-blue", name: "Academic Navy", primary: "#0f172a", accent: "#2563eb" },
-  { id: "emerald-gold", name: "Emerald & Gold", primary: "#064e3b", accent: "#f59e0b" },
-  { id: "crimson-slate", name: "Crimson Maroon", primary: "#881337", accent: "#e11d48" },
-  { id: "midnight-purple", name: "Midnight Obsidian", primary: "#180828", accent: "#a855f7" },
-  { id: "light-minimal", name: "Minimal Light", primary: "#ffffff", accent: "#0f172a" },
-];
-
-const FONTS = [
-  { id: "inter", name: "Inter", detail: "Clean modern sans-serif for high readability" },
-  { id: "serif", name: "Playfair Display", detail: "Classic academic serif typography" },
-  { id: "outfit", name: "Outfit & Roboto", detail: "Bold tech & modern geometric font pairing" },
-];
-
 export function DrawerPanel({
   isOpen,
   onClose,
@@ -78,18 +79,41 @@ export function DrawerPanel({
   onPageCreate,
   onPaletteSelect,
   onFontSelect,
-  onSectionAdd,
-  subdomain,
+  activePaletteId = DEFAULT_THEME_ID,
+  activeFontId = DEFAULT_FONT_ID,
+  pages: livePages,
+  activePageSlug,
 }: DrawerPanelProps) {
-  const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts" | "ai">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts">("pages");
   const [pages, setPages] = useState<PageItem[]>(INITIAL_PAGES);
-  const [selectedPageSlug, setSelectedPageSlug] = useState("/home");
-  const [selectedPalette, setSelectedPalette] = useState("academic-blue");
-  const [selectedFont, setSelectedFont] = useState("inter");
 
-  // AI Section Generation State
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  /**
+   * The list shown: every page the college actually has, plus the suggested
+   * ones it has not created yet.
+   *
+   * `INITIAL_PAGES` alone was the list before, so a page created in a previous
+   * session did not appear at all — the only way back to it was to create it
+   * again, which then opened it empty and autosaved that over the saved one.
+   */
+  const visiblePages: PageItem[] = useMemo(() => {
+    const bySlug = new Map<string, PageItem>();
+    pages.forEach((page) => bySlug.set(page.slug, page));
+
+    (livePages ?? []).forEach((page) => {
+      const existing = bySlug.get(page.slug);
+      bySlug.set(page.slug, {
+        id: existing?.id ?? `live-${page.slug}`,
+        name: page.title || existing?.name || page.slug,
+        slug: page.slug,
+        icon: existing?.icon ?? FileText,
+      });
+    });
+
+    return Array.from(bySlug.values());
+  }, [pages, livePages]);
+  const [selectedPageSlug, setSelectedPageSlug] = useState("/home");
+  /** The editor's open page wins; the local value is only the pre-boot default. */
+  const currentSlug = activePageSlug ?? selectedPageSlug;
 
   // New Page Modal State
   const [showNewPageModal, setShowNewPageModal] = useState(false);
@@ -99,48 +123,6 @@ export function DrawerPanel({
   const showNotification = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
-  };
-
-  const handleAiGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!aiPrompt.trim()) return;
-
-    setIsGenerating(true);
-    try {
-      /**
-       * Through the shared client, not a bare fetch.
-       *
-       * This called `http://localhost:4000` outright — an absolute URL to the
-       * *visitor's* machine, so in production the request left the browser and
-       * never arrived anywhere. The feature has never worked outside a
-       * developer's laptop, and it failed as "Failed to generate AI section",
-       * which reads like the model refusing rather than the call never landing.
-       *
-       * `api()` resolves NEXT_PUBLIC_API_BASE_URL and sends `credentials:
-       * "include"`, which this also lacked — and the endpoint now requires a
-       * session, so the cookie is no longer optional.
-       */
-      type GeneratedSection = {
-        id: string;
-        title: string;
-        sectionType: string;
-        code: string;
-      };
-      const data = await api<{ section?: GeneratedSection }>("/api/v1/ai/generate-section", {
-        method: "POST",
-        body: { prompt: aiPrompt, subdomain },
-      });
-
-      if (data.section && onSectionAdd) {
-        onSectionAdd(data.section);
-        showNotification("AI Section generated & added to canvas!");
-        setAiPrompt("");
-      }
-    } catch {
-      showNotification("Failed to generate AI section. Try again.");
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   const handleSelectPage = (page: PageItem) => {
@@ -177,7 +159,7 @@ export function DrawerPanel({
 
   const handleDeletePage = (e: React.MouseEvent, pageId: string) => {
     e.stopPropagation();
-    if (pages.length <= 1) {
+    if (visiblePages.length <= 1) {
       showNotification("Cannot delete the last remaining page.");
       return;
     }
@@ -185,16 +167,22 @@ export function DrawerPanel({
     showNotification("Page deleted successfully.");
   };
 
+  /**
+   * Apply a theme.
+   *
+   * No local "selected" state: the tick reads `activePaletteId`, which is what
+   * the canvas is actually showing. The drawer used to hold its own copy, so
+   * the tick moved when clicked and then reverted to Academic Navy the next
+   * time the drawer opened — the two disagreed after any reload.
+   */
   const handleSelectPalette = (paletteId: string, paletteName: string) => {
-    setSelectedPalette(paletteId);
-    if (onPaletteSelect) onPaletteSelect(paletteId);
-    showNotification(`Applied color theme: ${paletteName}`);
+    onPaletteSelect?.(paletteId);
+    showNotification(`Applied theme: ${paletteName}`);
   };
 
   const handleSelectFont = (fontId: string, fontName: string) => {
-    setSelectedFont(fontId);
-    if (onFontSelect) onFontSelect(fontId);
-    showNotification(`Applied font family: ${fontName}`);
+    onFontSelect?.(fontId);
+    showNotification(`Applied font: ${fontName}`);
   };
 
   if (!isOpen) return null;
@@ -368,28 +356,6 @@ export function DrawerPanel({
               <span>Fonts</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab("ai")}
-              style={{
-                flex: 1,
-                height: "36px",
-                borderRadius: "12px",
-                fontSize: "12px",
-                fontWeight: 800,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                border: "none",
-                cursor: "pointer",
-                backgroundColor: activeTab === "ai" ? "#0f172a" : "transparent",
-                color: activeTab === "ai" ? "#38bdf8" : "#64748b",
-                boxShadow: activeTab === "ai" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
-              }}
-            >
-              <Sparkles style={{ width: "14px", height: "14px" }} />
-              <span>AI</span>
-            </button>
           </div>
         </div>
 
@@ -398,9 +364,9 @@ export function DrawerPanel({
           {/* PAGES TAB */}
           {activeTab === "pages" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {pages.map((page) => {
+              {visiblePages.map((page) => {
                 const Icon = page.icon;
-                const isSelected = selectedPageSlug === page.slug;
+                const isSelected = currentSlug === page.slug;
                 return (
                   <div
                     key={page.id}
@@ -445,7 +411,7 @@ export function DrawerPanel({
                       </div>
                     </div>
 
-                    {pages.length > 1 && (
+                    {visiblePages.length > 1 && (
                       <button
                         onClick={(e) => handleDeletePage(e, page.id)}
                         style={{
@@ -470,12 +436,14 @@ export function DrawerPanel({
           {/* COLORS TAB */}
           {activeTab === "colors" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {PALETTES.map((palette) => {
-                const isSelected = selectedPalette === palette.id;
+              {EDITOR_THEMES.map((theme) => {
+                const isSelected = activePaletteId === theme.id;
                 return (
-                  <div
-                    key={palette.id}
-                    onClick={() => handleSelectPalette(palette.id, palette.name)}
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => handleSelectPalette(theme.id, theme.name)}
+                    aria-pressed={isSelected}
                     style={{
                       padding: "14px",
                       borderRadius: "16px",
@@ -486,17 +454,21 @@ export function DrawerPanel({
                       flexDirection: "row",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      textAlign: "left",
+                      width: "100%",
+                      font: "inherit",
                     }}
                   >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>{palette.name}</span>
-                      <div style={{ display: "flex", flexDirection: "row", gap: "6px" }}>
-                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: palette.primary, border: "1px solid #cbd5e1" }} />
-                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: palette.accent, border: "1px solid #cbd5e1" }} />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>{theme.name}</span>
+                      <span style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.4 }}>{theme.description}</span>
+                      <div style={{ display: "flex", flexDirection: "row", gap: "6px", marginTop: "2px" }}>
+                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: theme.swatch.base, border: "1px solid #cbd5e1" }} />
+                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: theme.swatch.accent, border: "1px solid #cbd5e1" }} />
                       </div>
                     </div>
-                    {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a" }} />}
-                  </div>
+                    {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a", flexShrink: 0 }} />}
+                  </button>
                 );
               })}
             </div>
@@ -505,12 +477,14 @@ export function DrawerPanel({
           {/* FONTS TAB */}
           {activeTab === "fonts" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {FONTS.map((font) => {
-                const isSelected = selectedFont === font.id;
+              {EDITOR_FONTS.map((font) => {
+                const isSelected = activeFontId === font.id;
                 return (
-                  <div
+                  <button
                     key={font.id}
+                    type="button"
                     onClick={() => handleSelectFont(font.id, font.name)}
+                    aria-pressed={isSelected}
                     style={{
                       padding: "14px",
                       borderRadius: "16px",
@@ -520,74 +494,25 @@ export function DrawerPanel({
                       display: "flex",
                       flexDirection: "column",
                       gap: "4px",
+                      textAlign: "left",
+                      width: "100%",
                     }}
                   >
                     <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "14px", fontWeight: 900, color: "#0f172a" }}>{font.name}</span>
-                      {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a" }} />}
+                      {/* Set in its own face, so the choice is legible as itself
+                          rather than as a name rendered in the app's font. */}
+                      <span style={{ fontSize: "15px", fontWeight: 900, color: "#0f172a", fontFamily: font.stack }}>
+                        {font.name}
+                      </span>
+                      {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a", flexShrink: 0 }} />}
                     </div>
-                    <span style={{ fontSize: "11px", color: "#64748b" }}>{font.detail}</span>
-                  </div>
+                    <span style={{ fontSize: "11px", color: "#64748b" }}>{font.description}</span>
+                  </button>
                 );
               })}
             </div>
           )}
 
-          {/* AI GENERATOR TAB */}
-          {activeTab === "ai" && (
-            <form onSubmit={handleAiGenerate} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div style={{ background: "#0f172a", color: "#ffffff", padding: "16px", borderRadius: "16px", border: "1px solid #334155" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Sparkles style={{ width: "18px", height: "18px", color: "#38bdf8" }} />
-                  <span style={{ fontSize: "14px", fontWeight: 900, color: "#ffffff" }}>AI Section Generator</span>
-                </div>
-                <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "6px", lineHeight: "1.5" }}>
-                  Describe any campus section (e.g. "Research Labs", "Sports Complex", "Placement Stats") and AI will craft & inject it into your page.
-                </p>
-              </div>
-
-              <textarea
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Enter prompt e.g. Generate a modern Quantum Research Lab section with 3 cards..."
-                rows={4}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  borderRadius: "12px",
-                  border: "1px solid #cbd5e1",
-                  fontSize: "13px",
-                  fontFamily: "inherit",
-                  outline: "none",
-                  resize: "vertical",
-                  boxSizing: "border-box",
-                }}
-              />
-
-              <button
-                type="submit"
-                disabled={isGenerating || !aiPrompt.trim()}
-                style={{
-                  height: "44px",
-                  backgroundColor: isGenerating || !aiPrompt.trim() ? "#94a3b8" : "#2563eb",
-                  color: "#ffffff",
-                  fontSize: "13px",
-                  fontWeight: 900,
-                  borderRadius: "12px",
-                  border: "none",
-                  cursor: isGenerating || !aiPrompt.trim() ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  boxShadow: "0 4px 12px rgba(37,99,235,0.3)",
-                }}
-              >
-                <Sparkles style={{ width: "16px", height: "16px" }} />
-                <span>{isGenerating ? "Generating Section..." : "Generate & Add Section"}</span>
-              </button>
-            </form>
-          )}
         </div>
 
         {/* Bottom Sticky Add New Page Button */}

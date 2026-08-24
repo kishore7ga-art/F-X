@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Save,
   Link as LinkIcon,
@@ -40,6 +40,15 @@ interface EditorToolbarProps {
   onAddSection?: () => void;
   onDuplicateSection?: () => void;
   onSwapVariant?: () => void;
+  /**
+   * How many layouts the selected section can swap between.
+   *
+   * The Swap button used to look identical whether a section had eight
+   * alternatives or none, and pressing it in the second case did nothing and
+   * said nothing. With the count here the button can disable itself and its
+   * tooltip can say why.
+   */
+  variantCount?: number;
   onEditText?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -67,6 +76,7 @@ export function EditorToolbar({
   isSectionSelected = true,
   onDuplicateSection,
   onSwapVariant,
+  variantCount = 0,
   onEditText,
   onUndo,
   onRedo,
@@ -89,6 +99,25 @@ export function EditorToolbar({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+
+  /**
+   * Say what just happened, in the status pill.
+   *
+   * This was an empty function with a comment saying notifications were
+   * disabled, declared *below* the five places that called it — so "Toolbar
+   * docked", "Link copied" and "Changes saved" were all computed and thrown
+   * away, and the state holding them was never rendered. Popups are still
+   * gone; this is one non-blocking line that replaces its own message.
+   */
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message || null);
+  }, []);
+
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => setToastMessage(null), 2600);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     // If user clicked directly on or inside a <button>, allow button click normally
@@ -156,11 +185,7 @@ export function EditorToolbar({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [isDragging, dragOffset]);
-
-  const showToast = (_msg: string) => {
-    // Disabled all toast notifications per user request
-  };
+  }, [isDragging, dragOffset, showToast]);
 
   const handleCopyLink = async () => {
     if (typeof window === "undefined") return;
@@ -214,19 +239,27 @@ export function EditorToolbar({
     }, 500);
   };
 
+  /**
+   * Ask for the next layout.
+   *
+   * No toast. This used to announce "Section variant updated!" the moment it
+   * was pressed — before the swap was attempted, and regardless of whether one
+   * happened. On the common failure (a category with nothing in the library)
+   * the user was told the section had changed while it visibly had not.
+   * Reporting belongs to the code that knows the outcome; the studio's status
+   * line does it.
+   */
   const handleRefreshSwap = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (onSwapVariant) {
-      onSwapVariant();
-      showToast("Section variant updated!");
-    } else {
-      showToast("Swapped section layout variant 🚀");
-    }
+    onSwapVariant?.();
   };
 
   // From the one device ladder in `@/lib/section-runtime`, shared with the site
   // preview and the Admin. Three switchers offering three different notions of
   // "Tablet" is how a section passes review at a width nobody ships.
+  /** Two or more layouts is the minimum for a swap to be able to do anything. */
+  const canSwap = isSectionSelected && variantCount > 1;
+
   const MOBILE_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "mobile");
   const TABLET_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "tablet");
   const DESKTOP_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "desktop");
@@ -331,6 +364,34 @@ export function EditorToolbar({
   };
 
   return (
+    <>
+      {/* What just happened. `toastMessage` already existed and nothing
+          rendered it, so every message this component produced was discarded. */}
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            bottom: "128px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 60,
+            pointerEvents: "none",
+            padding: "8px 16px",
+            borderRadius: "999px",
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            color: "#f8fafc",
+            fontSize: "11px",
+            fontWeight: 900,
+            letterSpacing: "-0.01em",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.28)",
+          }}
+        >
+          {toastMessage}
+        </div>
+      )}
+
     <div
       className="editor-toolbar-dock"
       onClick={(e) => e.stopPropagation()}
@@ -557,7 +618,9 @@ export function EditorToolbar({
               {/* Swap Variant Layout Button */}
               <button
                 onClick={handleRefreshSwap}
+                disabled={!canSwap}
                 style={{
+                  position: "relative",
                   width: "30px",
                   height: "30px",
                   display: "flex",
@@ -565,13 +628,47 @@ export function EditorToolbar({
                   justifyContent: "center",
                   border: "none",
                   backgroundColor: "transparent",
-                  cursor: "pointer",
+                  cursor: canSwap ? "pointer" : "not-allowed",
+                  opacity: canSwap ? 1 : 0.4,
                   color: "#334155",
                   ...buttonHoverStyle,
                 }}
-                title="Swap Variant Layout"
+                title={
+                  canSwap
+                    ? `Next layout (${variantCount} available)`
+                    : "No other layout for this section in the library"
+                }
+                aria-label={
+                  canSwap
+                    ? `Swap to the next of ${variantCount} layouts`
+                    : "No other layout available for this section"
+                }
               >
                 <RefreshCw style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
+                {canSwap && (
+                  /* How many alternatives there are, on the button. Without it
+                     the only way to find out was to press it and count. */
+                  <span
+                    aria-hidden
+                    style={{
+                      position: "absolute",
+                      top: "-1px",
+                      right: "-1px",
+                      minWidth: "13px",
+                      height: "13px",
+                      padding: "0 3px",
+                      borderRadius: "999px",
+                      backgroundColor: "#0f172a",
+                      color: "#ffffff",
+                      fontSize: "8px",
+                      fontWeight: 900,
+                      lineHeight: "13px",
+                      textAlign: "center",
+                    }}
+                  >
+                    {variantCount}
+                  </span>
+                )}
               </button>
             </div>
             {/* === CENTER GROUP: Resolution Switcher === */}
@@ -1271,5 +1368,6 @@ export function EditorToolbar({
       )}
 
     </div>
+    </>
   );
 }
