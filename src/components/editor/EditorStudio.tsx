@@ -26,6 +26,7 @@ import {
   Trophy,
   MapPin,
   Footprints,
+  Megaphone,
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
@@ -95,6 +96,7 @@ const SECTION_CATEGORIES: ReadonlyArray<{
 }> = [
   { id: "navbar", name: "Navbar / Header", description: "Top navigation bar with logo, menu links & action buttons", icon: Compass },
   { id: "hero", name: "Hero Banner", description: "Lead banner, masthead & title headline", icon: Layout },
+  { id: "cta", name: "Call to Action", description: "Promotional banner, enrolment prompt & apply button", icon: Megaphone },
   { id: "highlights", name: "College Highlights", description: "Key stats, NIRF rankings & accreditation badges", icon: Award },
   { id: "about", name: "About College", description: "College history, overview & leadership message", icon: Info },
   { id: "vision", name: "Vision & Mission", description: "Institutional core values, vision & long-term goals", icon: Target },
