@@ -66,6 +66,46 @@ export function fenceCssToSection(css: string, sectionId: string): string {
 }
 
 /**
+ * Attributes that mean "the framework owns this stylesheet, not us".
+ *
+ * React 19 stamps `data-precedence` on stylesheets it hoists; Next stamps
+ * `data-href` / `data-n-href` on the ones it injects during development.
+ */
+const FRAMEWORK_OWNED = "[data-precedence], [data-href], [data-n-href]";
+
+/**
+ * The stylesheet Tailwind's Play CDN generates for section markup.
+ *
+ * The test used to be "the first `<style>` whose text contains `--tw-`", and
+ * that is not specific enough on this app. `globals.css` is Tailwind 4,
+ * compiled at build time, and **its output contains `--tw-` variables too** —
+ * verified in `.next/static/chunks/*.css`. So the search could return the
+ * application's own stylesheet.
+ *
+ * For `placeBeforeTailwind` that is merely wrong. For the caller in
+ * `useSectionRuntime` it is destructive: that one sets `sheet.disabled = true`
+ * on whatever it finds, which would switch off the entire editor UI's styling
+ * the moment a device preview is opened. Production escapes it because Next
+ * serves its CSS as `<link>` rather than `<style>` — which makes this the kind
+ * of bug that only appears on someone's laptop, and only sometimes.
+ *
+ * Two discriminators, both required: the sheet must carry `--tw-`, and it must
+ * not be one the framework stamped as its own.
+ */
+export function findSectionTailwindStyle(exclude?: Element | null): HTMLStyleElement | null {
+  return (
+    Array.from(document.querySelectorAll<HTMLStyleElement>("style")).find(
+      (candidate) =>
+        candidate !== exclude &&
+        !candidate.matches(FRAMEWORK_OWNED) &&
+        !candidate.id &&
+        !candidate.hasAttribute("data-xite-tw-mirror") &&
+        (candidate.textContent || "").includes("--tw-"),
+    ) ?? null
+  );
+}
+
+/**
  * Moves `style` in front of the stylesheet Tailwind's Play CDN generates.
  *
  * In the Admin's document Tailwind's stylesheet is the last one in `<head>`, so
@@ -75,9 +115,7 @@ export function fenceCssToSection(css: string, sectionId: string): string {
  * the caller can wait for it.
  */
 export function placeBeforeTailwind(style: HTMLStyleElement): boolean {
-  const twStyle = Array.from(document.querySelectorAll("style")).find(
-    (candidate) => candidate !== style && (candidate.textContent || "").includes("--tw-"),
-  );
+  const twStyle = findSectionTailwindStyle(style);
   if (!twStyle || !twStyle.parentNode) return false;
   if (style.compareDocumentPosition(twStyle) & Node.DOCUMENT_POSITION_FOLLOWING) return true;
   twStyle.parentNode.insertBefore(style, twStyle);

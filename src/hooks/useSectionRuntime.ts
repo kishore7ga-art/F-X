@@ -2,7 +2,11 @@
 
 import { useEffect } from "react";
 
-import { fenceCssToSection, placeBeforeTailwind } from "@/lib/section-css-fence";
+import {
+  fenceCssToSection,
+  findSectionTailwindStyle,
+  placeBeforeTailwind,
+} from "@/lib/section-css-fence";
 import {
   extractStylesAndBody,
   remapDocumentSelectors,
@@ -11,6 +15,7 @@ import {
   viewportMediaToContainer,
 } from "@/lib/section-runtime";
 import type { SectionItem } from "@/lib/site-sections";
+import { tokenizeCss } from "@/lib/editor-themes";
 
 /**
  * Puts a page into the environment sections are authored against.
@@ -70,11 +75,59 @@ export function useSectionRuntime({
     // container. One stylesheet, so its place in the cascade is knowable.
     const parts = [sectionRuntimeCss(scope), sectionResponsiveCss(scope)];
 
+    /**
+     * `@import url(...)` pulled out of a section's CSS and loaded as a `<link>`.
+     *
+     * Two reasons it cannot stay where it is. `CSSStyleSheet.replaceSync()` —
+     * which `fenceCssToSection` uses to parse and re-scope the CSS — discards
+     * `@import` rules outright. And `@import` is only valid at the very top of
+     * a stylesheet, whereas every section's CSS is concatenated into one sheet
+     * after the runtime and responsive blocks.
+     *
+     * It mattered less while the canvas *also* rendered the section's `<style>`
+     * block inline, because that copy carried the import. Removing the
+     * duplicate — which is what stops one section's CSS restyling the others —
+     * would otherwise have silently dropped every webfont a section imports
+     * this way, so the two changes belong together.
+     */
+    const hoistImport = (href: string, sectionId: string) => {
+      if (!href || document.querySelector(`link[href="${href}"]`)) return;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.setAttribute("data-xite-section", sectionId);
+      head.appendChild(link);
+    };
+
     sections.forEach((sec) => {
-      const { headCss, headLinks } = extractStylesAndBody(sec.code || "");
+      const raw = extractStylesAndBody(sec.code || "");
+      const headLinks = raw.headLinks;
+
+      const headCss = raw.headCss.replace(
+        /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?[^;]*;/gi,
+        (_full, href: string) => {
+          hoistImport(href, sec.id);
+          return "";
+        },
+      );
 
       if (headCss.trim()) {
-        parts.push(fenceCssToSection(remapDocumentSelectors(headCss, ".section-canvas-box"), sec.id));
+        /**
+         * Tokenised before fencing, so the theme reaches a section's own CSS.
+         *
+         * This is now the *only* copy of that CSS in the document — the canvas
+         * used to also render the `<style>` block inline, unfenced, and that
+         * copy was the one the theme happened to reach. Removing the duplicate
+         * fixed section CSS leaking between sections and would have quietly
+         * taken the theme off everything a section styles by class, which is
+         * most of what a well-built section styles.
+         */
+        parts.push(
+          fenceCssToSection(
+            tokenizeCss(remapDocumentSelectors(headCss, ".section-canvas-box")),
+            sec.id,
+          ),
+        );
       }
 
       // <link> tags are the one thing that cannot be fenced — a font is a font.
@@ -129,13 +182,11 @@ function useTailwindContainerQueries(active: boolean) {
     let source: HTMLStyleElement | null = null;
     let frame = 0;
 
-    const findSource = () =>
-      Array.from(document.querySelectorAll("style")).find(
-        (candidate) =>
-          candidate.id !== RUNTIME_STYLE_ID &&
-          !candidate.hasAttribute("data-xite-tw-mirror") &&
-          (candidate.textContent || "").includes("--tw-"),
-      ) || null;
+    // Shared with `placeBeforeTailwind`, so both agree on which sheet is the
+    // section engine's. This one *disables* what it finds, and the old test —
+    // "any <style> containing --tw-" — also matches the app's own Tailwind 4
+    // build output, which would have switched off the entire editor UI.
+    const findSource = () => findSectionTailwindStyle(mirror);
 
     const sync = () => {
       source = findSource();

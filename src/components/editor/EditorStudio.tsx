@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
+import { recomposeSectionCode, sectionCanvasHtml } from "@/lib/section-runtime";
 import { canonicalSlug, useEditorPages } from "@/hooks/useEditorPages";
 import type { SectionCategoryId } from "@/lib/sections/categories";
 import {
@@ -171,43 +172,6 @@ function SectionInsertPoint({
   );
 }
 
-/**
- * A section's markup, wrapped for the canvas.
- *
- * At module scope: it reads nothing from the component, and being declared
- * below its own caller meant every render captured a fresh closure over
- * nothing. Preserves 100% of the author's HTML, body styles, attributes and
- * colours — the same bytes the Admin's iframe renders.
- */
-function cleanFullWebCodeForCanvas(code: string): string {
-  if (!code) return "";
-
-  let cleanCode = code;
-
-  const bodyFullMatch = code.match(/<body([^>]*)>([\s\S]*?)<\/body\s*>/i);
-  if (bodyFullMatch) {
-    const bodyAttrs = bodyFullMatch[1] || "";
-    const bodyContent = bodyFullMatch[2] || "";
-    const headMatch = code.match(/<head[^>]*>([\s\S]*?)<\/head\s*>/i);
-    const styles = headMatch ? headMatch[1] : "";
-    cleanCode = `${styles}\n<div class="xite-body-wrapper" ${bodyAttrs}>${bodyContent}</div>`;
-  } else {
-    // The word boundary on every tag name is load-bearing: `<head[\s\S]*?>`
-    // also matches `<header ...>` and `</head>` matches `</header>`, so this
-    // pass used to delete the wrapper element of every navbar section —
-    // background, padding and all.
-    cleanCode = code
-      .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
-      .replace(/<\/?html[^>]*>/gi, "")
-      .replace(/<\/?head[^>]*>/gi, "")
-      .replace(/<\/?body[^>]*>/gi, "");
-  }
-
-  // The CSS isolation reset targeting `.section-canvas-box` is injected once on
-  // mount by the section runtime.
-  return `<div class="section-canvas-box w-full block text-left relative">${cleanCode}</div>`;
-}
-
 interface EditorStudioProps {
   subdomain?: string;
   collegeName?: string;
@@ -328,10 +292,21 @@ export function EditorStudio({
    * reversible and a section renders identically with no theme applied: every
    * `var(--xite-…)` carries the original colour as its fallback.
    */
-  const canvasHtml = useCallback(
-    (code: string) => tokenizeSectionHtml(cleanFullWebCodeForCanvas(code)),
-    [],
-  );
+  /**
+   * A section's markup, ready for the canvas.
+   *
+   * `sectionCanvasHtml` is the shared one — the same function the published
+   * site and the preview call — so the three surfaces cannot disagree about
+   * what a section is. The editor had its own weaker version that left every
+   * `<style>` block in the markup, which meant each section's CSS was in the
+   * document twice: once fenced to that section by `useSectionRuntime`, and
+   * once unfenced, restyling every other section on the page.
+   *
+   * Only the inline `style="…"` attributes are tokenised here. The `<style>`
+   * blocks are gone from this markup by design, and the runtime hook tokenises
+   * them where it fences them.
+   */
+  const canvasHtml = useCallback((code: string) => tokenizeSectionHtml(sectionCanvasHtml(code)), []);
 
   /** The three theme font families, loaded once for the whole editor. */
   useEffect(() => {
@@ -775,12 +750,28 @@ export function EditorStudio({
       (el as HTMLElement).style.backgroundColor = '';
     });
 
-    const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
-    if (newCode) {
+    const newBody = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
+    if (newBody) {
       setSectionsWithHistory((prev) =>
-        prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
+        prev.map((sec, i) =>
+          i === sectionIndex
+            ? {
+                ...sec,
+                /**
+                 * Head from the stored section, body from the canvas.
+                 *
+                 * The canvas holds no `<style>` — the runtime lifted it out and
+                 * fenced it to this section — so saving what the DOM returns
+                 * verbatim would delete the section's whole stylesheet the
+                 * first time anybody fixed a typo. `sec.code` is read from
+                 * `prev` rather than a closure so it is always the current one.
+                 */
+                code: recomposeSectionCode(sec.code, newBody),
+              }
+            : sec,
+        ),
       );
-      showToastNotification("Text content updated!");
+      showToastNotification("Text content updated");
     }
   }, [cleanCanvasWrapperFromCode, setSectionsWithHistory, showToastNotification]);
 

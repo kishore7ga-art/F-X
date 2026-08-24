@@ -6,7 +6,7 @@ import { Monitor, Tablet, Smartphone, Edit3 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
 import {
-  extractStylesAndBody,
+  sectionCanvasHtml,
   nextSectionDeviceWidth,
   sectionDeviceWidths,
 } from "@/lib/section-runtime";
@@ -464,11 +464,6 @@ export function PreviewSiteViewer({
  * through innerHTML and the environment effect has already moved them into
  * `document.head` — the same split the Admin's iframe makes when it builds `<head>`.
  */
-function sectionCanvasHtml(code: string): string {
-  const { bodyHtml } = extractStylesAndBody(code || "");
-  return `<div class="section-canvas-box">${bodyHtml}</div>`;
-}
-
 function sameSections(a: SectionItem[], b: SectionItem[]): boolean {
   if (a.length !== b.length) return false;
   return a.every(
