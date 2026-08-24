@@ -295,12 +295,43 @@ in the Admin's preview and another way live.
 
 ---
 
+## 11. The black band below the last section
+
+Reported after the CSS fix, in the editor at full width.
+
+`sectionRuntimeCss` sets two things on the canvas together: the site's own
+background colour, and `min-height: 100%`.
+
+That pairing is correct on the **published site** — a short page should end in
+the site's background rather than in a strip of whatever is behind it. It is
+wrong in the **editor**, where the canvas sits on the studio's white surface.
+There it paints a rectangle of the *site's* dark background below the last
+section, with nothing in it, which reads as a section that failed to load
+rather than as the end of the page.
+
+Half of this had already been fixed: `min-h-screen` was removed from the
+editor's canvas element, with a comment describing the exact symptom — *"a
+tenant whose only section is a 102px header got that header and then a full
+screen of flat black"*. The rule in the **shared stylesheet** was left in
+place, so the band came back at whatever height the parent gave it.
+
+**Fix.** `fillViewport` is a parameter on `sectionRuntimeCss`, defaulting to
+`true` so the published site and the Admin's preview iframe keep the behaviour
+without opting in. The editor passes `false`.
+
+Also removed: 448px of stacked dead space. `main` carried `pb-64` (256px) *and*
+a separate 192px spacer div, both reserving room for the same floating dock.
+The dock is ~96px tall and sits 32px from the bottom, so one 160px spacer
+clears it.
+
+---
+
 ## Verification
 
 | Check | Scope | Result |
 | :--- | :--- | :--- |
 | Unit tests | xite-B | 129 passed (27 new) |
-| Unit tests | xite-F | 102 passed (77 new) |
+| Unit tests | xite-F | 105 passed (80 new) |
 | `tsc --noEmit` | all three | 0 errors |
 | Production build | all three | pass |
 | ESLint | xite-F | 64 → 25 errors (remainder pre-existing, untouched files) |
