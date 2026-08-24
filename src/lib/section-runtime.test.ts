@@ -164,3 +164,27 @@ describe("recomposeSectionCode — editing text must not delete the CSS", () => 
     assert.equal(recomposeSectionCode("<p>a</p>", "<p>b</p>"), "<p>b</p>");
   });
 });
+
+describe("fillViewport — the canvas ends where its sections end, in the editor", () => {
+  it("reserves a screenful by default, for the published site", () => {
+    // A short published page should end in the site's own background rather
+    // than in a strip of whatever is behind it.
+    assert.match(sectionRuntimeCss(".xite-site-canvas"), /min-height:\s*100%/);
+  });
+
+  it("reserves nothing when the editor opts out", () => {
+    // In the editor the canvas sits on the studio's white surface, so reserving
+    // height paints a band of the *site's* dark background below the last
+    // section — a rectangle with nothing in it, which reads as a section that
+    // failed to load rather than as the end of the page.
+    const css = sectionRuntimeCss(".xite-site-canvas", { fillViewport: false });
+    assert.ok(!/min-height:\s*100%/.test(css), css.slice(0, 300));
+  });
+
+  it("keeps the background either way — the canvas is still the page", () => {
+    for (const opts of [undefined, { fillViewport: false }]) {
+      const css = sectionRuntimeCss(".xite-site-canvas", opts);
+      assert.match(css, /background-color: var\(--xite-surface, #09090b\)/);
+    }
+  });
+});

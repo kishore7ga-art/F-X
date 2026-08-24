@@ -590,6 +590,8 @@ export function EditorStudio({
     sections,
     scope: EDITOR_CANVAS_SCOPE,
     simulatedWidth: viewportWidth,
+    // The canvas ends where its sections end. See `sectionRuntimeCss`.
+    fillViewport: false,
   });
 
   // ─── Section Script Execution ───────────────────────────────────────────────
@@ -1587,8 +1589,8 @@ export function EditorStudio({
       {/* Main Studio Canvas Workspace */}
       <main
         onClick={() => setActiveSectionIndex(null)}
-        className={`flex-1 w-full flex flex-col items-center justify-start pb-64 cursor-pointer min-h-screen transition-all ${
-          viewportWidth === "100%" ? "bg-white p-0 m-0" : "bg-slate-100/90 px-4 sm:px-8 pt-0 pb-12 mt-0"
+        className={`flex-1 w-full flex flex-col items-center justify-start cursor-pointer min-h-screen transition-all ${
+          viewportWidth === "100%" ? "bg-white p-0 m-0" : "bg-slate-100/90 px-4 sm:px-8 pt-0 mt-0"
         }`}
       >
         {/* Device-frame chrome on its own element: its border would otherwise come
@@ -1833,11 +1835,12 @@ export function EditorStudio({
           )}
         </div>
 
-        {/* Clearance for the floating dock. Outside the canvas: it is editor
-            chrome, and inside it the canvas painted 192px of its own background
-            below the last section — which on a site with one short header read
-            as a broken page rather than as space. */}
-        <div className="w-full h-48 shrink-0 pointer-events-none" />
+        {/* Clearance for the floating dock, and the only such clearance.
+            `main` also carried `pb-64`, so 256px of padding and this 192px
+            spacer both reserved room for the same dock — 448px of dead space
+            under every page. The dock is ~96px tall and sits 32px from the
+            bottom, so 160px clears it with room to spare. */}
+        <div className="w-full h-40 shrink-0 pointer-events-none" />
         </div>
       </main>
 

@@ -33,6 +33,7 @@ export function useSectionRuntime({
   sections,
   scope,
   simulatedWidth,
+  fillViewport = true,
 }: {
   sections: SectionItem[];
   /** The element standing in for `<body>` — the canvas. */
@@ -43,6 +44,15 @@ export function useSectionRuntime({
    * need redirecting at the container; see `useTailwindContainerQueries`.
    */
   simulatedWidth?: string | null;
+  /**
+   * Whether the canvas reserves a screenful of the site's own background.
+   *
+   * The published site wants it; the editor does not. In the editor the canvas
+   * sits on the studio's white surface, so reserving height paints a dark band
+   * below the last section that looks like a broken section rather than the end
+   * of the page.
+   */
+  fillViewport?: boolean;
 }) {
   useEffect(() => {
     const head = document.head;
@@ -73,7 +83,7 @@ export function useSectionRuntime({
     // The environment, the responsive engine, then each section's own CSS —
     // fenced to that section, and with its width breakpoints redirected at the
     // container. One stylesheet, so its place in the cascade is knowable.
-    const parts = [sectionRuntimeCss(scope), sectionResponsiveCss(scope)];
+    const parts = [sectionRuntimeCss(scope, { fillViewport }), sectionResponsiveCss(scope)];
 
     /**
      * `@import url(...)` pulled out of a section's CSS and loaded as a `<link>`.
@@ -154,7 +164,7 @@ export function useSectionRuntime({
       placement?.disconnect();
       document.querySelectorAll("link[data-xite-section]").forEach((el) => el.remove());
     };
-  }, [sections, scope]);
+  }, [sections, scope, fillViewport]);
 
   useTailwindContainerQueries(Boolean(simulatedWidth) && simulatedWidth !== "100%");
 }
