@@ -326,12 +326,102 @@ clears it.
 
 ---
 
+## 12. The black band: a section whose script was stripped
+
+Reported as empty space in the editor. It is not space — it is a **section
+whose content was assembled by JavaScript that no longer runs**, leaving its
+own background and padding behind as a coloured rectangle with nothing in it.
+
+Two sanitisers guard two paths and disagree about `<script>` on purpose:
+`sanitizeTemplateCode` allows it (the library contains carousels, sliders and
+hamburger menus); `sanitizeSectionHtml` discards it (tenant markup renders on
+the platform apex, beside the sign-in page).
+
+A section crosses that boundary the first time it is saved:
+
+1. The admin publishes a slider whose slides are built by its script.
+2. A tenant adds it. The editor runs the script; the slides appear.
+3. The autosave writes it through `PUT /my-website`, which strips the script.
+4. On reload the markup is there and the script is not — an empty band.
+
+**Fix.** `restoreTemplateScripts` puts the script back on *read*. It is never
+taken from the request: it is looked up from the `Template` row the section
+came from, by `templateId`, and only for templates still published and
+unarchived. A tenant may put any `templateId` they like in a body; the worst
+they achieve is running a script an administrator already published to the
+whole platform. Relaxing the sanitiser instead would have fixed the symptom
+and opened the hole it exists to close.
+
+Applied to the editor's `GET /my-website` and both public site paths, so
+nothing is written back and the stored draft stays exactly as sanitised. One
+query per request, none at all when no section references a template.
+
+**Known gap.** The restore keys on `templateId`. Sections added before that
+field existed carry `null` and are not restored; the editor labels them.
+
+**And the editor now says so.** A section that occupies space and shows nothing
+is labelled on the canvas rather than appearing as an unexplained coloured
+band. Measured from the rendered DOM, not inferred from markup — whether a
+section *looks* empty depends on CSS, container queries and images only the
+browser has resolved. It skips anything under 64px, and treats a background
+image as content.
+
+---
+
+## 13. Logos rendering as broken line-art
+
+Reported from a side-by-side screenshot of the same navbar: in one, the
+university crest and the social icons render correctly; in the other the crest
+is outlines and the icons are garbled.
+
+Both sanitisers kept their **own partial idea of what an inline SVG may
+contain**, and both were badly incomplete. The template policy allowed eleven
+tags and five attributes — `xmlns`, `viewBox`, `d`, `fill`, `stroke`. That is
+enough to keep a `<path>` visible and loses everything that positions, masks or
+fills it.
+
+A test built from a realistic crest and icon row **failed 28 of 34
+assertions**. Dropped: `<defs>`, `<clipPath>`, `<linearGradient>`, `<stop>`,
+`<ellipse>`, `<text>`, and `transform`, `clip-path`, `fill-rule`, `clip-rule`,
+`stroke-width`, `stroke-linecap`, `stroke-linejoin`, `fill-opacity`,
+`gradientUnits`, `stop-color`, `preserveAspectRatio`, `cx`, `cy`, `rx`, `ry`,
+`offset`, `text-anchor`, `font-size`.
+
+Nothing breaks, which is what makes it expensive: the shield loses its clip
+mask and its gradient and comes out as outlines, and the icon inverts because
+`fill-rule="evenodd"` is what makes the hole in a glyph a hole. The page still
+looks like a page.
+
+**Fix.** One shared allowlist, `lib/sections/svg-allowlist.ts`, used by both
+policies. They disagree about `<script>` deliberately; they must not also
+disagree about what an SVG is, or a logo renders one way in the Admin's preview
+and another way live.
+
+**A detail worth knowing.** sanitize-html lower-cases *attribute* names but
+preserves *tag* names — so `<clipPath>` arrives as `clipPath`, and an allowlist
+spelled `clippath` matches nothing. Found by measurement after getting it
+backwards first: with only lowercase forms allowed, `<linearGradient>` and
+`<clipPath>` are silently discarded and their children hoisted into `<defs>`.
+Both spellings are listed.
+
+**Still refused,** and asserted for both policies: `<foreignObject>` (a route
+back into HTML parsing, and from there into script), `<script>`, the
+declarative-animation elements that can set arbitrary attributes over time,
+event handlers, and `javascript:` URLs.
+
+**Known gap.** This corrects the sanitiser; templates already stored with their
+SVG stripped were damaged on write and do not repair themselves. Re-saving an
+affected template in Admin › Templates puts it through the corrected pass.
+
+---
+
 ## Verification
 
 | Check | Scope | Result |
 | :--- | :--- | :--- |
-| Unit tests | xite-B | 129 passed (27 new) |
+| Unit tests | xite-B | 173 passed (71 new) |
 | Unit tests | xite-F | 105 passed (80 new) |
+| API end-to-end | xite-B | 76 checks passed |
 | `tsc --noEmit` | all three | 0 errors |
 | Production build | all three | pass |
 | ESLint | xite-F | 64 → 25 errors (remainder pre-existing, untouched files) |
