@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import {
-  Plus,
   Layout,
   X,
   Info,
@@ -45,6 +44,7 @@ import {
 } from "@/lib/editor-api";
 import {
   moveSection,
+  insertSlotAfter,
   placementIndex,
   sectionFromTemplate,
   swapVariant,
@@ -129,72 +129,6 @@ const SECTION_CATEGORIES: ReadonlyArray<{
  */
 function newSectionId(prefix = "sec"): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-}
-
-/**
- * The seam between two sections, and the way a section is added at a position.
- *
- * ── Why it takes up no space ───────────────────────────────────────────────
- *
- * This used to be a real 8px-tall element that grew to 44px on hover, with a
- * cyan hairline drawn across it. Both were visible: 8px of the canvas's own
- * dark background sat between every pair of sections, so a page read as a stack
- * of blocks separated by black lines rather than as the website it is. And
- * because the height changed on hover, everything below the pointer jumped
- * 36px whenever the mouse crossed a seam.
- *
- * So it is `h-0` now and contributes nothing to layout — sections sit flush,
- * exactly as they do on the published site. The hover target and the button are
- * both absolutely positioned, straddling the boundary, which means hovering
- * changes what is *painted* and never what is *laid out*. Nothing moves.
- *
- * The hairline is gone entirely. Only the button appears, which is what it was
- * for; a line across the page said "there is a control here" a second time.
- *
- * ── The two details that are load-bearing ─────────────────────────────────
- *
- * `stopPropagation` on the button: the section wrappers on either side select
- * themselves on click, and without it pressing the seam would select a section
- * and open the picker at the same time.
- *
- * `z-[45]`: above the navbar's z-index of 40, so the topmost seam — the one
- * above a sticky header — is still reachable, and below the picker modal at 50.
- * A click on the strip itself, rather than the button, is deliberately left to
- * bubble: it reaches the canvas handler and deselects, which is what clicking
- * anywhere else on empty canvas does.
- */
-function SectionInsertPoint({
-  index,
-  onInsert,
-}: {
-  index: number;
-  onInsert: (index: number) => void;
-}) {
-  return (
-    <div className="group/insert relative z-[45] h-0 w-full" data-xite-insert-at={index}>
-      {/*
-        The hover target, straddling the seam. 14px — seven either side — is
-        enough to hit without aiming, and small enough that it rarely swallows a
-        click meant for the section above or below. It paints nothing.
-      */}
-      <div className="absolute inset-x-0 -top-[7px] h-[14px]" aria-hidden />
-
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onInsert(index);
-        }}
-        title={`Add a section here (position ${index + 1})`}
-        aria-label={`Add a section at position ${index + 1}`}
-        className="absolute left-1/2 top-0 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full border border-cyan-400/60 bg-slate-900 px-3 py-1 text-[10px] font-extrabold tracking-tight text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/insert:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
-        style={{ fontFamily: "'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif" }}
-      >
-        <Plus className="h-3 w-3 stroke-[3] text-cyan-300" />
-        Add Section
-      </button>
-    </div>
-  );
 }
 
 interface EditorStudioProps {
@@ -486,20 +420,40 @@ export function EditorStudio({
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
 
   /**
-   * Where the section the user is about to pick should land.
+   * Which section the one being picked should land under.
    *
-   * `null` means the modal was opened from the toolbar, which has no position
-   * in mind — that path keeps its existing placement rules (a navbar goes to
-   * the top, a hero directly under it, anything else replaces its own kind or
-   * slots in above the footer). A number means the user pressed a specific
-   * insertion point on the canvas, and the only correct answer is the index
-   * they pressed.
+   * ── Why an id and not an index ────────────────────────────────────────────
+   *
+   * The list can change between opening the picker and choosing from it. A
+   * navbar or a footer is singular, so adding one *removes* the existing one
+   * before the new section is spliced in — and every index after the removal
+   * shifts by one. An index captured when the picker opened would then point at
+   * the section after the intended one, which is how "add below this" silently
+   * becomes "add below the next one".
+   *
+   * An id survives that, and survives a reorder made while the picker is open.
+   * It is resolved against the list the section is actually going into, at the
+   * moment it goes in.
+   *
+   * `null` means nothing was selected when the button was pressed, and the
+   * existing placement rules apply: a navbar goes to the top, a footer to the
+   * bottom, anything else above the footer.
    */
-  const [pendingInsertIndex, setPendingInsertIndex] = useState<number | null>(null);
+  const [pendingInsertAfterId, setPendingInsertAfterId] = useState<string | null>(null);
 
-  /** Opens the picker for a specific slot on the canvas. */
-  const openAddSectionModalAt = (index: number) => {
-    setPendingInsertIndex(index);
+  /**
+   * Opens the picker from the toolbar, anchored to the selection.
+   *
+   * There used to be a hover button in every seam between two sections, which
+   * meant the canvas grew a control the moment the pointer crossed it and the
+   * page read as a stack of blocks rather than as the website it is. One button
+   * in the toolbar, placing relative to what is selected, does the same job
+   * without putting editor chrome inside the preview.
+   */
+  const openAddSectionModal = () => {
+    setPendingInsertAfterId(
+      activeSectionIndex !== null ? sections[activeSectionIndex]?.id ?? null : null,
+    );
     setShowAddSectionModal(true);
   };
 
@@ -507,13 +461,13 @@ export function EditorStudio({
    * Closes the picker and forgets the slot.
    *
    * Every dismissal goes through here — the close button, the backdrop, and
-   * each branch that finishes adding a section. A `pendingInsertIndex` left
-   * behind by a cancelled press would silently redirect the *next* section the
-   * user adds from the toolbar to wherever they last pointed.
+   * each branch that finishes adding a section. A `pendingInsertAfterId` left
+   * behind by a cancelled press would silently anchor the *next* section the
+   * user adds to whatever was selected last time.
    */
   const closeAddSectionModal = () => {
     setShowAddSectionModal(false);
-    setPendingInsertIndex(null);
+    setPendingInsertAfterId(null);
   };
 
   // Right-Click Link / Button Navigation Popup State
@@ -1445,7 +1399,6 @@ export function EditorStudio({
       }
 
       const newSection = sectionFromTemplate(chosen, newSectionId());
-      const slot = pendingInsertIndex;
 
       // A navbar and a footer are singular: adding a second replaces the first,
       // because two navbars is not a layout anyone means to build. Everything
@@ -1453,6 +1406,11 @@ export function EditorStudio({
       // the first, which is not what "add" means.
       const singular = newSection.category === "navbar" || newSection.category === "footer";
       const base = singular ? sections.filter((sec) => sec.category !== newSection.category) : sections;
+
+      // Directly under the selected section. Resolved against `base` — the list
+      // after the singular filter — which is what makes "below this one"
+      // survive a navbar being replaced in the same action.
+      const slot = insertSlotAfter(base, pendingInsertAfterId);
 
       // Computed once, from the list the section is actually going into. Doing
       // it against the pre-filter list is what made the selection land on the
@@ -1467,7 +1425,7 @@ export function EditorStudio({
       closeAddSectionModal();
       setSwapNotice(`Added ${newSection.title}`);
     },
-    [libraryTemplatesFor, pendingInsertIndex, sections, setSectionsWithHistory, setActiveSectionIndex],
+    [libraryTemplatesFor, pendingInsertAfterId, sections, setSectionsWithHistory, setActiveSectionIndex],
   );
 
   /**
@@ -1758,9 +1716,8 @@ export function EditorStudio({
                 // navbar the first section, whatever it was, got the navbar z-index.
                 const isHeader = sec.category === "navbar";
                 return (
-                  <React.Fragment key={sec.id}>
-                  <SectionInsertPoint index={idx} onInsert={openAddSectionModalAt} />
                   <div
+                    key={sec.id}
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveSectionIndex(idx);
@@ -1938,13 +1895,8 @@ export function EditorStudio({
                       </div>
                     )}
                   </div>
-                  </React.Fragment>
                 );
               })}
-
-              {/* The slot under the last section. */}
-              <SectionInsertPoint index={sections.length} onInsert={openAddSectionModalAt} />
-
             </div>
           )}
         </ResponsiveCanvas>
@@ -2216,7 +2168,7 @@ export function EditorStudio({
           }
           hasSections={sections.length > 0}
           isSectionSelected={activeSectionIndex !== null}
-          onAddSection={() => setShowAddSectionModal(true)}
+          onAddSection={openAddSectionModal}
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={() => handleSwapVariant(1)}
           variantCount={activeVariantCount}

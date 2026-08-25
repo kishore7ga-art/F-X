@@ -173,6 +173,31 @@ export function sectionFromTemplate(template: LibrarySection, id: string): Edito
  * destroyed the first. A page may have two of anything except a navbar and a
  * footer.
  */
+/**
+ * The slot directly below a given section.
+ *
+ * "Add a section" places relative to what is selected, and the selection is
+ * held as an **id** rather than as an index. The list can change between
+ * opening the picker and choosing from it — a navbar or a footer is singular,
+ * so adding one removes the existing one first, and every index after that
+ * removal shifts by one. An index captured when the picker opened would then
+ * point one section too far, which is how "below this" quietly becomes "below
+ * the next one".
+ *
+ * Resolved against the list the section is actually going into, at the moment
+ * it goes in. An anchor that is no longer there — because it *was* the navbar
+ * being replaced — returns `null`, which hands the decision back to
+ * `placementIndex`'s ordinary rules rather than trusting a stale position.
+ */
+export function insertSlotAfter(
+  sections: EditorSection[],
+  anchorId: string | null,
+): number | null {
+  if (!anchorId) return null;
+  const index = sections.findIndex((section) => section.id === anchorId);
+  return index >= 0 ? index + 1 : null;
+}
+
 export function placementIndex(
   sections: EditorSection[],
   category: string,

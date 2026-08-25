@@ -133,6 +133,14 @@ one real pixel rather than 0.47 of one. The floating-dock spacer is outside the
 canvas for the same reason — inside, its 160px of clearance would shrink with
 the zoom and the dock would cover the end of the page.
 
+For the same reason there is **no editor chrome inside the canvas at all**. The
+hover "Add Section" button that used to appear in every seam between two
+sections is gone: adding a section is a toolbar action now, placing directly
+below the selected section (`insertSlotAfter` in `src/lib/section-variants.ts`).
+Inside a scaled canvas that button would have been drawn at 47% along with
+everything else, and it put a control in the one place the preview has to be
+nothing but the site.
+
 **The editor chrome is never scaled.** The toolbar, the drawers and the pane are
 all outside `ResponsiveCanvas`.
 

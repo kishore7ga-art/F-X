@@ -6,6 +6,7 @@ import {
   canMove,
   currentVariantIndex,
   moveSection,
+  insertSlotAfter,
   placementIndex,
   sectionFromTemplate,
   swapVariant,
@@ -190,6 +191,54 @@ describe("placementIndex — where a new section lands", () => {
   it("defaults to just above the footer when no slot was named", () => {
     assert.equal(placementIndex([nav, hero, foot], "courses", null), 2);
     assert.equal(placementIndex([nav, hero], "courses", null), 2);
+  });
+});
+
+describe("insertSlotAfter — Add Section places below the selection", () => {
+  const page = [nav, hero, about, foot];
+
+  it("returns the slot directly below the selected section", () => {
+    // The behaviour the button promises: select About, add, and the new section
+    // lands under About rather than at the end of the page.
+    assert.equal(insertSlotAfter(page, "about"), 3);
+    assert.equal(insertSlotAfter(page, "hero"), 2);
+  });
+
+  it("returns null when nothing is selected", () => {
+    // Which hands the decision to `placementIndex`, whose rules put a section
+    // above the footer. Not index 0, which would push it above the navbar.
+    assert.equal(insertSlotAfter(page, null), null);
+  });
+
+  it("returns null for an anchor that is no longer on the page", () => {
+    // The case an index could not survive: the anchor *was* the navbar, and
+    // adding a second navbar removed it before the splice. A stale index would
+    // point at whatever moved into that position.
+    assert.equal(insertSlotAfter(page.filter((s) => s.category !== "navbar"), "nav"), null);
+  });
+
+  it("resolves against the list handed to it, not the one on screen", () => {
+    // Same anchor, two lists, two answers — this is why the anchor is an id.
+    assert.equal(insertSlotAfter(page, "about"), 3);
+    assert.equal(insertSlotAfter([hero, about, foot], "about"), 2);
+  });
+
+  it("composes with placementIndex to land under the selection", () => {
+    // End to end, the way the editor does it: resolve the slot, then let the
+    // placement rules have the final say.
+    const slot = insertSlotAfter(page, "hero");
+    assert.equal(placementIndex(page, "courses", slot), 2);
+
+    // And the rules still win where they must: a footer goes last however it
+    // was anchored, and a navbar first.
+    assert.equal(placementIndex(page, "footer", insertSlotAfter(page, "hero")), page.length);
+    assert.equal(placementIndex(page, "navbar", insertSlotAfter(page, "about")), 0);
+  });
+
+  it("cannot place a section below the footer, even anchored to it", () => {
+    // Selecting the footer and pressing Add would otherwise ask for a slot past
+    // the end of the page.
+    assert.equal(placementIndex(page, "courses", insertSlotAfter(page, "foot")), 3);
   });
 });
 

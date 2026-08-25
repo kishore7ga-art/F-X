@@ -16,6 +16,7 @@ import {
   Check,
   Layers,
   Type,
+  Plus,
 } from "lucide-react";
 import type { ViewportState } from "@/lib/viewport-presets";
 import { rootDomain } from "@/lib/host-routing";
@@ -80,6 +81,7 @@ export function EditorToolbar({
   activeSectionTitle = "",
   hasSections = true,
   isSectionSelected = true,
+  onAddSection,
   onDuplicateSection,
   onSwapVariant,
   variantCount = 0,
@@ -266,6 +268,28 @@ export function EditorToolbar({
   const buttonHoverStyle = {
     transition: "all 0.15s ease",
   };
+
+  /**
+   * Add Section — the one place a section is added from.
+   *
+   * It used to be a hover button in every seam of the canvas: pass the pointer
+   * between two sections and a control appeared *inside the preview*, which is
+   * the one place editor chrome does not belong. The page read as a stack of
+   * blocks with gaps rather than as the website it is.
+   *
+   * Here it is instead, next to the other things you do to a section, and it
+   * places relative to the selection: the new section lands directly **below**
+   * the selected one. With nothing selected it falls back to the existing
+   * rules — a navbar to the top, a footer to the bottom, anything else above
+   * the footer.
+   *
+   * Labelled rather than an icon alone, and filled rather than ghosted, because
+   * it is the primary action on this bar. The title says where the section will
+   * land, so pressing it is never a guess.
+   */
+  const addSectionTitle = isSectionSelected && activeSectionTitle
+    ? `Add a section below ${activeSectionTitle}`
+    : "Add a section to this page";
 
   const isVertical = dockPosition === "left" || dockPosition === "right";
 
@@ -528,6 +552,28 @@ export function EditorToolbar({
                 title="Redo (Ctrl+Y)"
               >
                 <Redo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canRedo ? "#334155" : "#cbd5e1" }} />
+              </button>
+
+              {/* Add Section — icon only; the dock is 52px wide on end. */}
+              <button
+                onClick={onAddSection}
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  borderRadius: "50%",
+                  backgroundColor: "#2563eb",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  boxShadow: "0 2px 8px rgba(37,99,235,0.3)",
+                  ...buttonHoverStyle,
+                }}
+                title={addSectionTitle}
+              >
+                <Plus style={{ width: "16px", height: "16px", strokeWidth: 2.6, color: "#ffffff" }} />
               </button>
 
               {/* Duplicate Section Button */}
@@ -1010,6 +1056,33 @@ export function EditorToolbar({
                   title="Redo (Ctrl+Y)"
                 >
                   <Redo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canRedo ? "#334155" : "#cbd5e1" }} />
+                </button>
+
+                <button
+                  onClick={onAddSection}
+                  style={{
+                    height: "30px",
+                    padding: "0 12px 0 9px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    border: "none",
+                    borderRadius: "999px",
+                    backgroundColor: "#2563eb",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    fontFamily: "'Plus Jakarta Sans', 'Outfit', sans-serif",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 2px 8px rgba(37,99,235,0.3)",
+                    ...buttonHoverStyle,
+                  }}
+                  title={addSectionTitle}
+                >
+                  <Plus style={{ width: "15px", height: "15px", strokeWidth: 2.6, color: "#ffffff" }} />
+                  Add Section
                 </button>
 
                 <button
