@@ -60,6 +60,8 @@ import {
   type EditorFontId,
   type EditorThemeId,
 } from "@/lib/editor-themes";
+import { useViewport } from "@/hooks/useViewport";
+import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -204,7 +206,28 @@ export function EditorStudio({
   subdomain = "greenfield",
   collegeName = "Greenfield University",
 }: EditorStudioProps) {
-  const [viewportWidth, setViewportWidth] = useState<string>("100%");
+  /**
+   * The preview: which device, which width, and how large it is drawn.
+   *
+   * One object rather than three pieces of state, so it is impossible to hold a
+   * phone icon lit next to a 1920px canvas. It is also the only place any of it
+   * lives — nothing derives a second copy, and the site's saved content has no
+   * idea it exists.
+   *
+   * Deliberately **not** in MongoDB. Which width somebody is inspecting is a
+   * property of the person and the minute, not of the website: storing it with
+   * the site would make it a value two open tabs fought over, would sync one
+   * operator's phone view onto a colleague's screen, and — worst — would make
+   * switching to phone a *change to the page*, with a dirty flag and a save.
+   *
+   * The initial state is the plain default rather than the stored one, because
+   * the server has no localStorage and rendering the stored width here would
+   * produce markup the client immediately contradicts. It is read in the effect
+   * just below, after hydration.
+   */
+  const [viewport, setViewport] = useViewport();
+  const [canvasScale, setCanvasScale] = useState(1);
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>("domain");
@@ -322,7 +345,7 @@ export function EditorStudio({
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [sections, viewportWidth]);
+  }, [sections, viewport.width]);
 
   /** Which category's variant strip is open in the picker. One at a time. */
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -667,7 +690,7 @@ export function EditorStudio({
   useSectionRuntime({
     sections,
     scope: EDITOR_CANVAS_SCOPE,
-    simulatedWidth: viewportWidth,
+    simulatedWidth: `${viewport.width}px`,
     // The canvas ends where its sections end. See `sectionRuntimeCss`.
     fillViewport: false,
   });
@@ -1667,25 +1690,26 @@ export function EditorStudio({
       {/* Main Studio Canvas Workspace */}
       <main
         onClick={() => setActiveSectionIndex(null)}
-        className={`flex-1 w-full flex flex-col items-center justify-start cursor-pointer min-h-screen transition-all ${
-          viewportWidth === "100%" ? "bg-white p-0 m-0" : "bg-slate-100/90 px-4 sm:px-8 pt-0 mt-0"
-        }`}
+        className="flex-1 w-full flex flex-col items-stretch justify-start cursor-pointer min-h-screen bg-slate-100/90 px-4 sm:px-8 py-0"
       >
-        {/* Device-frame chrome on its own element: its border would otherwise come
-            out of the canvas's content box, so a "375px" preview would measure
-            373px to the container queries the sections are written against. */}
-        {/* Chrome shrink-wraps the canvas; the width goes on the canvas itself, or
-            its own border would come out of the content box the sections are
-            measured against. */}
-        <div
-          className={`transition-all duration-300 mx-auto max-w-full ${
-            viewportWidth === "100%"
-              ? "w-full rounded-none border-none shadow-none m-0 p-0"
-              : "w-fit shadow-2xl rounded-2xl border border-slate-300 mt-0 mb-4"
-          }`}
-        >
-        <div
-          /**
+        {/*
+          The site, at the width it says it is.
+
+          Everything about *fitting* that width onto this screen lives in
+          `ResponsiveCanvas` and is done with a transform, so the canvas keeps
+          its real CSS width and the sections resolve their container queries
+          against the number on the toolbar. The pane, the toolbar and the
+          drawers are all outside it and are never scaled — resizing the preview
+          must not resize the editor.
+        */}
+        <ResponsiveCanvas
+          viewport={viewport}
+          themeId={themeId}
+          fontId={fontId}
+          onScaleChange={setCanvasScale}
+          paneClassName="py-4"
+          chromeClassName="shadow-2xl rounded-2xl border border-slate-300 bg-white"
+          /*
            * The canvas hugs its sections; it does not reserve a screenful.
            *
            * `min-h-screen` is right on the published site — a short page should
@@ -1694,22 +1718,8 @@ export function EditorStudio({
            * impression: a tenant whose only section is a 102px header got that
            * header and then a full screen of flat black, which reads as a page
            * that failed to load rather than a site with one section in it.
-           *
-           * Sizing to content puts the editor's own surface directly under the
-           * last section, so what is dark on screen is a section, and what is
-           * not a section does not pretend to be one.
            */
-          /* The theme switch, in full. Every theme's tokens are already in the
-             injected stylesheet keyed on these two attributes, so changing one
-             retints every section under this element in the same frame — no
-             refetch, no section re-render, no reload, and identical behaviour
-             on every page because nothing here reads the page's sections. */
-          data-xite-theme={themeId}
-          data-xite-font={fontId}
-          className={`xite-site-canvas block max-w-full ${
-            viewportWidth === "100%" ? "w-full m-0 p-0" : "min-h-[40vh]"
-          }`}
-          style={{ width: viewportWidth, maxWidth: "100%" }}
+          canvasClassName="min-h-[40vh]"
         >
           {sections.length === 0 ? (
             /* Empty Canvas State
@@ -1937,15 +1947,18 @@ export function EditorStudio({
 
             </div>
           )}
-        </div>
+        </ResponsiveCanvas>
 
         {/* Clearance for the floating dock, and the only such clearance.
             `main` also carried `pb-64`, so 256px of padding and this 192px
             spacer both reserved room for the same dock — 448px of dead space
             under every page. The dock is ~96px tall and sits 32px from the
-            bottom, so 160px clears it with room to spare. */}
+            bottom, so 160px clears it with room to spare.
+
+            Outside the canvas, because it is chrome: within it the transform
+            would shrink the clearance in step with the zoom, so at 50% the dock
+            would sit over the last section. */}
         <div className="w-full h-40 shrink-0 pointer-events-none" />
-        </div>
       </main>
 
       {/* Select Section Category Modal */}
@@ -2191,8 +2204,9 @@ export function EditorStudio({
           onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
           isSettingsOpen={isSettingsOpen}
           onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
-          viewportWidth={viewportWidth}
-          setViewportWidth={setViewportWidth}
+          viewport={viewport}
+          setViewport={setViewport}
+          canvasScale={canvasScale}
           /* Empty when nothing is selected, so the toolbar can say so. This
              passed the literal string "Hero" instead: clicking blank canvas
              deselects — correctly — and the toolbar then named a section that

@@ -12,6 +12,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "check:shared": "node scripts/check-shared-files.mjs",
+    "test:canvas": "tsx scripts/test-responsive-canvas.ts",
     "prebuild": "node scripts/check-shared-files.mjs && node scripts/check-api-boundary.mjs",
     "check:boundary": "node scripts/check-api-boundary.mjs",
     "audit:responsive": "node scripts/audit-responsive.mjs",

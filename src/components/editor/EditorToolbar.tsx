@@ -13,27 +13,32 @@ import {
   ArrowDown,
   Trash2,
   X,
-  Monitor,
-  Tablet,
-  Smartphone,
   Check,
   Layers,
   Type,
 } from "lucide-react";
-import {
-  SECTION_DEVICE_PRESETS,
-  nextSectionDeviceWidth,
-  type SectionDevicePreset,
-} from "@/lib/section-runtime";
+import type { ViewportState } from "@/lib/viewport-presets";
 import { rootDomain } from "@/lib/host-routing";
+import { ViewportControl } from "./ViewportControl";
 
 interface EditorToolbarProps {
   subdomain?: string;
   onOpenSettings: () => void;
   onToggleDrawer: () => void;
   isSettingsOpen?: boolean;
-  viewportWidth: string;
-  setViewportWidth: (width: string) => void;
+  /**
+   * The device, the width and the zoom — one object.
+   *
+   * This was a bare `viewportWidth: string` carrying values like `"768px"` and
+   * `"100%"`, which is two different kinds of thing in one field: a real
+   * viewport width, and a sentinel meaning "no particular width". Everything
+   * downstream had to branch on the sentinel, and there was nowhere at all to
+   * put a zoom. See `@/lib/viewport-presets`.
+   */
+  viewport: ViewportState;
+  setViewport: (next: ViewportState) => void;
+  /** What "Fit" currently works out to, measured by the canvas. */
+  canvasScale?: number;
   activeSectionTitle?: string;
   hasSections?: boolean;
   isSectionSelected?: boolean;
@@ -66,8 +71,9 @@ export function EditorToolbar({
   onOpenSettings,
   onToggleDrawer,
   isSettingsOpen = false,
-  viewportWidth,
-  setViewportWidth,
+  viewport,
+  setViewport,
+  canvasScale = 1,
   // Empty, not a sample section name. The fallback below already says
   // "Select a section"; defaulting to "Hero 2" meant an omitted prop rendered
   // as a confident label for a section nobody had chosen.
@@ -254,39 +260,8 @@ export function EditorToolbar({
     onSwapVariant?.();
   };
 
-  // From the one device ladder in `@/lib/section-runtime`, shared with the site
-  // preview and the Admin. Three switchers offering three different notions of
-  // "Tablet" is how a section passes review at a width nobody ships.
   /** Two or more layouts is the minimum for a swap to be able to do anything. */
   const canSwap = isSectionSelected && variantCount > 1;
-
-  const MOBILE_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "mobile");
-  const TABLET_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "tablet");
-  const DESKTOP_SIZES = SECTION_DEVICE_PRESETS.filter((p) => p.group === "desktop");
-
-  const activeMobile = MOBILE_SIZES.find((s) => s.width === viewportWidth);
-  const activeTablet = TABLET_SIZES.find((s) => s.width === viewportWidth);
-  const activeDesktop = DESKTOP_SIZES.find((s) => s.width === viewportWidth);
-
-  /**
-   * One press of one device button.
-   *
-   * The three handlers were three hand-written index tables — `if (width ===
-   * "1200px") nextIdx = 2` — which had to be kept in step with the preset list
-   * by hand, and with the site preview's own copy of the same idea by review.
-   * `nextSectionDeviceWidth` is that rule, stated once, beside the ladder it
-   * walks.
-   */
-  const cycleDevice = (group: SectionDevicePreset["group"]) => {
-    const width = nextSectionDeviceWidth(group, viewportWidth);
-    const preset = SECTION_DEVICE_PRESETS.find((p) => p.width === width);
-    setViewportWidth(width);
-    showToast(preset ? `${preset.label} (${preset.width})` : width);
-  };
-
-  const handleMobileClick = () => cycleDevice("mobile");
-  const handleTabletClick = () => cycleDevice("tablet");
-  const handleDesktopClick = () => cycleDevice("desktop");
 
   const buttonHoverStyle = {
     transition: "all 0.15s ease",
@@ -684,65 +659,12 @@ export function EditorToolbar({
             >
               <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
 
-              {/* Mobile Resolution Button */}
-              <button
-                onClick={handleMobileClick}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: activeMobile ? "#2563eb" : "#475569",
-                  ...buttonHoverStyle,
-                }}
-                title="Mobile Resolution"
-              >
-                <Smartphone style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeMobile ? "#2563eb" : "#475569" }} />
-              </button>
-
-              {/* Tablet Resolution Button */}
-              <button
-                onClick={handleTabletClick}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: activeTablet ? "#2563eb" : "#475569",
-                  ...buttonHoverStyle,
-                }}
-                title="Tablet Resolution"
-              >
-                <Tablet style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeTablet ? "#2563eb" : "#475569" }} />
-              </button>
-
-              {/* Desktop Resolution Button */}
-              <button
-                onClick={handleDesktopClick}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: !activeTablet && !activeMobile ? "#2563eb" : "#475569",
-                  ...buttonHoverStyle,
-                }}
-                title="Desktop Resolution (100%)"
-              >
-                <Monitor style={{ width: "16px", height: "16px", strokeWidth: 2, color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }} />
-              </button>
+              <ViewportControl
+                viewport={viewport}
+                onChange={setViewport}
+                scale={canvasScale}
+                orientation="vertical"
+              />
 
               <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
             </div>
@@ -1040,80 +962,12 @@ export function EditorToolbar({
 
             {/* 3. Right Group: Viewport Switcher + Editing Tools */}
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
-                <button
-                  onClick={handleDesktopClick}
-                  style={{
-                    height: "32px",
-                    padding: "0 4px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    border: "none",
-                    borderBottom: !activeTablet && !activeMobile ? "2px solid #2563eb" : "2px solid transparent",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: !activeTablet && !activeMobile ? "#2563eb" : "#475569",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Desktop Resolution (100%)"
-                >
-                  <Monitor style={{ width: "16px", height: "16px", strokeWidth: 2, color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }} />
-                  <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: !activeTablet && !activeMobile ? 600 : 500, fontSize: "12px", color: !activeTablet && !activeMobile ? "#2563eb" : "#475569" }}>
-                    100%
-                  </span>
-                </button>
-
-                <button
-                  onClick={handleTabletClick}
-                  style={{
-                    height: "32px",
-                    padding: "0 4px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    border: "none",
-                    borderBottom: activeTablet ? "2px solid #2563eb" : "2px solid transparent",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: activeTablet ? "#2563eb" : "#475569",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Tablet Resolution"
-                >
-                  <Tablet style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeTablet ? "#2563eb" : "#475569" }} />
-                  {activeTablet && (
-                    <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: "12px", color: "#2563eb" }}>
-                      {viewportWidth}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleMobileClick}
-                  style={{
-                    height: "32px",
-                    padding: "0 4px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    border: "none",
-                    borderBottom: activeMobile ? "2.5px solid #2563eb" : "2px solid transparent",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: activeMobile ? "#2563eb" : "#475569",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Mobile Resolution"
-                >
-                  <Smartphone style={{ width: "16px", height: "16px", strokeWidth: 2, color: activeMobile ? "#2563eb" : "#475569" }} />
-                  {activeMobile && (
-                    <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: "12px", color: "#2563eb" }}>
-                      {viewportWidth}
-                    </span>
-                  )}
-                </button>
-              </div>
+              <ViewportControl
+                viewport={viewport}
+                onChange={setViewport}
+                scale={canvasScale}
+                orientation="horizontal"
+              />
 
               <div style={{ height: "18px", width: "1.5px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
 

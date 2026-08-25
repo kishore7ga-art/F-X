@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Monitor, Tablet, Smartphone, Edit3 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Edit3 } from "lucide-react";
 
 import { api } from "@/lib/api-client";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
-import {
-  sectionCanvasHtml,
-  nextSectionDeviceWidth,
-  sectionDeviceWidths,
-} from "@/lib/section-runtime";
+import { sectionCanvasHtml } from "@/lib/section-runtime";
+import { useViewport } from "@/hooks/useViewport";
+import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
+import { ViewportControl } from "@/components/editor/ViewportControl";
 import { normalizeSections, pickSections, type SectionItem } from "@/lib/site-sections";
 import { tokenizeSectionHtml } from "@/lib/editor-themes";
 import { resolveCategory } from "@/lib/sections/categories";
@@ -76,8 +75,22 @@ export function PreviewSiteViewer({
 }) {
   const [sections, setSections] = useState<SectionItem[]>(initialSections);
   const [loading, setLoading] = useState(initialSections.length === 0);
-  const [previewWidth, setPreviewWidth] = useState<string>("100%");
   const isLive = mode === "live";
+
+  /**
+   * The preview viewport — the same object, ladder and rules as the editor.
+   *
+   * Shared deliberately: this screen and the editor canvas are two views of one
+   * website, and a section signed off at "tablet" here has to mean the same
+   * width as "tablet" there. They had separate ladders and separate cycling
+   * code, so the two agreed only for as long as nobody edited one of them.
+   *
+   * Live mode never reads it. A visitor's browser *is* the viewport; there is
+   * nothing to simulate, no frame to draw and no scaling to do — see the render
+   * below, which keeps the published path exactly as it was.
+   */
+  const [viewport, setViewport] = useViewport();
+  const [canvasScale, setCanvasScale] = useState(1);
 
   // `sections` is replaced only when its contents actually change (see the fetch
   // effect below), so the effects can depend on it directly: they re-run when the
@@ -86,7 +99,11 @@ export function PreviewSiteViewer({
   // The environment, the responsive engine and every section's own CSS — shared
   // with the editor canvas, and built from the same functions the Admin's iframe
   // uses, so the three surfaces cannot drift apart.
-  useSectionRuntime({ sections, scope: CANVAS_SCOPE, simulatedWidth: previewWidth });
+  useSectionRuntime({
+    sections,
+    scope: CANVAS_SCOPE,
+    simulatedWidth: isLive ? null : `${viewport.width}px`,
+  });
 
   // ─── Section scripts ────────────────────────────────────────────────────────
   // A browser will not run a <script> that arrives through innerHTML, so each
@@ -234,22 +251,6 @@ export function PreviewSiteViewer({
     };
   }, [subdomain, isLive, initialSections]);
 
-  // One ladder, shared with the editor toolbar and the Admin preview, so "Tablet"
-  // is the same width wherever somebody checks a section.
-  const DESKTOP_WIDTHS = sectionDeviceWidths("desktop");
-  const TABLET_WIDTHS = sectionDeviceWidths("tablet");
-  const MOBILE_WIDTHS = sectionDeviceWidths("mobile");
-
-  const isDesktop = DESKTOP_WIDTHS.includes(previewWidth);
-  const isTablet = TABLET_WIDTHS.includes(previewWidth);
-  const isMobile = MOBILE_WIDTHS.includes(previewWidth);
-
-  // The same rule the editor toolbar presses, from the same place: stay in the
-  // group and you advance a width, switch group and you enter it at its first.
-  const handleDesktopClick = () => setPreviewWidth(nextSectionDeviceWidth("desktop", previewWidth));
-  const handleTabletClick = () => setPreviewWidth(nextSectionDeviceWidth("tablet", previewWidth));
-  const handleMobileClick = () => setPreviewWidth(nextSectionDeviceWidth("mobile", previewWidth));
-
   // Every hook above runs on every render. The loading branch below is deliberately
   // the last thing in this component: React counts hooks per render, and returning
   // early from the middle of the list — as this component used to — throws
@@ -296,6 +297,36 @@ export function PreviewSiteViewer({
     );
   }
 
+  const body = sections.map((sec, idx) => {
+      // The navbar, by what it actually is. `idx === 0` was one of the
+      // tests, so on a site with no navbar the first section — whatever it
+      // happened to be — was given the sticky header's z-index.
+      const isHeader = resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
+      void idx;
+      return (
+        <div
+          key={sec.id}
+          data-xite-section={sec.id}
+          style={{
+            // A header that sticks has to sit above what follows it; the rest
+            // stack in source order. No clipping — the Admin's iframe does not
+            // clip either, and `overflow: hidden` here cut off every shadow,
+            // dropdown and sticky element a section had.
+            //
+            // The rest carried a descending z-index, which stacked every
+            // section above the one after it — the reverse of how HTML paints,
+            // so an overlapping decoration rendered over its neighbour instead
+            // of under it. Natural order is both correct and what the Admin
+            // shows.
+            ...(isHeader ? { zIndex: 40 } : null),
+            position: "relative",
+          }}
+          className="w-full relative transition-all group section-wrapper-container"
+          dangerouslySetInnerHTML={{ __html: tokenizeSectionHtml(sectionCanvasHtml(sec.code)) }}
+        />
+      );
+    });
+
   return (
     <div className="min-h-screen w-full font-sans relative" style={{ backgroundColor: RUNTIME_PAGE_BG }}>
 
@@ -311,67 +342,13 @@ export function PreviewSiteViewer({
           }}
           className="bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-full shadow-[0_16px_40px_rgba(15,23,42,0.14),0_4px_12px_rgba(0,0,0,0.06)] flex items-center justify-center gap-1.5 select-none transition-all duration-200"
         >
-          {/* Vertical Divider Line */}
-          <div className="h-4.5 w-[1px] bg-slate-200 shrink-0 mx-0.5" />
+          <ViewportControl
+            viewport={viewport}
+            onChange={setViewport}
+            scale={canvasScale}
+            orientation="horizontal"
+          />
 
-          {/* 1. Desktop Button */}
-          <button
-            type="button"
-            onClick={handleDesktopClick}
-            className={`flex items-center gap-2 h-9 transition-all duration-200 cursor-pointer rounded-full text-xs ${
-              isDesktop
-                ? "bg-white border border-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(0,0,0,0.04)] px-3.5 text-slate-900 font-extrabold"
-                : "bg-transparent border border-transparent px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
-            }`}
-            title="Desktop Resolution (Click to Cycle 100% / 1200px / 1024px)"
-          >
-            <Monitor className={`w-4.5 h-4.5 shrink-0 ${isDesktop ? "text-slate-900" : "text-slate-500"}`} />
-            {isDesktop && (
-              <span className="font-mono font-extrabold text-[12.5px] text-slate-900 tracking-tight">
-                {previewWidth}
-              </span>
-            )}
-          </button>
-
-          {/* 2. Tablet Button */}
-          <button
-            type="button"
-            onClick={handleTabletClick}
-            className={`flex items-center gap-2 h-9 transition-all duration-200 cursor-pointer rounded-full text-xs ${
-              isTablet
-                ? "bg-white border border-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(0,0,0,0.04)] px-3.5 text-slate-900 font-extrabold"
-                : "bg-transparent border border-transparent px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
-            }`}
-            title="Tablet Resolution (Click to Cycle 768px / 640px)"
-          >
-            <Tablet className={`w-4.5 h-4.5 shrink-0 ${isTablet ? "text-slate-900" : "text-slate-500"}`} />
-            {isTablet && (
-              <span className="font-mono font-extrabold text-[12.5px] text-slate-900 tracking-tight">
-                {previewWidth}
-              </span>
-            )}
-          </button>
-
-          {/* 3. Mobile Button */}
-          <button
-            type="button"
-            onClick={handleMobileClick}
-            className={`flex items-center gap-2 h-9 transition-all duration-200 cursor-pointer rounded-full text-xs ${
-              isMobile
-                ? "bg-white border border-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08),0_1px_2px_rgba(0,0,0,0.04)] px-3.5 text-slate-900 font-extrabold"
-                : "bg-transparent border border-transparent px-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
-            }`}
-            title="Mobile Phone Resolution (Click to Cycle 375px / 425px)"
-          >
-            <Smartphone className={`w-4.5 h-4.5 shrink-0 ${isMobile ? "text-slate-900" : "text-slate-500"}`} />
-            {isMobile && (
-              <span className="font-mono font-extrabold text-[12.5px] text-slate-900 tracking-tight">
-                {previewWidth}
-              </span>
-            )}
-          </button>
-
-          {/* Vertical Divider */}
           <div className="h-4.5 w-[1px] bg-slate-200 shrink-0 mx-0.5" />
 
           {/* 4. Open Editor Studio Button */}
@@ -386,72 +363,50 @@ export function PreviewSiteViewer({
         </div>
       )}
 
-      {/* Main Live Site View */}
+      {/* The site itself */}
       <main
-        className={`w-full flex-1 flex flex-col items-center justify-start transition-all ${
-          previewWidth === "100%" ? "p-0 m-0" : "py-12 px-4 bg-slate-100/90"
-        } ${isLive ? "" : "pb-36"}`}
+        className={`w-full flex-1 flex flex-col items-stretch justify-start ${
+          isLive ? "p-0 m-0" : "py-8 px-4 pb-36 bg-slate-100/90"
+        }`}
       >
-        {/* The device frame is chrome, and it carries its own border — which would
-            otherwise come out of the canvas's content box and make a "375px"
-            preview report 373px to the container queries. Kept on a wrapper so
-            the canvas is exactly the width the label claims. */}
-        {/* The device frame is chrome and shrink-wraps the canvas. The width goes
-            on the canvas itself: a border on the element that carries the width
-            comes out of its content box, so a "375px" preview would be 373px to
-            the container queries — and at the 640px preset that is the mobile
-            breakpoint firing two pixels early. */}
-        <div
-          className={`transition-all duration-300 mx-auto max-w-full ${
-            previewWidth === "100%"
-              ? "w-full rounded-none border-none shadow-none m-0 p-0"
-              : "w-fit shadow-2xl rounded-2xl border border-slate-300 my-4 overflow-hidden"
-          }`}
-        >
-        <div
-          /* The tenant's theme, applied by attribute. Every theme's tokens are
-             already in the stylesheet `SectionRuntimeAssets` emitted, so this
-             costs nothing and cannot flash: the correct colours are resolved on
-             the first paint of the server-rendered HTML. */
-          data-xite-theme={themeId ?? undefined}
-          data-xite-font={fontId ?? undefined}
-          className={`xite-site-canvas block max-w-full ${
-            previewWidth === "100%" ? "w-full min-h-screen m-0 p-0" : "min-h-[75vh]"
-          }`}
-          style={{ width: previewWidth, maxWidth: "100%" }}
-        >
-          {sections.map((sec, idx) => {
-            // The navbar, by what it actually is. `idx === 0` was one of the
-            // tests, so on a site with no navbar the first section — whatever it
-            // happened to be — was given the sticky header's z-index.
-            const isHeader = resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
-            void idx;
-            return (
-              <div
-                key={sec.id}
-                data-xite-section={sec.id}
-                style={{
-                  // A header that sticks has to sit above what follows it; the rest
-                  // stack in source order. No clipping — the Admin's iframe does not
-                  // clip either, and `overflow: hidden` here cut off every shadow,
-                  // dropdown and sticky element a section had.
-                  //
-                  // The rest carried a descending z-index, which stacked every
-                  // section above the one after it — the reverse of how HTML paints,
-                  // so an overlapping decoration rendered over its neighbour instead
-                  // of under it. Natural order is both correct and what the Admin
-                  // shows.
-                  ...(isHeader ? { zIndex: 40 } : null),
-                  position: "relative",
-                }}
-                className="w-full relative transition-all group section-wrapper-container"
-                dangerouslySetInnerHTML={{ __html: tokenizeSectionHtml(sectionCanvasHtml(sec.code)) }}
-              />
-            );
-          })}
-          {!isLive && <div className="w-full h-36 bg-transparent pointer-events-none shrink-0" />}
-        </div>
-        </div>
+        {/*
+          Two paths, and the split is the point.
+
+          Live is a visitor's browser: the window *is* the viewport, so there is
+          nothing to simulate. It renders exactly what it always did — a plain
+          full-width canvas, no wrapper, no frame, no transform — because the one
+          thing a preview feature must never do is change the published site.
+
+          Preview is an inspection tool, so it gets the real thing: the canvas is
+          laid out at the chosen width whether or not that width fits on this
+          screen, and a transform makes it visible. The old code clamped it with
+          `maxWidth: "100%"`, which silently laid the site out for the pane and
+          then labelled it 1920.
+        */}
+        {isLive ? (
+          <div
+            /* The tenant's theme, applied by attribute. Every theme's tokens are
+               already in the stylesheet `SectionRuntimeAssets` emitted, so this
+               costs nothing and cannot flash: the correct colours are resolved on
+               the first paint of the server-rendered HTML. */
+            data-xite-theme={themeId ?? undefined}
+            data-xite-font={fontId ?? undefined}
+            className="xite-site-canvas block w-full min-h-screen m-0 p-0"
+          >
+            {body}
+          </div>
+        ) : (
+          <ResponsiveCanvas
+            viewport={viewport}
+            themeId={themeId}
+            fontId={fontId}
+            onScaleChange={setCanvasScale}
+            chromeClassName="shadow-2xl rounded-2xl border border-slate-300 bg-white"
+            canvasClassName="min-h-[75vh]"
+          >
+            {body}
+          </ResponsiveCanvas>
+        )}
       </main>
     </div>
   );
