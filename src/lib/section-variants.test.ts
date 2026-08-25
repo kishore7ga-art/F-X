@@ -6,6 +6,7 @@ import {
   canMove,
   currentVariantIndex,
   moveSection,
+  insertSection,
   insertSlotAfter,
   placementIndex,
   sectionFromTemplate,
@@ -191,6 +192,105 @@ describe("placementIndex — where a new section lands", () => {
   it("defaults to just above the footer when no slot was named", () => {
     assert.equal(placementIndex([nav, hero, foot], "courses", null), 2);
     assert.equal(placementIndex([nav, hero], "courses", null), 2);
+  });
+});
+
+describe("insertSection — pressing Add Section", () => {
+  const page = [nav, hero, about, foot];
+  const made = (over: Partial<EditorSection> = {}) =>
+    section({ id: "new", category: "gallery", title: "Gallery", ...over });
+
+  it("puts the new section directly below the selected one", () => {
+    // The behaviour the button promises, stated as one assertion.
+    const { sections, index } = insertSection(page, 1, made());
+    assert.deepEqual(sections.map((s) => s.id), ["nav", "hero", "new", "about", "foot"]);
+    assert.equal(index, 2);
+  });
+
+  it("places below the selection wherever the selection is", () => {
+    for (let i = 0; i < page.length; i++) {
+      const { sections } = insertSection(page, i, made());
+      const at = sections.findIndex((s) => s.id === "new");
+      // Except at the footer, which nothing may go below — see the case below.
+      const expected = page[i]!.category === "footer" ? 3 : i + 1;
+      assert.equal(at, expected, `selecting ${page[i]!.id} put it at ${at}`);
+    }
+  });
+
+  it("falls back to above the footer when nothing is selected", () => {
+    const { sections, index } = insertSection(page, null, made());
+    assert.equal(index, 3);
+    assert.deepEqual(sections.map((s) => s.id), ["nav", "hero", "about", "new", "foot"]);
+  });
+
+  it("survives a navbar being replaced in the same action", () => {
+    // The reason the anchor is an id and is resolved against the filtered list.
+    // Adding a navbar removes the old one, so every later index shifts by one;
+    // an index captured beforehand would point one section too far.
+    const { sections, index } = insertSection(page, 2, made({ category: "navbar", title: "Nav 2" }));
+    assert.equal(index, 0);
+    assert.deepEqual(sections.map((s) => s.id), ["new", "hero", "about", "foot"]);
+  });
+
+  it("keeps a footer last and a navbar first however it was anchored", () => {
+    assert.equal(insertSection(page, 1, made({ category: "footer" })).index, 3);
+    assert.equal(insertSection(page, 2, made({ category: "navbar" })).index, 0);
+  });
+
+  it("will not put a section below the footer", () => {
+    // Selecting the footer and pressing Add asks for a slot past the end.
+    const { sections } = insertSection(page, 3, made());
+    assert.equal(sections[sections.length - 1]!.id, "foot");
+  });
+
+  it("will not put a section above the navbar", () => {
+    // There is no slot 0 to ask for while a navbar holds it, but the clamp is
+    // what guarantees that rather than the absence of a control.
+    const { sections } = insertSection(page, 0, made());
+    assert.equal(sections[0]!.id, "nav");
+    assert.equal(sections[1]!.id, "new");
+  });
+
+  it("adds a second of an ordinary category instead of replacing the first", () => {
+    // Adding a second Courses section used to silently destroy the first.
+    const withGallery = [...page.slice(0, 3), section({ id: "g1", category: "gallery" }), foot];
+    const { sections } = insertSection(withGallery, 3, made());
+    assert.equal(sections.filter((s) => s.category === "gallery").length, 2);
+  });
+
+  it("never loses or duplicates a section", () => {
+    for (let i = 0; i < page.length; i++) {
+      for (const category of ["gallery", "navbar", "footer"] as const) {
+        const { sections } = insertSection(page, i, made({ category }));
+        assert.equal(new Set(sections.map((s) => s.id)).size, sections.length);
+        assert.ok(sections.some((s) => s.id === "new"));
+      }
+    }
+  });
+
+  it("reports the index the section is actually at", () => {
+    // The caller selects and scrolls with it, so a wrong index would select and
+    // scroll to the wrong section — the failure looking exactly like the one
+    // this whole rule exists to prevent.
+    for (let i = 0; i < page.length; i++) {
+      for (const category of ["gallery", "navbar", "footer"] as const) {
+        const { sections, index } = insertSection(page, i, made({ category }));
+        assert.equal(sections[index]!.id, "new", `${category} anchored at ${i}`);
+      }
+    }
+  });
+
+  it("works on a page with neither navbar nor footer", () => {
+    const bare = [hero, about];
+    assert.equal(insertSection(bare, 0, made()).index, 1);
+    assert.equal(insertSection(bare, null, made()).index, 2);
+  });
+
+  it("handles an empty page and an out-of-range selection", () => {
+    assert.equal(insertSection([], null, made()).index, 0);
+    // A selection index that no longer addresses anything reads as no selection
+    // rather than throwing.
+    assert.equal(insertSection(page, 99, made()).index, 3);
   });
 });
 

@@ -44,8 +44,7 @@ import {
 } from "@/lib/editor-api";
 import {
   moveSection,
-  insertSlotAfter,
-  placementIndex,
+  insertSection,
   sectionFromTemplate,
   swapVariant,
   variantsFor,
@@ -420,54 +419,24 @@ export function EditorStudio({
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
 
   /**
-   * Which section the one being picked should land under.
+   * The section just added, so the canvas can scroll to it.
    *
-   * ── Why an id and not an index ────────────────────────────────────────────
-   *
-   * The list can change between opening the picker and choosing from it. A
-   * navbar or a footer is singular, so adding one *removes* the existing one
-   * before the new section is spliced in — and every index after the removal
-   * shifts by one. An index captured when the picker opened would then point at
-   * the section after the intended one, which is how "add below this" silently
-   * becomes "add below the next one".
-   *
-   * An id survives that, and survives a reorder made while the picker is open.
-   * It is resolved against the list the section is actually going into, at the
-   * moment it goes in.
-   *
-   * `null` means nothing was selected when the button was pressed, and the
-   * existing placement rules apply: a navbar goes to the top, a footer to the
-   * bottom, anything else above the footer.
+   * Without this, "add below the selected section" was frequently invisible.
+   * Pick the navbar on a long page, add a section, and it lands at position two
+   * — correctly — while the viewport is still wherever it was, often several
+   * screens down. Nothing appears to happen, and the reasonable conclusion is
+   * that it went to the bottom.
    */
-  const [pendingInsertAfterId, setPendingInsertAfterId] = useState<string | null>(null);
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
 
   /**
-   * Opens the picker from the toolbar, anchored to the selection.
-   *
-   * There used to be a hover button in every seam between two sections, which
-   * meant the canvas grew a control the moment the pointer crossed it and the
-   * page read as a stack of blocks rather than as the website it is. One button
-   * in the toolbar, placing relative to what is selected, does the same job
-   * without putting editor chrome inside the preview.
-   */
-  const openAddSectionModal = () => {
-    setPendingInsertAfterId(
-      activeSectionIndex !== null ? sections[activeSectionIndex]?.id ?? null : null,
-    );
-    setShowAddSectionModal(true);
-  };
-
-  /**
-   * Closes the picker and forgets the slot.
+   * Closes the picker.
    *
    * Every dismissal goes through here — the close button, the backdrop, and
-   * each branch that finishes adding a section. A `pendingInsertAfterId` left
-   * behind by a cancelled press would silently anchor the *next* section the
-   * user adds to whatever was selected last time.
+   * each branch that finishes adding a section.
    */
   const closeAddSectionModal = () => {
     setShowAddSectionModal(false);
-    setPendingInsertAfterId(null);
   };
 
   // Right-Click Link / Button Navigation Popup State
@@ -636,6 +605,27 @@ export function EditorStudio({
   const showToast = (_msg?: string) => {
     // Toast popups completely removed
   };
+
+  /**
+   * Bring a newly added section into view.
+   *
+   * Deliberately after the section has rendered — the element does not exist in
+   * the frame the state changes, so this waits for the paint that follows.
+   * `block: "center"` rather than `"start"`: a section aligned to the top of the
+   * pane sits under the editor's own chrome on shorter windows.
+   */
+  useEffect(() => {
+    if (!justAddedId) return;
+
+    const frame = requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-xite-section="${justAddedId}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setJustAddedId(null);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [justAddedId]);
 
   // ─── The section environment ────────────────────────────────────────────────
   // The environment, the responsive engine and every section's own CSS. Shared
@@ -1400,32 +1390,55 @@ export function EditorStudio({
 
       const newSection = sectionFromTemplate(chosen, newSectionId());
 
-      // A navbar and a footer are singular: adding a second replaces the first,
-      // because two navbars is not a layout anyone means to build. Everything
-      // else stacks — adding a second Courses section used to silently destroy
-      // the first, which is not what "add" means.
-      const singular = newSection.category === "navbar" || newSection.category === "footer";
-      const base = singular ? sections.filter((sec) => sec.category !== newSection.category) : sections;
-
-      // Directly under the selected section. Resolved against `base` — the list
-      // after the singular filter — which is what makes "below this one"
-      // survive a navbar being replaced in the same action.
-      const slot = insertSlotAfter(base, pendingInsertAfterId);
-
-      // Computed once, from the list the section is actually going into. Doing
-      // it against the pre-filter list is what made the selection land on the
-      // wrong section when a navbar was replaced.
-      const at = placementIndex(base, newSection.category, slot);
-
-      const next = [...base];
-      next.splice(at, 0, newSection);
+      /**
+       * The placement rule, from `@/lib/section-variants`.
+       *
+       * It used to be written out here — the singular filter, the anchor
+       * lookup, the placement clamp and the splice, four steps whose
+       * interaction is the whole difficulty and which only unit-tested
+       * individually. `insertSection` is those four as one function, so the
+       * behaviour this screen promises is the behaviour under test.
+       *
+       * The selection is read **now**, not when the picker opened. It used to
+       * be captured on open and held in state, which put a copy of the
+       * selection somewhere it could go stale: between those two moments an
+       * inline text edit commits on the mousedown that opens the picker, the
+       * debounced save can land, and a page load can arrive and renumber
+       * sections. A held id that no longer resolves is indistinguishable from
+       * "nothing was selected", and sends the section to the end of the page —
+       * which is exactly what it was doing.
+       */
+      const { sections: next, index: at } = insertSection(sections, activeSectionIndex, newSection);
 
       setSectionsWithHistory(() => next);
       setActiveSectionIndex(at);
+      setJustAddedId(newSection.id);
       closeAddSectionModal();
-      setSwapNotice(`Added ${newSection.title}`);
+
+      /**
+       * Where it landed, not just that it landed.
+       *
+       * "Added Gallery" is true of every outcome, including the one the user is
+       * complaining about. Naming the position makes the placement rule
+       * checkable from the screen: if it says "below Navbar" and it is not
+       * below the navbar, that is a bug report anyone can write, and if it says
+       * "at the end" the user knows immediately that nothing was selected.
+       */
+      const landed =
+        next[at - 1] && at > 0
+          ? `below ${next[at - 1]!.title}`
+          : at === 0
+            ? "at the top"
+            : "at the end";
+      setSwapNotice(`Added ${newSection.title} ${landed}`);
     },
-    [libraryTemplatesFor, pendingInsertAfterId, sections, setSectionsWithHistory, setActiveSectionIndex],
+    [
+      activeSectionIndex,
+      libraryTemplatesFor,
+      sections,
+      setSectionsWithHistory,
+      setActiveSectionIndex,
+    ],
   );
 
   /**
@@ -2168,7 +2181,7 @@ export function EditorStudio({
           }
           hasSections={sections.length > 0}
           isSectionSelected={activeSectionIndex !== null}
-          onAddSection={openAddSectionModal}
+          onAddSection={() => setShowAddSectionModal(true)}
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={() => handleSwapVariant(1)}
           variantCount={activeVariantCount}

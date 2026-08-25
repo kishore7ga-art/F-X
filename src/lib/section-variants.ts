@@ -174,6 +174,46 @@ export function sectionFromTemplate(template: LibrarySection, id: string): Edito
  * footer.
  */
 /**
+ * Add a section to a page, below the selected one.
+ *
+ * The whole rule in one place, because it is three rules that interact and they
+ * were spread across a component callback where only the pieces were tested:
+ *
+ *   1. a navbar and a footer are singular — adding one removes the existing one
+ *      rather than making a page with two;
+ *   2. the new section goes directly below the selection;
+ *   3. except that a navbar is always first and a footer always last, and
+ *      nothing may be placed above the one or below the other.
+ *
+ * Rule 1 is what makes rule 2 subtle: the removal shifts every later index, so
+ * the anchor has to be resolved against the list the section is actually going
+ * into and not the one on screen. That is why `activeIndex` is turned into an
+ * id immediately and looked up again afterwards.
+ *
+ * Returns the new list and where the section landed, so the caller can select
+ * it, scroll to it and say where it went without recomputing any of this.
+ */
+export function insertSection(
+  sections: EditorSection[],
+  activeIndex: number | null,
+  newSection: EditorSection,
+): { sections: EditorSection[]; index: number } {
+  const anchorId = activeIndex !== null ? sections[activeIndex]?.id ?? null : null;
+
+  const singular = newSection.category === "navbar" || newSection.category === "footer";
+  const base = singular
+    ? sections.filter((section) => section.category !== newSection.category)
+    : sections;
+
+  const index = placementIndex(base, newSection.category, insertSlotAfter(base, anchorId));
+
+  const next = [...base];
+  next.splice(index, 0, newSection);
+
+  return { sections: next, index };
+}
+
+/**
  * The slot directly below a given section.
  *
  * "Add a section" places relative to what is selected, and the selection is
