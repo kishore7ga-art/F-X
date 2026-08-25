@@ -283,9 +283,14 @@ export function EditorToolbar({
    * rules — a navbar to the top, a footer to the bottom, anything else above
    * the footer.
    *
-   * Labelled rather than an icon alone, and filled rather than ghosted, because
-   * it is the primary action on this bar. The title says where the section will
-   * land, so pressing it is never a guess.
+   * An icon alone, styled exactly like the tools beside it. A filled blue pill
+   * with a label was tried and was wrong for this bar: every other control here
+   * is a bare 30px glyph, so the one coloured, labelled button read as something
+   * bolted on rather than as one of the tools. The row is scanned, not read.
+   *
+   * The `title` carries everything the label said and more — it names the
+   * section the new one will land under — so pressing it is never a guess, and
+   * `aria-label` says the same for anyone who never sees the tooltip.
    */
   const addSectionTitle = isSectionSelected && activeSectionTitle
     ? `Add a section below ${activeSectionTitle}`
@@ -564,16 +569,16 @@ export function EditorToolbar({
                   alignItems: "center",
                   justifyContent: "center",
                   border: "none",
-                  borderRadius: "50%",
-                  backgroundColor: "#2563eb",
+                  backgroundColor: "transparent",
                   cursor: "pointer",
+                  color: "#334155",
                   flexShrink: 0,
-                  boxShadow: "0 2px 8px rgba(37,99,235,0.3)",
                   ...buttonHoverStyle,
                 }}
                 title={addSectionTitle}
+                aria-label={addSectionTitle}
               >
-                <Plus style={{ width: "16px", height: "16px", strokeWidth: 2.6, color: "#ffffff" }} />
+                <Plus style={{ width: "17px", height: "17px", strokeWidth: 2.2, color: "#334155" }} />
               </button>
 
               {/* Duplicate Section Button */}
@@ -1061,28 +1066,21 @@ export function EditorToolbar({
                 <button
                   onClick={onAddSection}
                   style={{
+                    width: "30px",
                     height: "30px",
-                    padding: "0 12px 0 9px",
                     display: "flex",
                     alignItems: "center",
-                    gap: "5px",
+                    justifyContent: "center",
                     border: "none",
-                    borderRadius: "999px",
-                    backgroundColor: "#2563eb",
-                    color: "#ffffff",
+                    backgroundColor: "transparent",
                     cursor: "pointer",
-                    fontFamily: "'Plus Jakarta Sans', 'Outfit', sans-serif",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    letterSpacing: "-0.01em",
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 2px 8px rgba(37,99,235,0.3)",
+                    color: "#334155",
                     ...buttonHoverStyle,
                   }}
                   title={addSectionTitle}
+                  aria-label={addSectionTitle}
                 >
-                  <Plus style={{ width: "15px", height: "15px", strokeWidth: 2.6, color: "#ffffff" }} />
-                  Add Section
+                  <Plus style={{ width: "17px", height: "17px", strokeWidth: 2.2, color: "#334155" }} />
                 </button>
 
                 <button
