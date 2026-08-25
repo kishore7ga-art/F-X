@@ -208,6 +208,21 @@ export type DomainCheck = {
 
 const CHECK_ORDER: DomainStage[] = ["ownership", "routing", "edge", "tls"];
 
+/**
+ * The stage a domain must be at, when the server did not say.
+ *
+ * Mirrors `stageFromStatus` in the API for the same reason it exists there:
+ * only the two ends can be known. `VERIFIED` is one of three positions and the
+ * response does not say which, so it is reported as `routing` — the first of
+ * the three and the only one the tenant can act on. Guessing `tls` would tell
+ * somebody to wait when they need to act.
+ */
+function stageFromStatus(status: DomainStatus): DomainStage {
+  if (status === "ACTIVE") return "done";
+  if (status === "VERIFIED") return "routing";
+  return "ownership";
+}
+
 export function domainChecklist(domain: Domain): DomainCheck[] {
   const steps: { key: DomainStage; label: string; owner: DomainCheck["owner"] }[] = [
     { key: "ownership", label: "You own this domain", owner: "you" },
@@ -222,9 +237,24 @@ export function domainChecklist(domain: Domain): DomainCheck[] {
     return steps.map((step) => ({ ...step, state: "blocked" as const, detail: null }));
   }
 
-  const at = CHECK_ORDER.indexOf(domain.stage);
-  // `done` is not in CHECK_ORDER, so it lands past the end and every step reads
-  // as passed — which is exactly what `done` means.
+  /**
+   * `stage` comes from the server, and there are two ways it can be absent.
+   *
+   * A response from a deploy older than the field — including the window
+   * between the frontend and the backend rolling out, and any cached
+   * response — has no `stage` at all. `indexOf(undefined)` is -1, and reading
+   * -1 as "past the end" would mark **all four checks passed** on a domain that
+   * has verified nothing. That is the worst possible wrong answer here: it
+   * tells a tenant their domain is connected while it is not being served.
+   *
+   * So an unrecognised value is derived from `status` instead, the same way the
+   * server derives it for old rows. `done` genuinely is past the end, and is the
+   * one value outside `CHECK_ORDER` that means every step passed.
+   */
+  const known = domain.stage === "done" || CHECK_ORDER.includes(domain.stage);
+  const stage = known ? domain.stage : stageFromStatus(domain.status);
+
+  const at = CHECK_ORDER.indexOf(stage);
   const current = at < 0 ? CHECK_ORDER.length : at;
 
   return steps.map((step, index) => {

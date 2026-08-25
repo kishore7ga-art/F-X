@@ -184,11 +184,30 @@ describe("domainChecklist — which of the four is outstanding", () => {
     assert.equal(owners.tls, "automatic");
   });
 
-  it("renders a stage it does not recognise as finished rather than crashing", () => {
-    // `stage` arrives from the server. A value from a newer deploy must degrade
-    // to something sensible, not produce a checklist with nothing marked.
-    const checks = domainChecklist(domain({ stage: "something-new" as DomainStage }));
-    assert.equal(checks.length, 4);
+  it("never reports all four passed just because `stage` is missing", () => {
+    // The deploy window, and any cached response: a body from a build older
+    // than the field has no `stage`. `indexOf(undefined)` is -1, and reading -1
+    // as "past the end" would mark every check passed on a domain that has
+    // verified nothing — telling a tenant their domain is connected while it is
+    // not being served. It falls back to the status instead.
+    const missing = domainChecklist(
+      domain({ status: "PENDING_VERIFICATION", stage: undefined as unknown as DomainStage }),
+    );
+    assert.equal(missing[0]!.state, "current");
+    assert.ok(!missing.every((c) => c.state === "ok"));
+
+    // Same for a value from a build newer than this one.
+    const unknown = domainChecklist(
+      domain({ status: "VERIFIED", stage: "something-new" as DomainStage }),
+    );
+    assert.equal(unknown.length, 4);
+    assert.deepEqual(unknown.map((c) => c.state), ["ok", "current", "blocked", "blocked"]);
+  });
+
+  it("still reads a genuinely finished domain as finished with no stage", () => {
+    const checks = domainChecklist(
+      domain({ status: "ACTIVE", sslStatus: "ACTIVE", stage: undefined as unknown as DomainStage }),
+    );
     assert.ok(checks.every((c) => c.state === "ok"));
   });
 });
