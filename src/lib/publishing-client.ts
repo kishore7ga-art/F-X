@@ -44,12 +44,27 @@ export type DomainStatus =
 
 export type SslStatus = "NONE" | "PENDING" | "ACTIVE" | "ERROR";
 
+/**
+ * Which of the four checks a domain is waiting on. From the server, which ran
+ * them — never inferred here.
+ *
+ * `status` and `stage` answer different questions. `status` is how far along a
+ * domain is; `stage` is what is outstanding. Three quite different situations
+ * share the status `VERIFIED` — the records do not point here, the edge has not
+ * been told to serve the host, or the certificate has not been issued — and
+ * only the first is the tenant's to fix. Without this the screen could only
+ * print one sentence of prose and leave them to work out whether they were
+ * being asked to act or to wait.
+ */
+export type DomainStage = "ownership" | "routing" | "edge" | "tls" | "done";
+
 export type DnsRecord = { type: "TXT" | "CNAME" | "A"; name: string; value: string };
 
 export type Domain = {
   id: string;
   hostname: string;
   status: DomainStatus;
+  stage: DomainStage;
   sslStatus: SslStatus;
   isPrimary: boolean;
   verifiedAt: string | null;
@@ -92,28 +107,138 @@ export const disconnectDomain = (id: string) =>
 export function describeDomain(domain: Domain): {
   label: string;
   detail: string;
-  tone: "pending" | "progress" | "live" | "error";
+  tone: "pending" | "progress" | "live" | "error" | "off";
 } {
-  if (domain.status === "ACTIVE" && domain.sslStatus === "ACTIVE") {
-    return { label: "Connected", detail: "Serving over HTTPS.", tone: "live" };
-  }
-  if (domain.status === "VERIFIED") {
+  /**
+   * Switched off by a platform administrator, and therefore not served.
+   *
+   * This used to fall through to the bottom of the function, so a domain the
+   * platform had disabled told the tenant "Pending verification — add the TXT
+   * record below, then press Check". They would then add a record that was
+   * already there, press a button that returns 404 for a disconnected domain,
+   * and have no way to learn what had actually happened.
+   */
+  if (domain.status === "DISCONNECTED") {
     return {
-      label: "Almost there",
+      label: "Disconnected",
+      detail: domain.lastError ?? "This domain is not being served. Reconnect it to start again.",
+      tone: "off",
+    };
+  }
+
+  if (domain.status === "ACTIVE") {
+    /**
+     * ACTIVE without a certificate fell through to "Pending verification" too.
+     *
+     * The old first branch required `status === "ACTIVE" && sslStatus ===
+     * "ACTIVE"` and there was no second branch for ACTIVE, so a domain that had
+     * passed every check while the certificate was still being issued was
+     * described as not yet verified — the opposite end of the process from
+     * where it actually was.
+     */
+    if (domain.sslStatus === "ACTIVE") {
+      return { label: "Connected", detail: "Serving over HTTPS.", tone: "live" };
+    }
+    return {
+      label: "Certificate pending",
+      detail:
+        domain.lastError ??
+        "DNS is correct and the site is being served. The HTTPS certificate is still being issued.",
+      tone: "progress",
+    };
+  }
+
+  if (domain.status === "VERIFIED") {
+    /**
+     * One status, three situations, and only one of them is the tenant's to
+     * fix — so the label says which rather than "Almost there" for all three.
+     */
+    const label =
+      domain.stage === "routing"
+        ? "Waiting for DNS"
+        : domain.stage === "edge"
+          ? "Not being served yet"
+          : "Certificate pending";
+
+    return {
+      label,
       detail:
         domain.lastError ??
         "Ownership confirmed. Waiting for DNS to point here and for the certificate to be issued.",
       tone: "progress",
     };
   }
+
   if (domain.status === "FAILED") {
     return { label: "Failed", detail: domain.lastError ?? "Verification failed.", tone: "error" };
   }
+
   return {
     label: "Pending verification",
     detail: domain.lastError ?? "Add the TXT record below, then press Check.",
     tone: "pending",
   };
+}
+
+/**
+ * The four checks, and where this domain has got to.
+ *
+ * ── Why a checklist ────────────────────────────────────────────────────────
+ *
+ * Connecting a domain is four things that must all be true, and they belong to
+ * three different people: the tenant creates the records, the platform tells
+ * the edge to serve the host, and a certificate authority issues the
+ * certificate. The screen showed one line of prose, so a tenant could not tell
+ * whether they were being asked to do something or to wait — and "wait" and
+ * "act" are the only two answers that matter to them.
+ *
+ * The order is the order the server checks in, and a step after the current one
+ * is `blocked` rather than `failed`: nothing has been observed about it, because
+ * an earlier check stopped the pass. Reporting an unexamined step as failing
+ * would send somebody to fix a record that may well be correct.
+ */
+export type DomainCheck = {
+  key: DomainStage;
+  label: string;
+  /** Who has to do something about it, when it is the one outstanding. */
+  owner: "you" | "us" | "automatic";
+  state: "ok" | "current" | "blocked" | "failed";
+  detail: string | null;
+};
+
+const CHECK_ORDER: DomainStage[] = ["ownership", "routing", "edge", "tls"];
+
+export function domainChecklist(domain: Domain): DomainCheck[] {
+  const steps: { key: DomainStage; label: string; owner: DomainCheck["owner"] }[] = [
+    { key: "ownership", label: "You own this domain", owner: "you" },
+    { key: "routing", label: "DNS points to XITE", owner: "you" },
+    { key: "edge", label: "XITE is serving this address", owner: "us" },
+    { key: "tls", label: "HTTPS certificate issued", owner: "automatic" },
+  ];
+
+  // Disconnected is not a position in the sequence. Nothing is being checked,
+  // so nothing is claimed about any of the four.
+  if (domain.status === "DISCONNECTED") {
+    return steps.map((step) => ({ ...step, state: "blocked" as const, detail: null }));
+  }
+
+  const at = CHECK_ORDER.indexOf(domain.stage);
+  // `done` is not in CHECK_ORDER, so it lands past the end and every step reads
+  // as passed — which is exactly what `done` means.
+  const current = at < 0 ? CHECK_ORDER.length : at;
+
+  return steps.map((step, index) => {
+    if (index < current) return { ...step, state: "ok" as const, detail: null };
+    if (index > current) return { ...step, state: "blocked" as const, detail: null };
+
+    // The one being waited on. FAILED means it has been retried to exhaustion;
+    // anything else is still in progress and should not be shown as broken.
+    return {
+      ...step,
+      state: domain.status === "FAILED" ? ("failed" as const) : ("current" as const),
+      detail: domain.lastError,
+    };
+  });
 }
 
 /* ── Site settings ───────────────────────────────────────────────────────── */

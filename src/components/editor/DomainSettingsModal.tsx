@@ -8,6 +8,7 @@ import {
   addDomain,
   changePassword,
   describeDomain,
+  domainChecklist,
   detachPaymentMethod,
   disconnectDomain,
   getPublishStatus,
@@ -1242,7 +1243,16 @@ export function DomainSettingsModal({
                       ? { fg: "#B91C1C", bg: "#FEF2F2" }
                       : described.tone === "progress"
                         ? { fg: "#B45309", bg: "#FFFBEB" }
-                        : { fg: "#525252", bg: "#F5F5F5" };
+                        : described.tone === "off"
+                          ? { fg: "#7C3AED", bg: "#F5F3FF" }
+                          : { fg: "#525252", bg: "#F5F5F5" };
+
+                const checks = domainChecklist(domain);
+
+                // A disconnected domain has no outstanding check and its Check
+                // button returns 404, so the actions below are hidden for it
+                // rather than offered and then failing.
+                const off = domain.status === "DISCONNECTED";
 
                 return (
                   <div key={domain.id} style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -1260,7 +1270,98 @@ export function DomainSettingsModal({
                       </span>
                     </div>
 
-                    <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>{described.detail}</p>
+                    {/* Shown only where the checklist below does not already
+                        carry it. `described.detail` is `lastError`, which is
+                        also the detail on the step being waited on — printing
+                        both put the same sentence on the card twice. */}
+                    {off || domain.status === "ACTIVE" ? (
+                      <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>{described.detail}</p>
+                    ) : null}
+
+                    {/*
+                      The four checks, in the order the server runs them.
+
+                      Connecting a domain is four things that must all be true,
+                      and they belong to three different people: the tenant
+                      creates the records, XITE tells the edge to serve the
+                      host, and a certificate authority issues the certificate.
+                      A single line of prose could not say which of those was
+                      outstanding, so a tenant had no way to tell whether they
+                      were being asked to act or to wait — the only two answers
+                      that matter to them.
+
+                      Each row says who it belongs to for exactly that reason.
+                      The most common support question this screen produced was
+                      somebody re-checking their DNS for hours over a step that
+                      was never theirs.
+                    */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", padding: "4px 0" }}>
+                      {checks.map((check) => {
+                        const mark =
+                          check.state === "ok"
+                            ? { glyph: "\u2713", fg: "#047857", bg: "#ECFDF5" }
+                            : check.state === "failed"
+                              ? { glyph: "\u00d7", fg: "#B91C1C", bg: "#FEF2F2" }
+                              : check.state === "current"
+                                ? { glyph: "\u2022", fg: "#B45309", bg: "#FFFBEB" }
+                                : { glyph: "\u00b7", fg: "#A3A3A3", bg: "#FAFAFA" };
+
+                        return (
+                          <div key={check.key} style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "6px 0" }}>
+                            <span
+                              aria-hidden
+                              style={{
+                                width: "18px",
+                                height: "18px",
+                                borderRadius: "50%",
+                                backgroundColor: mark.bg,
+                                color: mark.fg,
+                                fontSize: "11px",
+                                fontWeight: 700,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                marginTop: "1px",
+                              }}
+                            >
+                              {mark.glyph}
+                            </span>
+
+                            <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "2px" }}>
+                              <span
+                                style={{
+                                  fontSize: "12px",
+                                  fontWeight: check.state === "current" || check.state === "failed" ? 600 : 500,
+                                  color: check.state === "blocked" ? "#A3A3A3" : "#171717",
+                                }}
+                              >
+                                {check.label}
+                                {/* Named only on the step being waited on. On a
+                                    finished step it is noise, and on a step
+                                    nothing has looked at yet it would imply
+                                    somebody is already working on it. */}
+                                {check.state === "current" || check.state === "failed" ? (
+                                  <span style={{ marginLeft: "8px", fontSize: "10px", fontWeight: 600, color: "#737373", backgroundColor: "#F5F5F5", padding: "2px 7px", borderRadius: "10px" }}>
+                                    {check.owner === "you"
+                                      ? "Your DNS provider"
+                                      : check.owner === "us"
+                                        ? "XITE is on it"
+                                        : "Issued automatically"}
+                                  </span>
+                                ) : null}
+                              </span>
+
+                              {check.detail ? (
+                                <span style={{ fontSize: "11px", color: "#737373", lineHeight: 1.55 }}>
+                                  {check.detail}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
                     {/* SSL is reported separately, because a domain can be
                         verified while no certificate exists yet — and telling a
@@ -1285,8 +1386,12 @@ export function DomainSettingsModal({
 
                     {/* Exactly the records this tenant must create, generated
                         per domain — not the fixed A/CNAME/TXT trio that used to
-                        be printed here with an invented token and a Vercel IP. */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        be printed here with an invented token and a Vercel IP.
+
+                        Hidden while the domain is disconnected: the token is no
+                        longer being checked against anything, so printing it
+                        invites somebody to edit their zone to no effect. */}
+                    <div style={{ display: off ? "none" : "flex", flexDirection: "column", gap: "8px" }}>
                       {[domain.dnsInstructions.verification, domain.dnsInstructions.routing].map((rec) => (
                         <div key={rec.type + "-" + rec.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "10px 14px", borderRadius: "8px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px", overflowX: "auto" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
@@ -1306,7 +1411,7 @@ export function DomainSettingsModal({
                       ))}
                     </div>
 
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <div style={{ display: off ? "none" : "flex", gap: "8px", flexWrap: "wrap" }}>
                       <button
                         type="button"
                         onClick={() => void handleVerifyDomain(domain.id)}
