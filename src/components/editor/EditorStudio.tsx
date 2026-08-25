@@ -132,13 +132,34 @@ function newSectionId(prefix = "sec"): string {
 /**
  * The seam between two sections, and the way a section is added at a position.
  *
- * Collapsed to a few pixels and invisible until the pointer is over it, so the
- * canvas still reads as the page it is rather than as a form with a control
- * between every block. It expands on hover because a 4px target is not one.
+ * ── Why it takes up no space ───────────────────────────────────────────────
  *
- * `stopPropagation` matters here: the section wrappers on either side select
+ * This used to be a real 8px-tall element that grew to 44px on hover, with a
+ * cyan hairline drawn across it. Both were visible: 8px of the canvas's own
+ * dark background sat between every pair of sections, so a page read as a stack
+ * of blocks separated by black lines rather than as the website it is. And
+ * because the height changed on hover, everything below the pointer jumped
+ * 36px whenever the mouse crossed a seam.
+ *
+ * So it is `h-0` now and contributes nothing to layout — sections sit flush,
+ * exactly as they do on the published site. The hover target and the button are
+ * both absolutely positioned, straddling the boundary, which means hovering
+ * changes what is *painted* and never what is *laid out*. Nothing moves.
+ *
+ * The hairline is gone entirely. Only the button appears, which is what it was
+ * for; a line across the page said "there is a control here" a second time.
+ *
+ * ── The two details that are load-bearing ─────────────────────────────────
+ *
+ * `stopPropagation` on the button: the section wrappers on either side select
  * themselves on click, and without it pressing the seam would select a section
  * and open the picker at the same time.
+ *
+ * `z-[45]`: above the navbar's z-index of 40, so the topmost seam — the one
+ * above a sticky header — is still reachable, and below the picker modal at 50.
+ * A click on the strip itself, rather than the button, is deliberately left to
+ * bubble: it reaches the canvas handler and deselects, which is what clicking
+ * anywhere else on empty canvas does.
  */
 function SectionInsertPoint({
   index,
@@ -148,14 +169,14 @@ function SectionInsertPoint({
   onInsert: (index: number) => void;
 }) {
   return (
-    <div
-      className="group/insert relative z-20 flex h-2 w-full items-center justify-center transition-all duration-150 hover:h-11"
-      data-xite-insert-at={index}
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-cyan-400/70 opacity-0 transition-opacity duration-150 group-hover/insert:opacity-100"
-      />
+    <div className="group/insert relative z-[45] h-0 w-full" data-xite-insert-at={index}>
+      {/*
+        The hover target, straddling the seam. 14px — seven either side — is
+        enough to hit without aiming, and small enough that it rarely swallows a
+        click meant for the section above or below. It paints nothing.
+      */}
+      <div className="absolute inset-x-0 -top-[7px] h-[14px]" aria-hidden />
+
       <button
         type="button"
         onClick={(e) => {
@@ -164,7 +185,7 @@ function SectionInsertPoint({
         }}
         title={`Add a section here (position ${index + 1})`}
         aria-label={`Add a section at position ${index + 1}`}
-        className="relative inline-flex items-center gap-1.5 rounded-full border border-cyan-400/60 bg-slate-900 px-3 py-1 text-[10px] font-extrabold tracking-tight text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/insert:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        className="absolute left-1/2 top-0 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full border border-cyan-400/60 bg-slate-900 px-3 py-1 text-[10px] font-extrabold tracking-tight text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/insert:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
         style={{ fontFamily: "'Plus Jakarta Sans', 'Outfit', system-ui, sans-serif" }}
       >
         <Plus className="h-3 w-3 stroke-[3] text-cyan-300" />
@@ -1872,8 +1893,15 @@ export function EditorStudio({
                     // No clipping: `overflow: hidden` cut off every shadow, dropdown
                     // and sticky element a section had, none of which the Admin's
                     // iframe clips.
+                    /* The selection ring is drawn *inside* the section's own
+                       box. `ring-offset-2 ring-offset-slate-900` used to paint
+                       2px of dark slate between the section and the ring —
+                       which on a light section reads as a black border, and
+                       with the seams now collapsed was the last thing still
+                       drawing a line between two sections. Inset also means
+                       selecting a section no longer changes its size. */
                     className={`w-full relative transition-all group section-wrapper-container ${
-                      activeSectionIndex === idx ? "ring-2 ring-cyan-500/80 ring-offset-2 ring-offset-slate-900" : "cursor-default"
+                      activeSectionIndex === idx ? "ring-2 ring-inset ring-cyan-500/80" : "cursor-default"
                     }`}
                   >
                     <div
