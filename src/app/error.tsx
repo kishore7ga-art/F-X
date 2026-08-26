@@ -37,6 +37,11 @@ export default function ErrorBoundary({
         >
           Try again
         </button>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages --
+            `/api/health` is a Route Handler that answers JSON, not a page.
+            `<Link>` would prefetch it and hand it to the client router, which
+            has no route to render for it — a full navigation is what is wanted,
+            and a full navigation is what an anchor does. */}
         <a
           href="/api/health"
           className="rounded-lg border px-4 py-2 text-sm font-semibold transition hover:bg-black/5"

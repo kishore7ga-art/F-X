@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MapPin, MessageCircleQuestion, Plus, Search, Trash2 } from "lucide-react";
 
 import type {
@@ -219,6 +219,25 @@ const ORGANIZATION_TYPES = [
 
 const text = (value: string): string | null => value.trim() || null;
 
+/** Everything the three cards edit, as one value. */
+type Draft = {
+  title: string;
+  description: string;
+  ogImageUrl: string;
+  geo: SiteGeo;
+  aeo: SiteAeo;
+};
+
+function draftFrom(settings: SiteSettings | null): Draft {
+  return {
+    title: settings?.seo.title ?? "",
+    description: settings?.seo.description ?? "",
+    ogImageUrl: settings?.seo.ogImageUrl ?? "",
+    geo: settings?.geo ? { ...EMPTY_GEO, ...settings.geo } : EMPTY_GEO,
+    aeo: settings?.aeo ? { ...EMPTY_AEO, ...settings.aeo } : EMPTY_AEO,
+  };
+}
+
 export function SeoSettingsPanel({
   settings,
   busy,
@@ -238,24 +257,32 @@ export function SeoSettingsPanel({
    * `settings`, because nothing writes back until the save round-trips. The
    * re-seed on every `settings` change is what makes a rejected save visibly
    * revert rather than leaving a value on screen that the site does not have.
+   *
+   * Adjusted during render against a sentinel rather than in an effect. An
+   * effect that calls `setState` runs *after* the browser has been given the
+   * previous values to paint, so the fields would show the stale draft for one
+   * frame after every save; React handles a render-phase update by re-running
+   * this component before committing anything, so there is no flash and no
+   * cascading render. This is the documented shape for "reset state when a prop
+   * changes", and it is what `react-hooks/set-state-in-effect` is pointing at.
    */
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [ogImageUrl, setOgImageUrl] = useState("");
-  const [geo, setGeo] = useState<SiteGeo>(EMPTY_GEO);
-  const [aeo, setAeo] = useState<SiteAeo>(EMPTY_AEO);
+  const [draft, setDraft] = useState<Draft>(() => draftFrom(settings));
+  const [seededFrom, setSeededFrom] = useState(settings);
 
-  useEffect(() => {
-    if (!settings) return;
-    setTitle(settings.seo.title ?? "");
-    setDescription(settings.seo.description ?? "");
-    setOgImageUrl(settings.seo.ogImageUrl ?? "");
-    setGeo(settings.geo ? { ...EMPTY_GEO, ...settings.geo } : EMPTY_GEO);
-    setAeo(settings.aeo ? { ...EMPTY_AEO, ...settings.aeo } : EMPTY_AEO);
-  }, [settings]);
+  if (settings !== seededFrom) {
+    setSeededFrom(settings);
+    setDraft(draftFrom(settings));
+  }
 
-  const patchGeo = (next: Partial<SiteGeo>) => setGeo((prev) => ({ ...prev, ...next }));
-  const patchAeo = (next: Partial<SiteAeo>) => setAeo((prev) => ({ ...prev, ...next }));
+  const { title, description, ogImageUrl, geo, aeo } = draft;
+
+  const setTitle = (value: string) => setDraft((prev) => ({ ...prev, title: value }));
+  const setDescription = (value: string) => setDraft((prev) => ({ ...prev, description: value }));
+  const setOgImageUrl = (value: string) => setDraft((prev) => ({ ...prev, ogImageUrl: value }));
+  const patchGeo = (next: Partial<SiteGeo>) =>
+    setDraft((prev) => ({ ...prev, geo: { ...prev.geo, ...next } }));
+  const patchAeo = (next: Partial<SiteAeo>) =>
+    setDraft((prev) => ({ ...prev, aeo: { ...prev.aeo, ...next } }));
 
   const saveSearch = () =>
     onSave(
