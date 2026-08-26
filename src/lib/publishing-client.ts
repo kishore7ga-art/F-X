@@ -273,8 +273,37 @@ export function domainChecklist(domain: Domain): DomainCheck[] {
 
 /* ── Site settings ───────────────────────────────────────────────────────── */
 
+/** Where the institution physically is. Null when it has not said. */
+export type SiteGeo = {
+  streetAddress: string | null;
+  locality: string | null;
+  region: string | null;
+  postalCode: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  telephone: string | null;
+  serviceAreas: string[];
+};
+
+/** What it declares itself to be, and the questions it has answered. */
+export type SiteAeo = {
+  organizationType: string | null;
+  legalName: string | null;
+  foundingYear: number | null;
+  sameAs: string[];
+  faqs: { question: string; answer: string }[];
+};
+
 export type SiteSettings = {
-  seo: { indexingEnabled: boolean; title: string | null; description: string | null };
+  seo: {
+    indexingEnabled: boolean;
+    title: string | null;
+    description: string | null;
+    ogImageUrl: string | null;
+  };
+  geo: SiteGeo | null;
+  aeo: SiteAeo | null;
   maintenance: { enabled: boolean; message: string | null };
   customCode: { headHtml: string | null; bodyEndHtml: string | null };
   updatedAt: string | null;
@@ -283,9 +312,17 @@ export type SiteSettings = {
   customCodeNotice: string | null;
 };
 
-/** A partial patch. Three independent cards edit this, so one must not clobber another. */
+/**
+ * A partial patch. Independent cards edit this, so one must not clobber another.
+ *
+ * `geo` and `aeo` are whole-object rather than partial: they are edited as a
+ * form, and a per-field merge cannot tell "the tenant cleared this" from "this
+ * card did not send it". Sending `null` clears the group.
+ */
 export type SiteSettingsPatch = {
   seo?: Partial<SiteSettings["seo"]>;
+  geo?: Partial<SiteGeo> | null;
+  aeo?: Partial<SiteAeo> | null;
   maintenance?: Partial<SiteSettings["maintenance"]>;
   customCode?: Partial<SiteSettings["customCode"]>;
 };

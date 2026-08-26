@@ -50,7 +50,10 @@ import {
   Plus,
   Trash2,
   Calendar,
+  Search,
 } from "lucide-react";
+import { SeoSettingsPanel } from "@/components/editor/SeoSettingsPanel";
+import { canonicalUrl } from "@/lib/seo";
 import { rootDomain } from "@/lib/host-routing";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -394,6 +397,7 @@ export function DomainSettingsModal({
 
   const NAV_ITEMS = [
     { id: "domain", label: "Custom Domain & SSL", icon: Globe },
+    { id: "seo", label: "Search & Location", icon: Search },
     { id: "deploy", label: "Production Deploy", icon: Rocket },
     { id: "security", label: "Password & Passkey Security", icon: Key },
     { id: "subscriptions", label: "Premium Subscriptions", icon: Crown },
@@ -797,6 +801,18 @@ export function DomainSettingsModal({
         {/* ========================================================= */}
         {/* TAB 4: ADVANCED SETTINGS & CUSTOM CODE */}
         {/* ========================================================= */}
+        {activeNav === "seo" && (
+          <SeoSettingsPanel
+            settings={settings}
+            busy={settingsBusy}
+            onSave={(patch, describe) => void saveSettings(patch, describe)}
+            /* The address these settings will actually appear at, from the same
+               function the published page uses to declare its canonical — so
+               the preview cannot show one URL while the site declares another. */
+            siteUrl={canonicalUrl(subdomain, "/home", savedDomain || null)}
+          />
+        )}
+
         {activeNav === "advanced" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>

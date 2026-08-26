@@ -42,6 +42,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 
 import {
+  deletePage as deletePageRequest,
   fetchDefaultWebsite,
   fetchWebsite,
   savePage as savePageRequest,
@@ -703,6 +704,42 @@ export function useEditorPages(initialSlug = "/home") {
     dispatch({ type: "createPage", pageId, title });
   }, []);
 
+  /**
+   * Delete a page, from the database as well as from this store.
+   *
+   * The drawer's delete button used to filter a local array and say "Page
+   * deleted successfully." Nothing called the API — `deletePage` in
+   * `editor-api.ts` had no caller at all — so the page was still in MongoDB,
+   * still published, and back on the list the moment the editor's own page
+   * list re-rendered over the local one. The tenant was told a thing that had
+   * not happened, twice: once by the toast and once by the page disappearing.
+   *
+   * The local removal happens only after the server confirms, so a failed
+   * delete leaves the page where it is rather than hiding a page that still
+   * exists. The caller gets the error to show.
+   */
+  const deletePage = useCallback(
+    async (slug: string): Promise<void> => {
+      const pageId = canonicalSlug(slug);
+      if (!pageId) throw new Error("That page has no address.");
+
+      /**
+       * A page nobody has saved yet is not in the database, so asking the
+       * server to delete it would 404 on a page the tenant can plainly see.
+       * Removing it locally is the whole of the work.
+       */
+      const known = latest.current.pages[pageId];
+      if (known && known.fresh) {
+        dispatch({ type: "removePage", pageId });
+        return;
+      }
+
+      await deletePageRequest(pageId);
+      dispatch({ type: "removePage", pageId });
+    },
+    [],
+  );
+
   const pages = useMemo(
     () => state.order.map((id) => state.pages[id]).filter((p): p is PageState => Boolean(p)),
     [state.order, state.pages],
@@ -719,6 +756,7 @@ export function useEditorPages(initialSlug = "/home") {
     selectPage,
     createPage,
     removePage: useCallback((slug: string) => dispatch({ type: "removePage", pageId: canonicalSlug(slug) }), []),
+    deletePage,
     selectSection: useCallback((index: number | null) => dispatch({ type: "selectSection", index }), []),
     mutateSections,
     persistOrder,

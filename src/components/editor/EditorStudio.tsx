@@ -2122,6 +2122,13 @@ export function EditorStudio({
              permanent. */
           editor.createPage(slug, name);
         }}
+        onPageDelete={async (slug) => {
+          /* The real thing: DELETE /api/v1/my-website/pages/:slug, then the
+             local store. The drawer used to filter its own array and say the
+             page was deleted while it was still in the database and still
+             published. */
+          await editor.deletePage(slug);
+        }}
         onPaletteSelect={handlePaletteSelect}
         onFontSelect={handleFontSelect}
         activePaletteId={themeId}

@@ -202,12 +202,12 @@ describe("buildSiteMetadata", () => {
     );
     assert.equal(meta.openGraph?.title, "Greenfield College");
     assert.equal((meta.openGraph as { siteName?: string }).siteName, "Greenfield College");
-    assert.equal(meta.twitter?.card, "summary");
+    assert.equal((meta.twitter as { card?: string })?.card, "summary");
   });
 
   it("upgrades the card only when there is an image to make large", () => {
     const meta = buildSiteMetadata(input({ siteOgImage: "https://cdn.example.com/og.png" }));
-    assert.equal(meta.twitter?.card, "summary_large_image");
+    assert.equal((meta.twitter as { card?: string })?.card, "summary_large_image");
   });
 
   it("clears the platform's own description and favicon", () => {

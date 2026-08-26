@@ -46,6 +46,15 @@ interface DrawerPanelProps {
    */
   activePaletteId?: string;
   activeFontId?: string;
+  /**
+   * Deletes a page for real — from the database, not just from this list.
+   *
+   * Returns a promise so the drawer can report a failure rather than showing
+   * "deleted" over a page that is still published. Absent means the drawer
+   * cannot delete, which is the honest state for a caller that has not wired
+   * it up.
+   */
+  onPageDelete?: (pageSlug: string) => Promise<void>;
   /** The pages that exist, from the editor's own store. */
   pages?: { slug: string; title: string }[];
   activePageSlug?: string;
@@ -77,6 +86,7 @@ export function DrawerPanel({
   onClose,
   onPageSelect,
   onPageCreate,
+  onPageDelete,
   onPaletteSelect,
   onFontSelect,
   activePaletteId = DEFAULT_THEME_ID,
@@ -157,14 +167,68 @@ export function DrawerPanel({
     showNotification(`Created new page: "${newPage.name}"`);
   };
 
-  const handleDeletePage = (e: React.MouseEvent, pageId: string) => {
+  /** Slugs currently being deleted, so the button cannot be pressed twice. */
+  const [deleting, setDeleting] = useState<string[]>([]);
+
+  /**
+   * Delete a page.
+   *
+   * This used to filter a local array and announce "Page deleted successfully."
+   * Nothing was called: the page stayed in the database, stayed published, and
+   * reappeared as soon as the editor's own page list re-rendered over the local
+   * one — because `visiblePages` merges the two, and only the local half had
+   * been touched.
+   *
+   * Two kinds of row are in that list and they need different handling. A
+   * *suggested* page — one of the eleven this drawer offers that the college
+   * has never created — exists only here, so removing it is a local edit. A
+   * page the college actually has goes to the server, and the row stays put
+   * until the server says it is gone.
+   */
+  const handleDeletePage = async (e: React.MouseEvent, page: PageItem) => {
     e.stopPropagation();
+
     if (visiblePages.length <= 1) {
       showNotification("Cannot delete the last remaining page.");
       return;
     }
-    setPages((prev) => prev.filter((p) => p.id !== pageId));
-    showNotification("Page deleted successfully.");
+
+    const isLive = (livePages ?? []).some((live) => live.slug === page.slug);
+
+    if (!isLive) {
+      setPages((prev) => prev.filter((p) => p.id !== page.id));
+      showNotification(`Removed "${page.name}" from the list.`);
+      return;
+    }
+
+    if (!onPageDelete) {
+      showNotification("Deleting pages is unavailable right now.");
+      return;
+    }
+
+    // Deleting a page deletes its sections with it, and there is no undo for
+    // that on the server. Worth one question.
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Delete "${page.name}" and everything on it? Visitors to ${page.slug} will get a "page not found".`,
+      )
+    ) {
+      return;
+    }
+
+    setDeleting((prev) => [...prev, page.slug]);
+    try {
+      await onPageDelete(page.slug);
+      setPages((prev) => prev.filter((p) => p.slug !== page.slug));
+      showNotification(`Deleted "${page.name}".`);
+    } catch (error) {
+      showNotification(
+        error instanceof Error ? `Could not delete that page: ${error.message}` : "Could not delete that page.",
+      );
+    } finally {
+      setDeleting((prev) => prev.filter((slug) => slug !== page.slug));
+    }
   };
 
   /**
@@ -413,16 +477,21 @@ export function DrawerPanel({
 
                     {visiblePages.length > 1 && (
                       <button
-                        onClick={(e) => handleDeletePage(e, page.id)}
+                        onClick={(e) => void handleDeletePage(e, page)}
+                        disabled={deleting.includes(page.slug)}
                         style={{
                           backgroundColor: "transparent",
                           border: "none",
                           color: "#94a3b8",
-                          cursor: "pointer",
+                          cursor: deleting.includes(page.slug) ? "wait" : "pointer",
                           padding: "4px",
                           borderRadius: "6px",
+                          opacity: deleting.includes(page.slug) ? 0.5 : 1,
                         }}
-                        title="Delete Page"
+                        title={
+                          deleting.includes(page.slug) ? "Deleting…" : `Delete ${page.name}`
+                        }
+                        aria-label={`Delete ${page.name}`}
                       >
                         <Trash2 style={{ width: "14px", height: "14px" }} />
                       </button>
