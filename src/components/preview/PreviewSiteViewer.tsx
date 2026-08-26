@@ -9,7 +9,12 @@ import { sectionCanvasHtml } from "@/lib/section-runtime";
 import { useViewport } from "@/hooks/useViewport";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { ViewportControl } from "@/components/editor/ViewportControl";
-import { normalizeSections, pickSections, type SectionItem } from "@/lib/site-sections";
+import {
+  findPage,
+  homePage,
+  pickPages,
+  type SectionItem,
+} from "@/lib/site-sections";
 import { tokenizeSectionHtml } from "@/lib/editor-themes";
 import { resolveCategory } from "@/lib/sections/categories";
 
@@ -46,11 +51,21 @@ export type PreviewSiteMode = "live" | "preview";
 export function PreviewSiteViewer({
   subdomain,
   mode = "preview",
+  pageSlug,
   initialSections = [],
   themeId = null,
   fontId = null,
 }: {
   subdomain: string;
+  /**
+   * Which of the site's pages this is.
+   *
+   * The refresh below re-reads the whole site and has to come back with the
+   * same page the server rendered. Without it the refresh picked `pages[0]`,
+   * so a visitor who opened `/about` watched it turn into the home page a
+   * moment after it loaded.
+   */
+  pageSlug?: string;
   /**
    * `live` is a visitor on the published site: no editor chrome, no polling.
    * `preview` is somebody checking their work, and keeps the device dock.
@@ -166,6 +181,56 @@ export function PreviewSiteViewer({
     return () => document.removeEventListener("click", onClick);
   }, []);
 
+  // ─── Links between the site's own pages ─────────────────────────────────────
+  /**
+   * A tenant's header links to `/about`. Whether that resolves depends on which
+   * of the site's two addresses the visitor is on, and the markup cannot know:
+   *
+   *   - on `greenfield.webxite.org`, `/about` is the right URL and the proxy
+   *     rewrites it onto `/site/greenfield/about`;
+   *   - on `webxite.org/site/greenfield`, `/about` leaves the site entirely and
+   *     lands on the platform, where it names a *college* called "about".
+   *
+   * So the link is resolved against the base the page is actually being served
+   * under. Nothing is rewritten on a tenant's own domain, where the base is
+   * empty and the markup was already correct.
+   *
+   * Delegated, like the hamburger above, because the markup is replaced whole
+   * on every refresh and a listener bound to an anchor would not survive it.
+   */
+  useEffect(() => {
+    const path = window.location.pathname;
+    const base = path.startsWith(`/site/${subdomain}`)
+      ? `/site/${subdomain}`
+      : path === `/${subdomain}` || path.startsWith(`/${subdomain}/`)
+        ? `/${subdomain}`
+        : "";
+
+    if (!base) return;
+
+    const onClick = (event: MouseEvent) => {
+      // A modified click is the visitor asking for a new tab or a download; the
+      // browser's own handling of it is correct and must not be replaced.
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const anchor = (event.target as HTMLElement | null)?.closest?.("a");
+      if (!anchor) return;
+      if (!anchor.closest(CANVAS_SCOPE)) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || !href.startsWith("/") || href.startsWith("//")) return;
+      if (anchor.target && anchor.target !== "_self") return;
+      if (href.startsWith(base + "/") || href === base) return;
+
+      event.preventDefault();
+      window.location.assign(base + href);
+    };
+
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [subdomain]);
+
   // ─── Published sections ─────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
@@ -189,7 +254,7 @@ export function PreviewSiteViewer({
      */
     const fetchSiteSections = async () => {
       try {
-        let pageSecs: unknown[] = [];
+        let pageSecs: SectionItem[] = [];
 
         const sources = [
           `/api/v1/public/site/${encodeURIComponent(subdomain)}`,
@@ -200,8 +265,18 @@ export function PreviewSiteViewer({
         for (const path of sources) {
           try {
             const data = await api<unknown>(path);
-            pageSecs = pickSections(data);
-            if (pageSecs.length > 0) break;
+            const pages = pickPages(data);
+            if (pages.length === 0) continue;
+
+            // The page the server rendered, not the first one in the config.
+            const page = pageSlug === undefined ? homePage(pages) : findPage(pages, pageSlug);
+
+            // A page that exists but is empty is a real answer and stops the
+            // search — falling through to the next source would serve the
+            // platform default's home page under this page's address.
+            if (!page) continue;
+            pageSecs = page.sections;
+            break;
           } catch {
             // 404 or an unreachable backend: try the next source, then fall
             // through to whatever the server render already put on the page.
@@ -216,7 +291,7 @@ export function PreviewSiteViewer({
            database is the only store — so reading it could only ever serve a
            copy from before that change, forever, with nothing to invalidate it.
            A stale answer is worse than the server's. */
-        const finalSecs = pageSecs.length > 0 ? normalizeSections(pageSecs) : initialSections;
+        const finalSecs = pageSecs.length > 0 ? pageSecs : initialSections;
 
         // Replace state only on a real change. An identical array restarts every
         // effect above — re-injecting styles and re-running section scripts once
@@ -249,7 +324,7 @@ export function PreviewSiteViewer({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [subdomain, isLive, initialSections]);
+  }, [subdomain, isLive, initialSections, pageSlug]);
 
   // Every hook above runs on every render. The loading branch below is deliberately
   // the last thing in this component: React counts hooks per render, and returning

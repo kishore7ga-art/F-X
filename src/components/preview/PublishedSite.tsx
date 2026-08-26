@@ -1,9 +1,11 @@
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { PreviewSiteViewer } from "@/components/preview/PreviewSiteViewer";
 import { SectionRuntimeAssets } from "@/components/preview/SectionRuntimeAssets";
 import { loadSiteView } from "@/lib/site-sections.server";
+import { isHomeSlug } from "@/lib/site-sections";
 
 /**
  * A published tenant site, with its settings applied.
@@ -30,11 +32,36 @@ async function requestHost(): Promise<string | undefined> {
  * was previously told "SEO indexing disabled!" by a toast and then indexed
  * anyway, because nothing read the toggle.
  */
-export async function publishedSiteMetadata(subdomain: string): Promise<Metadata> {
-  const { settings } = await loadSiteView(subdomain, await requestHost());
+export async function publishedSiteMetadata(
+  subdomain: string,
+  pageSlug?: string,
+): Promise<Metadata> {
+  const { settings, page, found } = await loadSiteView(subdomain, await requestHost(), pageSlug);
+
+  /**
+   * A page that does not exist is never indexable, whatever the site's setting
+   * says. Next renders `not-found` for it and this metadata is what a crawler
+   * reads while doing so.
+   */
+  if (!found) {
+    return { title: "Page not found", robots: { index: false, follow: false } };
+  }
+
+  const siteTitle = settings.seoTitle || "Official Campus Portal — Powered by XITE";
+
+  /**
+   * The page's own name, in front of the site's.
+   *
+   * Every page of every site on the platform previously carried one title —
+   * the site's — because there was only ever one page. Two pages with the same
+   * `<title>` are two pages a search engine has to guess between, and the guess
+   * is not ours to make for a tenant.
+   */
+  const title =
+    page && !isHomeSlug(page.slug) && page.title ? `${page.title} — ${siteTitle}` : siteTitle;
 
   return {
-    title: settings.seoTitle || "Official Campus Portal — Powered by XITE",
+    title,
     ...(settings.seoDescription ? { description: settings.seoDescription } : {}),
     robots: settings.indexingEnabled
       ? { index: true, follow: true }
@@ -86,15 +113,35 @@ function CustomCode({ html, id }: { html: string; id: string }) {
   return <div data-xite-custom-code={id} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-export async function PublishedSite({ subdomain }: { subdomain: string }) {
+export async function PublishedSite({
+  subdomain,
+  pageSlug,
+}: {
+  subdomain: string;
+  /** The path beneath the site's root, or undefined for the root itself. */
+  pageSlug?: string;
+}) {
   const host = await requestHost();
-  const { sections, settings, theme } = await loadSiteView(subdomain, host);
+  const { sections, settings, theme, page, found } = await loadSiteView(subdomain, host, pageSlug);
 
   // Checked before anything else renders. A maintenance page that appears below
   // the site it is replacing is not a maintenance page.
   if (settings.maintenanceEnabled) {
     return <MaintenancePage message={settings.maintenanceMessage} />;
   }
+
+  /**
+   * A slug this site does not publish gets a 404, not the home page.
+   *
+   * Serving the home page at every address is what the renderer did when it
+   * ignored pages entirely, and it is the worse failure of the two: a visitor
+   * who mistypes is told nothing is wrong, and a crawler indexes the same
+   * content under every URL it can invent.
+   *
+   * Checked after maintenance, so a tenant with their site switched off does
+   * not leak which of their pages exist.
+   */
+  if (!found) notFound();
 
   return (
     <>
@@ -103,6 +150,7 @@ export async function PublishedSite({ subdomain }: { subdomain: string }) {
       <PreviewSiteViewer
         subdomain={subdomain}
         mode="live"
+        pageSlug={page?.slug}
         initialSections={sections as never}
         themeId={theme.themeId}
         fontId={theme.fontId}

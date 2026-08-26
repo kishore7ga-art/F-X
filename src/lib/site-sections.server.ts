@@ -1,9 +1,15 @@
-import { normalizeSections, pickSections, type SectionItem } from "@/lib/site-sections";
+import {
+  findPage,
+  homePage,
+  pickPages,
+  type PageItem,
+  type SectionItem,
+} from "@/lib/site-sections";
 
 import { serverApi } from "./api/server";
 
 /**
- * A published site's sections, fetched during the server render.
+ * A published site's pages, fetched during the server render.
  *
  * The browser used to do this on mount, which meant the HTML a visitor received
  * was a spinner and the college's own site arrived a round trip later — a visible
@@ -13,8 +19,8 @@ import { serverApi } from "./api/server";
  * It tries the same three sources, in the same order, as the browser does: the
  * public endpoint, the editor endpoint, then the platform default. An empty array
  * is a real answer here — it means "the client should try" — and the viewer
- * carries on with its own fetch and its localStorage fallback, so a backend that
- * is briefly unreachable at render time costs a flash rather than a blank site.
+ * carries on with its own fetch, so a backend that is briefly unreachable at
+ * render time costs a flash rather than a blank site.
  */
 export async function loadSiteSections(subdomain: string): Promise<SectionItem[]> {
   return (await loadSiteView(subdomain)).sections;
@@ -53,17 +59,53 @@ export type SiteTheme = { themeId: string | null; fontId: string | null };
 
 export const DEFAULT_SITE_THEME: SiteTheme = { themeId: null, fontId: null };
 
-export type SiteView = { sections: SectionItem[]; settings: SiteSettings; theme: SiteTheme };
+export type SiteView = {
+  /** The requested page's sections, or the home page's when none was asked for. */
+  sections: SectionItem[];
+  /** Every page this site publishes, for navigation and for the sitemap. */
+  pages: PageItem[];
+  /** The page these sections came from, or `null` when the site has none. */
+  page: PageItem | null;
+  /**
+   * False when a page was asked for by slug and this site does not have it.
+   *
+   * The caller turns this into a 404. It is deliberately distinct from
+   * `pages.length === 0`, which means "this site publishes nothing at all" — a
+   * different sentence for the visitor and a different status for a crawler.
+   */
+  found: boolean;
+  settings: SiteSettings;
+  theme: SiteTheme;
+};
+
+const EMPTY_VIEW: SiteView = {
+  sections: [],
+  pages: [],
+  page: null,
+  found: true,
+  settings: DEFAULT_SITE_SETTINGS,
+  theme: DEFAULT_SITE_THEME,
+};
 
 /**
- * Sections and settings in one pass.
+ * One page of a published site, with the settings that govern it.
  *
  * `host` is forwarded so the backend can decide whether this tenant's custom
  * code is being served on their own domain, which is what determines whether
  * script in it is emitted or stripped. The decision is made there, not here:
  * the renderer is the party that would benefit from getting it wrong.
+ *
+ * `pageSlug` is the path the visitor asked for beneath the site's root —
+ * `/about`, `/admissions/fees` — or undefined for the root itself. It used not
+ * to be a parameter at all: every address of a tenant's site rendered
+ * `pages[0]`, so the pages the editor lets a tenant create had no address of
+ * their own and the links between them led nowhere.
  */
-export async function loadSiteView(subdomain: string, host?: string): Promise<SiteView> {
+export async function loadSiteView(
+  subdomain: string,
+  host?: string,
+  pageSlug?: string,
+): Promise<SiteView> {
   const query = host ? `?host=${encodeURIComponent(host)}` : "";
   const paths = [
     `/api/v1/public/site/${encodeURIComponent(subdomain)}${query}`,
@@ -76,13 +118,19 @@ export async function loadSiteView(subdomain: string, host?: string): Promise<Si
       const data = await serverApi<unknown>(path);
       if (!data) continue;
 
-      const sections = pickSections(data);
-      if (sections.length === 0) continue;
+      const pages = pickPages(data);
+      if (pages.length === 0) continue;
+
+      const page = pageSlug === undefined ? homePage(pages) : findPage(pages, pageSlug);
 
       const raw = (data as { settings?: Partial<SiteSettings> })?.settings;
       const theme = (data as { theme?: Partial<SiteTheme> })?.theme;
+
       return {
-        sections: normalizeSections(sections),
+        sections: page?.sections ?? [],
+        pages,
+        page,
+        found: page !== null,
         settings: raw ? { ...DEFAULT_SITE_SETTINGS, ...raw } : DEFAULT_SITE_SETTINGS,
         theme: theme ? { ...DEFAULT_SITE_THEME, ...theme } : DEFAULT_SITE_THEME,
       };
@@ -92,5 +140,5 @@ export async function loadSiteView(subdomain: string, host?: string): Promise<Si
     }
   }
 
-  return { sections: [], settings: DEFAULT_SITE_SETTINGS, theme: DEFAULT_SITE_THEME };
+  return EMPTY_VIEW;
 }
