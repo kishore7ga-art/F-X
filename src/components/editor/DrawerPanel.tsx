@@ -2,12 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import {
-  EDITOR_FONTS,
-  EDITOR_THEMES,
-  DEFAULT_FONT_ID,
-  DEFAULT_THEME_ID,
-} from "@/lib/editor-themes";
+import { EDITOR_FONTS, EDITOR_THEMES } from "@/lib/editor-themes";
 import {
   X,
   Home,
@@ -44,8 +39,8 @@ interface DrawerPanelProps {
    * "Academic Navy" the next time the drawer was opened — it had no idea what
    * the canvas was actually showing, and the two disagreed after any reload.
    */
-  activePaletteId?: string;
-  activeFontId?: string;
+  activePaletteId?: string | null;
+  activeFontId?: string | null;
   /**
    * Deletes a page for real — from the database, not just from this list.
    *
@@ -89,8 +84,16 @@ export function DrawerPanel({
   onPageDelete,
   onPaletteSelect,
   onFontSelect,
-  activePaletteId = DEFAULT_THEME_ID,
-  activeFontId = DEFAULT_FONT_ID,
+  /**
+   * Null when the tenant has not chosen one, and then nothing is ticked.
+   *
+   * These defaulted to the first theme and font, so the drawer ticked
+   * "Academic Navy" and "Inter" for every tenant who had never opened it —
+   * telling them they had made a choice they had not made, and disagreeing
+   * with the canvas, which now stamps no theme until one is picked.
+   */
+  activePaletteId = null,
+  activeFontId = null,
   pages: livePages,
   activePageSlug,
 }: DrawerPanelProps) {

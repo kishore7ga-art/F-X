@@ -50,8 +50,6 @@ import {
   variantsFor,
 } from "@/lib/section-variants";
 import {
-  DEFAULT_FONT_ID,
-  DEFAULT_THEME_ID,
   detokenizeSectionHtml,
   themeFontsHref,
   themeStylesheet,
@@ -541,8 +539,37 @@ export function EditorStudio({
    * currently open, so a multi-page site ended up half one theme and half
    * another. See `lib/editor-themes.ts`.
    */
-  const [themeId, setThemeId] = useState<EditorThemeId>(DEFAULT_THEME_ID);
-  const [fontId, setFontId] = useState<EditorFontId>(DEFAULT_FONT_ID);
+  /**
+   * The theme the tenant chose, or `null` for "they have not chosen one".
+   *
+   * ── Why null and not a default ─────────────────────────────────────────
+   *
+   * These started at `DEFAULT_THEME_ID` / `DEFAULT_FONT_ID`, and the loader
+   * below only overwrites them when the server actually returns a value — so a
+   * tenant who had never picked a theme got Academic Blue stamped onto the
+   * canvas anyway, permanently and invisibly.
+   *
+   * That made the editor the only surface on the platform that recolours a
+   * section nobody asked to recolour. The Admin previews a section in an
+   * iframe with no theme attribute; the published site stamps
+   * `data-xite-theme` only when the server has a value, so an unthemed tenant
+   * gets no attribute there either. The editor stamped one always.
+   *
+   * The visible result: a header authored in Dartmouth green rendered green in
+   * the Admin, green on the live site, and navy in the editor — because
+   * `var(--xite-header, #00693e)` resolves to the fallback where no theme
+   * defines `--xite-header`, and to the theme's own navy where one does.
+   *
+   * Fonts were the sharper half. `themeStylesheet` emits
+   * `[data-xite-font] :where(*) { font-family: var(--xite-font) !important }`,
+   * so the mere presence of the attribute overrode the typeface of every
+   * element in every section — which is why a section could look right in the
+   * Admin and wrong in the studio with nothing in its markup having changed.
+   *
+   * Null means the attribute is omitted, which is what both other surfaces do.
+   */
+  const [themeId, setThemeId] = useState<EditorThemeId | null>(null);
+  const [fontId, setFontId] = useState<EditorFontId | null>(null);
 
   useEffect(() => {
     let cancelled = false;

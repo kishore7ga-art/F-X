@@ -91,7 +91,7 @@ function StructuredData({ nodes }: { nodes: ReturnType<typeof buildStructuredDat
   return (
     <script
       type="application/ld+json"
-      // eslint-disable-next-line react/no-danger -- JSON-LD has no other insertion point; escaped by `jsonLdScript`.
+      // JSON-LD has no other insertion point; escaped by `jsonLdScript`.
       dangerouslySetInnerHTML={{ __html: payload }}
     />
   );
