@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
+import { ApiError, uploadImage } from "@/lib/api-client";
 import {
   Layout,
   X,
@@ -65,6 +66,9 @@ import { UserProfileMenu } from "./UserProfileMenu";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
 const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
+
+/** The server's own upload ceiling, so the answer arrives before the upload does. */
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /**
  * A section, as the editor holds it.
@@ -1092,6 +1096,71 @@ export function EditorStudio({
 
     showToastNotification("⚡ Image & Logo updated & auto-saved!");
   };
+
+  /**
+   * A picture the tenant chose, uploaded and referenced by URL.
+   *
+   * ── What this replaces ────────────────────────────────────────────────
+   *
+   * A `FileReader.readAsDataURL`, whose result went straight into the
+   * section's markup. The image was never uploaded: `uploadImage` in
+   * `api-client.ts` existed, worked, and had no caller anywhere in the
+   * codebase, so `POST /api/uploads` was never called by anything — along with
+   * the Docker volume behind it, the UUID filenames, and the sandbox CSP on
+   * the way back out.
+   *
+   * What went into the database instead was the entire file, base64-encoded,
+   * inline in the section HTML. That is about 1.37x the file's size, and it is
+   * stored inside `websiteConfig` — a subdocument of the college document,
+   * which also carries `publishedConfig`, and which MongoDB will not allow past
+   * 16MB. Four or five photographs and a tenant's saves start failing outright,
+   * with their work in the browser and nowhere else. Nothing warned about it:
+   * the backend's sanitiser permits `data:` on `<img>` deliberately, for the
+   * small inline thumbnails sections legitimately carry.
+   *
+   * Short of that ceiling it was still paid for on every request — the bytes
+   * ship inside the HTML, so they are re-sent to every visitor on every page
+   * load and can never be cached separately.
+   *
+   * ── The checks ────────────────────────────────────────────────────────
+   *
+   * Both mirror the server's, which is the real boundary; these exist so the
+   * answer arrives before a slow upload rather than after it.
+   */
+  const handleImageFile = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith("image/")) {
+        setSwapNotice("That file is not an image.");
+        return;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        const mb = (file.size / 1024 / 1024).toFixed(1);
+        setSwapNotice(`That image is ${mb}MB. The limit is 5MB.`);
+        return;
+      }
+
+      setSwapNotice(`Uploading ${file.name}…`);
+      try {
+        const { url } = await uploadImage(file);
+        handleUpdateAndSaveImage({ imageUrl: url });
+        setSwapNotice("Image updated.");
+      } catch (error) {
+        /**
+         * Said out loud, and the old image left alone.
+         *
+         * The section keeps the picture it had rather than being handed a
+         * broken one, and the tenant is told why — an upload that fails
+         * silently is indistinguishable from one that is still going.
+         */
+        setSwapNotice(
+          error instanceof ApiError
+            ? `Could not upload that image: ${error.message}`
+            : "Could not upload that image. Check your connection and try again.",
+        );
+      }
+    },
+    [handleUpdateAndSaveImage],
+  );
 
   // Auto-Update & Save Map Location, iFrame Embed, and Directions Link
   const handleUpdateAndSaveMap = (newParams: Partial<NonNullable<typeof mapPopup>>) => {
@@ -2562,15 +2631,9 @@ export function EditorStudio({
                     style={{ display: "none" }}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          if (typeof ev.target?.result === "string") {
-                            handleUpdateAndSaveImage({ imageUrl: ev.target.result });
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }
+                      // Clear it, so choosing the same file twice fires again.
+                      e.target.value = "";
+                      if (file) void handleImageFile(file);
                     }}
                   />
                 </label>
