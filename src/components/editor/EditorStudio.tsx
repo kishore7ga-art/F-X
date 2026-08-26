@@ -358,15 +358,6 @@ export function EditorStudio({
   const activeEditingSectionIdxRef = useRef<number | null>(null);
   const activeEditingContainerRef = useRef<HTMLElement | null>(null);
 
-  // Check if user has explicitly logged out
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (sessionStorage.getItem("xite_user_logged_out") === "true") {
-        window.location.href = "/login";
-      }
-    }
-  }, []);
-
   /**
    * Undo and redo, per page.
    *

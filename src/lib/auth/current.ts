@@ -42,13 +42,43 @@ function toPayload(college: {
   } as CurrentCollege;
 }
 
+/**
+ * The backend could not be asked who this is.
+ *
+ * Distinct from "this person is not signed in", and the distinction is the
+ * whole point. Both used to end at `return null`, and `requireCurrentCollege`
+ * turns null into `redirect("/login")` — so a backend that was restarting, or a
+ * container that had not finished starting, signed every open editor out and
+ * dropped them on a login form. Their cookie was still valid the whole time;
+ * the only thing that had happened was that we could not reach the service that
+ * reads it.
+ *
+ * Thrown rather than returned so it reaches the route's error boundary, which
+ * says the service is temporarily unreachable and offers to try again. That is
+ * the true statement. "Please sign in" is not.
+ */
+export class BackendUnavailableError extends Error {
+  constructor(readonly detail: string) {
+    super("Could not reach the service that signs you in.");
+    this.name = "BackendUnavailableError";
+  }
+}
+
 export async function getCurrentCollege(targetSubdomain?: string): Promise<CurrentCollege | null> {
   try {
     const payload = await serverApi<{ college: CurrentCollege }>("/api/v1/me");
     if (payload?.college) return payload.college;
   } catch (error) {
+    /**
+     * 401 is an answer: not signed in. Anything else is the absence of one.
+     *
+     * A transport failure (`status === 0`) or a 5xx means the service could not
+     * tell us, and open access — checked below — must not paper over it either:
+     * that would hand a stranger a real college's editor during an outage.
+     */
     if (error instanceof ServerApiError && error.status !== 401) {
       console.error(`[auth] could not resolve college: ${error.message}`);
+      throw new BackendUnavailableError(error.message);
     }
   }
 
