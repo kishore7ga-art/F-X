@@ -34,12 +34,20 @@ export function SectionRuntimeAssets() {
       <link rel="stylesheet" href={themeFontsHref()} />
       {/*
         All four themes' tokens, in the first byte of HTML.
+
         A `data-xite-theme` attribute on the canvas selects between them, so a
         published site renders in its tenant's theme on the very first paint —
         no flash of the default palette, and no client-side pass over the
         section markup. The section HTML itself is exactly what was published:
         the colours resolve through `var()` with the authored value as the
-        fallback, so a site with no theme set renders identically to before.
+        fallback.
+
+        The last sentence of this comment used to be "so a site with no theme
+        set renders identically to before", and that was not true: the
+        stylesheet opened with an *ungated* block of the default theme's tokens,
+        so the variables were defined on every canvas and the fallback was never
+        reached. A site with no theme rendered in Academic Blue. It is true now
+        — every token block requires the attribute.
       */}
       {/* Generated from static constants in `editor-themes.ts`; no request
           data reaches it. */}

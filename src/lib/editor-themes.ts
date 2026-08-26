@@ -453,8 +453,33 @@ export function themeStylesheet(scope: string): string {
       .map(([name, value]) => `  --xite-${kebab(name)}: ${value};`)
       .join("\n");
 
-  blocks.push(`${scope} {\n${declarations(themeById(DEFAULT_THEME_ID))}\n}`);
-
+  /**
+   * No unconditional default block. This is the fix, and it was the bug.
+   *
+   * This function used to open with the default theme's tokens on the bare
+   * scope - `.xite-site-canvas { --xite-header: #0d1527; ... }` - so every
+   * token was defined on every canvas whether or not a tenant had ever chosen
+   * a theme.
+   *
+   * That is what made a section look one way in the Admin and another way
+   * everywhere else, for every section, permanently. A tokenised colour is
+   * `var(--xite-header, <authored>)`: the author's value survives as the
+   * fallback and is used wherever the variable is undefined. The Admin
+   * previews in an iframe carrying no theme layer at all, so the fallback won
+   * and the section rendered as authored. The editor and the published site
+   * both inject this stylesheet, so the variable was always defined and the
+   * default palette always won - a green header came out navy, a maroon one
+   * came out navy, and no setting a tenant could see was responsible.
+   *
+   * Dropping the `data-xite-theme` attribute was not enough on its own,
+   * because this block was never gated on that attribute in the first place.
+   *
+   * Tokens come only from the four blocks below, each of which requires
+   * `[data-xite-theme="..."]`. No theme chosen, no tokens, and every
+   * `var(--xite-..., <authored>)` resolves to what the author wrote - which is
+   * what the Admin shows, and what the comment in `SectionRuntimeAssets` has
+   * always claimed already happened.
+   */
   for (const theme of EDITOR_THEMES) {
     blocks.push(`${scope}[data-xite-theme="${theme.id}"] {\n${declarations(theme)}\n}`);
   }

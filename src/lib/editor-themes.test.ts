@@ -115,9 +115,39 @@ describe("themeStylesheet — one attribute switches everything", () => {
     }
   });
 
-  it("emits the default's tokens on the bare scope, so an unset canvas still resolves", () => {
+  /**
+   * This test used to assert the opposite, and the behaviour it protected was
+   * the bug.
+   *
+   * A bare `.xite-site-canvas { --xite-accent: … }` block defined every token
+   * on every canvas, whether or not a tenant had chosen a theme. Since a
+   * tokenised colour is `var(--xite-accent, <what the author wrote>)`, having
+   * the variable defined means the default palette wins and the author's value
+   * — the fallback — is never reached.
+   *
+   * The Admin previews a section in an iframe that carries no theme layer, so
+   * the fallback won there and the section rendered as authored. The editor
+   * and the published site both inject this stylesheet, so they did not. Every
+   * section with a tokenised colour therefore looked one way in the Admin and
+   * another way everywhere else, permanently, with no setting responsible.
+   */
+  it("defines no tokens at all until a theme is chosen", () => {
     const defaults = themeById(DEFAULT_THEME_ID);
-    assert.ok(css.includes(`.xite-site-canvas {`));
+    assert.ok(
+      !new RegExp(String.raw`\.xite-site-canvas\s*\{`).test(css),
+      "a bare scope block would apply the default palette to every unthemed canvas",
+    );
+    // The default's own values still appear — inside its attribute block.
+    const bareAccent = css.split(`[data-xite-theme="${DEFAULT_THEME_ID}"]`)[0] ?? "";
+    assert.ok(
+      !bareAccent.includes(`--xite-accent: ${defaults.tokens.accent};`),
+      "the default accent is declared before any attribute gate",
+    );
+  });
+
+  it("still applies the default palette when it is actually chosen", () => {
+    const defaults = themeById(DEFAULT_THEME_ID);
+    assert.ok(css.includes(`.xite-site-canvas[data-xite-theme="${DEFAULT_THEME_ID}"]`));
     assert.ok(css.includes(`--xite-accent: ${defaults.tokens.accent};`));
   });
 
