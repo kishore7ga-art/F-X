@@ -167,6 +167,17 @@ export type EditorFont = {
   stack: string;
   /** The Google Fonts families to load, or none for a system stack. */
   families: readonly string[];
+  /**
+   * The weight range this family actually ships, in Google Fonts' syntax.
+   *
+   * Per family rather than one list for all three, for two reasons and both of
+   * them bit. Asking for weights a family does not have is not harmless:
+   * `Playfair+Display:wght@100..900` is answered with **HTTP 400**, and since
+   * every family is requested in one URL, that one bad range would take down
+   * the stylesheet for all of them. And a range that is narrower than what the
+   * family ships is the thin-font bug — see `themeFontsHref`.
+   */
+  weights: string;
 };
 
 export const EDITOR_FONTS: readonly EditorFont[] = [
@@ -176,6 +187,8 @@ export const EDITOR_FONTS: readonly EditorFont[] = [
     description: "Clean modern sans-serif. High readability at small sizes.",
     stack: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
     families: ["Inter"],
+    // Variable, 100 to 900. One file covers the whole range.
+    weights: "100..900",
   },
   {
     id: "outfit",
@@ -183,6 +196,7 @@ export const EDITOR_FONTS: readonly EditorFont[] = [
     description: "Geometric sans with a technical feel.",
     stack: "'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif",
     families: ["Outfit"],
+    weights: "100..900",
   },
   {
     id: "serif",
@@ -190,6 +204,9 @@ export const EDITOR_FONTS: readonly EditorFont[] = [
     description: "Classic academic serif. Formal, high contrast.",
     stack: "'Playfair Display', Georgia, 'Times New Roman', serif",
     families: ["Playfair Display"],
+    // Playfair Display has no weight below 400, and asking for one is a 400
+    // from Google Fonts rather than a clamp.
+    weights: "400..900",
   },
 ] as const;
 
@@ -457,11 +474,39 @@ export function themeStylesheet(scope: string): string {
   return blocks.join("\n\n");
 }
 
-/** The Google Fonts URL for every family the three packs need, loaded once. */
+/**
+ * The Google Fonts URL for every family the three packs need, loaded once.
+ *
+ * ── The thin-font bug ─────────────────────────────────────────────────────
+ *
+ * This asked for `wght@400;500;600;700;800;900` — for every family, from one
+ * hard-coded list. So 100, 200 and 300 were never downloaded, and any section
+ * authored with `font-weight: 300` had no font file to render in. The browser
+ * does not report that. It either synthesises a light face by thinning the
+ * outlines of the regular one, which looks wrong in a way that is hard to
+ * name, or it simply uses the regular weight, so text the author made light
+ * came out at normal weight and the setting appeared to do nothing.
+ *
+ * The ranges come from each font's own entry now, because the two failure
+ * modes pull in opposite directions: too narrow and light weights silently
+ * vanish, too wide and Google Fonts answers **HTTP 400** — Playfair Display
+ * has nothing below 400 — which, since all three families share one URL,
+ * would leave every page on the platform with no webfont at all.
+ *
+ * These are variable fonts, so the wider range costs no extra requests and
+ * very little extra weight: it widens the axis inside the same file.
+ */
 export function themeFontsHref(): string {
-  const families = Array.from(new Set(EDITOR_FONTS.flatMap((f) => f.families)));
-  const query = families
-    .map((family) => `family=${family.replace(/\s+/g, "+")}:wght@400;500;600;700;800;900`)
-    .join("&");
-  return `https://fonts.googleapis.com/css2?${query}&display=swap`;
+  const seen = new Set<string>();
+  const parts: string[] = [];
+
+  for (const font of EDITOR_FONTS) {
+    for (const family of font.families) {
+      if (seen.has(family)) continue;
+      seen.add(family);
+      parts.push(`family=${family.replace(/\s+/g, "+")}:wght@${font.weights}`);
+    }
+  }
+
+  return `https://fonts.googleapis.com/css2?${parts.join("&")}&display=swap`;
 }

@@ -24,10 +24,18 @@ export default function RootLayout({
       className="min-h-screen antialiased dark scroll-smooth bg-black text-white w-full max-w-full font-sans"
     >
       <head>
+        {/* The full weight range each family actually ships, not a list of the
+            six somebody needed at the time. Inter started at 300 and the other
+            two at 500, so `font-light` and `font-thin` anywhere in the app had
+            no font file and were either synthesised or silently rendered at the
+            nearest weight. The ranges differ per family because they have to:
+            Plus Jakarta Sans has nothing outside 200-800, and asking for more
+            is an HTTP 400 for the whole stylesheet, all three families with it.
+            Variable fonts, so a wider axis is the same file. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=Outfit:wght@500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@200..800&family=Outfit:wght@100..900&display=swap"
           rel="stylesheet"
         />
         <link

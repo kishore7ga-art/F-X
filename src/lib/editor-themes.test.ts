@@ -8,6 +8,7 @@ import {
   fontById,
   themeById,
   detokenizeSectionHtml,
+  themeFontsHref,
   themeStylesheet,
   tokenizeCss,
   tokenizeSectionHtml,
@@ -164,5 +165,56 @@ describe("detokenizeSectionHtml — what is saved is what was authored", () => {
       stored = detokenizeSectionHtml(tokenizeSectionHtml(stored));
     }
     assert.equal(stored, authored);
+  });
+});
+
+/**
+ * The webfont request.
+ *
+ * Both failure modes here are silent from the browser's side, which is why
+ * they are asserted rather than eyeballed: too narrow a range and a light
+ * weight has no font file, so the browser synthesises or substitutes one and
+ * the author's setting appears not to work; too wide and Google Fonts answers
+ * HTTP 400 for the whole stylesheet — every family in it, because they share
+ * one URL.
+ */
+describe("themeFontsHref — every weight a family actually ships", () => {
+  it("asks for the full range of the variable sans faces", () => {
+    const href = themeFontsHref();
+    assert.match(href, /family=Inter:wght@100\.\.900/);
+    assert.match(href, /family=Outfit:wght@100\.\.900/);
+  });
+
+  it("does not ask Playfair Display for a weight it does not have", () => {
+    // `Playfair+Display:wght@100..900` is answered with HTTP 400, and since all
+    // three families are requested in one URL that would leave the platform
+    // with no webfont at all.
+    const href = themeFontsHref();
+    assert.match(href, /family=Playfair\+Display:wght@400\.\.900/);
+    assert.ok(!/Playfair\+Display:wght@100/.test(href));
+  });
+
+  it("names every family exactly once", () => {
+    const families = themeFontsHref().match(/family=/g) ?? [];
+    const unique = new Set(
+      (themeFontsHref().match(/family=([^:]+):/g) ?? []).map((m) => m),
+    );
+    assert.equal(families.length, unique.size);
+  });
+
+  it("covers every font pack the editor offers", () => {
+    const href = themeFontsHref();
+    for (const font of EDITOR_FONTS) {
+      for (const family of font.families) {
+        assert.ok(
+          href.includes(`family=${family.replace(/\s+/g, "+")}:`),
+          `${family} is offered in the editor but never downloaded`,
+        );
+      }
+    }
+  });
+
+  it("swaps rather than blocking the first paint", () => {
+    assert.match(themeFontsHref(), /display=swap/);
   });
 });
