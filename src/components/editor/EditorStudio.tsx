@@ -1681,7 +1681,22 @@ export function EditorStudio({
            * header and then a full screen of flat black, which reads as a page
            * that failed to load rather than a site with one section in it.
            */
-          canvasClassName="min-h-[40vh]"
+          /*
+           * An empty page is not a dark page.
+           *
+           * The canvas stands in for `<body>`, so the runtime paints it in the
+           * site's own surface colour — a deep navy under the default theme.
+           * That is right the moment there is a section on it, and wrong before
+           * there is: a tenant who opens a page they have just created sees a
+           * screen of flat navy with a card floating on it, which reads as a
+           * page that failed to load rather than a page with nothing on it yet.
+           *
+           * The same reasoning as `min-h-[40vh]` above, one step further. A
+           * plain class beats the runtime rule without `!important` because the
+           * runtime scopes itself with `:where()`, which carries no specificity
+           * — the whole reason that choice was made.
+           */
+          canvasClassName={`min-h-[40vh]${sections.length === 0 ? " bg-white" : ""}`}
         >
           {sections.length === 0 ? (
             /* Empty Canvas State
