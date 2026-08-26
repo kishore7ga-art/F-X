@@ -30,10 +30,20 @@ export type SectionItem = {
   code: string;
 };
 
+/** A page's own search metadata. Every field null means "inherit the site's". */
+export type PageSeoItem = {
+  title: string | null;
+  description: string | null;
+  ogImageUrl: string | null;
+  indexable: boolean | null;
+};
+
 export type PageItem = {
   /** Canonical: leading slash, lowercase, no trailing slash. Never empty. */
   slug: string;
   title: string;
+  /** Null for every page saved before per-page SEO existed. */
+  seo: PageSeoItem | null;
   sections: SectionItem[];
 };
 
@@ -86,7 +96,9 @@ export function pickPages(data: unknown): PageItem[] {
   // default-website endpoint answers for a deployment with no pages. One page,
   // so every caller downstream has the same shape to read.
   if (Array.isArray(payload.sections) && payload.sections.length > 0) {
-    return [{ slug: HOME_SLUG, title: "Home", sections: normalizeSections(payload.sections) }];
+    return [
+      { slug: HOME_SLUG, title: "Home", seo: null, sections: normalizeSections(payload.sections) },
+    ];
   }
 
   return [];
@@ -153,7 +165,7 @@ export function normalizeSections(raw: unknown[]): SectionItem[] {
 
 function normalizePage(raw: unknown, index: number): PageItem | null {
   if (!raw || typeof raw !== "object") return null;
-  const page = raw as { slug?: unknown; title?: unknown; sections?: unknown };
+  const page = raw as { slug?: unknown; title?: unknown; seo?: unknown; sections?: unknown };
 
   // A page with no usable slug cannot be linked to or routed at, so it is
   // dropped rather than filed under a guessed address. The first page is the
@@ -167,7 +179,41 @@ function normalizePage(raw: unknown, index: number): PageItem | null {
       ? page.title.trim()
       : titleFromSlug(slug);
 
-  return { slug, title, sections };
+  return { slug, title, seo: normalizePageSeo(page.seo), sections };
+}
+
+/**
+ * A page's SEO overrides, or null.
+ *
+ * Null rather than an all-null object, so "this page has nothing of its own to
+ * say" is one value that every reader tests the same way. Anything that is not
+ * a usable string or boolean is dropped: this data reaches a `<meta>` tag, and
+ * a number arriving where a title belongs should read as absent, not as "0".
+ */
+function normalizePageSeo(raw: unknown): PageSeoItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as Record<string, unknown>;
+
+  const text = (value: unknown): string | null => {
+    if (typeof value !== "string") return null;
+    const trimmed = value.trim();
+    return trimmed || null;
+  };
+
+  const seo: PageSeoItem = {
+    title: text(entry.title),
+    description: text(entry.description),
+    ogImageUrl: text(entry.ogImageUrl),
+    indexable: typeof entry.indexable === "boolean" ? entry.indexable : null,
+  };
+
+  const hasAnything =
+    seo.title !== null ||
+    seo.description !== null ||
+    seo.ogImageUrl !== null ||
+    seo.indexable !== null;
+
+  return hasAnything ? seo : null;
 }
 
 function titleFromSlug(slug: string): string {

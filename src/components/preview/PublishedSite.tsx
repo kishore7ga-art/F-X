@@ -5,7 +5,9 @@ import type { Metadata } from "next";
 import { PreviewSiteViewer } from "@/components/preview/PreviewSiteViewer";
 import { SectionRuntimeAssets } from "@/components/preview/SectionRuntimeAssets";
 import { loadSiteView } from "@/lib/site-sections.server";
-import { isHomeSlug } from "@/lib/site-sections";
+import type { SiteSettings } from "@/lib/site-sections.server";
+import type { PageItem } from "@/lib/site-sections";
+import { buildSiteMetadata, buildStructuredData, jsonLdScript, type SeoInput } from "@/lib/seo";
 
 /**
  * A published tenant site, with its settings applied.
@@ -26,17 +28,21 @@ async function requestHost(): Promise<string | undefined> {
 }
 
 /**
- * Search-engine directives, from the tenant's own SEO settings.
+ * Everything a published page tells a search or answer engine about itself.
  *
- * `robots` is the part that has to be right: a tenant who switched indexing off
- * was previously told "SEO indexing disabled!" by a toast and then indexed
- * anyway, because nothing read the toggle.
+ * This used to be a title, an optional description and `robots`, and the title
+ * was the same string for every page of every site on the platform. What it
+ * emits now — canonical, Open Graph, Twitter card, geographic tags, and the
+ * page's own title and description where the tenant has set them — is built by
+ * `@/lib/seo` from the settings the backend resolved, so the sitemap, the
+ * structured data and this agree on every URL by construction.
  */
 export async function publishedSiteMetadata(
   subdomain: string,
   pageSlug?: string,
 ): Promise<Metadata> {
-  const { settings, page, found } = await loadSiteView(subdomain, await requestHost(), pageSlug);
+  const host = await requestHost();
+  const { settings, page, found } = await loadSiteView(subdomain, host, pageSlug);
 
   /**
    * A page that does not exist is never indexable, whatever the site's setting
@@ -47,26 +53,48 @@ export async function publishedSiteMetadata(
     return { title: "Page not found", robots: { index: false, follow: false } };
   }
 
-  const siteTitle = settings.seoTitle || "Official Campus Portal — Powered by XITE";
+  return buildSiteMetadata(seoInputFor(subdomain, host, settings, page));
+}
 
-  /**
-   * The page's own name, in front of the site's.
-   *
-   * Every page of every site on the platform previously carried one title —
-   * the site's — because there was only ever one page. Two pages with the same
-   * `<title>` are two pages a search engine has to guess between, and the guess
-   * is not ours to make for a tenant.
-   */
-  const title =
-    page && !isHomeSlug(page.slug) && page.title ? `${page.title} — ${siteTitle}` : siteTitle;
-
+/** The one place the renderer's two SEO consumers get their input. */
+function seoInputFor(
+  subdomain: string,
+  host: string | undefined,
+  settings: SiteSettings,
+  page: PageItem | null,
+): SeoInput {
   return {
-    title,
-    ...(settings.seoDescription ? { description: settings.seoDescription } : {}),
-    robots: settings.indexingEnabled
-      ? { index: true, follow: true }
-      : { index: false, follow: false, nocache: true },
+    subdomain,
+    requestHost: host ?? null,
+    siteName: settings.siteName || subdomain,
+    siteTitle: settings.seoTitle,
+    siteDescription: settings.seoDescription,
+    siteOgImage: settings.ogImageUrl,
+    indexingEnabled: settings.indexingEnabled,
+    page: page ? { slug: page.slug, title: page.title, seo: page.seo } : null,
+    geo: settings.geo,
+    aeo: settings.aeo,
   };
+}
+
+/**
+ * The structured data for this page, as a script element.
+ *
+ * Built from the tenant's settings as *data* and serialised here — never
+ * assembled as a string anywhere upstream. `</script>` inside a FAQ answer is
+ * the one way a JSON-LD block becomes script injection, and `jsonLdScript`
+ * escapes it at the single point every caller goes through.
+ */
+function StructuredData({ nodes }: { nodes: ReturnType<typeof buildStructuredData> }) {
+  const payload = jsonLdScript(nodes);
+  if (!payload) return null;
+  return (
+    <script
+      type="application/ld+json"
+      // eslint-disable-next-line react/no-danger -- JSON-LD has no other insertion point; escaped by `jsonLdScript`.
+      dangerouslySetInnerHTML={{ __html: payload }}
+    />
+  );
 }
 
 /**
@@ -146,6 +174,9 @@ export async function PublishedSite({
   return (
     <>
       <SectionRuntimeAssets />
+      {/* Before the tenant's own head code, so a `<script>` they later gain the
+          right to run cannot be positioned to rewrite the block above it. */}
+      <StructuredData nodes={buildStructuredData(seoInputFor(subdomain, host, settings, page))} />
       <CustomCode html={settings.headHtml} id="head" />
       <PreviewSiteViewer
         subdomain={subdomain}

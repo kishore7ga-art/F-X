@@ -5,6 +5,7 @@ import {
   type PageItem,
   type SectionItem,
 } from "@/lib/site-sections";
+import type { AeoSettings, GeoSettings } from "@/lib/seo";
 
 import { serverApi } from "./api/server";
 
@@ -38,6 +39,14 @@ export type SiteSettings = {
   indexingEnabled: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
+  /** Absolute URL of the site's default social preview image. */
+  ogImageUrl: string | null;
+  /** The institution's own name, for `og:site_name` and the structured data. */
+  siteName: string;
+  /** Where this institution physically is, or null if it has not said. */
+  geo: GeoSettings | null;
+  /** What it declares itself to be, and the questions it has answered. */
+  aeo: AeoSettings | null;
   maintenanceEnabled: boolean;
   maintenanceMessage: string | null;
   headHtml: string;
@@ -48,6 +57,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   indexingEnabled: true,
   seoTitle: null,
   seoDescription: null,
+  ogImageUrl: null,
+  siteName: "",
+  geo: null,
+  aeo: null,
   maintenanceEnabled: false,
   maintenanceMessage: null,
   headHtml: "",
@@ -125,13 +138,29 @@ export async function loadSiteView(
 
       const raw = (data as { settings?: Partial<SiteSettings> })?.settings;
       const theme = (data as { theme?: Partial<SiteTheme> })?.theme;
+      const college = (data as { college?: { name?: string } | null })?.college;
+
+      const settings = raw
+        ? { ...DEFAULT_SITE_SETTINGS, ...raw }
+        : { ...DEFAULT_SITE_SETTINGS };
+
+      /**
+       * The institution's name, from wherever this response happens to carry it.
+       *
+       * `settings` is absent on the platform-default branch of the public
+       * endpoint — the one that answers for a subdomain with no college row —
+       * while `college.name` is present on both. Without this, `og:site_name`
+       * and the `WebSite` node would be empty strings on exactly the sites that
+       * have the least other metadata to fall back on.
+       */
+      if (!settings.siteName && college?.name) settings.siteName = college.name;
 
       return {
         sections: page?.sections ?? [],
         pages,
         page,
         found: page !== null,
-        settings: raw ? { ...DEFAULT_SITE_SETTINGS, ...raw } : DEFAULT_SITE_SETTINGS,
+        settings,
         theme: theme ? { ...DEFAULT_SITE_THEME, ...theme } : DEFAULT_SITE_THEME,
       };
     } catch {
