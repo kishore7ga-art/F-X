@@ -1699,14 +1699,26 @@ export function EditorStudio({
           paneClassName="py-4"
           chromeClassName="shadow-2xl rounded-2xl border border-slate-300 bg-white"
           /*
-           * The canvas hugs its sections; it does not reserve a screenful.
+           * The canvas hugs its sections. It reserves no height at all.
            *
            * `min-h-screen` is right on the published site — a short page should
            * still fill the viewport with the site's own background rather than
            * ending in a band of nothing. In the editor it produced the opposite
-           * impression: a tenant whose only section is a 102px header got that
-           * header and then a full screen of flat black, which reads as a page
+           * impression: a tenant whose only section is a 50px header got that
+           * header and then a screenful of flat navy, which reads as a page
            * that failed to load rather than a site with one section in it.
+           *
+           * It became `min-h-[40vh]`, which only made the band shorter — 40% of
+           * the window is still several hundred pixels of the site's surface
+           * colour below a header, and it is still the thing a tenant asks
+           * about. `fillViewport: false` already tells the runtime not to
+           * reserve a screenful; this class was reserving one anyway, on top of
+           * it. Now nothing does, and a one-section page is exactly as tall as
+           * that section.
+           *
+           * The empty state does not depend on this — it carries its own
+           * `min-h-[60vh]` centring box, because an empty page needs somewhere
+           * to put the card and a page with sections does not.
            */
           /*
            * An empty page is not a dark page.
@@ -1723,7 +1735,7 @@ export function EditorStudio({
            * runtime scopes itself with `:where()`, which carries no specificity
            * — the whole reason that choice was made.
            */
-          canvasClassName={`min-h-[40vh]${sections.length === 0 ? " bg-white" : ""}`}
+          canvasClassName={sections.length === 0 ? "bg-white" : ""}
         >
           {sections.length === 0 ? (
             /* Empty Canvas State
