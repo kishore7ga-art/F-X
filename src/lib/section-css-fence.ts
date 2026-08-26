@@ -17,6 +17,69 @@ export function cssEscape(value: string): string {
 }
 
 /**
+ * Selectors that mean "the document itself" rather than an element inside it.
+ *
+ * Matched as a whole leading token, so `body` is rewritten and `body-copy` is
+ * not. A compound such as `body.dark` keeps everything after the token.
+ */
+const ROOT_TOKEN = /^(?::root|html|body)\b/;
+
+/**
+ * Rewrites one selector so it can only reach inside a section.
+ *
+ * ── The bug this is the fix for ────────────────────────────────────────────
+ *
+ * Fencing prefixed every selector with `fence <selector>` — a descendant
+ * combinator. That is right for `.title`, `h2` and `nav a`, and silently fatal
+ * for the three selectors that name the document: `:root` became
+ * `:where([data-xite-section="…"]) :root`, which matches nothing, because
+ * `:root` is `<html>` and `<html>` is nobody's descendant. Same for `html` and
+ * `body`.
+ *
+ * Almost every section in this library opens with
+ *
+ *     :root { --brand-font: 'Times New Roman', serif; --nav-font: 'Arial'; }
+ *
+ * and then uses `var(--brand-font)` throughout. In the Admin's iframe that
+ * `<style>` goes into `<head>`, `:root` is the iframe's own `<html>`, and the
+ * variables resolve. On the editor canvas and the published site the rule
+ * matched nothing, so every one of those custom properties was **undefined**,
+ * every `var()` referencing one became invalid at computed-value time, and the
+ * property fell back to whatever was inherited — the canvas's own Inter.
+ *
+ * So a header authored with a serif wordmark and an Arial nav was previewed
+ * that way in the Admin and published in Inter, and the same silent
+ * substitution applied to every colour, size and spacing token a section
+ * declared this way. It is measurable: the platform's own default header
+ * renders `.brand-sub` in `"Times New Roman", Georgia, serif` in the Admin and
+ * in `Inter, system-ui, sans-serif` live.
+ *
+ * ── The rule ───────────────────────────────────────────────────────────────
+ *
+ * Inside a section's own subtree the fence element *is* the document root: it
+ * is what `sectionRuntimeCss` already styles in place of `html, body`. So a
+ * selector that names the document is rewritten to the fence itself rather
+ * than to a descendant of it, and anything that follows the token is kept:
+ *
+ *     :root            → :where([data-xite-section="…"])
+ *     body.dark        → :where([data-xite-section="…"]).dark
+ *     :root .title     → :where([data-xite-section="…"]) .title
+ *     .title           → :where([data-xite-section="…"]) .title
+ */
+export function rescopeSelector(selector: string, fence: string): string {
+  const trimmed = selector.trim();
+  if (!trimmed) return trimmed;
+
+  const match = trimmed.match(ROOT_TOKEN);
+  if (!match) return `${fence} ${trimmed}`;
+
+  // Everything the author attached to the token — `.dark`, `[data-x]`, `:has()`
+  // — stays attached to the fence. A descendant part keeps its space.
+  const rest = trimmed.slice(match[0].length);
+  return `${fence}${rest}`;
+}
+
+/**
  * Prefixes every selector in `css` with the section's fence.
  *
  * `:where()` carries no specificity, which is the whole point: the fence decides
@@ -42,7 +105,7 @@ export function fenceCssToSection(css: string, sectionId: string): string {
         if (rule instanceof CSSStyleRule) {
           rule.selectorText = rule.selectorText
             .split(",")
-            .map((selector) => `${fence} ${selector.trim()}`)
+            .map((selector) => rescopeSelector(selector, fence))
             .join(", ");
           return;
         }
