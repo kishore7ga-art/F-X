@@ -2,20 +2,10 @@
 
 import { useEffect } from "react";
 
-import {
-  fenceCssToSection,
-  findSectionTailwindStyle,
-  placeBeforeTailwind,
-} from "@/lib/section-css-fence";
-import {
-  extractStylesAndBody,
-  remapDocumentSelectors,
-  sectionResponsiveCss,
-  sectionRuntimeCss,
-  viewportMediaToContainer,
-} from "@/lib/section-runtime";
+import { findSectionTailwindStyle, placeBeforeTailwind } from "@/lib/section-css-fence";
+import { buildSectionRuntimeStylesheet } from "@/lib/section-runtime-stylesheet";
+import { viewportMediaToContainer } from "@/lib/section-runtime";
 import type { SectionItem } from "@/lib/site-sections";
-import { tokenizeCss } from "@/lib/editor-themes";
 
 /**
  * Puts a page into the environment sections are authored against.
@@ -26,6 +16,10 @@ import { tokenizeCss } from "@/lib/editor-themes";
  * time one of them was touched. There is one copy now, and the Admin's iframe
  * builds the same stylesheets from the same functions, so all three surfaces
  * agree by construction rather than by review.
+ *
+ * What that stylesheet *contains* is `buildSectionRuntimeStylesheet`; this hook
+ * is only the effect that installs it. The split exists so the parity harness
+ * can ask for the editor's real CSS without rendering the editor.
  */
 const RUNTIME_STYLE_ID = "xite-section-runtime";
 
@@ -80,85 +74,18 @@ export function useSectionRuntime({
       placement.observe(document.documentElement, { childList: true, subtree: true });
     }
 
-    // The environment, the responsive engine, then each section's own CSS —
-    // fenced to that section, and with its width breakpoints redirected at the
-    // container. One stylesheet, so its place in the cascade is knowable.
-    const parts = [sectionRuntimeCss(scope, { fillViewport }), sectionResponsiveCss(scope)];
+    const { css, links } = buildSectionRuntimeStylesheet({ sections, scope, fillViewport });
 
-    /**
-     * `@import url(...)` pulled out of a section's CSS and loaded as a `<link>`.
-     *
-     * Two reasons it cannot stay where it is. `CSSStyleSheet.replaceSync()` —
-     * which `fenceCssToSection` uses to parse and re-scope the CSS — discards
-     * `@import` rules outright. And `@import` is only valid at the very top of
-     * a stylesheet, whereas every section's CSS is concatenated into one sheet
-     * after the runtime and responsive blocks.
-     *
-     * It mattered less while the canvas *also* rendered the section's `<style>`
-     * block inline, because that copy carried the import. Removing the
-     * duplicate — which is what stops one section's CSS restyling the others —
-     * would otherwise have silently dropped every webfont a section imports
-     * this way, so the two changes belong together.
-     */
-    const hoistImport = (href: string, sectionId: string) => {
-      if (!href || document.querySelector(`link[href="${href}"]`)) return;
+    // <link> tags are the one thing that cannot be fenced — a font is a font.
+    links.forEach(({ sectionId, attrs }) => {
+      if (attrs.href && document.querySelector(`link[href="${attrs.href}"]`)) return;
       const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = href;
+      Object.entries(attrs).forEach(([name, value]) => link.setAttribute(name, value));
       link.setAttribute("data-xite-section", sectionId);
       head.appendChild(link);
-    };
-
-    sections.forEach((sec) => {
-      const raw = extractStylesAndBody(sec.code || "");
-      const headLinks = raw.headLinks;
-
-      const headCss = raw.headCss.replace(
-        /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?[^;]*;/gi,
-        (_full, href: string) => {
-          hoistImport(href, sec.id);
-          return "";
-        },
-      );
-
-      if (headCss.trim()) {
-        /**
-         * Tokenised before fencing, so the theme reaches a section's own CSS.
-         *
-         * This is now the *only* copy of that CSS in the document — the canvas
-         * used to also render the `<style>` block inline, unfenced, and that
-         * copy was the one the theme happened to reach. Removing the duplicate
-         * fixed section CSS leaking between sections and would have quietly
-         * taken the theme off everything a section styles by class, which is
-         * most of what a well-built section styles.
-         */
-        parts.push(
-          fenceCssToSection(
-            tokenizeCss(remapDocumentSelectors(headCss, ".section-canvas-box")),
-            sec.id,
-          ),
-        );
-      }
-
-      // <link> tags are the one thing that cannot be fenced — a font is a font.
-      const linkRegex = /<link([^>]+)>/gi;
-      let match: RegExpExecArray | null;
-      while ((match = linkRegex.exec(headLinks)) !== null) {
-        const attrs = match[1] || "";
-        const href = (attrs.match(/href=["']([^"']+)["']/i) || [])[1];
-        if (!href || document.querySelector(`link[href="${href}"]`)) continue;
-        const link = document.createElement("link");
-        attrs.replace(/([\w-]+)=["']([^"']*)["']/gi, (_full: string, name: string, value: string) => {
-          link.setAttribute(name, value);
-          return "";
-        });
-        if (!link.getAttribute("rel")) link.setAttribute("rel", "stylesheet");
-        link.setAttribute("data-xite-section", sec.id);
-        head.appendChild(link);
-      }
     });
 
-    style.textContent = parts.join("\n\n");
+    style.textContent = css;
 
     return () => {
       placement?.disconnect();

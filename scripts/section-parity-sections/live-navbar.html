@@ -1,0 +1,407 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,600;0,700;1,400&family=Open+Sans:wght@700;800&display=swap');
+
+  .penn-header {
+    width: 100%;
+    background: transparent;
+    position: relative;
+    z-index: 9999;
+    box-sizing: border-box;
+  }
+
+  .penn-header *,
+  .penn-header *::before,
+  .penn-header *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  .penn-container {
+    width: 100%;
+    max-width: 3840px;
+    margin: 0 auto;
+    padding: clamp(0.75rem, 1.2vw, 1.5rem) clamp(1rem, 3.5vw, 4rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(1rem, 2vw, 2.5rem);
+  }
+
+  /* Logo */
+  .penn-brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: #ffffff;
+    gap: clamp(0.6rem, 1vw, 1rem);
+    flex-shrink: 0;
+  }
+
+  .penn-shield {
+    width: clamp(38px, 4vw, 56px);
+    height: auto;
+  }
+
+  .penn-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 0.9;
+  }
+
+  .penn-title {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: clamp(2.3rem, 3.4vw, 4rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+
+  .penn-subtitle {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: clamp(0.72rem, 0.95vw, 1.05rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 3px;
+    color: #ffffff;
+  }
+
+  .penn-subtitle em {
+    font-style: italic;
+    text-transform: lowercase;
+    font-size: 1.1em;
+    margin-right: 2px;
+  }
+
+  /* Navigation Structure */
+  .penn-nav-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  /* Upper Tier */
+  .penn-top-tier {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: clamp(1rem, 1.8vw, 2.2rem);
+  }
+
+  .penn-top-line {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.4);
+    flex: 1;
+    margin-right: clamp(0.8rem, 1.5vw, 1.8rem);
+  }
+
+  .penn-search {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .penn-search:hover {
+    transform: scale(1.1);
+    opacity: 0.85;
+  }
+
+  .penn-search svg {
+    width: clamp(18px, 1.35vw, 24px);
+    height: clamp(18px, 1.35vw, 24px);
+  }
+
+  .penn-resources {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: clamp(0.75rem, 0.88vw, 1rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+  }
+
+  .penn-resources:hover {
+    opacity: 0.8;
+  }
+
+  .penn-give-btn {
+    background-color: #990000;
+    color: #ffffff;
+    text-decoration: none;
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: clamp(0.75rem, 0.88vw, 1rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: clamp(0.65rem, 0.95vw, 1.1rem) clamp(1.2rem, 1.8vw, 2.4rem);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+  }
+
+  .penn-give-btn:hover {
+    background-color: #b30000;
+  }
+
+  /* Bottom Tier */
+  .penn-main-nav {
+    margin-top: clamp(0.45rem, 0.85vw, 0.95rem);
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .penn-menu-list {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    list-style: none;
+    flex-wrap: wrap;
+    gap: clamp(0.4rem, 0.75vw, 1.15rem);
+  }
+
+  .penn-menu-item {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .penn-link {
+    color: #ffffff;
+    text-decoration: none;
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: clamp(0.76rem, 0.9vw, 1.05rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    transition: opacity 0.2s ease;
+  }
+
+  .penn-link:hover {
+    opacity: 0.8;
+  }
+
+  .penn-chevron {
+    width: clamp(9px, 0.7vw, 13px);
+    height: clamp(9px, 0.7vw, 13px);
+  }
+
+  .penn-slash {
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Open Sans', sans-serif;
+    font-size: clamp(0.75rem, 0.9vw, 1rem);
+    user-select: none;
+    margin: 0 0.15rem;
+  }
+
+  .penn-burger {
+    display: none;
+    background: none;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+
+  .penn-burger svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Responsive Rules */
+  @media (max-width: 1024px) {
+    .penn-top-line {
+      display: none;
+    }
+
+    .penn-burger {
+      display: block;
+    }
+
+    .penn-nav-wrap {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background: rgba(1, 31, 91, 0.97);
+      backdrop-filter: blur(10px);
+      padding: 1.5rem clamp(1rem, 3.5vw, 4rem) 2.5rem;
+    }
+
+    .penn-nav-wrap.open {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .penn-top-tier {
+      justify-content: space-between;
+      flex-direction: row-reverse;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+      padding-bottom: 1.2rem;
+    }
+
+    .penn-main-nav {
+      margin-top: 0;
+    }
+
+    .penn-menu-list {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.25rem;
+    }
+
+    .penn-slash {
+      display: none;
+    }
+
+    .penn-link {
+      font-size: 1.1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .penn-container {
+      padding: 0.75rem 1rem;
+    }
+    
+    .penn-subtitle {
+      letter-spacing: 0.03em;
+    }
+  }
+</style>
+
+
+
+<header class="penn-header">
+  <div class="penn-container">
+    
+    
+    <a href="#" class="penn-brand" aria-label="University of Pennsylvania">
+      <svg class="penn-shield" viewbox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5 5 H95 V70 C95 98 50 115 50 115 C50 115 5 98 5 70 Z" fill="#011F5B" stroke="#ffffff" stroke-width="6"></path>
+        <path d="M5 5 H95 V42 H5 Z" fill="#990000"></path>
+        <path d="M50 42 V115" stroke="#ffffff" stroke-width="5"></path>
+        <circle cx="28" cy="78" r="7" fill="#ffffff"></circle>
+        <circle cx="72" cy="78" r="7" fill="#ffffff"></circle>
+        <circle cx="50" cy="98" r="7" fill="#ffffff"></circle>
+        <path d="M16 15 H38 V32 H16 Z M62 15 H84 V32 H62 Z" fill="#ffffff"></path>
+        <path d="M42 22 Q50 12 58 22 Q50 28 42 22 Z" fill="#ffffff"></path>
+      </svg>
+      <div class="penn-text">
+        <span class="penn-title">Penn</span>
+        <span class="penn-subtitle">University <em>of</em> Pennsylvania</span>
+      </div>
+    </a>
+
+    
+    <button class="penn-burger" id="pennBurger" aria-label="Toggle navigation">
+      <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewbox="0 0 24 24">
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+
+    
+    <div class="penn-nav-wrap" id="pennNavMenu">
+      
+      
+      <div class="penn-top-tier">
+        <div class="penn-top-line"></div>
+        <button class="penn-search" aria-label="Search">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewbox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+        <button class="penn-resources">
+          Resources
+          <svg class="penn-chevron" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewbox="0 0 24 24">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <a href="#" class="penn-give-btn">Give to Penn</a>
+      </div>
+
+      
+      <nav class="penn-main-nav" aria-label="Primary Navigation">
+        <ul class="penn-menu-list">
+          <li class="penn-menu-item">
+            <a href="#" class="penn-link">
+              Academics
+              <svg class="penn-chevron" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewbox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </a>
+          </li>
+          <li class="penn-slash">/</li>
+          
+          <li class="penn-menu-item">
+            <a href="#" class="penn-link">Admissions &amp; Aid</a>
+          </li>
+          <li class="penn-slash">/</li>
+
+          <li class="penn-menu-item">
+            <a href="#" class="penn-link">Athletics</a>
+          </li>
+          <li class="penn-slash">/</li>
+
+          <li class="penn-menu-item">
+            <a href="#" class="penn-link">
+              Research &amp; Innovation
+              <svg class="penn-chevron" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewbox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </a>
+          </li>
+          <li class="penn-slash">/</li>
+
+          <li class="penn-menu-item">
+            <a href="#" class="penn-link">
+              Life at Penn
+              <svg class="penn-chevron" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewbox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </a>
+          </li>
+          <li class="penn-slash">/</li>
+
+          <li class="penn-menu-item">
+            <a href="#" class="penn-link">
+              About
+              <svg class="penn-chevron" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewbox="0 0 24 24">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+    </div>
+  </div>
+</header>
+
+
+

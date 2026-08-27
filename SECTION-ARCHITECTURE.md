@@ -55,6 +55,15 @@ All three call `sectionRuntimeCss()` and `sectionResponsiveCss()`. That is the
 single environment builder. **Anything that renders a section must go through
 it.**
 
+The editor's canvas markup sits in one extra element — a `display: contents`
+wrapper, because `dangerouslySetInnerHTML` cannot share a node with the
+empty-section notice. `display: contents` is load-bearing: the element has no
+box, so `.section-canvas-box` is laid out as a direct child of the section
+wrapper, exactly as on the published site. It also carries **no classes**. It
+used to carry `w-full block p-0 m-0 text-left`, and `text-align` is inherited —
+so an editor utility class was deciding the text alignment of every section on
+the canvas, inside the containment boundary where nothing resets it.
+
 ---
 
 ## 3. Containment — the rule that matters most
@@ -90,12 +99,60 @@ specificity:
 A section's own CSS, and its Tailwind classes, still win every fight they
 should.
 
+Preflight rules are the one thing a reset on the canvas cannot reach, and the
+two majors disagree in a way no rule named after an element could cover:
+**Tailwind 4 zeroes margin and padding on the universal selector**, and
+Tailwind 3 does it element by element. So anything on neither of v3's lists —
+an `<option>`, a `<td>`, a `<fieldset>` — kept its browser padding in the
+Admin's iframe and lost it on the other two surfaces. The containment layer
+therefore opens with `:where(*) { margin: revert; padding: revert }`, at zero
+specificity, so v3's own preflight then wins on the elements it covers. Which
+is the Admin's cascade, reproduced.
+
 ### What this replaced
 
 `hostReset` used to undo exactly three properties — font smoothing, text
 rendering and scrollbar hiding — each named after a symptom somebody had
 chased down. A list of symptoms grows one incident at a time and is silently
 wrong the moment anyone adds a global style to the app.
+
+---
+
+## 3a. Units — the other thing an environment decides
+
+Containment settles what an ancestor may say about a section. It says nothing
+about what a *unit* means, and two of them are resolved against the document
+rather than against the section:
+
+| | the section is this wide | `100vw` is |
+| :--- | :--- | :--- |
+| Admin preview | the iframe | the iframe — *the same* |
+| Editor canvas | the selected width, 1440 | the studio window, 1920 |
+| Published site | the window | the window — *the same* |
+
+Sections in this library are full-bleed and stay that way with `vw`:
+`padding: clamp(0.75rem, 1.2vw, 1.5rem) clamp(1rem, 3.5vw, 4rem)` on a header
+bar, `font-size: clamp(2.3rem, 3.4vw, 4rem)` on a wordmark. The platform's own
+default header uses eleven of them. In the editor every one resolved against
+the operator's monitor: on a 1920px window showing a 1440px canvas the header's
+side padding came out at 64px instead of 50 and the wordmark at 62px instead of
+49 — visibly taller and looser than the Admin had just shown, from markup
+neither side had touched.
+
+`viewportUnitsToContainer` rewrites `vw` as `cqw` — 1% of the query container,
+which *is* the box the section occupies on all three surfaces. Same
+substitution as `@media` → `@container`, same reason. It runs on all three
+surfaces, in `sectionCanvasHtml`, `buildSectionPreviewDocument` and
+`buildSectionRuntimeStylesheet`, and it reaches inline `style` attributes as
+well as `<style>` blocks, because that is where half a section's CSS lives.
+
+It is a **render-time** substitution. What is stored stays `vw`:
+`recomposeSectionCode` and the editor's read-back funnel apply
+`containerUnitsToViewport`, exactly as they apply `detokenizeSectionHtml` to the
+theme tokens, and for the same reason — a section is not edited by being looked
+at.
+
+`vh`, `vmin` and `vmax` are left alone; see §9.
 
 ---
 
@@ -177,7 +234,13 @@ the build fails rather than the templates going quiet.
 ## 7. Adding a surface that renders sections
 
 Call `sectionCanvasHtml(code)` for the markup and `useSectionRuntime({ sections,
-scope })` for the environment. That is the whole contract.
+scope })` for the environment. That is the whole contract. Put nothing with a
+class or a style between the canvas and `.section-canvas-box`, and add the
+surface to `scripts/section-parity-dom.ts`.
+
+What `useSectionRuntime` installs is `buildSectionRuntimeStylesheet` — a
+function, so the parity harness can ask for the editor's real CSS without
+rendering the editor. The hook is only the effect around it.
 
 Do not write a second document stripper. The editor had one, it disagreed with
 the site's about whether a `<style>` block stayed in the markup, and the result
@@ -201,9 +264,32 @@ it.
 
 Alongside it:
 
+`section-parity.test.ts` is a statement about **strings**, and that is its
+limit. It passed the whole time the Admin and the editor were visibly rendering
+the same header differently, because the difference was never in the strings —
+it was in what the two documents did with them.
+
+`scripts/section-parity-dom.ts` (`npm run test:parity`) is the other half. It
+builds both environments for real in Chromium — `buildSectionPreviewDocument`
+on one side; the app's document, its compiled `globals.css`, Tailwind's Play
+CDN, the theme layer and the DOM `EditorStudio` emits on the other — renders
+ten sections at three widths on all three surfaces, and compares the computed
+style of every element plus its box. 95,830 comparisons, and the number that
+matters is zero.
+
+Three of its ten fixtures are the platform's own default sections, taken
+verbatim from `GET /api/v1/default-website`. That is deliberate: a synthetic
+fixture only tests what its author thought to test, and every bug this found
+lived in a construct nobody would have written on purpose.
+
+Its one weakness is that it *reproduces* `EditorStudio`'s DOM rather than
+mounting it, so a change to the canvas markup has to be made in both. The class
+lists are copied verbatim to keep that honest.
+
 | Guard | Catches |
 | :--- | :--- |
 | `section-parity.test.ts` | a surface that diverges from the shared environment |
+| `section-parity-dom.ts` | a surface that renders differently despite agreeing on paper |
 | `section-runtime.test.ts` | the canvas contract and the edit round-trip |
 | `svg-survival.test.ts` (xite-B) | an allowlist that quietly breaks logos |
 | `sanitize-policies.test.ts` (xite-B) | the two policies drifting on `<script>` |
@@ -221,6 +307,14 @@ Alongside it:
   third-party outage from unstyled. Its preflight is neutralised inside the
   canvas; replacing it means precompiling the utilities sections actually use,
   which is a project rather than a fix.
+- **`vh`, `vmin` and `vmax` still mean the window.** There is no
+  container-relative height unit unless the container declares
+  `container-type: size`, and that needs a height the canvas does not have — it
+  is as tall as its sections. So a `height: 80vh` hero is the window's height in
+  the editor and on the published site, which is what it will actually get, and
+  the Admin's fixed-height preview iframe is the surface that disagrees. Closing
+  it means the iframe canvas, below.
+
 - **Templates damaged before the SVG allowlist was corrected** were stripped on
   write and do not repair themselves. Re-saving one in Admin › Templates puts it
   through the corrected pass.

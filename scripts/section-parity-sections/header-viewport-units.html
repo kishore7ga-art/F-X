@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Ivy Header</title>
+  <style>
+    :root {
+      --brand-font: 'EB Garamond', Georgia, serif;
+      --nav-font: 'Open Sans', Arial, sans-serif;
+      --brand-ink: #00693e;
+    }
+
+    .ivy-header {
+      width: 100%;
+      background: var(--brand-ink);
+      position: relative;
+    }
+
+    .ivy-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: clamp(1rem, 2vw, 2.5rem);
+      padding: clamp(0.75rem, 1.2vw, 1.5rem) clamp(1rem, 3.5vw, 4rem);
+      max-width: 3840px;
+      margin: 0 auto;
+    }
+
+    .ivy-wordmark {
+      font-family: var(--brand-font);
+      font-size: clamp(1.6rem, 3.4vw, 4rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      line-height: 0.95;
+    }
+
+    .ivy-nav {
+      display: flex;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      gap: clamp(0.4rem, 1.4vw, 1.6rem);
+    }
+
+    .ivy-nav a {
+      font-family: var(--nav-font);
+      font-size: clamp(0.7rem, 0.85vw, 0.95rem);
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #fff;
+      text-decoration: none;
+      padding: 0.4rem 0.55rem;
+    }
+
+    .ivy-tools {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .ivy-search {
+      background: transparent;
+      border: none;
+      color: #fff;
+      padding: 0.25rem;
+      cursor: pointer;
+    }
+
+    .ivy-search svg {
+      width: clamp(18px, 1.35vw, 24px);
+      height: clamp(18px, 1.35vw, 24px);
+    }
+
+    @media (max-width: 900px) {
+      .ivy-nav { display: none; }
+      .ivy-wordmark { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="ivy-header">
+    <div class="ivy-bar">
+      <div class="ivy-wordmark">DARTMOUTH</div>
+      <nav>
+        <ul class="ivy-nav">
+          <li><a href="#">Admissions</a></li>
+          <li><a href="#">Academics</a></li>
+          <li><a href="#">Campus Life</a></li>
+          <li><a href="#">About</a></li>
+          <li><a href="#">News</a></li>
+          <li><a href="#">Giving</a></li>
+        </ul>
+      </nav>
+      <div class="ivy-tools">
+        <button class="ivy-search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+          </svg>
+        </button>
+        <span style="font-family: 'Open Sans', Arial, sans-serif; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: #fff;">Resources for you</span>
+      </div>
+    </div>
+  </header>
+</body>
+</html>

@@ -54,7 +54,28 @@ describe("tokenizeCss — lossless by construction", () => {
 
   it("preserves an rgba alpha instead of turning an overlay solid", () => {
     const out = tokenizeCss("background: rgba(37, 99, 235, 0.4)");
-    assert.match(out, /color-mix\(in srgb, var\(--xite-accent, rgba\(37, 99, 235, 0\.4\)\) 40%, transparent\)/);
+    assert.match(out, /color-mix\(in srgb, var\(--xite-accent, rgb\(37, 99, 235\)\) 40%, transparent\)/);
+  });
+
+  /**
+   * The fallback is the *opaque* colour, and this is the assertion that says
+   * why. It used to be the original `rgba()`, so with no theme set the mix
+   * applied the alpha to a value that already carried it: `0.4` rendered at
+   * `0.16`, and a `0.14` hairline at `0.0198`, which is invisible. The Admin's
+   * iframe has no tokeniser and rendered the same declaration as written —
+   * which is the whole of "the borders disappear in the editor".
+   */
+  it("applies the alpha once, not twice", () => {
+    assert.doesNotMatch(tokenizeCss("background: rgba(37, 99, 235, 0.4)"), /rgba\(/);
+  });
+
+  it("leaves an alpha it cannot round-trip exactly alone", () => {
+    // `0.125` would come back from a whole-number percentage as `0.13` — a
+    // section quietly redrawn by an edit that touched a word of copy.
+    assert.equal(
+      tokenizeCss("background: rgba(37, 99, 235, 0.125)"),
+      "background: rgba(37, 99, 235, 0.125)",
+    );
   });
 
   it("leaves a colour that is not a brand colour exactly as the author wrote it", () => {

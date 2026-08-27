@@ -30,7 +30,12 @@ import {
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
-import { recomposeSectionCode, sectionCanvasHtml } from "@/lib/section-runtime";
+import {
+  containerUnitsToViewport,
+  mapInlineStyles,
+  recomposeSectionCode,
+  sectionCanvasHtml,
+} from "@/lib/section-runtime";
 import { canonicalSlug, useEditorPages } from "@/hooks/useEditorPages";
 import type { SectionCategoryId } from "@/lib/sections/categories";
 import {
@@ -515,6 +520,17 @@ export function EditorStudio({
      * Tokens exist between the store and the screen, and nowhere else.
      */
     let clean = detokenizeSectionHtml(rawCode);
+
+    /**
+     * And the units the canvas substituted, back to what the author wrote.
+     *
+     * `sectionCanvasHtml` renders `40vw` as `40cqw` so the section is measured
+     * against the canvas rather than against the operator's monitor. That is a
+     * render-time substitution; what is stored stays `vw`, exactly as with the
+     * theme tokens above, and for the same reason — a section is not edited by
+     * being looked at.
+     */
+    clean = mapInlineStyles(clean, containerUnitsToViewport);
 
     // Overlays and toggles the canvas injects at runtime, which are not content.
     clean = clean.replace(/<div[^>]*class="[^"]*mobile-drawer-menu[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "");
@@ -1998,9 +2014,31 @@ export function EditorStudio({
                       activeSectionIndex === idx ? "ring-2 ring-inset ring-cyan-500/80" : "cursor-default"
                     }`}
                   >
+                    {/*
+                      The one element the editor puts *inside* the canvas, and
+                      it is not allowed to say anything about the section.
+
+                      It carried `w-full block p-0 m-0 text-left`. Three of
+                      those are what a plain `<div>` does anyway; `text-left`
+                      is not. `text-align` is inherited, this element sits
+                      inside the containment boundary — which resets what
+                      *ancestors* say, and this is a descendant — so every
+                      section on the canvas was laid out with `text-align:
+                      left` where the Admin's iframe and the published site
+                      inherit `start`. Identical in English and wrong in
+                      Arabic; and more to the point, an editor utility class
+                      had become part of the site's design.
+
+                      `display: contents` removes the box altogether, so
+                      `.section-canvas-box` is laid out as a direct child of
+                      the section wrapper — which is exactly the shape
+                      `PreviewSiteViewer` renders. The element exists only
+                      because `dangerouslySetInnerHTML` cannot share a node
+                      with the empty-section notice below.
+                    */}
                     <div
                       dangerouslySetInnerHTML={{ __html: canvasHtml(sec.code) }}
-                      className="w-full block p-0 m-0 text-left"
+                      style={{ display: "contents" }}
                     />
 
                     {/* This section occupies space and shows nothing.

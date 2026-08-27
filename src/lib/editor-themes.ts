@@ -320,6 +320,27 @@ const RGB_PARTS = /rgba?\(\s*(\d+)\s*[, ]\s*(\d+)\s*[, ]\s*(\d+)\s*(?:[,/]\s*([\
  * `rgba()` keeps its alpha by going through `color-mix`, so a 40%-opacity
  * overlay stays a 40%-opacity overlay rather than becoming a solid block.
  *
+ * ── The alpha was applied twice ───────────────────────────────────────────
+ *
+ * The `color-mix` wrapper used to carry the *original* `rgba()` as the
+ * variable's fallback:
+ *
+ *     rgba(255,255,255,0.4)
+ *       -> color-mix(in srgb, var(--xite-text, rgba(255,255,255,0.4)) 40%, transparent)
+ *
+ * With no theme set the variable is undefined, the fallback is used, and the
+ * fallback already carries the 0.4 — which the mix then applies again. Every
+ * translucent value in the library came out at **alpha squared**: a hairline at
+ * `rgba(255,255,255,0.4)` rendered at 0.16, a card border at `0.14` rendered at
+ * 0.0198 and was invisible. In the Admin's iframe, which has no theme layer and
+ * no tokeniser, the same declaration rendered as written. It is the whole
+ * explanation for "the borders disappear in the editor".
+ *
+ * The fallback is the opaque colour now, so the mix is the only place the alpha
+ * is applied. `detokenizeCss` rebuilds the original `rgba()` from the two
+ * halves, and the pass only runs when that rebuild is exact — an alpha of
+ * `0.125` would come back as `0.13`, so it is left alone rather than rounded.
+ *
  * Idempotent: running it twice produces the same string as running it once.
  */
 export function tokenizeCss(css: string): string {
@@ -341,14 +362,24 @@ export function tokenizeCss(css: string): string {
     const token = TOKEN_FOR_HEX.get(rgbToHex(Number(parts[1]), Number(parts[2]), Number(parts[3])));
     if (!token) return match;
 
-    const variable = `var(--xite-${kebab(token)}, ${match})`;
     const alpha = parts[4];
-    if (alpha === undefined || Number(alpha) >= 1) return variable;
+    if (alpha === undefined || Number(alpha) >= 1) {
+      return `var(--xite-${kebab(token)}, ${match})`;
+    }
+
+    // Only when the round trip is exact. `detokenizeCss` reads the alpha back
+    // out of the percentage, and a percentage is a whole number — so `0.4`
+    // survives and `0.125` would come back as `0.13`, which is a section
+    // quietly redrawn by an edit that touched a word of copy.
+    const percent = Number(alpha) * 100;
+    if (!Number.isInteger(percent) || percent <= 0) return match;
 
     // `color-mix` with transparent is how an opacity is applied to a colour
-    // that is not known until the theme is. Supported everywhere the rest of
-    // this editor is; a browser without it falls back to the original `rgba()`.
-    return `color-mix(in srgb, ${variable} ${Math.round(Number(alpha) * 100)}%, transparent)`;
+    // that is not known until the theme is. The fallback is the *opaque*
+    // colour: the mix is what applies the alpha, and a fallback that carried it
+    // too would apply it twice.
+    const opaque = `rgb(${Number(parts[1])}, ${Number(parts[2])}, ${Number(parts[3])})`;
+    return `color-mix(in srgb, var(--xite-${kebab(token)}, ${opaque}) ${percent}%, transparent)`;
   });
 }
 
@@ -371,11 +402,26 @@ export function detokenizeCss(css: string): string {
   let previous: string;
   let out = css;
 
-  // Looped because `color-mix(in srgb, var(--xite-accent, rgba(…)) 40%,
-  // transparent)` unwraps to the `rgba()` in two steps, and a single pass would
-  // leave the `color-mix` wrapper behind.
+  // Looped because a `color-mix` unwraps in two steps, and a single pass would
+  // leave the wrapper behind.
   do {
     previous = out;
+    /**
+     * The translucent form, rebuilt whole.
+     *
+     * `tokenizeCss` splits an `rgba()` into an opaque colour and a percentage,
+     * so both halves are needed to put it back. Stripping the wrapper and
+     * keeping the fallback — which is what this used to do — returned the
+     * *opaque* colour, so a `rgba(255,255,255,0.14)` hairline was saved back as
+     * solid white the first time anyone corrected a typo in that section.
+     */
+    out = out.replace(
+      /color-mix\(in srgb,\s*var\(--xite-[a-z-]+\s*,\s*rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*\)\s*(\d+)%\s*,\s*transparent\)/gi,
+      (_full, r: string, g: string, b: string, percent: string) =>
+        `rgba(${r}, ${g}, ${b}, ${Number(percent) / 100})`,
+    );
+    // Anything else wrapped in a mix — a hand-written one, or a form an older
+    // build produced — keeps its fallback rather than being dropped.
     out = out.replace(
       /color-mix\(in srgb,\s*(var\(--xite-[a-z-]+\s*,\s*(?:[^()]|\([^()]*\))*\))\s*\d+%\s*,\s*transparent\)/gi,
       "$1",
