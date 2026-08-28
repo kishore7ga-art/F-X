@@ -34,21 +34,27 @@ export async function openAccessCollege(targetSubdomain?: string) {
       update: {},
       create: { name: NAME, subdomain: sub, status: "DRAFT" },
     });
-  } catch {
-    // If local Prisma database / DATABASE_URL is not configured on xite-F,
-    // return a synthetic college object so the Visual Live Editor loads seamlessly!
-    return {
-      id: `open-access-${sub}`,
-      name: sub === "greenfield" ? NAME : sub.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      subdomain: sub,
-      customDomain: null,
-      templateId: "reference-university-v1",
-      themePaletteId: "classic-navy",
-      themeFontId: "inter-roboto",
-      collegeType: "Engineering",
-      status: "DRAFT",
-      isDemo: false,
-      createdAt: new Date(),
-    };
+  } catch (cause) {
+    /**
+     * A database that cannot be reached is not a college.
+     *
+     * This used to return a hand-built object — a made-up id, a
+     * `templateId` of `"reference-university-v1"` and a `themePaletteId` of
+     * `"classic-navy"` — so that "the Visual Live Editor loads seamlessly".
+     * It loaded, and everything it did afterwards was against a tenant that
+     * does not exist: every save 404s or writes somewhere unintended, and the
+     * theme id is not one of the four `EDITOR_THEMES` ships, so the studio
+     * rendered it as no theme at all. A builder that appears to work and
+     * silently discards the work is worse than one that says it is down.
+     *
+     * Null, so `getCurrentCollege` falls through to "not signed in" and the
+     * caller's own guard decides — which for every editor route is the login
+     * screen, and for the two auth screens is rendering normally.
+     */
+    console.error(
+      "[auth] open-access lookup failed — no college to serve:",
+      cause instanceof Error ? cause.message : cause,
+    );
+    return null;
   }
 }

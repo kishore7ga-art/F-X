@@ -37,6 +37,7 @@ import {
   sectionCanvasHtml,
 } from "@/lib/section-runtime";
 import { canonicalSlug, useEditorPages } from "@/hooks/useEditorPages";
+import type { SaveStatus } from "@/hooks/useEditorPages";
 import type { SectionCategoryId } from "@/lib/sections/categories";
 import {
   fetchDefaultWebsite,
@@ -140,6 +141,60 @@ function newSectionId(prefix = "sec"): string {
 interface EditorStudioProps {
   subdomain?: string;
   collegeName?: string;
+}
+
+/**
+ * What the editor's modals say about saving, as opposed to what they used to.
+ *
+ * Both footers rendered a fixed green "✓ Auto-Saved & Live Updated ⚡" —
+ * unconditionally, so it was equally emphatic while a request was in flight and
+ * after one had failed. The hook recorded the failure the whole time; nothing
+ * asked it for one.
+ *
+ * The failing state names the reason and says the work is still in the editor,
+ * because the useful thing to know at that moment is not that a save failed but
+ * that nothing has been lost yet.
+ */
+function SaveStatusLine({
+  status,
+  error,
+}: {
+  status: SaveStatus;
+  error: string | null;
+}) {
+  const { color, text } = (() => {
+    switch (status) {
+      case "saving":
+        return { color: "#f59e0b", text: "Saving…" };
+      case "saved":
+        return { color: "#22c55e", text: "✓ Saved" };
+      case "failed":
+        return {
+          color: "#f43f5e",
+          text: error
+            ? `Not saved — ${error}. Your changes are still here.`
+            : "Not saved. Your changes are still here.",
+        };
+      default:
+        return { color: "#a1a1aa", text: "No unsaved changes" };
+    }
+  })();
+
+  return (
+    <span
+      role="status"
+      style={{
+        fontSize: "12px",
+        fontWeight: 800,
+        color,
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+      }}
+    >
+      {text}
+    </span>
+  );
 }
 
 export function EditorStudio({
@@ -2353,6 +2408,8 @@ export function EditorStudio({
           onMoveDown={handleMoveDown}
           onDeleteSection={handleDeleteSection}
           onSyncAdminWebsite={handlePersistWebsiteSave}
+          saveStatus={editor.saveStatus}
+          saveError={editor.saveError}
         />
       )}
 
@@ -2740,9 +2797,7 @@ export function EditorStudio({
 
             {/* Footer Action Buttons */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "14px", borderTop: "1px solid #27272a" }}>
-              <span style={{ fontSize: "12px", fontWeight: 800, color: "#22c55e", display: "flex", alignItems: "center", gap: "6px" }}>
-                ✓ Auto-Saved & Live Updated ⚡
-              </span>
+              <SaveStatusLine status={editor.saveStatus} error={editor.saveError} />
               <button
                 onClick={() => setImagePopup(null)}
                 style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(255,255,255,0.15)" }}
@@ -2912,9 +2967,7 @@ export function EditorStudio({
 
             {/* Footer Actions */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "14px", borderTop: "1px solid #27272a" }}>
-              <span style={{ fontSize: "12px", fontWeight: 800, color: "#22c55e", display: "flex", alignItems: "center", gap: "6px" }}>
-                ✓ Auto-Saved & Live Updated ⚡
-              </span>
+              <SaveStatusLine status={editor.saveStatus} error={editor.saveError} />
               <button
                 onClick={() => setMapPopup(null)}
                 style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(255,255,255,0.15)" }}

@@ -26,6 +26,7 @@ function toPayload(college: {
   id: string; name: string; subdomain: string; customDomain: string | null;
   templateId: string | null; themePaletteId: string | null; themeFontId: string | null;
   collegeType: string | null; status: string; isDemo: boolean; createdAt: Date;
+  ownerRole?: string | null; onboardingCompletedAt?: Date | null;
 }): CurrentCollege {
   return {
     id: college.id,
@@ -38,6 +39,10 @@ function toPayload(college: {
     collegeType: college.collegeType,
     status: college.status,
     isDemo: college.isDemo,
+    ownerRole: college.ownerRole ?? null,
+    // Derived here the same way the API derives it, from the same field, so
+    // the two paths into this type cannot disagree about who has onboarded.
+    onboardingCompleted: Boolean(college.onboardingCompletedAt),
     createdAt: college.createdAt.toISOString(),
   } as CurrentCollege;
 }
@@ -137,6 +142,26 @@ export async function requireCollegeBySubdomain(subdomain: string) {
   const college = await requireCurrentCollege(subdomain);
   if (!AUTH_DISABLED && college.subdomain !== subdomain) {
     redirect(`/editor/${college.subdomain}`);
+  }
+  return requireOnboarded(college);
+}
+
+/**
+ * The editor is not reachable before the wizard has been finished.
+ *
+ * Enforced on the server, on the route, rather than by trusting the `next` the
+ * login response hands back. That value is a convenience for the browser and
+ * nothing more — typing `/editor/<mine>` into the address bar skips it
+ * entirely, which is precisely how somebody lands in a builder with no theme
+ * and no font stamped on their project.
+ *
+ * Not applied in open-access mode. That mode has no real account behind it, so
+ * there is nobody to ask the three questions of, and redirecting would trap a
+ * local development session in a wizard whose submit has no college to write to.
+ */
+export function requireOnboarded(college: CurrentCollege): CurrentCollege {
+  if (!AUTH_DISABLED && !college.onboardingCompleted) {
+    redirect("/onboarding");
   }
   return college;
 }

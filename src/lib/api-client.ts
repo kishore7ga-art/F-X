@@ -12,6 +12,8 @@
  * Empty means same-origin (one Dokploy service). Set it to the backend's URL
  * and the frontend talks to another host with no other change.
  */
+import type { OnboardingPayload } from "@/lib/api-contract";
+
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export class ApiError extends Error {
@@ -112,12 +114,37 @@ export const requestAccessRequest = (input: {
   email: string;
   password?: string;
   organization?: string;
+  /**
+   * Fields, not prose. Both of these used to be concatenated into `message`
+   * as `"Website: … | Mobile: …"` — and the admin listing returns `message`
+   * as null unconditionally, so both were collected from the applicant and
+   * then shown to nobody.
+   */
+  phone?: string;
+  website?: string;
   message?: string;
 }) =>
   api<{ received: true }>("/api/v1/access-requests", {
     method: "POST",
     body: input,
   });
+
+/* Onboarding.
+ *
+ * Read and write, and deliberately no third call that saves one answer at a
+ * time. The three questions are one decision: submitted together they either
+ * all land or none do, and a tenant who abandons the wizard halfway is still
+ * cleanly "not onboarded" rather than a college with a theme, no font and
+ * nothing that knows which screen it belongs on.
+ */
+
+export const fetchOnboarding = () => api<OnboardingPayload>("/api/v1/onboarding");
+
+export const completeOnboardingRequest = (input: {
+  role: string;
+  themePaletteId: string;
+  themeFontId: string;
+}) => api<OnboardingPayload>("/api/v1/onboarding", { method: "PUT", body: input });
 
 /*
  * No logoutRequest. Signing out clears the cookie through the server action in

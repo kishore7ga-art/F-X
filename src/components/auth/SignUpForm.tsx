@@ -29,8 +29,26 @@ export function SignUpForm() {
       return;
     }
 
-    if (!password || password.length < 4) {
-      setError("Password must be at least 4 characters long.");
+    /**
+     * Ten, matching `MIN_ACCOUNT_PASSWORD_LENGTH` on the API.
+     *
+     * This said four. The backend has refused anything under ten since the
+     * work factor was unified, so every password between four and nine
+     * characters passed this check, was sent, and came back rejected — with
+     * the form having just told the person it was long enough. Client-side
+     * validation that disagrees with the server is worse than none: it moves
+     * the error to after the submit and blames the wrong thing.
+     */
+    if (!password || password.length < 10) {
+      setError("Password must be at least 10 characters long.");
+      return;
+    }
+
+    const cleanMobile = mobile.trim();
+    // Mirrors the API's rule rather than approximating it. A number rejected
+    // here is a number that would have been rejected there.
+    if (!/^\+?[0-9][0-9\s()\-.]*$/.test(cleanMobile) || cleanMobile.length < 7) {
+      setError("Please enter a valid mobile number (e.g. +91 98765 43210).");
       return;
     }
 
@@ -42,7 +60,12 @@ export function SignUpForm() {
         email: cleanEmail,
         password,
         organization: organization.trim(),
-        message: `Website: ${website.trim()} | Mobile: ${mobile.trim()}`,
+        // A field, not a sentence. This used to be sent as
+        // `message: "Website: … | Mobile: …"`, which the admin listing dropped
+        // on the floor — so the number an administrator needs in order to
+        // verify an application never reached the screen they verify it on.
+        phone: cleanMobile,
+        website: website.trim(),
       });
       window.location.assign("/login?requested=1");
     } catch (cause) {

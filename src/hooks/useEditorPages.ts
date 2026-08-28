@@ -39,7 +39,7 @@
  * and two rapid edits to one page cannot land out of order.
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import {
   deletePage as deletePageRequest,
@@ -62,6 +62,23 @@ export function canonicalSlug(raw: string | null | undefined): PageId {
 }
 
 export type PageStatus = "unloaded" | "loading" | "ready";
+
+/**
+ * What the editor should be telling the person about their work.
+ *
+ * The studio had no such thing. Two modals rendered the literal string
+ * "✓ Auto-Saved & Live Updated ⚡" in green, unconditionally — including while
+ * a save was in flight and including after one had failed — and the toolbar's
+ * save button carried a dot of a fixed colour. The hook already recorded the
+ * failure on `page.error` and simply never handed it to anything that renders.
+ *
+ * Four states, because that is what actually happens:
+ *  - `idle`   — nothing outstanding, nothing saved this session yet.
+ *  - `saving` — a request is in flight, or edits are waiting on the debounce.
+ *  - `saved`  — the last write landed and nothing has changed since.
+ *  - `failed` — the last write did not land. The edits are still in memory.
+ */
+export type SaveStatus = "idle" | "saving" | "saved" | "failed";
 
 export type PageState = {
   id: PageId;
@@ -153,6 +170,41 @@ function fromApi(page: EditorPage): PageState {
 /** Adds a page id to `order` if it is new, preserving insertion order. */
 function withOrder(order: PageId[], pageId: PageId): PageId[] {
   return order.includes(pageId) ? order : [...order, pageId];
+}
+
+/**
+ * The one rule for what the editor claims about unsaved work.
+ *
+ * Pure and exported so it can be tested directly: the states it has to get
+ * right are the ones that are awkward to reach through the UI — a save that
+ * failed on a page nobody is looking at, and the two-second window where edits
+ * are sitting in a debounce with no request in flight yet.
+ *
+ * Order matters and is deliberate:
+ *
+ *  1. A failure anywhere wins. Unsaved work on About is unsaved work while
+ *     Home is on screen, and letting the active page's cleanliness mask it is
+ *     how somebody closes the tab believing everything landed.
+ *  2. Dirty counts as saving. The debounce is already holding those edits;
+ *     saying "saved" during it is the same false statement as saying it during
+ *     the request itself.
+ *  3. Otherwise: "saved" if anything has ever landed this session, and "idle"
+ *     if not — a freshly opened editor has saved nothing and should not imply
+ *     that it has.
+ */
+export function deriveSaveStatus(
+  pages: readonly PageState[],
+  savesInFlight: number,
+  savedOnce: boolean,
+): { saveStatus: SaveStatus; saveError: string | null } {
+  const failed = pages.find((page) => page.error);
+  if (failed) return { saveStatus: "failed", saveError: failed.error };
+
+  if (savesInFlight > 0 || pages.some((page) => page.dirty)) {
+    return { saveStatus: "saving", saveError: null };
+  }
+
+  return { saveStatus: savedOnce ? "saved" : "idle", saveError: null };
 }
 
 export function reducer(state: EditorState, action: Action): EditorState {
@@ -413,6 +465,16 @@ export function useEditorPages(initialSlug = "/home") {
   const loadToken = useRef<Record<PageId, number>>({});
   /** Per-page save queue: the in-flight promise, and whether another is due. */
   const saveState = useRef<Record<PageId, { running: boolean; queued: boolean }>>({});
+  /**
+   * How many saves are in flight, across every page.
+   *
+   * In React state rather than only in the `saveState` ref, because the
+   * toolbar has to re-render when it changes — a ref moves silently, which is
+   * exactly how a status indicator ends up stuck on its last value.
+   */
+  const [savesInFlight, setSavesInFlight] = useState(0);
+  /** Set once the first save of the session lands, so `idle` and `saved` differ. */
+  const [savedOnce, setSavedOnce] = useState(false);
   const timers = useRef<Record<PageId, ReturnType<typeof setTimeout>>>({});
   /**
    * The current state, readable from an async callback.
@@ -559,6 +621,7 @@ export function useEditorPages(initialSlug = "/home") {
       return;
     }
     queue.running = true;
+    setSavesInFlight((n) => n + 1);
 
     try {
       for (;;) {
@@ -578,6 +641,7 @@ export function useEditorPages(initialSlug = "/home") {
             sections: snapshot,
           });
           dispatch({ type: "markSaved", pageId, snapshot, page: saved });
+          setSavedOnce(true);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Could not save";
           console.error(`[editor] save failed for ${pageId}:`, error);
@@ -589,6 +653,7 @@ export function useEditorPages(initialSlug = "/home") {
       }
     } finally {
       queue.running = false;
+      setSavesInFlight((n) => Math.max(0, n - 1));
     }
   }, []);
 
@@ -745,10 +810,27 @@ export function useEditorPages(initialSlug = "/home") {
     [state.order, state.pages],
   );
 
+  /**
+   * The status, and the message behind a failure.
+   *
+   * Derived across every page rather than for the active one alone: a save
+   * that failed on About is still unsaved work, and switching to Home must not
+   * make the editor claim everything is fine. `dirty` counts as saving
+   * because the debounce is already holding those edits — reporting "saved"
+   * during the two seconds before the request goes out is the same lie as
+   * reporting it during the request.
+   */
+  const { saveStatus, saveError } = useMemo(
+    () => deriveSaveStatus(Object.values(state.pages), savesInFlight, savedOnce),
+    [state.pages, savesInFlight, savedOnce],
+  );
+
   return {
     state,
     pages,
     activePage,
+    saveStatus,
+    saveError,
     activeSectionIndex: state.activeSectionIndex,
     booting: state.booting,
     canUndo: (state.history[state.activePageId]?.length ?? 0) > 0,

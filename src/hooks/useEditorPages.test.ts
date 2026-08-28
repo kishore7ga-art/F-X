@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { EditorPage, EditorSection } from "@/lib/editor-api";
-import { canonicalSlug, reducer, type EditorState } from "@/hooks/useEditorPages";
+import {
+  canonicalSlug,
+  deriveSaveStatus,
+  reducer,
+  type EditorState,
+  type PageState,
+} from "@/hooks/useEditorPages";
 
 const section = (id: string, over: Partial<EditorSection> = {}): EditorSection => ({
   id,
@@ -336,5 +342,92 @@ describe("removing a page", () => {
     assert.ok(!state.order.includes("/about"));
     assert.equal(state.activePageId, "/home");
     assert.equal(state.activeSectionIndex, 0);
+  });
+});
+
+/**
+ * What the editor tells someone about their unsaved work.
+ *
+ * Two modal footers rendered a fixed green "✓ Auto-Saved & Live Updated ⚡"
+ * unconditionally, and the toolbar's save dot was one hardcoded colour. The
+ * hook had been recording failures on `page.error` since it was written and
+ * exposed them to nothing — so the one state that mattered, "this did not
+ * save", was the one state the editor could not express.
+ */
+describe("deriveSaveStatus — the editor may not claim a save that did not happen", () => {
+  const page = (over: Partial<PageState> = {}): PageState => ({
+    id: "/home",
+    slug: "/home",
+    title: "Home",
+    sections: [],
+    status: "ready",
+    dirty: false,
+    fresh: false,
+    error: null,
+    ...over,
+  });
+
+  it("says idle before anything has been saved this session", () => {
+    // A freshly opened editor has saved nothing and must not imply it has.
+    assert.deepEqual(deriveSaveStatus([page()], 0, false), {
+      saveStatus: "idle",
+      saveError: null,
+    });
+  });
+
+  it("says saved once a write has landed and nothing has changed since", () => {
+    assert.deepEqual(deriveSaveStatus([page()], 0, true), {
+      saveStatus: "saved",
+      saveError: null,
+    });
+  });
+
+  it("says saving while a request is in flight", () => {
+    assert.equal(deriveSaveStatus([page()], 1, true).saveStatus, "saving");
+  });
+
+  it("says saving while edits sit in the debounce, before any request", () => {
+    // The two-second window that used to render as "✓ Auto-Saved".
+    assert.equal(deriveSaveStatus([page({ dirty: true })], 0, true).saveStatus, "saving");
+  });
+
+  it("reports a failure and keeps its reason", () => {
+    const result = deriveSaveStatus([page({ error: "Network unavailable" })], 0, true);
+    assert.equal(result.saveStatus, "failed");
+    assert.equal(result.saveError, "Network unavailable");
+  });
+
+  it("reports a failure on another page while the open one is clean", () => {
+    // The case the old indicator could not have shown even if it had tried:
+    // unsaved work on About is unsaved work while Home is on screen.
+    const result = deriveSaveStatus(
+      [page(), page({ id: "/about", slug: "/about", error: "Could not save" })],
+      0,
+      true,
+    );
+    assert.equal(result.saveStatus, "failed");
+    assert.equal(result.saveError, "Could not save");
+  });
+
+  it("lets a failure outrank an in-flight save", () => {
+    // Retrying does not un-fail the write that already failed, and showing
+    // "Saving…" over an unresolved failure hides it behind the retry.
+    const result = deriveSaveStatus([page({ error: "Session expired", dirty: true })], 1, true);
+    assert.equal(result.saveStatus, "failed");
+  });
+
+  it("never says saved while any page is dirty or in flight", () => {
+    for (const [pages, inFlight] of [
+      [[page({ dirty: true })], 0],
+      [[page()], 2],
+      [[page(), page({ id: "/about", slug: "/about", dirty: true })], 0],
+    ] as const) {
+      assert.notEqual(deriveSaveStatus(pages, inFlight, true).saveStatus, "saved");
+    }
+  });
+
+  it("handles an editor with no pages at all", () => {
+    assert.doesNotThrow(() => deriveSaveStatus([], 0, false));
+    assert.equal(deriveSaveStatus([], 0, false).saveStatus, "idle");
   });
 });

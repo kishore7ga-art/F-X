@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
+import type { SaveStatus } from "@/hooks/useEditorPages";
 import {
   Save,
   Link as LinkIcon,
@@ -65,6 +67,15 @@ interface EditorToolbarProps {
   onDeleteSection?: () => void;
   onClearSelection?: () => void;
   onSyncAdminWebsite?: () => void;
+  /**
+   * What to say about the person's unsaved work.
+   *
+   * Optional so the toolbar still renders without it, defaulting to "idle" —
+   * which shows a neutral dot and claims nothing. The one state this must
+   * never invent is "saved".
+   */
+  saveStatus?: SaveStatus;
+  saveError?: string | null;
 }
 
 export function EditorToolbar({
@@ -95,6 +106,8 @@ export function EditorToolbar({
   onDeleteSection,
   onClearSelection,
   onSyncAdminWebsite,
+  saveStatus = "idle",
+  saveError = null,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -264,6 +277,31 @@ export function EditorToolbar({
 
   /** Two or more layouts is the minimum for a swap to be able to do anything. */
   const canSwap = isSectionSelected && variantCount > 1;
+
+  /**
+   * The save button's dot and tooltip.
+   *
+   * A failure keeps the reason rather than flattening it to "Save failed":
+   * "Network unavailable" and "Session expired" call for different actions
+   * from the person reading it, and both used to reach the console only.
+   */
+  const saveIndicator = (() => {
+    switch (saveStatus) {
+      case "saving":
+        return { dot: "#f59e0b", title: "Saving your changes…" };
+      case "saved":
+        return { dot: "#16a34a", title: "All changes saved" };
+      case "failed":
+        return {
+          dot: "#e11d48",
+          title: saveError
+            ? `Not saved — ${saveError}. Your changes are still here; click to retry.`
+            : "Not saved. Your changes are still here; click to retry.",
+        };
+      default:
+        return { dot: "#94a3b8", title: "No changes to save" };
+    }
+  })();
 
   const buttonHoverStyle = {
     transition: "all 0.15s ease",
@@ -802,9 +840,28 @@ export function EditorToolbar({
                   position: "relative",
                   ...buttonHoverStyle,
                 }}
-                title="Save Status (Click to Save)"
+                title={saveIndicator.title}
+                aria-label={saveIndicator.title}
               >
-                <Save style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
+                <Save
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    strokeWidth: 1.8,
+                    color: saveStatus === "failed" ? "#e11d48" : "#334155",
+                  }}
+                />
+                {/*
+                  The dot reports the save queue rather than decorating the
+                  button. It was a fixed `#0d1527` — the same colour whether a
+                  request was in flight, had landed, or had failed — which made
+                  it a decoration in the shape of a status light.
+
+                  Colour is not the only carrier: the tooltip and the
+                  `aria-label` say the same thing in words, and a failure also
+                  tints the icon, so this does not depend on distinguishing
+                  amber from green.
+                */}
                 <span
                   style={{
                     position: "absolute",
@@ -813,7 +870,7 @@ export function EditorToolbar({
                     width: "5px",
                     height: "5px",
                     borderRadius: "50%",
-                    backgroundColor: "#0d1527",
+                    backgroundColor: saveIndicator.dot,
                   }}
                 />
               </button>

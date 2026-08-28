@@ -53,7 +53,11 @@ export async function getSession(): Promise<SessionPayload | null> {
     const signedIn = await verifySessionCookie(store.get(COOKIE_NAME)?.value);
     if (signedIn) return signedIn;
 
+    // Null when the database could not be reached. There is no college to
+    // scope a session to, and inventing one would mint a token for a tenant
+    // that does not exist — every write behind it lands nowhere.
     const college = await openAccessCollege();
+    if (!college) return null;
     return { userId: `open-access:${college.id}`, collegeId: college.id };
   }
   const session = await verifySessionCookie(store.get(COOKIE_NAME)?.value);
