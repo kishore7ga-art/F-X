@@ -52,3 +52,8 @@ Thumbs.db
 
 # ---- deploy ----
 .vercel
+
+# ---- test artefacts ----
+# Screenshots from scripts/verify-ui-flows.mjs. Written on every run and only
+# useful for the run that produced them; a failing assertion names the file.
+scripts/screenshots/
