@@ -13,7 +13,15 @@ const nextConfig: NextConfig = {
       process.env.BACKEND_INTERNAL_URL ||
       process.env.NEXT_PUBLIC_API_BASE_URL ||
       "http://localhost:4000";
-    return [
+
+    /**
+     * The proxy that makes `/api/v1/*` the backend.
+     *
+     * Returned as a bare array, which Next treats as `afterFiles` — it runs
+     * *after* filesystem routes. That is correct and load-bearing:
+     * `/api/v1/access-requests` is a real route in this app and has to win.
+     */
+    const proxy = [
       {
         source: "/api/v1/:path*",
         destination: `${backendUrl}/api/v1/:path*`,
@@ -32,6 +40,48 @@ const nextConfig: NextConfig = {
         destination: `${backendUrl}/api/v1/admin/:path*`,
       },
     ];
+
+    /**
+     * ── The rule that keeps the preview mocks out of production ────────────
+     *
+     * `src/app/api/v1/` contains mock handlers for four backend endpoints, so
+     * the editor can be opened and clicked through with no backend and no
+     * database. They are genuinely useful and they are also the most dangerous
+     * files in this repository, because **a filesystem route beats an
+     * `afterFiles` rewrite**. Left unguarded they do not fall back to the
+     * backend — they replace it:
+     *
+     *   - every tenant's editor would load the hardcoded demo college instead
+     *     of their own website, and
+     *   - the mock `PUT /my-website/pages/[slug]` echoes the request back
+     *     without storing it, so the editor would report "All changes saved"
+     *     and discard the work.
+     *
+     * An `if` inside each handler cannot fix that: the route still exists, so
+     * the rewrite still never runs, and a handler that returns 404 when the
+     * flag is off breaks the endpoint instead of proxying it.
+     *
+     * So the guard is here, where the precedence is decided. With the flag off,
+     * exactly these four prefixes are rewritten in `beforeFiles`, which runs
+     * *ahead* of filesystem routes — the mock handlers become unreachable code
+     * rather than a fallback nobody reaches. Everything else, `access-requests`
+     * included, keeps the ordering it has today.
+     *
+     * Scoped to the four prefixes on purpose. A blanket `beforeFiles` rule for
+     * `/api/v1/:path*` would send `/api/v1/access-requests` to the backend too,
+     * which is a real route in this app.
+     */
+    if (process.env.NEXT_PUBLIC_UI_PREVIEW === "1") return proxy;
+
+    const MOCKED_PREFIXES = ["default-website", "my-theme", "my-website", "section-library"];
+    return {
+      beforeFiles: MOCKED_PREFIXES.flatMap((prefix) => [
+        { source: `/api/v1/${prefix}`, destination: `${backendUrl}/api/v1/${prefix}` },
+        { source: `/api/v1/${prefix}/:path*`, destination: `${backendUrl}/api/v1/${prefix}/:path*` },
+      ]),
+      afterFiles: proxy,
+      fallback: [],
+    };
   },
   async headers() {
     /**
