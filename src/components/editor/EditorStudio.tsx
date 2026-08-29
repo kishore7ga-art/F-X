@@ -67,9 +67,11 @@ import {
 import { useViewport } from "@/hooks/useViewport";
 import { DEFAULT_WIDTH, nearestWidth, type DeviceMode } from "@/lib/viewport-presets";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
-import { SectionToolbar, SECTION_TOOLBAR_WIDTH } from "./SectionToolbar";
+import { SectionToolbar } from "./SectionToolbar";
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SectionPatch } from "@/lib/sections/section-edit";
+import { buildSectionSchema } from "@/lib/sections/section-schema";
+import type { SectionCategory } from "@/lib/sections/section-capabilities";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -1771,6 +1773,52 @@ export function EditorStudio({
   const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
 
   /**
+   * Whether the section popup is open.
+   *
+   * Selecting a section does **not** open it. Selection is something a person
+   * does constantly — to move a section, to delete one, to see where it is —
+   * and a panel that appears on every one of those is a panel that is in the
+   * way of all of them. The dock offers a button; this is that button's state.
+   *
+   * It stays open across a change of selection rather than closing, so clicking
+   * from the hero to the footer with it open swaps the controls in place. What
+   * it must never do is show one section's controls while another is selected,
+   * and it cannot: the popup is keyed on the section id and re-derives
+   * everything from that section's markup.
+   */
+  const [isSectionPanelOpen, setIsSectionPanelOpen] = useState(false);
+
+  /**
+   * What the dock's button should offer to edit — "Hero", "Header", "Services".
+   *
+   * Empty when the selected section's markup gives the toolbar nothing to work
+   * with, in which case the dock shows no button at all. A door onto an empty
+   * room is worse than no door: it is the placeholder control §24 forbids, and
+   * it takes a click to discover.
+   */
+  const activeSectionKind = useMemo(() => {
+    if (!activeSection) return "";
+    const schema = buildSectionSchema({
+      code: activeSection.code,
+      category: activeSection.category as SectionCategory,
+    });
+    return schema.groups.length > 0 ? schema.categoryLabel : "";
+  }, [activeSection]);
+
+  /**
+   * Deselecting, which also closes the popup.
+   *
+   * One function rather than an effect watching the selection: a `setState` in
+   * an effect body is a cascading render and React 19's linter rejects it, and
+   * the honest description of this is not "when nothing is selected, close the
+   * popup" but "closing the popup is part of deselecting".
+   */
+  const clearSelection = useCallback(() => {
+    setActiveSectionIndex(null);
+    setIsSectionPanelOpen(false);
+  }, [setActiveSectionIndex]);
+
+  /**
    * The device the panel is editing, taken from the canvas rather than kept
    * beside it.
    *
@@ -1834,11 +1882,14 @@ export function EditorStudio({
         target.blur();
         return;
       }
-      setActiveSectionIndex(null);
+      // The popup first, the selection second — Escape closes the thing most
+      // recently opened, which is what it does everywhere else.
+      if (isSectionPanelOpen) setIsSectionPanelOpen(false);
+      else clearSelection();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeSectionIndex, setActiveSectionIndex]);
+  }, [activeSectionIndex, isSectionPanelOpen, clearSelection]);
 
   const handleEnableTextEditingForActiveSection = () => {
     const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
@@ -1927,13 +1978,8 @@ export function EditorStudio({
 
       {/* Main Studio Canvas Workspace */}
       <main
-        onClick={() => setActiveSectionIndex(null)}
+        onClick={clearSelection}
         className="flex-1 w-full flex flex-col items-stretch justify-start cursor-pointer min-h-screen bg-slate-100/90 px-4 sm:px-8 py-0"
-        /* Room for the section panel rather than a canvas underneath it. The
-           canvas is scaled to fit its pane, so covering 344px of that pane
-           would silently shrink the preview instead of hiding part of it —
-           `ResponsiveCanvas` measures the pane it is given. */
-        style={activeSection ? { paddingRight: SECTION_TOOLBAR_WIDTH + 16 } : undefined}
       >
         {/*
           The site, at the width it says it is.
@@ -2521,18 +2567,16 @@ export function EditorStudio({
       )}
 
       {/*
-        The section's toolbar.
+        The section's toolbar, as a popup over the canvas.
 
-        Present exactly while a section is selected, which is the whole of §1
-        and §12 of the brief: clicking a section replaces the editing surface
-        with that section's controls, clicking another replaces them again —
-        `SectionToolbar` is keyed on the section id, so React discards the
-        previous section's component rather than reconciling it, and there is no
-        state that could survive from one selection into the next. Clicking the
-        canvas background deselects and the panel goes, leaving the editor
-        exactly as it was.
+        Present only while a section is selected *and* the dock's button has
+        been pressed — §1 and §12 of the brief without the side panel that used
+        to enforce them. Keyed on the section id, so clicking from the hero to
+        the footer with it open discards the previous section's component
+        rather than reconciling it: there is no state that could survive from
+        one selection into the next, and therefore no stale toolbar.
       */}
-      {!isSettingsOpen && activeSection && activeSectionIndex !== null && (
+      {!isSettingsOpen && isSectionPanelOpen && activeSection && activeSectionIndex !== null && (
         <SectionToolbar
           key={activeSection.id}
           section={activeSection}
@@ -2541,21 +2585,9 @@ export function EditorStudio({
           dockPosition={dockPosition}
           onDeviceChange={handleSectionDeviceChange}
           onPatch={handleSectionPatch}
-          onClose={() => setActiveSectionIndex(null)}
-          actions={{
-            onDuplicate: handleDuplicateSection,
-            onDelete: handleDeleteSection,
-            onMoveUp: handleMoveUp,
-            onMoveDown: handleMoveDown,
-            onSwapVariant: () => handleSwapVariant(1),
-            variantCount: activeVariantCount,
-            /* The same rule `handleDuplicateSection` enforces, stated here so
-               the button explains itself rather than doing nothing: a navbar or
-               a footer is singular by position, and a copy of one could never
-               be moved anywhere legal. */
-            canDuplicate:
-              activeSection.category !== "navbar" && activeSection.category !== "footer",
-          }}
+          /* Closes the popup and leaves the section selected. Deselecting is a
+             separate act, and one the canvas already offers. */
+          onClose={() => setIsSectionPanelOpen(false)}
         />
       )}
 
@@ -2594,6 +2626,13 @@ export function EditorStudio({
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
           onDockPositionChange={setDockPosition}
+          /* The kind of section, not its name: the button says "Edit Hero"
+             while the pill beside it already says "Hero 2". Empty when this
+             section's markup offers nothing to edit, so the button is absent
+             rather than opening onto nothing. */
+          sectionKindLabel={activeSectionKind}
+          isSectionPanelOpen={isSectionPanelOpen}
+          onToggleSectionPanel={() => setIsSectionPanelOpen((open) => !open)}
         />
       )}
 

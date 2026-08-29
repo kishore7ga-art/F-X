@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { SaveStatus } from "@/hooks/useEditorPages";
 import {
   Save,
@@ -19,28 +18,38 @@ import {
   Layers,
   Type,
   Plus,
+  Lock,
+  Bold as BoldIcon,
+  Italic as ItalicIcon,
+  Underline as UnderlineIcon,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  SlidersVertical,
+  Volume2,
+  Sparkles,
+  Scissors,
+  RotateCw,
+  Crop,
+  Droplet,
+  Gauge,
+  LayoutGrid,
+  Check as CheckIcon,
+  Edit3,
+  Bookmark,
+  ChevronDown,
 } from "lucide-react";
 import type { ViewportState } from "@/lib/viewport-presets";
 import { rootDomain } from "@/lib/host-routing";
-import { ViewportControl } from "./ViewportControl";
 
 interface EditorToolbarProps {
   subdomain?: string;
   onOpenSettings: () => void;
   onToggleDrawer: () => void;
   isSettingsOpen?: boolean;
-  /**
-   * The device, the width and the zoom — one object.
-   *
-   * This was a bare `viewportWidth: string` carrying values like `"768px"` and
-   * `"100%"`, which is two different kinds of thing in one field: a real
-   * viewport width, and a sentinel meaning "no particular width". Everything
-   * downstream had to branch on the sentinel, and there was nowhere at all to
-   * put a zoom. See `@/lib/viewport-presets`.
-   */
   viewport: ViewportState;
   setViewport: (next: ViewportState) => void;
-  /** What "Fit" currently works out to, measured by the canvas. */
   canvasScale?: number;
   activeSectionTitle?: string;
   hasSections?: boolean;
@@ -48,14 +57,6 @@ interface EditorToolbarProps {
   onAddSection?: () => void;
   onDuplicateSection?: () => void;
   onSwapVariant?: () => void;
-  /**
-   * How many layouts the selected section can swap between.
-   *
-   * The Swap button used to look identical whether a section had eight
-   * alternatives or none, and pressing it in the second case did nothing and
-   * said nothing. With the count here the button can disable itself and its
-   * tooltip can say why.
-   */
   variantCount?: number;
   onEditText?: () => void;
   onUndo?: () => void;
@@ -67,25 +68,17 @@ interface EditorToolbarProps {
   onDeleteSection?: () => void;
   onClearSelection?: () => void;
   onSyncAdminWebsite?: () => void;
-  /**
-   * What to say about the person's unsaved work.
-   *
-   * Optional so the toolbar still renders without it, defaulting to "idle" —
-   * which shows a neutral dot and claims nothing. The one state this must
-   * never invent is "saved".
-   */
   saveStatus?: SaveStatus;
   saveError?: string | null;
-  /**
-   * Where the dock has snapped to, reported upward.
-   *
-   * The dock is draggable and docks to any of the four edges, and the section
-   * panel occupies the right edge whenever a section is selected — so on two of
-   * those four edges they would sit on top of each other. The dock keeps
-   * ownership of the position (nothing about its behaviour changes); it just
-   * says where it went, so the panel can step aside.
-   */
   onDockPositionChange?: (position: "bottom" | "top" | "left" | "right") => void;
+  /**
+   * The kind of section selected — "Hero", "Header", "Services" — for the one
+   * button that opens its controls. Empty when the selection has no controls.
+   */
+  sectionKindLabel?: string;
+  /** Whether that button's popup is currently open, so it can show as pressed. */
+  isSectionPanelOpen?: boolean;
+  onToggleSectionPanel?: () => void;
 }
 
 export function EditorToolbar({
@@ -96,9 +89,6 @@ export function EditorToolbar({
   viewport,
   setViewport,
   canvasScale = 1,
-  // Empty, not a sample section name. The fallback below already says
-  // "Select a section"; defaulting to "Hero 2" meant an omitted prop rendered
-  // as a confident label for a section nobody had chosen.
   activeSectionTitle = "",
   hasSections = true,
   isSectionSelected = true,
@@ -119,1249 +109,1293 @@ export function EditorToolbar({
   saveStatus = "idle",
   saveError = null,
   onDockPositionChange,
+  sectionKindLabel = "",
+  isSectionPanelOpen = false,
+  onToggleSectionPanel,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
-  // 4-Direction Hold & Drag + Auto-Docking State
-  const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
-  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  // Toolbar Mode: "format" (Text formatting) or "media" (Crop, Speed, Loop, Volume)
+  const [toolbarMode, setToolbarMode] = useState<"format" | "media">("format");
 
-  /**
-   * Say what just happened, in the status pill.
-   *
-   * This was an empty function with a comment saying notifications were
-   * disabled, declared *below* the five places that called it — so "Toolbar
-   * docked", "Link copied" and "Changes saved" were all computed and thrown
-   * away, and the state holding them was never rendered. Popups are still
-   * gone; this is one non-blocking line that replaces its own message.
-   */
-  const showToast = useCallback((message: string) => {
-    setToastMessage(message || null);
+  // Interactive Popover States
+  const [activeDropdown, setActiveDropdown] = useState<
+    "fontSize" | "alignment" | "speed" | "loop" | "volume" | "fontFamily" | "fillColor" | "lineHeight" | null
+  >(null);
+
+  // Formatting state
+  const [fontSize, setFontSize] = useState<number>(40);
+  const [fontFamily, setFontFamily] = useState<string>("Inter");
+  const [isBold, setIsBold] = useState(false);
+  const [isItalic, setIsItalic] = useState(false);
+  const [isUnderline, setIsUnderline] = useState(false);
+  const [alignment, setAlignment] = useState<"left" | "center" | "right">("left");
+  const [lineHeight, setLineHeight] = useState<number>(1.4);
+  const [fillColor, setFillColor] = useState<string>("#2563eb");
+  const [speed, setSpeed] = useState<number>(0.75);
+  const [volume, setVolume] = useState<number>(50);
+  const [loopEnabled, setLoopEnabled] = useState<boolean>(true);
+
+  // Tooltip tracking
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+
+  // Close dropdowns on outside click
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => setToastMessage(null), 2600);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    // If user clicked directly on or inside a <button>, allow button click normally
-    if ((e.target as HTMLElement).closest("button")) {
-      return;
-    }
-    e.preventDefault();
-    setIsDragging(true);
-    const rect = (e.currentTarget.closest(".editor-toolbar-dock") as HTMLElement)?.getBoundingClientRect();
-    if (rect) {
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+  const handleCopyLink = () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const preview = `${origin}/preview/${subdomain}`;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(preview).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       });
-      setDragPos({
-        x: rect.left,
-        y: rect.top,
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!dragOffset) return;
-      setDragPos({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y,
-      });
-    };
-
-    const handlePointerUp = (e: PointerEvent) => {
-      setIsDragging(false);
-      setDragOffset(null);
-
-      // Snap to nearest 4 edges (Top, Bottom, Left, Right)
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const x = e.clientX;
-      const y = e.clientY;
-
-      const distTop = y;
-      const distBottom = h - y;
-      const distLeft = x;
-      const distRight = w - x;
-
-      const minDist = Math.min(distTop, distBottom, distLeft, distRight);
-
-      let targetDock: "bottom" | "top" | "left" | "right" = "bottom";
-      if (minDist === distTop) targetDock = "top";
-      else if (minDist === distBottom) targetDock = "bottom";
-      else if (minDist === distLeft) targetDock = "left";
-      else targetDock = "right";
-
-      setDockPosition(targetDock);
-      onDockPositionChange?.(targetDock);
-      setDragPos(null);
-      showToast(`Toolbar docked to ${targetDock.toUpperCase()} 🎯`);
-    };
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-  }, [isDragging, dragOffset, showToast, onDockPositionChange]);
-
-  const handleCopyLink = async () => {
-    if (typeof window === "undefined") return;
-    const sub = subdomain || "greenfield";
-    const origin = window.location.origin;
-    const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-    
-    // Clean Live Website Public URL. The host comes from NEXT_PUBLIC_ROOT_DOMAIN
-    // rather than a literal, so moving the platform's domain does not leave a
-    // share button handing out links to the previous one.
-    const publicWebsiteUrl = isProd
-      ? `https://${rootDomain()}/site/${sub}`
-      : `${origin}/site/${sub}`;
-
-    setShareUrl(publicWebsiteUrl);
-    setShowShareModal(true);
-
-    try {
-      await navigator.clipboard.writeText(publicWebsiteUrl);
-      setCopied(true);
-      showToast("Clean Live Website Link Copied! 🔗");
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // Clipboard fallback
-    }
-  };
-
-  const handleOpenPreview = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (onSyncAdminWebsite) {
-      onSyncAdminWebsite();
-    }
-    if (typeof window !== "undefined") {
-      const sub = subdomain || "greenfield";
-      const origin = window.location.origin;
-      const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-      const previewTargetUrl = isProd ? `https://${rootDomain()}/site/${sub}` : `${origin}/site/${sub}`;
-      
-      window.open(previewTargetUrl, "_blank");
     }
   };
 
   const handleManualSave = () => {
-    setSaving(true);
     if (onSyncAdminWebsite) {
       onSyncAdminWebsite();
     }
-    setTimeout(() => {
-      setSaving(false);
-      showToast("Changes saved successfully! 💾");
-    }, 500);
   };
 
-  /**
-   * Ask for the next layout.
-   *
-   * No toast. This used to announce "Section variant updated!" the moment it
-   * was pressed — before the swap was attempted, and regardless of whether one
-   * happened. On the common failure (a category with nothing in the library)
-   * the user was told the section had changed while it visibly had not.
-   * Reporting belongs to the code that knows the outcome; the studio's status
-   * line does it.
-   */
-  const handleRefreshSwap = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    onSwapVariant?.();
+  const toggleDropdown = (name: typeof activeDropdown) => {
+    setActiveDropdown((prev) => (prev === name ? null : name));
   };
 
-  /** Two or more layouts is the minimum for a swap to be able to do anything. */
-  const canSwap = isSectionSelected && variantCount > 1;
-
-  /**
-   * The save button's dot and tooltip.
-   *
-   * A failure keeps the reason rather than flattening it to "Save failed":
-   * "Network unavailable" and "Session expired" call for different actions
-   * from the person reading it, and both used to reach the console only.
-   */
-  const saveIndicator = (() => {
-    switch (saveStatus) {
-      case "saving":
-        return { dot: "#f59e0b", title: "Saving your changes…" };
-      case "saved":
-        return { dot: "#16a34a", title: "All changes saved" };
-      case "failed":
-        return {
-          dot: "#e11d48",
-          title: saveError
-            ? `Not saved — ${saveError}. Your changes are still here; click to retry.`
-            : "Not saved. Your changes are still here; click to retry.",
-        };
-      default:
-        return { dot: "#94a3b8", title: "No changes to save" };
-    }
-  })();
-
-  const buttonHoverStyle = {
-    transition: "all 0.15s ease",
-  };
-
-  /**
-   * Add Section — the one place a section is added from.
-   *
-   * It used to be a hover button in every seam of the canvas: pass the pointer
-   * between two sections and a control appeared *inside the preview*, which is
-   * the one place editor chrome does not belong. The page read as a stack of
-   * blocks with gaps rather than as the website it is.
-   *
-   * Here it is instead, next to the other things you do to a section, and it
-   * places relative to the selection: the new section lands directly **below**
-   * the selected one. With nothing selected it falls back to the existing
-   * rules — a navbar to the top, a footer to the bottom, anything else above
-   * the footer.
-   *
-   * An icon alone, styled exactly like the tools beside it. A filled blue pill
-   * with a label was tried and was wrong for this bar: every other control here
-   * is a bare 30px glyph, so the one coloured, labelled button read as something
-   * bolted on rather than as one of the tools. The row is scanned, not read.
-   *
-   * The `title` carries everything the label said and more — it names the
-   * section the new one will land under — so pressing it is never a guess, and
-   * `aria-label` says the same for anyone who never sees the tooltip.
-   */
-  const addSectionTitle = isSectionSelected && activeSectionTitle
-    ? `Add a section below ${activeSectionTitle}`
-    : "Add a section to this page";
-
-  const isVertical = dockPosition === "left" || dockPosition === "right";
-
-  // Dynamic Dock Positioning Styles
-  const getDockPositionStyles = (): React.CSSProperties => {
-    if (isDragging && dragPos) {
-      return {
-        position: "fixed",
-        left: `${dragPos.x}px`,
-        top: `${dragPos.y}px`,
-        bottom: "auto",
-        right: "auto",
-        transform: "none",
-        transition: "none",
-        zIndex: 999999,
-      };
-    }
-
-    if (dockPosition === "top") {
-      return {
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: "auto",
-        width: "100%",
-        height: "52px",
-        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+  // Tooltip helper component
+  const Tooltip = ({ title, shortcut }: { title: string; shortcut?: string }) => (
+    <div
+      style={{
+        position: "absolute",
+        bottom: "calc(100% + 8px)",
+        left: "50%",
+        transform: "translateX(-50%)",
+        backgroundColor: "#09090b",
+        color: "#ffffff",
+        padding: "4px 8px",
+        borderRadius: "6px",
+        fontSize: "11px",
+        fontWeight: 700,
+        fontFamily: "'Inter', system-ui, sans-serif",
+        whiteSpace: "nowrap",
+        pointerEvents: "none",
+        boxShadow: "0 6px 16px rgba(0,0,0,0.3)",
+        border: "1px solid #27272a",
         zIndex: 99999,
-      };
-    }
-
-    if (dockPosition === "left") {
-      return {
-        position: "fixed",
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: "52px",
-        height: "100%",
-        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-        zIndex: 99999,
-      };
-    }
-
-    if (dockPosition === "right") {
-      return {
-        position: "fixed",
-        right: 0,
-        top: 0,
-        bottom: 0,
-        width: "52px",
-        height: "100%",
-        transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-        zIndex: 99999,
-      };
-    }
-
-    // Default "bottom"
-    return {
-      position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      top: "auto",
-      width: "100%",
-      height: "52px",
-      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-      zIndex: 99999,
-    };
-  };
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "1px",
+      }}
+    >
+      <span>{title}</span>
+      {shortcut && (
+        <span style={{ fontSize: "10px", color: "#a1a1aa", fontWeight: 500 }}>
+          {shortcut}
+        </span>
+      )}
+      {/* Downward triangle arrow */}
+      <div
+        style={{
+          position: "absolute",
+          top: "100%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 0,
+          height: 0,
+          borderLeft: "4px solid transparent",
+          borderRight: "4px solid transparent",
+          borderTop: "4px solid #09090b",
+        }}
+      />
+    </div>
+  );
 
   return (
-    <>
-      {/* What just happened. `toastMessage` already existed and nothing
-          rendered it, so every message this component produced was discarded. */}
-      {toastMessage && (
+    <div
+      ref={toolbarRef}
+      style={{
+        position: "fixed",
+        bottom: "28px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "8px",
+        maxWidth: "96vw",
+      }}
+    >
+      {/* Active Section Label Pill above Toolbar */}
+      {activeSectionTitle && (
         <div
-          role="status"
-          aria-live="polite"
           style={{
-            position: "fixed",
-            bottom: "128px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 60,
-            pointerEvents: "none",
-            padding: "8px 16px",
-            borderRadius: "999px",
-            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            backgroundColor: "rgba(15, 23, 42, 0.9)",
+            backdropFilter: "blur(8px)",
             color: "#f8fafc",
+            padding: "3px 12px",
+            borderRadius: "9999px",
             fontSize: "11px",
-            fontWeight: 900,
+            fontWeight: 800,
             letterSpacing: "-0.01em",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.28)",
+            border: "1px solid rgba(148, 163, 184, 0.2)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
           }}
         >
-          {toastMessage}
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#38bdf8" }} />
+          <span>{activeSectionTitle}</span>
+          {/*
+            The one way into the section's own controls.
+
+            Deliberately one button and not a strip of them. A hero has around
+            sixty controls once its buttons, typography, background and
+            per-device values are counted, and none of that fits in a 52px
+            dock — so what goes here is the door, and the controls are behind
+            it. It sits in the pill that already names the selected section,
+            because that is where somebody looking for "what can I do to this
+            section" is already looking.
+          */}
+          {onToggleSectionPanel && sectionKindLabel && (
+            <button
+              onClick={onToggleSectionPanel}
+              aria-pressed={isSectionPanelOpen}
+              title={
+                isSectionPanelOpen
+                  ? `Close the ${sectionKindLabel} controls`
+                  : `Edit this ${sectionKindLabel.toLowerCase()} — content, layout, background, typography, spacing and responsive`
+              }
+              style={{
+                backgroundColor: isSectionPanelOpen ? "#38bdf8" : "rgba(255,255,255,0.15)",
+                border: "none",
+                borderRadius: "4px",
+                color: isSectionPanelOpen ? "#0f172a" : "#38bdf8",
+                fontSize: "10px",
+                fontWeight: 800,
+                padding: "1px 6px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "3px",
+              }}
+            >
+              <SlidersVertical style={{ width: "10px", height: "10px" }} />
+              Edit {sectionKindLabel}
+            </button>
+          )}
+          {variantCount > 1 && (
+            <button
+              onClick={onSwapVariant}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.15)",
+                border: "none",
+                borderRadius: "4px",
+                color: "#38bdf8",
+                fontSize: "10px",
+                fontWeight: 800,
+                padding: "1px 6px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "3px",
+              }}
+              title={`Swap to next layout (${variantCount} available)`}
+            >
+              <RefreshCw style={{ width: "10px", height: "10px" }} />
+              Swap ({variantCount})
+            </button>
+          )}
         </div>
       )}
 
-    <div
-      className="editor-toolbar-dock"
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        ...getDockPositionStyles(),
-        userSelect: "none",
-      }}
-    >
-      {/* Dock Bar Container (Draggable from any empty space) */}
+      {/* Main Floating White Toolbar Bar */}
       <div
-        onPointerDown={handlePointerDown}
         style={{
-          height: isVertical ? "100%" : "52px",
-          width: isVertical ? "52px" : "100%",
-          backgroundColor: "#f4f6f9",
-          backgroundImage: "linear-gradient(180deg, #fafbfc 0%, #edf0f5 100%)",
-          borderRight: dockPosition === "left" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          borderLeft: dockPosition === "right" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          borderTop: dockPosition === "bottom" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          borderBottom: dockPosition === "top" ? "1px solid rgba(226, 232, 240, 0.9)" : "none",
-          boxShadow:
-            dockPosition === "left"
-              ? "10px 0 40px rgba(0, 0, 0, 0.45)"
-              : dockPosition === "right"
-              ? "-10px 0 40px rgba(0, 0, 0, 0.45)"
-              : dockPosition === "top"
-              ? "0 10px 40px rgba(0, 0, 0, 0.45)"
-              : "0 -10px 40px rgba(0, 0, 0, 0.45)",
-          borderRadius: 0,
-          padding: isVertical ? "8px 0" : "0 24px",
+          backgroundColor: "#ffffff",
+          borderRadius: "14px",
+          height: "48px",
           display: "flex",
-          flexDirection: isVertical ? "column" : "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: isVertical ? "16px" : "16px",
+          padding: "0 8px",
+          gap: "4px",
+          boxShadow: "0 14px 40px -4px rgba(0, 0, 0, 0.14), 0 4px 14px -2px rgba(0, 0, 0, 0.05)",
+          border: "1px solid rgba(228, 228, 231, 0.95)",
           boxSizing: "border-box",
+          userSelect: "none",
           position: "relative",
-          overflowY: isVertical ? "auto" : "visible",
-          cursor: isDragging ? "grabbing" : "grab",
-          touchAction: "none",
         }}
       >
-        {/* Vertical Side Dock Layout */}
-        {isVertical ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              height: "100%",
-              width: "100%",
-              boxSizing: "border-box",
-              padding: "6px 0",
-              gap: "0",
-            }}
-          >
-            {/* Top Floating Section Name Badge beside Vertical Side Dock */}
-            <div
-              style={{
-                position: "fixed",
-                left: dockPosition === "left" ? "64px" : "auto",
-                right: dockPosition === "right" ? "64px" : "auto",
-                top: "8px",
-                padding: "6px 14px",
-                borderRadius: "9999px",
-                backgroundColor: "#ffffff",
-                backgroundImage: "linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%)",
-                border: "1px solid rgba(203, 213, 225, 0.9)",
-                boxShadow: "0 6px 20px rgba(0,0,0,0.18)",
-                fontSize: "12.5px",
-                fontWeight: 800,
-                color: "#0f172a",
-                fontFamily: "'Plus Jakarta Sans', 'Outfit', sans-serif",
-                whiteSpace: "nowrap",
-                pointerEvents: "none",
-                zIndex: 999999,
-                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-              }}
-            >
-              {activeSectionTitle || "Select a section"}
-            </div>
-
-            {/* Logo — always pinned at the top regardless of dock side */}
-            <button
-              onClick={onOpenSettings}
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "50%",
-                backgroundColor: "#0d1527",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                cursor: "pointer",
-                flexShrink: 0,
-                boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
-                overflow: "hidden",
-                marginBottom: "4px",
-              }}
-              title={isSettingsOpen ? "Back to Editor" : "XITE Studio Settings"}
-            >
-              <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
-            </button>
-
-            {/* Inner container — reverses for right dock */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: dockPosition === "right" ? "column-reverse" : "column",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flex: 1,
-                width: "100%",
-                padding: "4px 0",
-              }}
-            >
-            {/* === TOP GROUP: Action Buttons === */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-              {/* Undo Button */}
+        {/* === LEFT / CENTER: Formatting or Media Group === */}
+        {toolbarMode === "format" ? (
+          <>
+            {/* 1. Font Family Dropdown */}
+            <div style={{ position: "relative" }}>
               <button
-                onClick={onUndo}
-                disabled={!canUndo}
+                onClick={() => toggleDropdown("fontFamily")}
+                onMouseEnter={() => setHoveredButton("font")}
+                onMouseLeave={() => setHoveredButton(null)}
                 style={{
-                  width: "30px",
-                  height: "30px",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
+                  gap: "6px",
+                  height: "34px",
+                  padding: "0 10px",
+                  borderRadius: "8px",
+                  backgroundColor: activeDropdown === "fontFamily" ? "#f4f4f5" : "transparent",
                   border: "none",
-                  backgroundColor: "transparent",
-                  cursor: canUndo ? "pointer" : "default",
-                  color: canUndo ? "#334155" : "#cbd5e1",
-                  ...buttonHoverStyle,
-                }}
-                title="Undo (Ctrl+Z)"
-              >
-                <Undo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canUndo ? "#334155" : "#cbd5e1" }} />
-              </button>
-
-              {/* Redo Button */}
-              <button
-                onClick={onRedo}
-                disabled={!canRedo}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: canRedo ? "pointer" : "default",
-                  color: canRedo ? "#334155" : "#cbd5e1",
-                  ...buttonHoverStyle,
-                }}
-                title="Redo (Ctrl+Y)"
-              >
-                <Redo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canRedo ? "#334155" : "#cbd5e1" }} />
-              </button>
-
-              {/* Add Section — icon only; the dock is 52px wide on end. */}
-              <button
-                onClick={onAddSection}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
                   cursor: "pointer",
-                  color: "#334155",
-                  flexShrink: 0,
-                  ...buttonHoverStyle,
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#18181b",
+                  transition: "background-color 0.15s ease",
                 }}
-                title={addSectionTitle}
-                aria-label={addSectionTitle}
               >
-                <Plus style={{ width: "17px", height: "17px", strokeWidth: 2.2, color: "#334155" }} />
+                <span style={{ fontSize: "14px", fontWeight: 800, color: "#27272a" }}>Tᴛ</span>
+                <span>{fontFamily}</span>
               </button>
+              {hoveredButton === "font" && activeDropdown !== "fontFamily" && (
+                <Tooltip title="Font family" />
+              )}
 
-              {/* Duplicate Section Button */}
-              <button
-                onClick={onDuplicateSection}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Duplicate Section"
-              >
-                <Copy style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-              </button>
-
-              {/* Move Up Button */}
-              <button
-                onClick={onMoveUp}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Move Up"
-              >
-                <ArrowUp style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-              </button>
-
-              {/* Move Down Button */}
-              <button
-                onClick={onMoveDown}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Move Down"
-              >
-                <ArrowDown style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-              </button>
-
-              {/* Swap Variant Layout Button */}
-              <button
-                onClick={handleRefreshSwap}
-                disabled={!canSwap}
-                style={{
-                  position: "relative",
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: canSwap ? "pointer" : "not-allowed",
-                  opacity: canSwap ? 1 : 0.4,
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title={
-                  canSwap
-                    ? `Next layout (${variantCount} available)`
-                    : "No other layout for this section in the library"
-                }
-                aria-label={
-                  canSwap
-                    ? `Swap to the next of ${variantCount} layouts`
-                    : "No other layout available for this section"
-                }
-              >
-                <RefreshCw style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                {canSwap && (
-                  /* How many alternatives there are, on the button. Without it
-                     the only way to find out was to press it and count. */
-                  <span
-                    aria-hidden
-                    style={{
-                      position: "absolute",
-                      top: "-1px",
-                      right: "-1px",
-                      minWidth: "13px",
-                      height: "13px",
-                      padding: "0 3px",
-                      borderRadius: "999px",
-                      backgroundColor: "#0f172a",
-                      color: "#ffffff",
-                      fontSize: "8px",
-                      fontWeight: 900,
-                      lineHeight: "13px",
-                      textAlign: "center",
-                    }}
-                  >
-                    {variantCount}
-                  </span>
-                )}
-              </button>
-            </div>
-            {/* === CENTER GROUP: Resolution Switcher === */}
-            {/* 3. Middle Resolution Switcher Group */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "6px",
-                margin: "4px 0",
-              }}
-            >
-              <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
-
-              <ViewportControl
-                viewport={viewport}
-                onChange={setViewport}
-                scale={canvasScale}
-                orientation="vertical"
-              />
-
-              <div style={{ height: "1px", width: "18px", backgroundColor: "#cbd5e1", margin: "4px 0" }} />
-            </div>
-
-            {/* === BOTTOM GROUP: Delete, External Preview, Copy Link, Save, Layers === */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
-              {/* Trash / Delete Section Button */}
-              <button
-                onClick={onDeleteSection}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#0f172a",
-                  ...buttonHoverStyle,
-                }}
-                title="Delete Section"
-              >
-                <Trash2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#0f172a" }} />
-              </button>
-
-              {/* External Link Button */}
-              <button
-                onClick={handleOpenPreview}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Open Live Website Preview in New Tab"
-              >
-                <ExternalLink style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-              </button>
-
-              {/* Copy Link Button */}
-              <button
-                onClick={handleCopyLink}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
-                }}
-                title="Instant Share / Copy Live Website Link"
-              >
-                {copied ? (
-                  <Check style={{ width: "16px", height: "16px", strokeWidth: 2, color: "#16a34a" }} />
-                ) : (
-                  <LinkIcon style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                )}
-              </button>
-
-              {/* Save Disk Button */}
-              <button
-                onClick={handleManualSave}
-                style={{
-                  width: "30px",
-                  height: "30px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  color: "#334155",
-                  position: "relative",
-                  ...buttonHoverStyle,
-                }}
-                title={saveIndicator.title}
-                aria-label={saveIndicator.title}
-              >
-                <Save
-                  style={{
-                    width: "16px",
-                    height: "16px",
-                    strokeWidth: 1.8,
-                    color: saveStatus === "failed" ? "#e11d48" : "#334155",
-                  }}
-                />
-                {/*
-                  The dot reports the save queue rather than decorating the
-                  button. It was a fixed `#0d1527` — the same colour whether a
-                  request was in flight, had landed, or had failed — which made
-                  it a decoration in the shape of a status light.
-
-                  Colour is not the only carrier: the tooltip and the
-                  `aria-label` say the same thing in words, and a failure also
-                  tints the icon, so this does not depend on distinguishing
-                  amber from green.
-                */}
-                <span
+              {/* Font Family Popover */}
+              {activeDropdown === "fontFamily" && (
+                <div
                   style={{
                     position: "absolute",
-                    top: "4px",
-                    right: "4px",
-                    width: "5px",
-                    height: "5px",
-                    borderRadius: "50%",
-                    backgroundColor: saveIndicator.dot,
+                    bottom: "calc(100% + 10px)",
+                    left: 0,
+                    backgroundColor: "#000000",
+                    border: "1px solid #27272a",
+                    borderRadius: "12px",
+                    padding: "6px",
+                    width: "180px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+                    zIndex: 99999,
                   }}
-                />
-              </button>
+                >
+                  {["Inter", "Outfit", "Playfair Display", "Jakarta Sans", "Serif", "Monospace"].map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => {
+                        setFontFamily(f);
+                        setActiveDropdown(null);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "8px 12px",
+                        borderRadius: "8px",
+                        textAlign: "left",
+                        backgroundColor: fontFamily === f ? "#0091ff" : "transparent",
+                        color: "#ffffff",
+                        fontSize: "13px",
+                        fontWeight: fontFamily === f ? 800 : 500,
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>{f}</span>
+                      {fontFamily === f && <CheckIcon style={{ width: "14px", height: "14px" }} />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-              {/* Layers Drawer Button (At Very Bottom) */}
+            {/* 2. Font Size Input / Pill (Matching Image: [🔒 40.00]) */}
+            <div style={{ position: "relative" }}>
               <button
-                onClick={onToggleDrawer}
+                onClick={() => toggleDropdown("fontSize")}
+                onMouseEnter={() => setHoveredButton("fontSize")}
+                onMouseLeave={() => setHoveredButton(null)}
                 style={{
-                  width: "30px",
-                  height: "30px",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  border: "none",
-                  backgroundColor: "transparent",
+                  gap: "6px",
+                  height: "34px",
+                  padding: "0 10px",
+                  borderRadius: "8px",
+                  backgroundColor: activeDropdown === "fontSize" ? "#f4f4f5" : "transparent",
+                  border: activeDropdown === "fontSize" ? "1.5px solid #0091ff" : "1px solid #e4e4e7",
                   cursor: "pointer",
-                  color: "#334155",
-                  ...buttonHoverStyle,
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#18181b",
+                  fontFamily: "monospace",
+                  minWidth: "78px",
+                  justifyContent: "center",
                 }}
-                title="Pages, Colors & Fonts Drawer"
               >
-                <Layers style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
+                <Lock style={{ width: "12px", height: "12px", color: "#71717a" }} />
+                <span>{fontSize.toFixed(2)}</span>
               </button>
+              {hoveredButton === "fontSize" && activeDropdown !== "fontSize" && (
+                <Tooltip title="Font size" />
+              )}
+
+              {/* Font Size Dropdown Popover (Exact match to image) */}
+              {activeDropdown === "fontSize" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "#000000",
+                    border: "1px solid #27272a",
+                    borderRadius: "10px",
+                    padding: "4px",
+                    width: "84px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
+                    zIndex: 99999,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                  }}
+                >
+                  {[24, 32, 40, 48, 56, 64, 72].map((sz) => {
+                    const isSelected = fontSize === sz;
+                    return (
+                      <button
+                        key={sz}
+                        onClick={() => {
+                          setFontSize(sz);
+                          setActiveDropdown(null);
+                        }}
+                        style={{
+                          padding: "6px 8px",
+                          borderRadius: "6px",
+                          backgroundColor: isSelected ? "#0091ff" : "transparent",
+                          color: "#ffffff",
+                          fontSize: "13px",
+                          fontWeight: 700,
+                          border: "none",
+                          cursor: "pointer",
+                          textAlign: "center",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        {sz === 40 && !isSelected && (
+                          <span style={{ fontSize: "11px", color: "#a1a1aa" }}>✓</span>
+                        )}
+                        <span>{sz}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            </div>
-          </div>
-        ) : (
-          /* Horizontal Dock Layout (Original Top/Bottom Dock Bar) */
-          <>
-            {/* 1. Far Left Group: Logo + System Tools */}
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "16px" }}>
-              {/* Logo Button */}
+
+            {/* Subtle Divider */}
+            <div style={{ width: "1px", height: "20px", backgroundColor: "#e4e4e7", margin: "0 2px" }} />
+
+            {/* 3. Bold Button (B) */}
+            <div style={{ position: "relative" }}>
               <button
-                onClick={onOpenSettings}
+                onClick={() => setIsBold(!isBold)}
+                onMouseEnter={() => setHoveredButton("bold")}
+                onMouseLeave={() => setHoveredButton(null)}
                 style={{
                   width: "32px",
                   height: "32px",
-                  borderRadius: "50%",
-                  backgroundColor: "#0d1527",
-                  color: "#ffffff",
+                  borderRadius: "8px",
+                  backgroundColor: isBold ? "#e4e4e7" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 900,
+                  color: "#18181b",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                }}
+              >
+                B
+              </button>
+              {hoveredButton === "bold" && <Tooltip title="Bold" shortcut="⌘B" />}
+            </div>
+
+            {/* 4. Italic Button (I) */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setIsItalic(!isItalic)}
+                onMouseEnter={() => setHoveredButton("italic")}
+                onMouseLeave={() => setHoveredButton(null)}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: isItalic ? "#e4e4e7" : "transparent",
                   border: "none",
                   cursor: "pointer",
-                  flexShrink: 0,
-                  boxShadow: "0 2px 6px rgba(13,21,39,0.25)",
-                  overflow: "hidden",
+                  fontSize: "14px",
+                  fontStyle: "italic",
+                  fontWeight: 700,
+                  color: "#18181b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-                title={isSettingsOpen ? "Back to Editor" : "XITE Studio Settings"}
               >
-                <img src="/xite-logo.png" alt="XITE Logo" style={{ width: "22px", height: "22px", borderRadius: "50%", objectFit: "contain" }} />
+                I
               </button>
-
-              {/* Primary System Tools Group */}
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
-                <button
-                  onClick={onToggleDrawer}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Pages, Colors & Fonts Drawer"
-                >
-                  <Layers style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                </button>
-
-                <button
-                  onClick={handleManualSave}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    position: "relative",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Save Status (Click to Save)"
-                >
-                  <Save style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "4px",
-                      right: "4px",
-                      width: "5px",
-                      height: "5px",
-                      borderRadius: "50%",
-                      backgroundColor: "#0d1527",
-                    }}
-                  />
-                </button>
-
-                <button
-                  onClick={handleCopyLink}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Instant Share / Copy Live Website Link"
-                >
-                  {copied ? (
-                    <Check style={{ width: "16px", height: "16px", strokeWidth: 2, color: "#16a34a" }} />
-                  ) : (
-                    <LinkIcon style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                  )}
-                </button>
-
-                <button
-                  onClick={handleOpenPreview}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Open Live Website Preview in New Tab"
-                >
-                  <ExternalLink style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                </button>
-
-                <button
-                  onClick={onDeleteSection}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#0f172a",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Delete Section"
-                >
-                  <Trash2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#0f172a" }} />
-                </button>
-              </div>
+              {hoveredButton === "italic" && <Tooltip title="Italic" shortcut="⌘I" />}
             </div>
 
-            {/* 2. Center: Active Section Name Text — absolutely centered */}
-            <div
+            {/* 5. Underline Button (U) (Exact match to image) */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setIsUnderline(!isUnderline)}
+                onMouseEnter={() => setHoveredButton("underline")}
+                onMouseLeave={() => setHoveredButton(null)}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: isUnderline ? "#e4e4e7" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  textDecoration: "underline",
+                  fontWeight: 700,
+                  color: "#18181b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                U
+              </button>
+              {hoveredButton === "underline" && (
+                <Tooltip title="Underline" shortcut="⌘U" />
+              )}
+            </div>
+
+            {/* Subtle Divider */}
+            <div style={{ width: "1px", height: "20px", backgroundColor: "#e4e4e7", margin: "0 2px" }} />
+
+            {/* 6. Alignment Button (≡) */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => toggleDropdown("alignment")}
+                onMouseEnter={() => setHoveredButton("align")}
+                onMouseLeave={() => setHoveredButton(null)}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: activeDropdown === "alignment" ? "#f4f4f5" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#18181b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {alignment === "left" && <AlignLeft style={{ width: "16px", height: "16px" }} />}
+                {alignment === "center" && <AlignCenter style={{ width: "16px", height: "16px" }} />}
+                {alignment === "right" && <AlignRight style={{ width: "16px", height: "16px" }} />}
+              </button>
+              {hoveredButton === "align" && activeDropdown !== "alignment" && (
+                <Tooltip title="Alignment" />
+              )}
+
+              {/* Alignment Popover (Exact match to image: [ ≡ | ≡ | ≡ ]) */}
+              {activeDropdown === "alignment" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "#000000",
+                    border: "1px solid #27272a",
+                    borderRadius: "10px",
+                    padding: "4px",
+                    display: "flex",
+                    gap: "3px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
+                    zIndex: 99999,
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      setAlignment("left");
+                      setActiveDropdown(null);
+                    }}
+                    style={{
+                      width: "32px",
+                      height: "30px",
+                      borderRadius: "6px",
+                      backgroundColor: alignment === "left" ? "#0091ff" : "transparent",
+                      color: "#ffffff",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AlignLeft style={{ width: "15px", height: "15px" }} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAlignment("center");
+                      setActiveDropdown(null);
+                    }}
+                    style={{
+                      width: "32px",
+                      height: "30px",
+                      borderRadius: "6px",
+                      backgroundColor: alignment === "center" ? "#0091ff" : "transparent",
+                      color: "#ffffff",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AlignCenter style={{ width: "15px", height: "15px" }} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setAlignment("right");
+                      setActiveDropdown(null);
+                    }}
+                    style={{
+                      width: "32px",
+                      height: "30px",
+                      borderRadius: "6px",
+                      backgroundColor: alignment === "right" ? "#0091ff" : "transparent",
+                      color: "#ffffff",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AlignRight style={{ width: "15px", height: "15px" }} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 7. Line Height Button (↕) */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => toggleDropdown("lineHeight")}
+                onMouseEnter={() => setHoveredButton("lineHeight")}
+                onMouseLeave={() => setHoveredButton(null)}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: activeDropdown === "lineHeight" ? "#f4f4f5" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#18181b",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <SlidersVertical style={{ width: "16px", height: "16px" }} />
+              </button>
+              {hoveredButton === "lineHeight" && activeDropdown !== "lineHeight" && (
+                <Tooltip title="Line height" />
+              )}
+
+              {/* Line Height Popover */}
+              {activeDropdown === "lineHeight" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "#000000",
+                    border: "1px solid #27272a",
+                    borderRadius: "10px",
+                    padding: "4px",
+                    width: "80px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
+                    zIndex: 99999,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                  }}
+                >
+                  {[1.0, 1.2, 1.4, 1.6, 1.8, 2.0].map((lh) => (
+                    <button
+                      key={lh}
+                      onClick={() => {
+                        setLineHeight(lh);
+                        setActiveDropdown(null);
+                      }}
+                      style={{
+                        padding: "6px",
+                        borderRadius: "6px",
+                        backgroundColor: lineHeight === lh ? "#0091ff" : "transparent",
+                        color: "#ffffff",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {lh.toFixed(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 8. Fill Color / Text Color Swatch Button (T_) */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => toggleDropdown("fillColor")}
+                onMouseEnter={() => setHoveredButton("fillColor")}
+                onMouseLeave={() => setHoveredButton(null)}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "32px",
+                  height: "32px",
+                  borderRadius: "8px",
+                  backgroundColor: activeDropdown === "fillColor" ? "#f4f4f5" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#18181b",
+                }}
+              >
+                <span style={{ fontSize: "14px", fontWeight: 800, lineHeight: 1 }}>T</span>
+                <span
+                  style={{
+                    width: "14px",
+                    height: "3px",
+                    backgroundColor: fillColor,
+                    borderRadius: "2px",
+                    marginTop: "2px",
+                  }}
+                />
+              </button>
+              {hoveredButton === "fillColor" && activeDropdown !== "fillColor" && (
+                <Tooltip title="Fill color" />
+              )}
+
+              {/* Fill Color Picker Popover */}
+              {activeDropdown === "fillColor" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "#000000",
+                    border: "1px solid #27272a",
+                    borderRadius: "12px",
+                    padding: "10px",
+                    width: "150px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
+                    zIndex: 99999,
+                    display: "grid",
+                    gridTemplateColumns: "repeat(5, 1fr)",
+                    gap: "6px",
+                  }}
+                >
+                  {[
+                    "#2563eb",
+                    "#3b82f6",
+                    "#60a5fa",
+                    "#10b981",
+                    "#4ade80",
+                    "#f59e0b",
+                    "#fbbf24",
+                    "#ef4444",
+                    "#f43f5e",
+                    "#a855f7",
+                    "#c084fc",
+                    "#ffffff",
+                    "#94a3b8",
+                    "#475569",
+                    "#0f172a",
+                  ].map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => {
+                        setFillColor(c);
+                        setActiveDropdown(null);
+                      }}
+                      style={{
+                        width: "22px",
+                        height: "22px",
+                        borderRadius: "50%",
+                        backgroundColor: c,
+                        border: fillColor === c ? "2px solid #0091ff" : "1px solid rgba(255,255,255,0.2)",
+                        cursor: "pointer",
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Subtle Divider */}
+            <div style={{ width: "1px", height: "20px", backgroundColor: "#e4e4e7", margin: "0 2px" }} />
+
+            {/* 9. Edit Action Button */}
+            <button
+              onClick={onEditText}
               style={{
-                position: "absolute",
-                left: "50%",
-                transform: "translateX(-50%)",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                pointerEvents: "none",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+                transition: "background-color 0.15s ease",
               }}
             >
+              <Edit3 style={{ width: "14px", height: "14px", color: "#27272a" }} />
+              <span>Edit</span>
+            </button>
+
+            {/* 10. Animation Button */}
+            <button
+              onClick={() => setToolbarMode("media")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+                transition: "background-color 0.15s ease",
+              }}
+            >
+              <Sparkles style={{ width: "14px", height: "14px", color: "#27272a" }} />
+              <span>Animation</span>
+            </button>
+
+            {/* 11. Save Action Button (with Live Indicator) */}
+            <button
+              onClick={handleManualSave}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+                position: "relative",
+              }}
+            >
+              <Bookmark style={{ width: "14px", height: "14px", color: "#27272a" }} />
+              <span>Save</span>
               <span
                 style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "50%",
+                  backgroundColor:
+                    saveStatus === "saved"
+                      ? "#22c55e"
+                      : saveStatus === "saving"
+                      ? "#f59e0b"
+                      : saveStatus === "failed"
+                      ? "#ef4444"
+                      : "#22c55e",
+                  marginLeft: "2px",
+                }}
+              />
+            </button>
+          </>
+        ) : (
+          /* === MEDIA / VIDEO / CROPPING BAR MODE (Row 4 in Image) === */
+          <>
+            {/* Switch back to format mode */}
+            <button
+              onClick={() => setToolbarMode("format")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                height: "34px",
+                padding: "0 8px",
+                borderRadius: "8px",
+                backgroundColor: "#f4f4f5",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "12px",
+                fontWeight: 800,
+                color: "#0091ff",
+              }}
+            >
+              ← Text
+            </button>
+
+            {/* Crop Button */}
+            <button
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+              }}
+            >
+              <Crop style={{ width: "14px", height: "14px" }} />
+              <span>Crop</span>
+            </button>
+
+            {/* Blur Button */}
+            <button
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+              }}
+            >
+              <Droplet style={{ width: "14px", height: "14px" }} />
+              <span>Blur</span>
+            </button>
+
+            {/* Trim Button */}
+            <button
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+              }}
+            >
+              <Scissors style={{ width: "14px", height: "14px" }} />
+              <span>Trim</span>
+            </button>
+
+            {/* Speed Button */}
+            <button
+              onClick={() => toggleDropdown("speed")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: activeDropdown === "speed" ? "#f4f4f5" : "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+              }}
+            >
+              <Gauge style={{ width: "14px", height: "14px" }} />
+              <span>Speed</span>
+            </button>
+
+            {/* Loop · On Button (with Popover Dropdown) */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => toggleDropdown("loop")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  height: "34px",
+                  padding: "0 10px",
+                  borderRadius: "8px",
+                  backgroundColor: activeDropdown === "loop" ? "#f4f4f5" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
                   fontSize: "13px",
-                  fontWeight: 800,
-                  color: "#0f172a",
-                  fontFamily: "'Plus Jakarta Sans', 'Outfit', var(--font-jakarta), var(--font-inter), sans-serif",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  letterSpacing: "-0.015em",
+                  fontWeight: 700,
+                  color: "#0091ff",
                 }}
               >
-                {activeSectionTitle || "Select a section"}
-              </span>
+                <RotateCw style={{ width: "14px", height: "14px", color: "#0091ff" }} />
+                <span>Loop · On</span>
+              </button>
+
+              {/* Loop / Speed Popover (Exact match to image) */}
+              {activeDropdown === "loop" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "#000000",
+                    border: "1px solid #27272a",
+                    borderRadius: "10px",
+                    padding: "4px",
+                    width: "100px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
+                    zIndex: 99999,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "2px",
+                  }}
+                >
+                  {[0.25, 0.5, 0.75, "Normal", 1.25, 1.5, 1.75, 2, 2.25, 2.5].map((val) => {
+                    const isSelected = val === 0.75;
+                    return (
+                      <button
+                        key={String(val)}
+                        onClick={() => {
+                          if (typeof val === "number") setSpeed(val);
+                          setActiveDropdown(null);
+                        }}
+                        style={{
+                          padding: "6px 8px",
+                          borderRadius: "6px",
+                          backgroundColor: isSelected ? "#0091ff" : "transparent",
+                          color: "#ffffff",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          border: "none",
+                          cursor: "pointer",
+                          textAlign: "center",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        {val === "Normal" && <span style={{ fontSize: "11px" }}>✓</span>}
+                        <span>{val}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* 3. Right Group: Viewport Switcher + Editing Tools */}
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
-              <ViewportControl
-                viewport={viewport}
-                onChange={setViewport}
-                scale={canvasScale}
-                orientation="horizontal"
-              />
+            {/* Animation Button */}
+            <button
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#18181b",
+              }}
+            >
+              <Sparkles style={{ width: "14px", height: "14px" }} />
+              <span>Animation</span>
+            </button>
 
-              <div style={{ height: "18px", width: "1.5px", backgroundColor: "#cbd5e1", margin: "0 6px", flexShrink: 0 }} />
+            {/* Volume Button (with Slider Popover) */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => toggleDropdown("volume")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  height: "34px",
+                  padding: "0 10px",
+                  borderRadius: "8px",
+                  backgroundColor: activeDropdown === "volume" ? "#f4f4f5" : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#18181b",
+                }}
+              >
+                <Volume2 style={{ width: "15px", height: "15px" }} />
+                <span>Volume</span>
+              </button>
 
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "6px" }}>
-                <button
-                  onClick={onUndo}
-                  disabled={!canUndo}
+              {/* Volume Popover (Exact match to image) */}
+              {activeDropdown === "volume" && (
+                <div
                   style={{
-                    width: "30px",
-                    height: "30px",
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "#000000",
+                    border: "1px solid #27272a",
+                    borderRadius: "12px",
+                    padding: "14px 18px",
+                    width: "240px",
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
+                    zIndex: 99999,
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: canUndo ? "pointer" : "default",
-                    color: canUndo ? "#334155" : "#cbd5e1",
-                    ...buttonHoverStyle,
+                    flexDirection: "column",
+                    gap: "12px",
                   }}
-                  title="Undo (Ctrl+Z)"
                 >
-                  <Undo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canUndo ? "#334155" : "#cbd5e1" }} />
-                </button>
-
-                <button
-                  onClick={onRedo}
-                  disabled={!canRedo}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: canRedo ? "pointer" : "default",
-                    color: canRedo ? "#334155" : "#cbd5e1",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Redo (Ctrl+Y)"
-                >
-                  <Redo2 style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: canRedo ? "#334155" : "#cbd5e1" }} />
-                </button>
-
-                <button
-                  onClick={onAddSection}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title={addSectionTitle}
-                  aria-label={addSectionTitle}
-                >
-                  <Plus style={{ width: "17px", height: "17px", strokeWidth: 2.2, color: "#334155" }} />
-                </button>
-
-                <button
-                  onClick={onDuplicateSection}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Duplicate Section"
-                >
-                  <Copy style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                </button>
-
-                <button
-                  onClick={onMoveUp}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Move Up"
-                >
-                  <ArrowUp style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                </button>
-
-                <button
-                  onClick={onMoveDown}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Move Down"
-                >
-                  <ArrowDown style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                </button>
-
-                <button
-                  onClick={handleRefreshSwap}
-                  style={{
-                    width: "30px",
-                    height: "30px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    color: "#334155",
-                    ...buttonHoverStyle,
-                  }}
-                  title="Swap Variant Layout"
-                >
-                  <RefreshCw style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
-                </button>
-              </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <Volume2 style={{ width: "16px", height: "16px", color: "#a1a1aa" }} />
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={volume}
+                      onChange={(e) => setVolume(Number(e.target.value))}
+                      style={{
+                        flex: 1,
+                        accentColor: "#0091ff",
+                        height: "4px",
+                        borderRadius: "2px",
+                        cursor: "pointer",
+                      }}
+                    />
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#ffffff", minWidth: "32px", textAlign: "right" }}>
+                      {volume}%
+                    </span>
+                  </div>
+                  <button
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      backgroundColor: "transparent",
+                      border: "none",
+                      color: "#e4e4e7",
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      padding: "4px 0",
+                    }}
+                  >
+                    <SlidersVertical style={{ width: "12px", height: "12px" }} />
+                    <span>Advanced</span>
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
-      </div>
 
+        {/* Separator before Right Actions */}
+        <div style={{ width: "1.5px", height: "22px", backgroundColor: "#e4e4e7", margin: "0 4px" }} />
 
-      {/* 🔗 Share Public Live Website Link Modal */}
-      {showShareModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999999,
-            backgroundColor: "rgba(0, 0, 0, 0.85)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={() => setShowShareModal(false)}
-        >
-          <div
+        {/* === RIGHT SECTION: Object & Section Actions === */}
+
+        {/* Copy / Duplicate Button (Exact match to image) */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={onDuplicateSection}
+            onMouseEnter={() => setHoveredButton("copy")}
+            onMouseLeave={() => setHoveredButton(null)}
             style={{
-              width: "100%",
-              maxWidth: "460px",
-              backgroundColor: "#000000",
-              border: "1px solid #3f3f46",
-              borderRadius: "24px",
-              padding: "28px",
-              boxShadow: "0 25px 60px -15px rgba(0, 0, 0, 0.95)",
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#18181b",
               display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-              color: "#ffffff",
-              fontFamily: "system-ui, sans-serif",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-            onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "38px", height: "38px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: 900 }}>
-                  🔗
-                </div>
-                <div>
-                  <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>Share Live Website Link</h3>
-                  <p style={{ fontSize: "11px", color: "#a1a1aa", margin: "2px 0 0 0" }}>Anyone with this link can view your live website</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowShareModal(false)}
-                style={{ background: "transparent", border: "none", color: "#a1a1aa", cursor: "pointer", fontSize: "18px" }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Input URL display */}
-            <div>
-              <label style={{ fontSize: "11px", fontWeight: 800, color: "#e4e4e7", textTransform: "uppercase", display: "block", marginBottom: "8px", letterSpacing: "0.05em" }}>
-                Public Live Website Link
-              </label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <input
-                  type="text"
-                  readOnly
-                  value={shareUrl}
-                  style={{
-                    flex: 1,
-                    height: "44px",
-                    backgroundColor: "#09090b",
-                    border: "1px solid #3f3f46",
-                    borderRadius: "12px",
-                    padding: "0 14px",
-                    color: "#ffffff",
-                    fontSize: "13px",
-                    fontFamily: "monospace",
-                    fontWeight: "bold",
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(shareUrl);
-                    showToast("Link Copied to Clipboard! 📋");
-                  }}
-                  style={{
-                    height: "44px",
-                    padding: "0 18px",
-                    borderRadius: "12px",
-                    backgroundColor: "#ffffff",
-                    color: "#000000",
-                    fontWeight: 900,
-                    fontSize: "13px",
-                    border: "none",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 4px 12px rgba(255,255,255,0.2)",
-                  }}
-                >
-                  📋 Copy
-                </button>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingTop: "12px", borderTop: "1px solid #27272a" }}>
-              <button
-                onClick={() => setShowShareModal(false)}
-                style={{ height: "40px", padding: "0 18px", borderRadius: "10px", border: "none", background: "transparent", color: "#a1a1aa", fontWeight: 800, cursor: "pointer" }}
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  window.open(shareUrl, "_blank");
-                  setShowShareModal(false);
-                }}
-                style={{ height: "40px", padding: "0 22px", borderRadius: "10px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
-              >
-                <span>Open Link in New Tab ↗️</span>
-              </button>
-            </div>
-          </div>
+            <Copy style={{ width: "16px", height: "16px", strokeWidth: 1.8 }} />
+          </button>
+          {hoveredButton === "copy" && <Tooltip title="Copy" shortcut="⌘C" />}
         </div>
-      )}
 
+        {/* Paste / Add Section Button */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={onAddSection}
+            onMouseEnter={() => setHoveredButton("add")}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#18181b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Plus style={{ width: "17px", height: "17px", strokeWidth: 2 }} />
+          </button>
+          {hoveredButton === "add" && <Tooltip title="Add Section" />}
+        </div>
+
+        {/* Move Up Button (↑) */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={onMoveUp}
+            onMouseEnter={() => setHoveredButton("moveUp")}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#18181b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ArrowUp style={{ width: "16px", height: "16px", strokeWidth: 1.8 }} />
+          </button>
+          {hoveredButton === "moveUp" && <Tooltip title="Move Up" />}
+        </div>
+
+        {/* Move Down Button (↓) */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={onMoveDown}
+            onMouseEnter={() => setHoveredButton("moveDown")}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#18181b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ArrowDown style={{ width: "16px", height: "16px", strokeWidth: 1.8 }} />
+          </button>
+          {hoveredButton === "moveDown" && <Tooltip title="Move Down" />}
+        </div>
+
+        {/* Delete Section Button (🗑) */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={onDeleteSection}
+            onMouseEnter={() => setHoveredButton("delete")}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#18181b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Trash2 style={{ width: "16px", height: "16px", strokeWidth: 1.8 }} />
+          </button>
+          {hoveredButton === "delete" && <Tooltip title="Delete" shortcut="⌫" />}
+        </div>
+
+        {/* More / Grid / Drawer Button (⊞) */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={onToggleDrawer}
+            onMouseEnter={() => setHoveredButton("grid")}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              color: "#18181b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <LayoutGrid style={{ width: "16px", height: "16px", strokeWidth: 1.8 }} />
+          </button>
+          {hoveredButton === "grid" && <Tooltip title="Layers & Theme" />}
+        </div>
+      </div>
     </div>
-    </>
   );
 }

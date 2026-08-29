@@ -3,15 +3,23 @@
 /**
  * The toolbar for whichever section is selected.
  *
- * ── Why this is a panel and not a wider dock ───────────────────────────────
+ * ── Where it lives, and why it is not a side panel ─────────────────────────
  *
- * The brief's own sketch of it (§15) is a vertical stack of named groups, and
- * that is the right shape: a hero has around sixty controls once its buttons,
- * typography and background are counted, and there is no arrangement of sixty
- * controls that fits in the 52px strip the existing dock occupies. The dock
- * keeps what belongs to the *editor* — save state, device width, undo, share,
- * add-section — and this panel is what belongs to the *section*. Selecting a
- * section opens it; deselecting closes it and the editor is exactly as it was.
+ * It was one, docked to the right edge for as long as a section was selected,
+ * and that was wrong for this editor: it stood open the whole time, took 344px
+ * off the canvas permanently, and made selecting a section a layout event. The
+ * canvas is the product here; a panel that competes with it for width is a
+ * panel that is in the way.
+ *
+ * So it is a **popup, opened from one small button in the dock**, and closed
+ * again. Nothing appears until it is asked for, and the canvas is full width
+ * the rest of the time. The dock keeps what belongs to the *editor* — save
+ * state, device width, undo, share, add-section, and the section's own
+ * move/duplicate/swap/delete — and this holds what belongs to the *section*:
+ * the sixty-odd controls that could never have fitted in a 52px strip.
+ *
+ * It anchors to whichever edge the dock has been dragged to, so the two are
+ * always adjacent and never overlapping.
  *
  * ── Why it holds almost no state ───────────────────────────────────────────
  *
@@ -43,7 +51,6 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  RefreshCw,
   X,
 } from "lucide-react";
 
@@ -67,28 +74,18 @@ import { buildSectionSchema, allControls, type Control, type ControlList } from 
 import { DEVICES, type Device } from "@/lib/sections/section-managed-css";
 import type { SectionCategory } from "@/lib/sections/section-capabilities";
 
-export type SectionToolbarActions = {
-  onDuplicate?: () => void;
-  onDelete?: () => void;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  onSwapVariant?: () => void;
-  variantCount: number;
-  canDuplicate: boolean;
-};
-
 type Props = {
   section: { id: string; title: string; code: string; category: string };
   /** Human position, for the header line. */
   position: { index: number; total: number };
   device: Device;
-  /** Where the floating dock is, so the panel can lay out beside it. */
+  /** Which edge the floating dock is on, so the popup opens against it. */
   dockPosition?: "bottom" | "top" | "left" | "right";
   onDeviceChange: (device: Device) => void;
   /** Writes through the editor's own mutation path — undo, autosave and all. */
   onPatch: (patch: SectionPatch) => void;
+  /** Closes the popup. Does *not* deselect — the section stays selected. */
   onClose: () => void;
-  actions: SectionToolbarActions;
 };
 
 const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
@@ -97,10 +94,44 @@ const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
   mobile: { label: "Mobile", Icon: Smartphone },
 };
 
-export const SECTION_TOOLBAR_WIDTH = 344;
+export const SECTION_TOOLBAR_WIDTH = 340;
 
 /** The floating dock's thickness on whichever edge it has snapped to. */
 const DOCK_THICKNESS = 52;
+
+/** A little air between the popup and the dock it opens from. */
+const DOCK_GAP = 10;
+
+/** The selected-section pill the dock draws above its bar, and its own gap. */
+const PILL_HEIGHT = 34;
+
+/**
+ * Where the popup sits, given the edge the dock is on.
+ *
+ * Always adjacent to the dock and never over it, because the button that opens
+ * this lives *in* the dock — a popup covering its own trigger is a popup you
+ * cannot close by pressing the thing you opened it with.
+ *
+ * Horizontal docks centre it; vertical docks put it against the same side, so
+ * it opens outward from the button rather than across the canvas.
+ */
+function popupPosition(dock: "bottom" | "top" | "left" | "right"): React.CSSProperties {
+  /* A horizontal dock carries the selected-section pill above the bar, and the
+     trigger button is *in* that pill — so the clearance is the bar plus the
+     pill, not the bar alone. A vertical dock has no pill. */
+  const alongside = DOCK_THICKNESS + DOCK_GAP;
+  const overBar = DOCK_THICKNESS + PILL_HEIGHT + DOCK_GAP;
+  switch (dock) {
+    case "top":
+      return { top: overBar, left: "50%", transform: "translateX(-50%)" };
+    case "left":
+      return { left: alongside, bottom: DOCK_GAP };
+    case "right":
+      return { right: alongside, bottom: DOCK_GAP };
+    default:
+      return { bottom: overBar, left: "50%", transform: "translateX(-50%)" };
+  }
+}
 
 export function SectionToolbar({
   section,
@@ -110,7 +141,6 @@ export function SectionToolbar({
   onDeviceChange,
   onPatch,
   onClose,
-  actions,
 }: Props) {
   const editable: EditableSection = useMemo(
     () => ({ title: section.title, code: section.code, category: section.category }),
@@ -236,43 +266,35 @@ export function SectionToolbar({
   };
 
   return (
-    <aside
-      onClick={(event) => event.stopPropagation()}
-      className="fixed right-0 top-0 bottom-0 z-40 flex flex-col border-l border-slate-200 bg-white shadow-[0_0_40px_rgba(15,23,42,0.10)]"
-      style={{
-        width: SECTION_TOOLBAR_WIDTH,
-        /* Beside the dock, never under it. The dock is 52px on whichever edge
-           it has been dragged to and sits above everything, so on the right it
-           would cover this panel's scrollbar and on the top its header. The
-           bottom edge needs nothing here — the scroll area's own `pb-24`
-           already clears it. */
-        right: dockPosition === "right" ? DOCK_THICKNESS : 0,
-        top: dockPosition === "top" ? DOCK_THICKNESS : 0,
-      }}
+    <div
+      role="dialog"
       aria-label={`${schema.categoryLabel} section settings`}
+      onClick={(event) => event.stopPropagation()}
+      className="fixed z-[100000] flex max-h-[min(70vh,560px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
+      style={{ width: SECTION_TOOLBAR_WIDTH, ...popupPosition(dockPosition) }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className="shrink-0 border-b border-slate-200 px-4 pb-3 pt-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-cyan-600">
+      <header className="shrink-0 border-b border-slate-200 px-3.5 pb-2.5 pt-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <p className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-600">
               {schema.categoryLabel}
             </p>
-            <h2 className="truncate text-sm font-extrabold tracking-tight text-slate-900" title={section.title}>
+            <h2 className="truncate text-[11px] font-bold text-slate-500" title={section.title}>
               {section.title}
+              <span className="ml-1.5 font-semibold text-slate-300">
+                {position.index + 1}/{position.total}
+              </span>
             </h2>
-            <p className="mt-0.5 text-[10px] font-semibold text-slate-400">
-              Section {position.index + 1} of {position.total}
-            </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            title="Close and deselect (Esc)"
+            title="Close (Esc)"
             aria-label="Close section settings"
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
 
@@ -280,7 +302,7 @@ export function SectionToolbar({
             and the values being edited always describe the same width — the
             alternative is a panel showing mobile values beside a desktop
             preview, which is worse than having no device tabs at all. */}
-        <div className="mt-3 flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+        <div className="mt-2 flex items-center gap-1 rounded-xl bg-slate-100 p-0.5">
           {DEVICES.map((id) => {
             const { label, Icon } = DEVICE_META[id];
             const active = device === id;
@@ -290,7 +312,7 @@ export function SectionToolbar({
                 type="button"
                 onClick={() => onDeviceChange(id)}
                 aria-pressed={active}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] font-bold transition ${
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition ${
                   active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
               >
@@ -301,11 +323,10 @@ export function SectionToolbar({
           })}
         </div>
 
-        <ActionRow actions={actions} onReset={reset} canReset={canReset} />
       </header>
 
       {/* ── Groups ─────────────────────────────────────────────────────── */}
-      <div className="min-h-0 flex-1 overflow-y-auto pb-24">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {schema.groups.length === 0 && (
           <p className="px-4 py-6 text-[11px] font-medium leading-relaxed text-slate-500">
             This section&rsquo;s markup offers nothing this toolbar can edit. Its text can still be
@@ -367,80 +388,35 @@ export function SectionToolbar({
           );
         })}
       </div>
-    </aside>
-  );
-}
 
-/* ── The section's own actions ──────────────────────────────────────────── */
+      {/*
+        Reset, and only Reset.
 
-function ActionRow({
-  actions,
-  onReset,
-  canReset,
-}: {
-  actions: SectionToolbarActions;
-  onReset: () => void;
-  canReset: boolean;
-}) {
-  const button = (
-    label: string,
-    title: string,
-    Icon: typeof Copy,
-    onClick: (() => void) | undefined,
-    enabled: boolean,
-    danger = false,
-  ) => (
-    <button
-      key={label}
-      type="button"
-      onClick={onClick}
-      disabled={!enabled || !onClick}
-      title={title}
-      aria-label={label}
-      className={`flex h-8 flex-1 items-center justify-center rounded-lg border transition ${
-        enabled && onClick
-          ? danger
-            ? "border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
-            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-          : "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300"
-      }`}
-    >
-      <Icon className="h-3.5 w-3.5" />
-    </button>
-  );
-
-  return (
-    <div className="mt-3 flex items-center gap-1.5">
-      {button("Move up", "Move this section up", ArrowUp, actions.onMoveUp, true)}
-      {button("Move down", "Move this section down", ArrowDown, actions.onMoveDown, true)}
-      {button(
-        "Swap layout",
-        actions.variantCount > 1
-          ? `Swap to another layout — ${actions.variantCount} available`
-          : "No other layouts in the library for this kind of section",
-        RefreshCw,
-        actions.onSwapVariant,
-        actions.variantCount > 1,
-      )}
-      {button(
-        "Duplicate",
-        actions.canDuplicate
-          ? "Duplicate this section below"
-          : "A header or a footer is singular by position and cannot be duplicated",
-        Copy,
-        actions.onDuplicate,
-        actions.canDuplicate,
-      )}
-      {button(
-        "Reset styling",
-        canReset
-          ? "Remove every style this toolbar has applied. Text edits are not affected."
-          : "This section has no toolbar styling to reset",
-        RotateCcw,
-        onReset,
-        canReset,
-      )}
-      {button("Delete", "Delete this section", Trash2, actions.onDelete, true, true)}
+        The six-button row that used to sit here — move up, move down, swap,
+        duplicate, delete — duplicated buttons the dock already has three
+        centimetres away, and a control offered twice is a control someone has
+        to work out the difference between. Reset is the one section action the
+        dock has no equivalent for, because it belongs to the styling this
+        popup writes.
+      */}
+      <footer className="shrink-0 border-t border-slate-100 px-3.5 py-2">
+        <button
+          type="button"
+          onClick={reset}
+          disabled={!canReset}
+          title={
+            canReset
+              ? "Remove every style this toolbar has applied to this section. Text edits are not affected, and this can be undone."
+              : "This section has no toolbar styling to reset"
+          }
+          className={`flex items-center gap-1.5 text-[10px] font-bold transition ${
+            canReset ? "text-slate-500 hover:text-rose-600" : "cursor-not-allowed text-slate-300"
+          }`}
+        >
+          <RotateCcw className="h-3 w-3" />
+          Reset styling
+        </button>
+      </footer>
     </div>
   );
 }
