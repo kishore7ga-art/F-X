@@ -65,7 +65,11 @@ import {
   type EditorThemeId,
 } from "@/lib/editor-themes";
 import { useViewport } from "@/hooks/useViewport";
+import { DEFAULT_WIDTH, nearestWidth, type DeviceMode } from "@/lib/viewport-presets";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
+import { SectionToolbar, SECTION_TOOLBAR_WIDTH } from "./SectionToolbar";
+import type { Device } from "@/lib/sections/section-managed-css";
+import type { SectionPatch } from "@/lib/sections/section-edit";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -1485,10 +1489,19 @@ export function EditorStudio({
         (el as HTMLElement).style.borderRadius = '';
       });
 
-      const newCode = cleanCanvasWrapperFromCode(clone.innerHTML);
-      if (newCode) {
+      const newBody = cleanCanvasWrapperFromCode(clone.innerHTML);
+      if (newBody) {
         setSectionsWithHistory((prev) =>
-          prev.map((sec, i) => (i === sectionIndex ? { ...sec, code: newCode } : sec))
+          prev.map((sec, i) =>
+            /* Head from the stored section, body from the canvas. The canvas
+               deliberately holds no `<style>` — `useSectionRuntime` lifted it
+               out and fenced it to this section — so writing what the DOM
+               returns as the whole section deletes that stylesheet. Every other
+               read-back on this page already goes through
+               `recomposeSectionCode`; these three did not, and each was one
+               "set this button's link" away from stripping a section's CSS. */
+            i === sectionIndex ? { ...sec, code: recomposeSectionCode(sec.code, newBody) } : sec,
+          ),
         );
       }
     }
@@ -1735,6 +1748,98 @@ export function EditorStudio({
   const handleMoveUp = useCallback(() => moveActiveSection(-1), [moveActiveSection]);
   const handleMoveDown = useCallback(() => moveActiveSection(1), [moveActiveSection]);
 
+  /* ── The selected section's own toolbar ───────────────────────────────────
+   *
+   * Everything below is plumbing between three things that already existed: the
+   * selection (`activeSectionIndex`), the preview width (`viewport`) and the
+   * mutation path (`setSectionsWithHistory`). The panel itself holds no section
+   * state and makes no requests — see `SectionToolbar` and
+   * `lib/sections/section-edit.ts`.
+   */
+
+  const activeSection = activeSectionIndex !== null ? sections[activeSectionIndex] ?? null : null;
+
+  /**
+   * Where the floating dock currently is, so the section panel does not sit
+   * under it.
+   *
+   * The dock can be dragged to any of the four edges and the panel occupies the
+   * right one, so on two of those four they would overlap — the right dock over
+   * the panel's scrollbar, the top dock over its header. The dock still owns
+   * its own position; this is only a copy for laying out beside it.
+   */
+  const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
+
+  /**
+   * The device the panel is editing, taken from the canvas rather than kept
+   * beside it.
+   *
+   * A second copy of "which device am I looking at" is how a panel comes to
+   * show mobile values next to a desktop preview. There is one viewport in this
+   * editor and the panel reads it; pressing Tablet in the panel moves the
+   * canvas, because those are the same act.
+   */
+  const sectionDevice: Device = viewport.mode === "phone" ? "mobile" : viewport.mode;
+
+  const handleSectionDeviceChange = useCallback(
+    (device: Device) => {
+      const mode: DeviceMode = device === "mobile" ? "phone" : device;
+      if (mode === viewport.mode) return;
+      // The nearest rung in the new mode, so switching device from the panel
+      // behaves exactly as switching it from the dock does.
+      setViewport({ ...viewport, mode, width: nearestWidth(mode, DEFAULT_WIDTH[mode]) });
+    },
+    [viewport, setViewport],
+  );
+
+  /**
+   * One control change, written the way every other section edit is written.
+   *
+   * `setSectionsWithHistory` is the same call the swap button, the inline text
+   * editor and the section picker make, so a toolbar edit gets undo, the
+   * per-page save queue and the dirty flag by construction rather than by
+   * remembering to wire them up. The index is captured here and the page is
+   * captured inside `mutateSections`, which is what makes an edit dispatched
+   * moments before a page switch land on the page it was made for.
+   */
+  const handleSectionPatch = useCallback(
+    (patch: SectionPatch) => {
+      if (activeSectionIndex === null) return;
+      setSectionsWithHistory((prev) =>
+        prev.map((sec, index) =>
+          index === activeSectionIndex
+            ? {
+                ...sec,
+                ...(patch.code !== undefined ? { code: patch.code } : null),
+                ...(patch.title !== undefined ? { title: patch.title } : null),
+              }
+            : sec,
+        ),
+      );
+    },
+    [activeSectionIndex, setSectionsWithHistory],
+  );
+
+  /** Escape deselects, which closes the panel and restores the default toolbar. */
+  useEffect(() => {
+    if (activeSectionIndex === null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const target = event.target as HTMLElement | null;
+      // Not while typing into one of the panel's own fields, and not while an
+      // element on the canvas is being edited inline — Escape belongs to the
+      // field first.
+      if (target?.isContentEditable) return;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
+        target.blur();
+        return;
+      }
+      setActiveSectionIndex(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeSectionIndex, setActiveSectionIndex]);
+
   const handleEnableTextEditingForActiveSection = () => {
     const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
     if (sections.length === 0) return;
@@ -1781,10 +1886,14 @@ export function EditorStudio({
           (el as HTMLElement).style.backgroundColor = '';
         });
 
-        const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
-        if (newCode) {
+        const newBody = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
+        if (newBody) {
           setSectionsWithHistory((prev) =>
-            prev.map((sec, i) => (i === targetIndex ? { ...sec, code: newCode } : sec))
+            // Head from the stored section, body from the canvas. See the note
+            // on the link popup's commit above.
+            prev.map((sec, i) =>
+              i === targetIndex ? { ...sec, code: recomposeSectionCode(sec.code, newBody) } : sec,
+            ),
           );
         }
       };
@@ -1820,6 +1929,11 @@ export function EditorStudio({
       <main
         onClick={() => setActiveSectionIndex(null)}
         className="flex-1 w-full flex flex-col items-stretch justify-start cursor-pointer min-h-screen bg-slate-100/90 px-4 sm:px-8 py-0"
+        /* Room for the section panel rather than a canvas underneath it. The
+           canvas is scaled to fit its pane, so covering 344px of that pane
+           would silently shrink the preview instead of hiding part of it —
+           `ResponsiveCanvas` measures the pane it is given. */
+        style={activeSection ? { paddingRight: SECTION_TOOLBAR_WIDTH + 16 } : undefined}
       >
         {/*
           The site, at the width it says it is.
@@ -1987,9 +2101,14 @@ export function EditorStudio({
                             (el as HTMLElement).style.userSelect = "";
                           });
 
-                          const newCode = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
+                          const newBody = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
                           setSectionsWithHistory((prev) => {
-                            if (!newCode || prev[idx]?.code === newCode) return prev;
+                            const current = prev[idx];
+                            if (!newBody || !current) return prev;
+                            // Head from the stored section, body from the
+                            // canvas. See the note on the link popup's commit.
+                            const newCode = recomposeSectionCode(current.code, newBody);
+                            if (current.code === newCode) return prev;
                             return prev.map((s, i) => (i === idx ? { ...s, code: newCode } : s));
                           });
                         };
@@ -2069,6 +2188,31 @@ export function EditorStudio({
                       activeSectionIndex === idx ? "ring-2 ring-inset ring-cyan-500/80" : "cursor-default"
                     }`}
                   >
+                    {/*
+                      What is selected, said in words as well as with a ring.
+
+                      §19 asks for a label, and a ring alone genuinely is not
+                      enough on this canvas: sections butt against each other
+                      with no seam between them, so an inset ring on a section
+                      whose top and bottom are off-screen is two vertical lines
+                      at the edges of the viewport and nothing else.
+
+                      It is a **sibling** of `.section-canvas-box`, never an
+                      ancestor of it, which is what keeps it out of the
+                      section's own styling: inheritance flows downward, and the
+                      containment boundary the whole architecture rests on is
+                      the canvas box itself. `pointer-events-none` so it cannot
+                      take a click meant for the section under it, and it is
+                      absolutely positioned so it reserves no space — selecting
+                      a section must not move it.
+                    */}
+                    {activeSectionIndex === idx && (
+                      <div className="pointer-events-none absolute left-0 top-0 z-40 flex items-center gap-1.5 rounded-br-lg bg-cyan-500 px-2 py-1 text-[10px] font-black tracking-tight text-white shadow-sm">
+                        <span className="opacity-70">{idx + 1}</span>
+                        <span className="max-w-[220px] truncate">{sec.title}</span>
+                      </div>
+                    )}
+
                     {/*
                       The one element the editor puts *inside* the canvas, and
                       it is not allowed to say anything about the section.
@@ -2376,6 +2520,45 @@ export function EditorStudio({
         </div>
       )}
 
+      {/*
+        The section's toolbar.
+
+        Present exactly while a section is selected, which is the whole of §1
+        and §12 of the brief: clicking a section replaces the editing surface
+        with that section's controls, clicking another replaces them again —
+        `SectionToolbar` is keyed on the section id, so React discards the
+        previous section's component rather than reconciling it, and there is no
+        state that could survive from one selection into the next. Clicking the
+        canvas background deselects and the panel goes, leaving the editor
+        exactly as it was.
+      */}
+      {!isSettingsOpen && activeSection && activeSectionIndex !== null && (
+        <SectionToolbar
+          key={activeSection.id}
+          section={activeSection}
+          position={{ index: activeSectionIndex, total: sections.length }}
+          device={sectionDevice}
+          dockPosition={dockPosition}
+          onDeviceChange={handleSectionDeviceChange}
+          onPatch={handleSectionPatch}
+          onClose={() => setActiveSectionIndex(null)}
+          actions={{
+            onDuplicate: handleDuplicateSection,
+            onDelete: handleDeleteSection,
+            onMoveUp: handleMoveUp,
+            onMoveDown: handleMoveDown,
+            onSwapVariant: () => handleSwapVariant(1),
+            variantCount: activeVariantCount,
+            /* The same rule `handleDuplicateSection` enforces, stated here so
+               the button explains itself rather than doing nothing: a navbar or
+               a footer is singular by position, and a copy of one could never
+               be moved anywhere legal. */
+            canDuplicate:
+              activeSection.category !== "navbar" && activeSection.category !== "footer",
+          }}
+        />
+      )}
+
       {/* Floating Bottom Toolbar Dock - Hidden when Settings Studio is open */}
       {!isSettingsOpen && (
         <EditorToolbar
@@ -2410,6 +2593,7 @@ export function EditorStudio({
           onSyncAdminWebsite={handlePersistWebsiteSave}
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
+          onDockPositionChange={setDockPosition}
         />
       )}
 

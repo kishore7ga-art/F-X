@@ -252,6 +252,71 @@ site's own background, which a published page wants and the editor does not.
 
 ---
 
+## 7a. Editing a section — the toolbar
+
+Selecting a section on the canvas opens `SectionToolbar`, whose controls are
+derived from the section rather than declared per section type. The chain:
+
+```text
+section.code
+   │  splitSectionCode          head links, stylesheet, body markup
+   ▼
+probeSection                    what the markup actually contains
+   │
+   ▼
+buildSectionSchema              groups of controls, in this category's order
+   │
+   ▼
+applyControl / applyListAction  a new section.code
+   │
+   ▼
+setSectionsWithHistory          undo, autosave, page isolation — for free
+```
+
+Four properties are load-bearing, and each replaces a mistake that is easy to
+make here.
+
+**A section has no configuration object, so a control edits the string.**
+`lib/sections/html-dom.ts` parses to a tree carrying **source offsets**, and
+every edit is a splice on the original string. Parsing to a DOM and serialising
+back would normalise attribute order, quoting and whitespace across the whole
+section, so changing one font size would produce a diff touching every line —
+and an undo entry and an autosave for markup nobody edited. It is also pure TS:
+`DOMParser` is browser-only and this repo has no jsdom, and an edit pipeline
+that can only run in a browser is one nobody tests.
+
+**Styling goes into a managed region of the section's own stylesheet, not into
+inline styles.** An inline style has no device, so a control that wrote one
+could not give Desktop and Mobile different values without one overwriting the
+other. The region is delimited by CSS comments — a `<style>` attribute does not
+survive the round trip, because `extractStylesAndBody` merges every block into
+one and `sanitizeSectionHtml` rebuilds `<style>` with its attributes dropped.
+Elements are addressed by a lazily-stamped `data-xite-el`, which `data-*`
+survives sanitisation.
+
+**Every managed declaration is `!important`.** Not a shortcut: the library is
+authored almost entirely in inline styles — the platform's own hero opens
+`<h1 style="font-size:56px…">` — and no selector beats an inline style at any
+specificity. The fence is `:where()`, which carries no specificity by design,
+and the runtime stylesheet is placed *before* Tailwind's Play CDN sheet. Three
+independent ways for a correct rule to be inert.
+
+**Responsive uses the engine that already exists.** Device values are written
+as `@media (max-width: …)`, which `viewportMediaToContainer` turns into
+`@container xite` on all three surfaces — so a mobile value resolves against the
+box the section occupies rather than against the operator's monitor. Visibility
+is the exception: `display: none` on a cascading tier reaches every narrower
+one, and there is no value that undoes it (`revert` rolls back past the
+author's own `display: flex`). So hiding uses two **exclusive** tiers whose
+ranges cannot overlap — see `Tier` in `section-managed-css.ts`.
+
+**Nothing is keyed on a section id.** Controls exist because the markup has
+something for them to edit; the category supplies ordering and labels only. A
+section type an administrator publishes next month gets card controls if it has
+cards, and no image controls if it has no images, with no entry anywhere naming
+it. `section-capabilities.ts` is the ordering table, and a category missing from
+it falls back to the default order rather than losing its toolbar.
+
 ## 8. What holds this together
 
 `src/lib/section-parity.test.ts` is a **contract, not a set of examples**. It
@@ -269,7 +334,10 @@ limit. It passed the whole time the Admin and the editor were visibly rendering
 the same header differently, because the difference was never in the strings —
 it was in what the two documents did with them.
 
-`scripts/section-parity-dom.ts` (`npm run test:parity`) is the other half. It
+`scripts/section-parity-dom.ts` (`npm run test:parity`) is the other half.
+Both browser harnesses build their page from `scripts/section-dom-harness.ts`;
+two hand-built copies of that environment would agree only until one of them was
+touched, and then both would report success while measuring different browsers. It
 builds both environments for real in Chromium — `buildSectionPreviewDocument`
 on one side; the app's document, its compiled `globals.css`, Tailwind's Play
 CDN, the theme layer and the DOM `EditorStudio` emits on the other — renders
@@ -291,6 +359,8 @@ lists are copied verbatim to keep that honest.
 | `section-parity.test.ts` | a surface that diverges from the shared environment |
 | `section-parity-dom.ts` | a surface that renders differently despite agreeing on paper |
 | `section-runtime.test.ts` | the canvas contract and the edit round-trip |
+| `section-toolbar.test.ts` | the parse, the managed region and every control's edit |
+| `section-toolbar-dom.ts` | a control that writes correct CSS the cascade then ignores |
 | `svg-survival.test.ts` (xite-B) | an allowlist that quietly breaks logos |
 | `sanitize-policies.test.ts` (xite-B) | the two policies drifting on `<script>` |
 | `categories.test.ts` (xite-B) | alias ordering |

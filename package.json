@@ -19,6 +19,7 @@
     "audit:sections": "node scripts/audit-sections-responsive.mjs",
     "test:unit": "tsx --test \"src/**/*.test.ts\"",
     "test:parity": "tsx scripts/section-parity-dom.ts",
+    "test:toolbar": "tsx scripts/section-toolbar-dom.ts",
     "test:ui": "node scripts/verify-ui-flows.mjs"
   },
   "dependencies": {

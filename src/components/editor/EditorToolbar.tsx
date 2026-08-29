@@ -76,6 +76,16 @@ interface EditorToolbarProps {
    */
   saveStatus?: SaveStatus;
   saveError?: string | null;
+  /**
+   * Where the dock has snapped to, reported upward.
+   *
+   * The dock is draggable and docks to any of the four edges, and the section
+   * panel occupies the right edge whenever a section is selected — so on two of
+   * those four edges they would sit on top of each other. The dock keeps
+   * ownership of the position (nothing about its behaviour changes); it just
+   * says where it went, so the panel can step aside.
+   */
+  onDockPositionChange?: (position: "bottom" | "top" | "left" | "right") => void;
 }
 
 export function EditorToolbar({
@@ -108,6 +118,7 @@ export function EditorToolbar({
   onSyncAdminWebsite,
   saveStatus = "idle",
   saveError = null,
+  onDockPositionChange,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -195,6 +206,7 @@ export function EditorToolbar({
       else targetDock = "right";
 
       setDockPosition(targetDock);
+      onDockPositionChange?.(targetDock);
       setDragPos(null);
       showToast(`Toolbar docked to ${targetDock.toUpperCase()} 🎯`);
     };
@@ -206,7 +218,7 @@ export function EditorToolbar({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [isDragging, dragOffset, showToast]);
+  }, [isDragging, dragOffset, showToast, onDockPositionChange]);
 
   const handleCopyLink = async () => {
     if (typeof window === "undefined") return;
