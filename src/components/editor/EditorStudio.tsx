@@ -2614,6 +2614,7 @@ export function EditorStudio({
       {!isSettingsOpen && (
         <EditorToolbar
           subdomain={subdomain}
+          activePageSlug={editor.activePage.slug}
           onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
           isSettingsOpen={isSettingsOpen}
           onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}

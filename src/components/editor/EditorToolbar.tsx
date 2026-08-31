@@ -27,6 +27,8 @@ import { ViewportControl } from "./ViewportControl";
 
 interface EditorToolbarProps {
   subdomain?: string;
+  /** The page currently open in the editor, so Preview opens that same page. */
+  activePageSlug?: string;
   onOpenSettings: () => void;
   onToggleDrawer: () => void;
   isSettingsOpen?: boolean;
@@ -102,6 +104,7 @@ interface EditorToolbarProps {
 
 export function EditorToolbar({
   subdomain = "greenfield",
+  activePageSlug,
   onOpenSettings,
   onToggleDrawer,
   isSettingsOpen = false,
@@ -262,12 +265,22 @@ export function EditorToolbar({
   };
 
   /**
+   * Preview opens `/editor/[subdomain]/preview`, not `/site/[subdomain]`.
+   *
+   * The latter — same URL "Copy Link" hands out — reads the tenant's
+   * *published* site, and once a tenant has published even once that stops
+   * falling back to the draft (`publishedSiteConfig` in xite-B). A save here
+   * only ever touches the draft, so opening the public URL right after
+   * saving showed the last publish, not the last save — indistinguishable
+   * from Preview being broken, and occasionally a completely different,
+   * long-since-superseded site. `/editor/[subdomain]/preview` is gated by the
+   * same auth as the editor and reads `/api/v1/my-website`, the tenant's own
+   * current draft, so what shows up here is exactly what Save just persisted.
+   *
    * Preview used to fire the save and open the tab in the same tick, so the
-   * new tab's request for `/site/[subdomain]` reached the server before the
-   * save's did — the tab showed whatever was live a moment ago, not what was
-   * just saved. `onSyncAdminWebsite` now returns a promise that resolves once
-   * the save has actually landed, so the tab is pointed at the live URL only
-   * after that.
+   * new tab's request could reach the server before the save's did.
+   * `onSyncAdminWebsite` now returns a promise that resolves once the save
+   * has actually landed, so the tab is pointed at the target only after that.
    *
    * The tab is still opened synchronously, in the same click handler, rather
    * than after the `await` below — Safari (and Chrome, in some configurations)
@@ -281,8 +294,8 @@ export function EditorToolbar({
 
     const sub = subdomain || "greenfield";
     const origin = window.location.origin;
-    const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-    const previewTargetUrl = isProd ? `https://${rootDomain()}/site/${sub}` : `${origin}/site/${sub}`;
+    const query = activePageSlug ? `?page=${encodeURIComponent(activePageSlug)}` : "";
+    const previewTargetUrl = `${origin}/editor/${encodeURIComponent(sub)}/preview${query}`;
 
     const previewTab = window.open("about:blank", "_blank");
     const goToPreview = () => {

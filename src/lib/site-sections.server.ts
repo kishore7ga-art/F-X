@@ -28,6 +28,28 @@ export async function loadSiteSections(subdomain: string): Promise<SectionItem[]
 }
 
 /**
+ * The signed-in tenant's own current draft — not the published site.
+ *
+ * `/api/v1/my-website` is session-scoped, so this answers for whoever's
+ * cookies the request carries, the same way the editor itself loads a page.
+ * It exists because `loadSiteView`'s three sources (public site, unauthenticated
+ * editor mirror, platform default) all resolve to the *published* config once a
+ * tenant has published once — see `publishedSiteConfig` in xite-B. A "preview
+ * my draft" screen that read any of those would show last publish, not last
+ * save, which is indistinguishable from Preview being broken.
+ */
+export async function loadMyDraftSections(pageSlug?: string): Promise<SectionItem[]> {
+  const data = await serverApi<unknown>("/api/v1/my-website");
+  if (!data) return [];
+
+  const pages = pickPages(data);
+  if (pages.length === 0) return [];
+
+  const page = pageSlug === undefined ? homePage(pages) : findPage(pages, pageSlug);
+  return page?.sections ?? [];
+}
+
+/**
  * The settings a published page has to honour before it renders anything.
  *
  * Defaults are the safe ones: indexing on (so an existing site is not

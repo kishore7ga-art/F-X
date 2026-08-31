@@ -46,7 +46,7 @@ const CANVAS_SCOPE = ".xite-site-canvas";
 /** The page behind the canvas, so a short site does not end in a band of the app's own colour. */
 const RUNTIME_PAGE_BG = "#09090b";
 
-export type PreviewSiteMode = "live" | "preview";
+export type PreviewSiteMode = "live" | "preview" | "draft";
 
 export function PreviewSiteViewer({
   subdomain,
@@ -68,7 +68,12 @@ export function PreviewSiteViewer({
   pageSlug?: string;
   /**
    * `live` is a visitor on the published site: no editor chrome, no polling.
-   * `preview` is somebody checking their work, and keeps the device dock.
+   * `preview` is somebody checking the *published* site with the device dock.
+   * `draft` is the tenant checking their own unpublished work — same dock,
+   * but it polls `/api/v1/my-website` (their session, their draft) instead of
+   * the published-site sources, which is the whole difference between it and
+   * `preview`: those settle on `publishedSiteConfig` once a tenant has ever
+   * published, however recent the draft is.
    *
    * A prop rather than something read off `window.location`, because the published
    * site reaches this component through a rewrite — the visitor's URL is
@@ -91,6 +96,7 @@ export function PreviewSiteViewer({
   const [sections, setSections] = useState<SectionItem[]>(initialSections);
   const [loading, setLoading] = useState(initialSections.length === 0);
   const isLive = mode === "live";
+  const isDraft = mode === "draft";
 
   /**
    * The preview viewport — the same object, ladder and rules as the editor.
@@ -256,11 +262,16 @@ export function PreviewSiteViewer({
       try {
         let pageSecs: SectionItem[] = [];
 
-        const sources = [
-          `/api/v1/public/site/${encodeURIComponent(subdomain)}`,
-          `/api/v1/editor/${encodeURIComponent(subdomain)}`,
-          "/api/v1/default-website",
-        ];
+        // `draft` reads the signed-in tenant's own unpublished work, the same
+        // endpoint the editor saves to — never the published-site sources
+        // below, which settle on the last publish once there has been one.
+        const sources = isDraft
+          ? ["/api/v1/my-website"]
+          : [
+              `/api/v1/public/site/${encodeURIComponent(subdomain)}`,
+              `/api/v1/editor/${encodeURIComponent(subdomain)}`,
+              "/api/v1/default-website",
+            ];
 
         for (const path of sources) {
           try {
@@ -324,7 +335,7 @@ export function PreviewSiteViewer({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [subdomain, isLive, initialSections, pageSlug]);
+  }, [subdomain, isLive, isDraft, initialSections, pageSlug]);
 
   // Every hook above runs on every render. The loading branch below is deliberately
   // the last thing in this component: React counts hooks per render, and returning
