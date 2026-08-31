@@ -2610,8 +2610,20 @@ export function EditorStudio({
         />
       )}
 
-      {/* Floating Bottom Toolbar Dock - Hidden when Settings Studio is open */}
-      {!isSettingsOpen && (
+      {/*
+       * Floating Bottom Toolbar Dock - Hidden when Settings Studio or the
+       * Pages/Colors/Fonts drawer is open.
+       *
+       * The drawer's own "Add New Page" button is fixed to the bottom of its
+       * panel, which lands in the exact same 52px strip the toolbar docks to
+       * at the bottom of the screen. Both are `position: fixed` with the same
+       * z-index, and the toolbar renders later in the DOM, so it painted over
+       * the drawer's button and made it unreachable — not literally deleted,
+       * just permanently covered. Hiding the toolbar while the drawer is open
+       * is the same fix already applied for Settings, just extended to cover
+       * the other full-screen overlay.
+       */}
+      {!isSettingsOpen && !isDrawerOpen && (
         <EditorToolbar
           subdomain={subdomain}
           activePageSlug={editor.activePage.slug}
