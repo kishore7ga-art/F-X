@@ -1304,6 +1304,21 @@ export function EditorStudio({
     const target = e.target as HTMLElement;
     if (!target) return;
 
+    /**
+     * Right-click opens the same toolbar left-click does, for any section,
+     * whatever is under the cursor.
+     *
+     * This used to be silent for anything that wasn't an image, logo,
+     * background, map or link/button — no branch below matched, nothing
+     * called `preventDefault()`, and the browser's own menu (Back/Reload/
+     * Inspect) showed instead. Selecting first and always calling
+     * `preventDefault()` here means right-click never again falls through to
+     * that native menu, and it never has to depend on which of the more
+     * specific popups below happens to match.
+     */
+    e.preventDefault();
+    setActiveSectionIndex(sectionIndex);
+
     // 📍 1. Map & Location iFrame / Button Target Detection
     const secObj = sections[sectionIndex];
     const secCategory = (secObj?.category || secObj?.title || "").toLowerCase();
