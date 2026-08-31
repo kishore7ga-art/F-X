@@ -19,7 +19,6 @@ import {
   Layers,
   Type,
   Plus,
-  SlidersHorizontal,
 } from "lucide-react";
 import type { ViewportState } from "@/lib/viewport-presets";
 import { rootDomain } from "@/lib/host-routing";
@@ -61,7 +60,6 @@ interface EditorToolbarProps {
    * tooltip can say why.
    */
   variantCount?: number;
-  onEditText?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   canUndo?: boolean;
@@ -91,16 +89,6 @@ interface EditorToolbarProps {
    * says where it went, so the panel can step aside.
    */
   onDockPositionChange?: (position: "bottom" | "top" | "left" | "right") => void;
-  /**
-   * The kind of section selected — "Hero", "Header", "Services" — for the one
-   * button that opens its controls. Empty when that section's markup offers
-   * this toolbar nothing to edit, in which case no button is drawn: a door onto
-   * an empty room costs a click to discover.
-   */
-  sectionKindLabel?: string;
-  /** Whether that button's popup is open, so it can show as pressed. */
-  isSectionPanelOpen?: boolean;
-  onToggleSectionPanel?: () => void;
 }
 
 export function EditorToolbar({
@@ -122,7 +110,6 @@ export function EditorToolbar({
   onDuplicateSection,
   onSwapVariant,
   variantCount = 0,
-  onEditText,
   onUndo,
   onRedo,
   canUndo = false,
@@ -135,9 +122,6 @@ export function EditorToolbar({
   saveStatus = "idle",
   saveError = null,
   onDockPositionChange,
-  sectionKindLabel = "",
-  isSectionPanelOpen = false,
-  onToggleSectionPanel,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -427,54 +411,6 @@ export function EditorToolbar({
    * section the new one will land under — so pressing it is never a guess, and
    * `aria-label` says the same for anyone who never sees the tooltip.
    */
-  /**
-   * The one way into the selected section's own controls.
-   *
-   * Deliberately one button rather than a strip of them. A hero has around
-   * sixty controls once its buttons, typography, background and per-device
-   * values are counted, and none of that fits in a 52px dock — so what belongs
-   * here is the door, and the controls are behind it. It sits beside the label
-   * that already names the selected section, in both dock layouts, because that
-   * is where somebody asking "what can I do to this section" is already looking.
-   */
-  const sectionEditButton =
-    onToggleSectionPanel && sectionKindLabel && isSectionSelected ? (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleSectionPanel();
-        }}
-        aria-pressed={isSectionPanelOpen}
-        title={
-          isSectionPanelOpen
-            ? `Close the ${sectionKindLabel} controls`
-            : `Edit this ${sectionKindLabel.toLowerCase()} — content, layout, background, typography, spacing and responsive`
-        }
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "4px",
-          height: "22px",
-          padding: "0 9px",
-          borderRadius: "999px",
-          border: isSectionPanelOpen ? "1px solid #0284c7" : "1px solid #cbd5e1",
-          backgroundColor: isSectionPanelOpen ? "#0ea5e9" : "#ffffff",
-          color: isSectionPanelOpen ? "#ffffff" : "#0f172a",
-          fontSize: "11px",
-          fontWeight: 800,
-          letterSpacing: "-0.01em",
-          cursor: "pointer",
-          // The label around it is `pointer-events: none` so it never eats a
-          // click meant for the canvas; this one has to take its own.
-          pointerEvents: "auto",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <SlidersHorizontal style={{ width: "11px", height: "11px" }} />
-        Edit {sectionKindLabel}
-      </button>
-    ) : null;
-
   const addSectionTitle = isSectionSelected && activeSectionTitle
     ? `Add a section below ${activeSectionTitle}`
     : "Add a section to this page";
@@ -663,7 +599,6 @@ export function EditorToolbar({
               }}
             >
               <span>{activeSectionTitle || "Select a section"}</span>
-              {sectionEditButton}
             </div>
 
             {/* Logo — always pinned at the top regardless of dock side */}
@@ -1215,7 +1150,6 @@ export function EditorToolbar({
               >
                 {activeSectionTitle || "Select a section"}
               </span>
-              {sectionEditButton && <span style={{ marginLeft: "10px" }}>{sectionEditButton}</span>}
             </div>
 
             {/* 3. Right Group: Viewport Switcher + Editing Tools */}

@@ -43,6 +43,7 @@ export type CapabilityId =
   | "background"
   | "border"
   | "shadow"
+  | "animation"
   | "typography"
   | "spacing"
   | "responsive";
@@ -66,6 +67,7 @@ export const DEFAULT_ORDER: readonly CapabilityId[] = [
   "spacing",
   "border",
   "shadow",
+  "animation",
   "responsive",
   "section",
 ];
@@ -197,6 +199,7 @@ export const GROUP_LABEL: Record<CapabilityId, string> = {
   background: "Background",
   border: "Border",
   shadow: "Shadow",
+  animation: "Animation",
   typography: "Typography",
   spacing: "Spacing",
   responsive: "Responsive",

@@ -355,34 +355,16 @@ export function buildSectionSchema(section: {
     return created;
   };
 
-  /* — Content —————————————————————————————————————————————— */
-
+  /*
+   * Heading/paragraph *text* is edited on the canvas — click or double-click
+   * it directly — not through a form here. This toolbar used to also carry a
+   * "Content" group with Heading/Heading 2/Description/… text fields that
+   * duplicated the exact same edit through a second, redundant path. Removed;
+   * `outerHeadings`/`outerParagraphs` stay, because Typography below still
+   * needs them to target font/size/weight/colour for the same elements.
+   */
   const outerHeadings = probe.headings.filter((entry) => !insideList(entry.path));
   const outerParagraphs = probe.paragraphs.filter((entry) => !insideList(entry.path));
-
-  outerHeadings.slice(0, 3).forEach((heading, index) => {
-    group("content").controls.push({
-      id: `heading-${index}`,
-      label: index === 0 ? "Heading" : `Heading ${index + 1}`,
-      kind: "text",
-      target: at(heading.path),
-      op: { kind: "text" },
-      responsive: false,
-      placeholder: "Heading text",
-    });
-  });
-
-  outerParagraphs.slice(0, 3).forEach((paragraph, index) => {
-    group("content").controls.push({
-      id: `paragraph-${index}`,
-      label: index === 0 ? "Description" : `Description ${index + 1}`,
-      kind: "textarea",
-      target: at(paragraph.path),
-      op: { kind: "text" },
-      responsive: false,
-      placeholder: "Body copy",
-    });
-  });
 
   /* — Logo —————————————————————————————————————————————————— */
 
@@ -674,6 +656,28 @@ export function buildSectionSchema(section: {
       max: 1,
       step: 0.05,
     }),
+  );
+
+  /* — Animation ———————————————————————————————————————————— */
+
+  /**
+   * One control, not four. Each option is the full `animation` shorthand —
+   * name, duration, easing and fill-mode baked in together — rather than
+   * separate duration/delay/easing fields nobody asked for. The keyframes
+   * themselves live in `section-runtime.ts`, the one stylesheet guaranteed to
+   * be on every surface a section renders on (editor canvas, Admin preview,
+   * published site).
+   */
+  group("animation").controls.push(
+    selectControl("anim-preset", "Animation", rootTarget, "animation", [
+      { value: "", label: "None" },
+      { value: "xite-fade-in 0.7s ease-out both", label: "Fade in" },
+      { value: "xite-slide-up 0.7s ease-out both", label: "Slide up" },
+      { value: "xite-slide-down 0.7s ease-out both", label: "Slide down" },
+      { value: "xite-slide-left 0.7s ease-out both", label: "Slide left" },
+      { value: "xite-slide-right 0.7s ease-out both", label: "Slide right" },
+      { value: "xite-zoom-in 0.7s ease-out both", label: "Zoom in" },
+    ]),
   );
 
   /* — Typography ———————————————————————————————————————————— */

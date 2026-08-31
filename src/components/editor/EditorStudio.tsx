@@ -70,8 +70,6 @@ import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { SectionToolbar } from "./SectionToolbar";
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SectionPatch } from "@/lib/sections/section-edit";
-import { buildSectionSchema } from "@/lib/sections/section-schema";
-import type { SectionCategory } from "@/lib/sections/section-capabilities";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -1792,49 +1790,25 @@ export function EditorStudio({
   const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
 
   /**
-   * Whether the section popup is open.
+   * Whether the section popup is open — derived from selection, not tracked
+   * on its own.
    *
-   * Selecting a section does **not** open it. Selection is something a person
-   * does constantly — to move a section, to delete one, to see where it is —
-   * and a panel that appears on every one of those is a panel that is in the
-   * way of all of them. The dock offers a button; this is that button's state.
-   *
-   * It stays open across a change of selection rather than closing, so clicking
-   * from the hero to the footer with it open swaps the controls in place. What
-   * it must never do is show one section's controls while another is selected,
-   * and it cannot: the popup is keyed on the section id and re-derives
-   * everything from that section's markup.
+   * It used to be independent state, opened only by a dock button, on the
+   * reasoning that selection happens constantly and a panel on every click is
+   * a panel in the way. In practice that meant an extra click before you could
+   * see or change anything about the section you just selected, and the
+   * "Content" group it opened onto largely duplicated editing text right on
+   * the canvas. Selecting *is* now the request to see that section's style
+   * controls — deselecting is what puts them away. Because the popup is keyed
+   * on the section id (see `SectionToolbar`'s own top comment), switching from
+   * the hero to the footer still swaps the controls in place rather than
+   * carrying any state across.
    */
-  const [isSectionPanelOpen, setIsSectionPanelOpen] = useState(false);
+  const isSectionPanelOpen = activeSectionIndex !== null;
 
-  /**
-   * What the dock's button should offer to edit — "Hero", "Header", "Services".
-   *
-   * Empty when the selected section's markup gives the toolbar nothing to work
-   * with, in which case the dock shows no button at all. A door onto an empty
-   * room is worse than no door: it is the placeholder control §24 forbids, and
-   * it takes a click to discover.
-   */
-  const activeSectionKind = useMemo(() => {
-    if (!activeSection) return "";
-    const schema = buildSectionSchema({
-      code: activeSection.code,
-      category: activeSection.category as SectionCategory,
-    });
-    return schema.groups.length > 0 ? schema.categoryLabel : "";
-  }, [activeSection]);
-
-  /**
-   * Deselecting, which also closes the popup.
-   *
-   * One function rather than an effect watching the selection: a `setState` in
-   * an effect body is a cascading render and React 19's linter rejects it, and
-   * the honest description of this is not "when nothing is selected, close the
-   * popup" but "closing the popup is part of deselecting".
-   */
+  /** Deselecting. The popup closes with it, because its visibility is derived from this. */
   const clearSelection = useCallback(() => {
     setActiveSectionIndex(null);
-    setIsSectionPanelOpen(false);
   }, [setActiveSectionIndex]);
 
   /**
@@ -1901,94 +1875,11 @@ export function EditorStudio({
         target.blur();
         return;
       }
-      // The popup first, the selection second — Escape closes the thing most
-      // recently opened, which is what it does everywhere else.
-      if (isSectionPanelOpen) setIsSectionPanelOpen(false);
-      else clearSelection();
+      clearSelection();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeSectionIndex, isSectionPanelOpen, clearSelection]);
-
-  const handleEnableTextEditingForActiveSection = () => {
-    const targetIndex = activeSectionIndex !== null ? activeSectionIndex : 0;
-    if (sections.length === 0) return;
-
-    setActiveSectionIndex(targetIndex);
-
-    const sectionContainers = document.querySelectorAll(".section-wrapper-container");
-    const container = sectionContainers[targetIndex] as HTMLElement;
-    if (!container) return;
-
-    const textElems = container.querySelectorAll("h1, h2, h3, h4, h5, h6, p, span, a, button:not(.hamburger-toggle-btn), li, strong, em, b, i, td, th");
-
-    textElems.forEach((textElem) => {
-      const elem = textElem as HTMLElement;
-      if (elem.children.length > 2 && elem.tagName === "DIV") return;
-
-      elem.contentEditable = "true";
-      elem.style.userSelect = "text";
-      (elem.style as any).webkitUserSelect = "text";
-      elem.style.outline = "2px dashed #2563eb";
-      elem.style.outlineOffset = "4px";
-      elem.style.borderRadius = "4px";
-
-      const saveUpdatedContent = () => {
-        elem.contentEditable = "false";
-        elem.style.outline = "";
-        elem.style.outlineOffset = "";
-        elem.style.borderRadius = "";
-
-        const canvasBox = container.querySelector(".section-canvas-box") as HTMLElement;
-        const targetNode = canvasBox || container;
-
-        const clone = targetNode.cloneNode(true) as HTMLElement;
-
-        const badges = clone.querySelectorAll('.pointer-events-none');
-        badges.forEach((b) => b.remove());
-
-        const editables = clone.querySelectorAll('[contenteditable]');
-        editables.forEach((el) => {
-          el.removeAttribute('contenteditable');
-          (el as HTMLElement).style.outline = '';
-          (el as HTMLElement).style.outlineOffset = '';
-          (el as HTMLElement).style.borderRadius = '';
-          (el as HTMLElement).style.backgroundColor = '';
-        });
-
-        const newBody = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
-        if (newBody) {
-          setSectionsWithHistory((prev) =>
-            // Head from the stored section, body from the canvas. See the note
-            // on the link popup's commit above.
-            prev.map((sec, i) =>
-              i === targetIndex ? { ...sec, code: recomposeSectionCode(sec.code, newBody) } : sec,
-            ),
-          );
-        }
-      };
-
-      elem.onblur = () => {
-        saveUpdatedContent();
-      };
-
-      elem.onkeydown = (keyEvent) => {
-        if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
-          keyEvent.preventDefault();
-          elem.blur();
-        }
-      };
-    });
-
-    if (textElems.length > 0) {
-      const firstElem = textElems[0] as HTMLElement;
-      try {
-        firstElem.focus();
-      } catch (e) {
-        // ignore focus error
-      }
-    }
-  };
+  }, [activeSectionIndex, clearSelection]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-y-auto">
@@ -2588,12 +2479,12 @@ export function EditorStudio({
       {/*
         The section's toolbar, as a popup over the canvas.
 
-        Present only while a section is selected *and* the dock's button has
-        been pressed — §1 and §12 of the brief without the side panel that used
-        to enforce them. Keyed on the section id, so clicking from the hero to
-        the footer with it open discards the previous section's component
-        rather than reconciling it: there is no state that could survive from
-        one selection into the next, and therefore no stale toolbar.
+        Present the instant a section is selected — §1 and §12 of the brief
+        without the side panel that used to enforce them. Keyed on the section
+        id, so clicking from the hero to the footer discards the previous
+        section's component rather than reconciling it: there is no state that
+        could survive from one selection into the next, and therefore no stale
+        toolbar.
       */}
       {!isSettingsOpen && isSectionPanelOpen && activeSection && activeSectionIndex !== null && (
         <SectionToolbar
@@ -2604,9 +2495,8 @@ export function EditorStudio({
           dockPosition={dockPosition}
           onDeviceChange={handleSectionDeviceChange}
           onPatch={handleSectionPatch}
-          /* Closes the popup and leaves the section selected. Deselecting is a
-             separate act, and one the canvas already offers. */
-          onClose={() => setIsSectionPanelOpen(false)}
+          /* Its visibility is derived from selection, so closing it means deselecting. */
+          onClose={clearSelection}
         />
       )}
 
@@ -2646,7 +2536,6 @@ export function EditorStudio({
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={() => handleSwapVariant(1)}
           variantCount={activeVariantCount}
-          onEditText={handleEnableTextEditingForActiveSection}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={editor.canUndo}
@@ -2658,13 +2547,6 @@ export function EditorStudio({
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
           onDockPositionChange={setDockPosition}
-          /* The kind of section, not its name: the button says "Edit Hero"
-             while the pill beside it already says "Hero 2". Empty when this
-             section's markup offers nothing to edit, so the button is absent
-             rather than opening onto nothing. */
-          sectionKindLabel={activeSectionKind}
-          isSectionPanelOpen={isSectionPanelOpen}
-          onToggleSectionPanel={() => setIsSectionPanelOpen((open) => !open)}
         />
       )}
 

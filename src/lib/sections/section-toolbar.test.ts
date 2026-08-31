@@ -293,10 +293,12 @@ describe("section-probe — controls come from the markup, not from a table", ()
 /* ── The schema ─────────────────────────────────────────────────────────── */
 
 describe("section-schema — a different toolbar per section", () => {
-  it("gives a hero content and button controls", () => {
+  it("gives a hero button controls, and no text-editing group", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
-    assert.ok(schema.capabilities.includes("content"));
     assert.ok(schema.capabilities.includes("buttons"));
+    // Heading/paragraph text is edited on the canvas, not through a form here —
+    // see the comment above `outerHeadings` in section-schema.ts.
+    assert.ok(!schema.capabilities.includes("content"));
     assert.equal(schema.categoryLabel, "Hero");
   });
 
@@ -333,7 +335,7 @@ describe("section-schema — a different toolbar per section", () => {
     const hero = buildSectionSchema({ code: HERO, category: "hero" });
     assert.notDeepEqual(header.capabilities, hero.capabilities);
     assert.equal(header.capabilities[0], "logo");
-    assert.equal(hero.capabilities[0], "content");
+    assert.equal(hero.capabilities[0], "buttons");
   });
 
   it("never emits a control whose target cannot be resolved", () => {
@@ -399,14 +401,14 @@ describe("section-edit — every control edits the section for real", () => {
     assert.ok(withHref.code!.includes(`href="#courses"`));
   });
 
-  it("escapes text so a heading cannot inject markup", () => {
-    const patch = applyControl(section(HERO), control("heading-0"), "desktop", "A <script>alert(1)</script> B")!;
+  it("escapes text so a button label cannot inject markup", () => {
+    const patch = applyControl(section(HERO), control("btn-0-text"), "desktop", "A <script>alert(1)</script> B")!;
     assert.ok(!patch.code!.includes("<script>"));
     assert.ok(patch.code!.includes("&lt;script&gt;"));
   });
 
   it("returns null rather than a no-op write when nothing changed", () => {
-    assert.equal(applyControl(section(HERO), control("heading-0"), "desktop", "Empowering Minds"), null);
+    assert.equal(applyControl(section(HERO), control("btn-0-text"), "desktop", "Apply Now"), null);
     assert.equal(applyControl(section(HERO), control("h-size"), "desktop", ""), null);
   });
 
