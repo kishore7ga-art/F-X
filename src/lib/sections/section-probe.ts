@@ -249,8 +249,21 @@ function findRepeaters(source: string, root: ElementNode, pathOf: Map<ElementNod
 
     if (best.length < 2) return;
     if (best.length * 3 < children.length * 2) return;
-    // Two empty wrappers are not a list of anything.
-    if (best.every((item) => textContent(source, item).length === 0 && descendants(item).length === 0)) return;
+    // Two empty wrappers are not a list of anything, and neither is a row of
+    // bare icons — a search/cart/account/hamburger cluster in a header, or a
+    // row of social glyphs in a footer. Each item there is icon markup and
+    // nothing else: no text, no `<img>`, no heading. That shape recurs at
+    // multiple nesting depths in the same cluster (the icon wrapper, and its
+    // parent row), so left unfiltered a single utility row turns into several
+    // bogus "Service cards" entries in the Layout panel — controls that point
+    // at containers with no real content to lay out.
+    const isIconOnly = (item: ElementNode) =>
+      textContent(source, item).length === 0 &&
+      item.tag !== "img" &&
+      item.tag !== "a" &&
+      item.tag !== "button" &&
+      !descendants(item).some((node) => node.tag === "img" || node.tag === "a" || node.tag === "button");
+    if (best.every((item) => descendants(item).length === 0 || isIconOnly(item))) return;
 
     found.push({
       kind: classifyRepeater(source, best),

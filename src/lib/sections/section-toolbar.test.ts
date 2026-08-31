@@ -288,6 +288,18 @@ describe("section-probe — controls come from the markup, not from a table", ()
     const probe = probeSection(`<section><div><h2>Only</h2></div></section>`);
     assert.deepEqual(probe.repeaters, []);
   });
+
+  it("does not treat a row of bare icon buttons as a card list", () => {
+    // A search/cart/account icon cluster is markup a header commonly carries;
+    // three same-class wrappers around an <svg> satisfy every structural test
+    // for a repeated list and used to surface as a bogus "Service cards"
+    // entry in the Layout panel — a control pointing at a container with
+    // nothing real to lay out, which a header can carry more than one of.
+    const probe = probeSection(
+      `<header><div class="icons"><span class="icon-btn"><svg><path d="M1 1"/></svg></span><span class="icon-btn"><svg><path d="M2 2"/></svg></span><span class="icon-btn"><svg><path d="M3 3"/></svg></span></div></header>`,
+    );
+    assert.deepEqual(probe.repeaters, []);
+  });
 });
 
 /* ── The schema ─────────────────────────────────────────────────────────── */
