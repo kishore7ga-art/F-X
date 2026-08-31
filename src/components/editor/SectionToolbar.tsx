@@ -1,33 +1,40 @@
 "use client";
 
 /**
- * The toolbar for whichever section is selected.
+ * The toolbar for whichever section is selected — replacing the dock in
+ * place, not floating beside it.
  *
- * ── Where it lives, and why it is not a side panel ─────────────────────────
+ * ── Where it lives, and why it is not a side panel or a popup ──────────────
  *
- * It was one, docked to the right edge for as long as a section was selected,
- * and that was wrong for this editor: it stood open the whole time, took 344px
- * off the canvas permanently, and made selecting a section a layout event. The
- * canvas is the product here; a panel that competes with it for width is a
- * panel that is in the way.
+ * It was a permanent right-hand sidebar once, then a floating popup opened by
+ * a dock button, and both were wrong for the same underlying reason: a panel
+ * that competes with the canvas, or that hides what selecting a section
+ * actually offers behind an extra click, is a panel in the way of the one
+ * thing this editor is for.
  *
- * So it is a **popup, opened from one small button in the dock**, and closed
- * again. Nothing appears until it is asked for, and the canvas is full width
- * the rest of the time. The dock keeps what belongs to the *editor* — save
- * state, device width, undo, share, add-section, and the section's own
- * move/duplicate/swap/delete — and this holds what belongs to the *section*:
- * the sixty-odd controls that could never have fitted in a 52px strip.
+ * So it *is* the dock, once a section is selected — not a second surface next
+ * to it. The instant something is selected, this replaces the normal icon row
+ * at the same edge the dock was docked to; deselecting brings the icon row
+ * back. What used to be sixty-odd controls floating in their own 340px card
+ * are now grouped behind tabs (Buttons, Layout, Background, Shadow,
+ * Animation, …) in a panel docked flush to that same edge, tall enough to
+ * hold real fields rather than a fixed popup width.
  *
- * It anchors to whichever edge the dock has been dragged to, so the two are
- * always adjacent and never overlapping.
+ * Only the handful of actions that matter mid-edit travel with it — back,
+ * device, undo/redo, delete, save. Add Section / Duplicate / Swap Variant /
+ * Move Up / Move Down stay on the normal dock; reaching them is one Escape or
+ * back-tap away, and folding every dock action into this panel too would
+ * mean rebuilding the whole dock a second time for no real gain during the
+ * moment somebody is actually adjusting a section's styling.
  *
  * ── Why it holds almost no state ───────────────────────────────────────────
  *
- * Two pieces only: which groups are expanded, and the text currently being
- * typed. Everything else is read from `section.code` on every render, through
- * `readControlValues`. So there is no cache to invalidate, no way for the panel
- * to disagree with the canvas, and an undo — which replaces `section.code` —
- * moves every control back without the panel being told anything happened.
+ * Three pieces: which group's tab is active, which lists/items inside that
+ * group are expanded, and the text currently being typed. Everything else is
+ * read from `section.code` on every render, through `readControlValues`. So
+ * there is no cache to invalidate, no way for the panel to disagree with the
+ * canvas, and an undo — which replaces `section.code` — moves every control
+ * back without the panel being told anything happened.
  *
  * The typing buffer exists because a controlled input whose value is re-derived
  * from re-parsed HTML cannot be typed into: each keystroke would rewrite the
@@ -39,19 +46,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowLeft,
   ChevronDown,
   Copy,
   Eye,
   Layers,
   Monitor,
   Plus,
+  Redo2,
   RotateCcw,
   Smartphone,
   Tablet,
   Trash2,
   ArrowUp,
   ArrowDown,
-  X,
+  Undo2,
 } from "lucide-react";
 
 import {
@@ -73,19 +82,27 @@ import {
 import { buildSectionSchema, allControls, type Control, type ControlList } from "@/lib/sections/section-schema";
 import { DEVICES, type Device } from "@/lib/sections/section-managed-css";
 import type { SectionCategory } from "@/lib/sections/section-capabilities";
+import type { SaveStatus } from "@/hooks/useEditorPages";
 
 type Props = {
   section: { id: string; title: string; code: string; category: string };
   /** Human position, for the header line. */
   position: { index: number; total: number };
   device: Device;
-  /** Which edge the floating dock is on, so the popup opens against it. */
+  /** Which edge the dock normally sits on — this panel takes its place there. */
   dockPosition?: "bottom" | "top" | "left" | "right";
   onDeviceChange: (device: Device) => void;
   /** Writes through the editor's own mutation path — undo, autosave and all. */
   onPatch: (patch: SectionPatch) => void;
-  /** Closes the popup. Does *not* deselect — the section stays selected. */
+  /** Deselects, which is what closing this panel means now that it replaces the dock. */
   onClose: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onDeleteSection?: () => void;
+  saveStatus?: SaveStatus;
+  saveError?: string | null;
 };
 
 const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
@@ -94,44 +111,29 @@ const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
   mobile: { label: "Mobile", Icon: Smartphone },
 };
 
-export const SECTION_TOOLBAR_WIDTH = 340;
+/** How tall (horizontal docks) or wide (vertical docks) the panel gets, at most. */
+const PANEL_EXTENT = "min(52vh, 460px)";
 
-/** The floating dock's thickness on whichever edge it has snapped to. */
-const DOCK_THICKNESS = 52;
-
-/** A little air between the popup and the dock it opens from. */
-const DOCK_GAP = 10;
-
-/** The selected-section pill the dock draws above its bar, and its own gap. */
-const PILL_HEIGHT = 34;
-
-/**
- * Where the popup sits, given the edge the dock is on.
- *
- * Always adjacent to the dock and never over it, because the button that opens
- * this lives *in* the dock — a popup covering its own trigger is a popup you
- * cannot close by pressing the thing you opened it with.
- *
- * Horizontal docks centre it; vertical docks put it against the same side, so
- * it opens outward from the button rather than across the canvas.
- */
-function popupPosition(dock: "bottom" | "top" | "left" | "right"): React.CSSProperties {
-  /* A horizontal dock carries the selected-section pill above the bar, and the
-     trigger button is *in* that pill — so the clearance is the bar plus the
-     pill, not the bar alone. A vertical dock has no pill. */
-  const alongside = DOCK_THICKNESS + DOCK_GAP;
-  const overBar = DOCK_THICKNESS + PILL_HEIGHT + DOCK_GAP;
+/** Fixed positioning for whichever edge the dock is on — full width or full height there. */
+function dockedStyle(dock: "bottom" | "top" | "left" | "right"): React.CSSProperties {
   switch (dock) {
     case "top":
-      return { top: overBar, left: "50%", transform: "translateX(-50%)" };
+      return { top: 0, left: 0, right: 0, height: PANEL_EXTENT };
     case "left":
-      return { left: alongside, bottom: DOCK_GAP };
+      return { left: 0, top: 0, bottom: 0, width: PANEL_EXTENT };
     case "right":
-      return { right: alongside, bottom: DOCK_GAP };
+      return { right: 0, top: 0, bottom: 0, width: PANEL_EXTENT };
     default:
-      return { bottom: overBar, left: "50%", transform: "translateX(-50%)" };
+      return { bottom: 0, left: 0, right: 0, height: PANEL_EXTENT };
   }
 }
+
+const SAVE_STATUS_META: Record<SaveStatus, { color: string; text: string }> = {
+  saving: { color: "#f59e0b", text: "Saving…" },
+  saved: { color: "#16a34a", text: "Saved" },
+  failed: { color: "#e11d48", text: "Not saved" },
+  idle: { color: "#94a3b8", text: "No changes" },
+};
 
 export function SectionToolbar({
   section,
@@ -141,6 +143,13 @@ export function SectionToolbar({
   onDeviceChange,
   onPatch,
   onClose,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  onDeleteSection,
+  saveStatus = "idle",
+  saveError = null,
 }: Props) {
   const editable: EditableSection = useMemo(
     () => ({ title: section.title, code: section.code, category: section.category }),
@@ -161,18 +170,20 @@ export function SectionToolbar({
   const canReset = useMemo(() => hasManagedStyling(section.code), [section.code]);
 
   /**
-   * Which groups are expanded.
+   * Which group's tab is showing.
    *
    * Initialised from the schema rather than synchronised to it by an effect,
    * because `EditorStudio` renders this component with `key={section.id}`: a
-   * different section is a different component instance, so "Content was open
-   * on the hero" cannot leak onto the footer the person just clicked. Deriving
-   * it in an effect instead would also *collapse the group being edited*, since
-   * every edit rebuilds the schema.
+   * different section is a different component instance, so "Buttons was open
+   * on the hero" cannot leak onto the footer the person just clicked. Falls
+   * back to the first group a category doesn't explicitly default-open, so
+   * there is always a real tab active rather than a blank panel.
    */
-  const [openGroups, setOpenGroups] = useState<Set<string>>(
-    () => new Set(schema.groups.filter((group) => group.open).map((group) => group.id)),
+  const [activeGroupId, setActiveGroupId] = useState<string | undefined>(
+    () => schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id,
   );
+  const activeGroup = schema.groups.find((group) => group.id === activeGroupId) ?? schema.groups[0];
+
   const [openLists, setOpenLists] = useState<Set<string>>(
     () => new Set(schema.groups.flatMap((group) => group.lists.slice(0, 1)).map((list) => list.id)),
   );
@@ -265,44 +276,45 @@ export function SectionToolbar({
     if (patch) onPatch(patch);
   };
 
+  const saveMeta = SAVE_STATUS_META[saveStatus];
+
   return (
     <div
       role="dialog"
       aria-label={`${schema.categoryLabel} section settings`}
       onClick={(event) => event.stopPropagation()}
-      className="fixed z-[100000] flex max-h-[min(70vh,560px)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
-      style={{ width: SECTION_TOOLBAR_WIDTH, ...popupPosition(dockPosition) }}
+      className="fixed z-[99999] flex flex-col overflow-hidden border border-slate-200 bg-white shadow-[0_-8px_30px_rgba(15,23,42,0.12)]"
+      style={dockedStyle(dockPosition)}
     >
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className="shrink-0 border-b border-slate-200 px-3.5 pb-2.5 pt-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <p className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-600">
-              {schema.categoryLabel}
-            </p>
-            <h2 className="truncate text-[11px] font-bold text-slate-500" title={section.title}>
-              {section.title}
-              <span className="ml-1.5 font-semibold text-slate-300">
-                {position.index + 1}/{position.total}
-              </span>
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            title="Close (Esc)"
-            aria-label="Close section settings"
-            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+      {/* ── Header: the handful of actions that matter mid-edit ─────────── */}
+      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-200 px-3.5 py-2">
+        <button
+          type="button"
+          onClick={onClose}
+          title="Back to the toolbar (Esc)"
+          aria-label="Deselect and return to the toolbar"
+          className="flex items-center gap-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+
+        <div className="flex min-w-0 items-baseline gap-2">
+          <p className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-600">
+            {schema.categoryLabel}
+          </p>
+          <h2 className="truncate text-[11px] font-bold text-slate-500" title={section.title}>
+            {section.title}
+            <span className="ml-1.5 font-semibold text-slate-300">
+              {position.index + 1}/{position.total}
+            </span>
+          </h2>
         </div>
 
         {/* Device tabs. These drive the editor's real viewport, so the canvas
             and the values being edited always describe the same width — the
             alternative is a panel showing mobile values beside a desktop
             preview, which is worse than having no device tabs at all. */}
-        <div className="mt-2 flex items-center gap-1 rounded-xl bg-slate-100 p-0.5">
+        <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-0.5">
           {DEVICES.map((id) => {
             const { label, Icon } = DEVICE_META[id];
             const active = device === id;
@@ -312,94 +324,134 @@ export function SectionToolbar({
                 type="button"
                 onClick={() => onDeviceChange(id)}
                 aria-pressed={active}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition ${
+                title={label}
+                className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition ${
                   active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {label}
               </button>
             );
           })}
         </div>
 
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onUndo}
+            disabled={!onUndo || !canUndo}
+            title="Undo"
+            aria-label="Undo"
+            className={`rounded-lg p-1.5 transition ${canUndo ? "text-slate-600 hover:bg-slate-100" : "cursor-not-allowed text-slate-300"}`}
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onRedo}
+            disabled={!onRedo || !canRedo}
+            title="Redo"
+            aria-label="Redo"
+            className={`rounded-lg p-1.5 transition ${canRedo ? "text-slate-600 hover:bg-slate-100" : "cursor-not-allowed text-slate-300"}`}
+          >
+            <Redo2 className="h-4 w-4" />
+          </button>
+          {onDeleteSection && (
+            <button
+              type="button"
+              onClick={onDeleteSection}
+              title="Delete this section"
+              aria-label="Delete this section"
+              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          <span
+            role="status"
+            title={saveStatus === "failed" && saveError ? saveError : undefined}
+            className="ml-1 whitespace-nowrap text-[10px] font-bold"
+            style={{ color: saveMeta.color }}
+          >
+            {saveMeta.text}
+          </span>
+        </div>
       </header>
 
-      {/* ── Groups ─────────────────────────────────────────────────────── */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      {/* ── Group tabs ────────────────────────────────────────────────── */}
+      {schema.groups.length > 0 && (
+        <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-100 px-3 py-1.5">
+          {schema.groups.map((group) => {
+            const active = group.id === activeGroup?.id;
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => setActiveGroupId(group.id)}
+                aria-pressed={active}
+                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold transition ${
+                  active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {group.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── The active group's controls ───────────────────────────────── */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {schema.groups.length === 0 && (
-          <p className="px-4 py-6 text-[11px] font-medium leading-relaxed text-slate-500">
+          <p className="text-[11px] font-medium leading-relaxed text-slate-500">
             This section&rsquo;s markup offers nothing this toolbar can edit. Its text can still be
             edited directly on the canvas.
           </p>
         )}
 
-        {schema.groups.map((group) => {
-          const expanded = openGroups.has(group.id);
-          return (
-            <section key={group.id} className="border-b border-slate-100">
-              <button
-                type="button"
-                onClick={() => toggle(openGroups, setOpenGroups)(group.id)}
-                aria-expanded={expanded}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-50"
-              >
-                <span className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-700">
-                  {group.label}
-                </span>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+        {activeGroup && (
+          <div className="grid grid-cols-1 gap-x-5 gap-y-3 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
+            {activeGroup.controls.map((control) => (
+              <ControlRow
+                key={controlValueKey(control)}
+                control={control}
+                reading={valueOf(control)}
+                draft={displayValue(control)}
+                device={device}
+                onDraft={(value) => commitDebounced(control, value)}
+                onCommit={(value) => commit(control, value)}
+              />
+            ))}
+
+            {activeGroup.lists.map((list) => (
+              <div key={list.id} className="col-span-full">
+                <ListBlock
+                  list={list}
+                  expanded={openLists.has(list.id)}
+                  onToggle={() => toggle(openLists, setOpenLists)(list.id)}
+                  openItems={openItems}
+                  onToggleItem={toggle(openItems, setOpenItems)}
+                  device={device}
+                  valueOf={valueOf}
+                  displayValue={displayValue}
+                  onDraft={commitDebounced}
+                  onCommit={commit}
+                  onAction={(index, action) => runListAction(list, index, action)}
                 />
-              </button>
-
-              {expanded && (
-                <div className="space-y-3 px-4 pb-4">
-                  {group.controls.map((control) => (
-                    <ControlRow
-                      key={controlValueKey(control)}
-                      control={control}
-                      reading={valueOf(control)}
-                      draft={displayValue(control)}
-                      device={device}
-                      onDraft={(value) => commitDebounced(control, value)}
-                      onCommit={(value) => commit(control, value)}
-                    />
-                  ))}
-
-                  {group.lists.map((list) => (
-                    <ListBlock
-                      key={list.id}
-                      list={list}
-                      expanded={openLists.has(list.id)}
-                      onToggle={() => toggle(openLists, setOpenLists)(list.id)}
-                      openItems={openItems}
-                      onToggleItem={toggle(openItems, setOpenItems)}
-                      device={device}
-                      valueOf={valueOf}
-                      displayValue={displayValue}
-                      onDraft={commitDebounced}
-                      onCommit={commit}
-                      onAction={(index, action) => runListAction(list, index, action)}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-          );
-        })}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/*
         Reset, and only Reset.
 
-        The six-button row that used to sit here — move up, move down, swap,
-        duplicate, delete — duplicated buttons the dock already has three
-        centimetres away, and a control offered twice is a control someone has
-        to work out the difference between. Reset is the one section action the
-        dock has no equivalent for, because it belongs to the styling this
-        popup writes.
+        Move Up / Move Down / Swap / Duplicate stay on the normal dock, one
+        Escape away — this panel only holds what has no equivalent there.
+        Reset is that: it belongs to the styling this panel writes.
       */}
-      <footer className="shrink-0 border-t border-slate-100 px-3.5 py-2">
+      <footer className="flex shrink-0 justify-end border-t border-slate-100 px-3.5 py-2">
         <button
           type="button"
           onClick={reset}

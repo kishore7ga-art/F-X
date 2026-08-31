@@ -391,24 +391,36 @@ describe("section-edit — every control edits the section for real", () => {
     assert.ok(!cleared.code!.includes("font-size: ;"));
   });
 
-  it("edits a button's text and link without disturbing the other button", () => {
-    const withText = applyControl(section(HERO), control("btn-0-text"), "desktop", "Apply for 2027")!;
-    const withHref = applyControl(section(withText.code!), control("btn-0-href"), "desktop", "/admissions")!;
+  it("edits a button's link without disturbing the other button or its own text", () => {
+    // No `btn-0-text` control any more — a button's label is text on the
+    // canvas, same as a heading's — so this only exercises the link.
+    const withHref = applyControl(section(HERO), control("btn-0-href"), "desktop", "/admissions")!;
 
-    assert.ok(withHref.code!.includes("Apply for 2027"));
     assert.ok(withHref.code!.includes(`href="/admissions"`));
+    assert.ok(withHref.code!.includes("Apply Now"));
     assert.ok(withHref.code!.includes("Explore Programs"));
     assert.ok(withHref.code!.includes(`href="#courses"`));
   });
 
-  it("escapes text so a button label cannot inject markup", () => {
-    const patch = applyControl(section(HERO), control("btn-0-text"), "desktop", "A <script>alert(1)</script> B")!;
+  /**
+   * Nothing in today's schema emits an `op: "text"` control any more —
+   * heading/paragraph/button/label text all moved to the canvas — but
+   * `applyControl`'s escaping still has to hold for it, since it's a general
+   * capability of `section-edit.ts`, not something tied to whether the
+   * current schema happens to expose it. Built by hand from an existing
+   * control's target rather than fetched from the schema, since the schema
+   * has nothing of this kind left to fetch.
+   */
+  const rawTextControl = { ...control("h-size"), id: "raw-text-probe", kind: "text" as const, op: { kind: "text" as const } };
+
+  it("escapes text so it cannot inject markup", () => {
+    const patch = applyControl(section(HERO), rawTextControl, "desktop", "A <script>alert(1)</script> B")!;
     assert.ok(!patch.code!.includes("<script>"));
     assert.ok(patch.code!.includes("&lt;script&gt;"));
   });
 
   it("returns null rather than a no-op write when nothing changed", () => {
-    assert.equal(applyControl(section(HERO), control("btn-0-text"), "desktop", "Apply Now"), null);
+    assert.equal(applyControl(section(HERO), rawTextControl, "desktop", "Empowering Minds"), null);
     assert.equal(applyControl(section(HERO), control("h-size"), "desktop", ""), null);
   });
 

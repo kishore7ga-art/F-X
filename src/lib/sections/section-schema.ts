@@ -410,8 +410,9 @@ export function buildSectionSchema(section: {
       items: probe.navLinks.map((link, index) => ({
         path: link.path,
         label: trimLabel(link.text) || `Item ${index + 1}`,
+        // Just the link — the label itself is text on the canvas. See the
+        // comment on the repeater items below for the rule this follows.
         controls: [
-          { id: "label", label: "Label", kind: "text", target: at(link.path), op: { kind: "text" }, responsive: false },
           { id: "href", label: "Link", kind: "url", target: at(link.path), op: { kind: "attr", name: "href" }, responsive: false },
         ],
       })),
@@ -443,7 +444,7 @@ export function buildSectionSchema(section: {
     const target = at(button.path);
     const prefix = buttons.length > 1 ? `Button ${index + 1} · ` : "";
     group("buttons").controls.push(
-      { id: `btn-${index}-text`, label: `${prefix}Text`, kind: "text", target, op: { kind: "text" }, responsive: false },
+      // No text control — a button's label is text on the canvas, same as a heading's.
       { id: `btn-${index}-href`, label: `${prefix}Link`, kind: "url", target, op: { kind: "attr", name: "href" }, responsive: false, placeholder: "#" },
       colorControl(`btn-${index}-bg`, `${prefix}Background`, target, "background-color"),
       colorControl(`btn-${index}-fg`, `${prefix}Text colour`, target, "color"),
@@ -492,6 +493,15 @@ export function buildSectionSchema(section: {
         if (path) controls.push(control(path));
       };
 
+      /*
+       * Visible text — a caption, a label, a title, a card's body copy — is
+       * edited on the canvas (click or double-click it), same as headings and
+       * paragraphs above. Only fields with no canvas equivalent stay here:
+       * an image's `src`, a link's `href`, a field's `placeholder`/`name`
+       * attribute. `alt` text is the one exception kept despite being an
+       * attribute rather than visible text — it isn't rendered at all, so
+       * there is nothing on the canvas to click.
+       */
       if (repeater.kind === "images") {
         add(firstIn(item.node, isImage), (path) => ({
           id: "src", label: "Image", kind: "image", target: at(path), op: { kind: "attr", name: "src" }, responsive: false,
@@ -499,14 +509,7 @@ export function buildSectionSchema(section: {
         add(firstIn(item.node, isImage), (path) => ({
           id: "alt", label: "Alt text", kind: "text", target: at(path), op: { kind: "attr", name: "alt" }, responsive: false,
         }));
-        add(
-          firstIn(item.node, (node) => isParagraph(node) || isHeading(node)),
-          (path) => ({ id: "caption", label: "Caption", kind: "text", target: at(path), op: { kind: "text" }, responsive: false }),
-        );
       } else if (repeater.kind === "fields") {
-        add(firstIn(item.node, (node) => node.tag === "label"), (path) => ({
-          id: "label", label: "Label", kind: "text", target: at(path), op: { kind: "text" }, responsive: false,
-        }));
         add(firstIn(item.node, isField), (path) => ({
           id: "placeholder", label: "Placeholder", kind: "text", target: at(path), op: { kind: "attr", name: "placeholder" }, responsive: false,
         }));
@@ -515,18 +518,9 @@ export function buildSectionSchema(section: {
         }));
       } else if (repeater.kind === "links") {
         add(firstIn(item.node, isLink), (path) => ({
-          id: "label", label: "Label", kind: "text", target: at(path), op: { kind: "text" }, responsive: false,
-        }));
-        add(firstIn(item.node, isLink), (path) => ({
           id: "href", label: "Link", kind: "url", target: at(path), op: { kind: "attr", name: "href" }, responsive: false,
         }));
       } else {
-        add(firstIn(item.node, isHeading), (path) => ({
-          id: "title", label: "Title", kind: "text", target: at(path), op: { kind: "text" }, responsive: false,
-        }));
-        add(firstIn(item.node, isParagraph), (path) => ({
-          id: "body", label: "Description", kind: "textarea", target: at(path), op: { kind: "text" }, responsive: false,
-        }));
         add(firstIn(item.node, isImage), (path) => ({
           id: "image", label: "Image", kind: "image", target: at(path), op: { kind: "attr", name: "src" }, responsive: false,
         }));

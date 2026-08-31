@@ -265,14 +265,16 @@ function buildCases(): Case[] {
     });
   }
 
-  /* ── 9. Content edits reach the canvas ────────────────────────────────── */
-  {
-    const section = edit(asSection(HERO), "heading-0", "desktop", "A new headline");
-    assert.ok(section.code.includes("A new headline"));
-    assert.ok(!section.code.includes("Empowering Minds"));
-  }
+  /*
+   * Content edits reaching the canvas used to be case 9 here, writing
+   * through a `heading-0` control. There is no such control any more —
+   * heading/paragraph/button/label text is edited directly on the canvas,
+   * not through the toolbar — so there is nothing of that kind left for this
+   * layout-engine harness to check; the canvas's own inline `contentEditable`
+   * path is exercised by hand, not by a control write.
+   */
 
-  /* ── 10. A structural edit survives into a rendered page ──────────────── */
+  /* ── 9. A structural edit survives into a rendered page ────────────────── */
   {
     const base = asSection(SERVICES, "courses");
     const list = buildSectionSchema({ code: base.code, category: "courses" })

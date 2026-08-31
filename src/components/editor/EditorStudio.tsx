@@ -2497,12 +2497,20 @@ export function EditorStudio({
           onPatch={handleSectionPatch}
           /* Its visibility is derived from selection, so closing it means deselecting. */
           onClose={clearSelection}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={editor.canUndo}
+          canRedo={editor.canRedo}
+          onDeleteSection={handleDeleteSection}
+          saveStatus={editor.saveStatus}
+          saveError={editor.saveError}
         />
       )}
 
       {/*
        * Floating Bottom Toolbar Dock - Hidden when Settings Studio or the
-       * Pages/Colors/Fonts drawer is open.
+       * Pages/Colors/Fonts drawer is open, and while a section is selected —
+       * `SectionToolbar` above takes its place at that point, not beside it.
        *
        * The drawer's own "Add New Page" button is fixed to the bottom of its
        * panel, which lands in the exact same 52px strip the toolbar docks to
@@ -2513,7 +2521,7 @@ export function EditorStudio({
        * is the same fix already applied for Settings, just extended to cover
        * the other full-screen overlay.
        */}
-      {!isSettingsOpen && !isDrawerOpen && (
+      {!isSettingsOpen && !isDrawerOpen && !isSectionPanelOpen && (
         <EditorToolbar
           subdomain={subdomain}
           activePageSlug={editor.activePage.slug}
