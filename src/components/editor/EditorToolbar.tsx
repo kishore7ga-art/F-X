@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { ViewportState } from "@/lib/viewport-presets";
 import { rootDomain } from "@/lib/host-routing";
+import { getPublishStatus, publishSite, type PublishStatus } from "@/lib/publishing-client";
 import { ViewportControl } from "./ViewportControl";
 
 interface EditorToolbarProps {
@@ -143,6 +144,17 @@ export function EditorToolbar({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  /**
+   * Whether the URL in the share modal actually matches what was last saved.
+   *
+   * `/site/[subdomain]` — the URL this modal hands out — serves the tenant's
+   * *published* site, and once they have published once, saving no longer
+   * moves that link at all until they publish again. Null while unknown
+   * (still loading, or the check failed) so the warning below stays silent
+   * rather than guessing.
+   */
+  const [publishStatus, setPublishStatus] = useState<PublishStatus | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
   // 4-Direction Hold & Drag + Auto-Docking State
   const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
@@ -253,6 +265,10 @@ export function EditorToolbar({
 
     setShareUrl(publicWebsiteUrl);
     setShowShareModal(true);
+    setPublishStatus(null);
+    getPublishStatus()
+      .then(setPublishStatus)
+      .catch(() => setPublishStatus(null));
 
     try {
       await navigator.clipboard.writeText(publicWebsiteUrl);
@@ -261,6 +277,22 @@ export function EditorToolbar({
       setTimeout(() => setCopied(false), 2500);
     } catch {
       // Clipboard fallback
+    }
+  };
+
+  /** Publishes from inside the share modal, right where the stale-link warning is. */
+  const handlePublishNow = async () => {
+    setPublishing(true);
+    try {
+      await publishSite();
+      const status = await getPublishStatus().catch(() => null);
+      if (status) setPublishStatus(status);
+      showToast("Published! This link now shows your latest changes. 🚀");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not publish";
+      showToast(`⚠️ ${message}`);
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -1444,6 +1476,47 @@ export function EditorToolbar({
                 </button>
               </div>
             </div>
+
+            {/* Stale-link warning: this URL is the *published* site, and once a
+                tenant has published once, a save alone never moves it. Silent
+                until the check answers, so this never guesses at a tenant. */}
+            {publishStatus?.hasPublished && publishStatus.hasUnpublishedChanges && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  padding: "12px 14px",
+                  borderRadius: "12px",
+                  backgroundColor: "rgba(245, 158, 11, 0.12)",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: "12px", lineHeight: 1.5, color: "#fbbf24" }}>
+                  ⚠️ This link doesn&rsquo;t show your latest saved changes yet — it shows the
+                  last time you published. Publish now to bring it up to date.
+                </p>
+                <button
+                  onClick={handlePublishNow}
+                  disabled={publishing}
+                  style={{
+                    alignSelf: "flex-start",
+                    height: "34px",
+                    padding: "0 16px",
+                    borderRadius: "8px",
+                    backgroundColor: "#f59e0b",
+                    color: "#000000",
+                    fontWeight: 900,
+                    fontSize: "12px",
+                    border: "none",
+                    cursor: publishing ? "default" : "pointer",
+                    opacity: publishing ? 0.7 : 1,
+                  }}
+                >
+                  {publishing ? "Publishing…" : "🚀 Publish Now"}
+                </button>
+              </div>
+            )}
 
             {/* Actions */}
             <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", paddingTop: "12px", borderTop: "1px solid #27272a" }}>
