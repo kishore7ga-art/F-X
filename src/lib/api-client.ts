@@ -14,7 +14,12 @@
  */
 import type { OnboardingPayload } from "@/lib/api-contract";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+// Same flag as next.config.ts and /editor: opt-in, so an unset env var keeps
+// this pointed at NEXT_PUBLIC_API_BASE_URL rather than assuming same-origin
+// mocks. When preview mode is explicitly on, the mock API routes only exist
+// same-origin, so BASE must follow.
+const UI_PREVIEW = process.env.NEXT_PUBLIC_UI_PREVIEW === "1";
+const BASE = UI_PREVIEW ? "" : (process.env.NEXT_PUBLIC_API_BASE_URL ?? "");
 
 export class ApiError extends Error {
   constructor(
