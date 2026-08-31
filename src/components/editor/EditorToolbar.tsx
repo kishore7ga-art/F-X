@@ -67,7 +67,8 @@ interface EditorToolbarProps {
   onMoveDown?: () => void;
   onDeleteSection?: () => void;
   onClearSelection?: () => void;
-  onSyncAdminWebsite?: () => void;
+  /** Returns a promise so callers can wait for the save to actually land. */
+  onSyncAdminWebsite?: () => void | Promise<void>;
   /**
    * What to say about the person's unsaved work.
    *
@@ -260,18 +261,43 @@ export function EditorToolbar({
     }
   };
 
+  /**
+   * Preview used to fire the save and open the tab in the same tick, so the
+   * new tab's request for `/site/[subdomain]` reached the server before the
+   * save's did — the tab showed whatever was live a moment ago, not what was
+   * just saved. `onSyncAdminWebsite` now returns a promise that resolves once
+   * the save has actually landed, so the tab is pointed at the live URL only
+   * after that.
+   *
+   * The tab is still opened synchronously, in the same click handler, rather
+   * than after the `await` below — Safari (and Chrome, in some configurations)
+   * only allows `window.open` during the original gesture and silently blocks
+   * it once a microtask boundary has passed. Opening blank first and
+   * navigating it later keeps the popup allowed either way.
+   */
   const handleOpenPreview = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (onSyncAdminWebsite) {
-      onSyncAdminWebsite();
-    }
-    if (typeof window !== "undefined") {
-      const sub = subdomain || "greenfield";
-      const origin = window.location.origin;
-      const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-      const previewTargetUrl = isProd ? `https://${rootDomain()}/site/${sub}` : `${origin}/site/${sub}`;
-      
-      window.open(previewTargetUrl, "_blank");
+    if (typeof window === "undefined") return;
+
+    const sub = subdomain || "greenfield";
+    const origin = window.location.origin;
+    const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+    const previewTargetUrl = isProd ? `https://${rootDomain()}/site/${sub}` : `${origin}/site/${sub}`;
+
+    const previewTab = window.open("about:blank", "_blank");
+    const goToPreview = () => {
+      if (previewTab && !previewTab.closed) {
+        previewTab.location.href = previewTargetUrl;
+      } else {
+        window.open(previewTargetUrl, "_blank");
+      }
+    };
+
+    const syncResult = onSyncAdminWebsite?.();
+    if (syncResult && typeof syncResult.then === "function") {
+      syncResult.then(goToPreview, goToPreview);
+    } else {
+      goToPreview();
     }
   };
 

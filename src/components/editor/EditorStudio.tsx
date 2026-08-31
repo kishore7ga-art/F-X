@@ -746,8 +746,21 @@ export function EditorStudio({
     document.querySelectorAll("script[data-xite-section-script]").forEach((el) => el.remove());
 
     const timer = setTimeout(() => {
-      // Auto-attach hamburger toggle listener to all hamburger buttons in canvas
-      document.querySelectorAll(".hamburger-toggle-btn").forEach((btn) => {
+      /**
+       * Auto-attach hamburger toggle listener to all hamburger buttons in canvas.
+       *
+       * Guarded with a dataset flag because this effect re-runs on every
+       * `sections` change — including adding an unrelated section elsewhere on
+       * the page — and `dangerouslySetInnerHTML` leaves an *unchanged* section's
+       * DOM node (and its listeners) exactly as it was. Without the guard, each
+       * re-run stacked a second `click` listener onto every hamburger already on
+       * the page, so two toggles fired per click and cancelled out. Invisible on
+       * desktop, where the hamburger is never shown — only broke phone/tablet,
+       * where it is.
+       */
+      document.querySelectorAll<HTMLElement>(".hamburger-toggle-btn").forEach((btn) => {
+        if (btn.dataset.xiteHamburgerBound) return;
+        btn.dataset.xiteHamburgerBound = "1";
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
           const header = btn.closest("header");
@@ -759,9 +772,11 @@ export function EditorStudio({
       });
 
       // Prevent link clicks from reloading page or changing URL inside editor
-      document.querySelectorAll(".section-canvas-box a").forEach((a) => {
+      document.querySelectorAll<HTMLAnchorElement>(".section-canvas-box a").forEach((a) => {
+        if (a.dataset.xiteLinkGuardBound) return;
+        a.dataset.xiteLinkGuardBound = "1";
         a.addEventListener("click", (e) => {
-          const href = (a as HTMLAnchorElement).getAttribute("href");
+          const href = a.getAttribute("href");
           if (href && (href.startsWith("#") || href.startsWith("/") || href.startsWith("http"))) {
             e.preventDefault();
           }
@@ -829,9 +844,13 @@ export function EditorStudio({
     [editor],
   );
 
-  /** Explicit Save. The debounced autosave already covers ordinary editing. */
+  /**
+   * Explicit Save. The debounced autosave already covers ordinary editing.
+   * Returns the in-flight save's promise so callers (e.g. "Preview") can wait
+   * for the change to actually reach the server before acting on it.
+   */
   const handlePersistWebsiteSave = useCallback(() => {
-    editor.flush(editor.activePage.id);
+    return editor.flush(editor.activePage.id);
   }, [editor]);
 
   /**

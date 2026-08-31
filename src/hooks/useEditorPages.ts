@@ -464,7 +464,7 @@ export function useEditorPages(initialSlug = "/home") {
    */
   const loadToken = useRef<Record<PageId, number>>({});
   /** Per-page save queue: the in-flight promise, and whether another is due. */
-  const saveState = useRef<Record<PageId, { running: boolean; queued: boolean }>>({});
+  const saveState = useRef<Record<PageId, { running: boolean; queued: boolean; promise?: Promise<void> }>>({});
   /**
    * How many saves are in flight, across every page.
    *
@@ -614,58 +614,75 @@ export function useEditorPages(initialSlug = "/home") {
 
   /* ── Saving ──────────────────────────────────────────────────────────── */
 
-  const runSave = useCallback(async (pageId: PageId) => {
+  /**
+   * Runs (or joins) this page's save queue, returning a promise that only
+   * resolves once the page's current data has actually reached the server.
+   *
+   * A second call while one is already running used to return a promise that
+   * resolved immediately — the caller's `await` was a no-op, so "Preview"
+   * could open the live site before the save it just triggered had landed.
+   * Joining the in-flight promise instead means every caller waits for the
+   * same real completion, however many times they call in.
+   */
+  const runSave = useCallback((pageId: PageId): Promise<void> => {
     const queue = (saveState.current[pageId] ??= { running: false, queued: false });
     if (queue.running) {
       queue.queued = true;
-      return;
+      return queue.promise ?? Promise.resolve();
     }
     queue.running = true;
     setSavesInFlight((n) => n + 1);
 
-    try {
-      for (;;) {
-        queue.queued = false;
-        const page = latest.current.pages[pageId];
-        if (!page || !page.dirty) break;
+    const run = async () => {
+      try {
+        for (;;) {
+          queue.queued = false;
+          const page = latest.current.pages[pageId];
+          if (!page || !page.dirty) break;
 
-        // Captured before the request so the response can be compared against
-        // it: if the user typed during the round trip the page is dirty again,
-        // and the server's copy must not be applied over the newer edit.
-        const snapshot = page.sections;
-        try {
-          const saved = await savePageRequest({
-            id: page.id,
-            slug: page.slug,
-            title: page.title,
-            sections: snapshot,
-          });
-          dispatch({ type: "markSaved", pageId, snapshot, page: saved });
-          setSavedOnce(true);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "Could not save";
-          console.error(`[editor] save failed for ${pageId}:`, error);
-          dispatch({ type: "saveFailed", pageId, message });
-          break;
+          // Captured before the request so the response can be compared against
+          // it: if the user typed during the round trip the page is dirty again,
+          // and the server's copy must not be applied over the newer edit.
+          const snapshot = page.sections;
+          try {
+            const saved = await savePageRequest({
+              id: page.id,
+              slug: page.slug,
+              title: page.title,
+              sections: snapshot,
+            });
+            dispatch({ type: "markSaved", pageId, snapshot, page: saved });
+            setSavedOnce(true);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "Could not save";
+            console.error(`[editor] save failed for ${pageId}:`, error);
+            dispatch({ type: "saveFailed", pageId, message });
+            break;
+          }
+
+          if (!queue.queued && !latest.current.pages[pageId]?.dirty) break;
         }
-
-        if (!queue.queued && !latest.current.pages[pageId]?.dirty) break;
+      } finally {
+        queue.running = false;
+        queue.promise = undefined;
+        setSavesInFlight((n) => Math.max(0, n - 1));
       }
-    } finally {
-      queue.running = false;
-      setSavesInFlight((n) => Math.max(0, n - 1));
-    }
+    };
+
+    const promise = run();
+    queue.promise = promise;
+    return promise;
   }, []);
 
-  /** Save this page now, cancelling its pending debounce. */
+  /** Save this page now, cancelling its pending debounce. Resolves once it lands. */
   const flush = useCallback(
-    (pageId: PageId) => {
+    (pageId: PageId): Promise<void> => {
       const timer = timers.current[pageId];
       if (timer) {
         clearTimeout(timer);
         delete timers.current[pageId];
       }
-      void runSave(pageId);
+      return runSave(pageId);
     },
     [runSave],
   );
