@@ -1986,9 +1986,27 @@ export function EditorStudio({
                 return (
                   <div
                     key={sec.id}
+                    /**
+                     * Selection, on its own listener, in the capture phase.
+                     *
+                     * A section's own markup can carry a `<script>` — see the
+                     * "Section Script Execution" effect above, which actually
+                     * runs them, not just renders them inertly. A template's
+                     * anchor-smooth-scroll or counter boilerplate calling
+                     * `stopPropagation()` on its own click is ordinary code for
+                     * a script that has no idea it is running inside an editor.
+                     * Bubble-phase `stopPropagation()` on a descendant node
+                     * stops the click before it ever reaches this wrapper's
+                     * `onClick`, so a Hero with such a script never selected —
+                     * right-click still worked, because `contextmenu` is a
+                     * different event that script never touched. Capture runs
+                     * top-down before any bubble-phase listener a section's own
+                     * script attached, so selection can no longer depend on
+                     * what that markup happens to do with the click afterwards.
+                     */
+                    onClickCapture={() => setActiveSectionIndex(idx)}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActiveSectionIndex(idx);
 
                       const target = e.target as HTMLElement;
                       if (!target) return;
