@@ -1821,6 +1821,18 @@ export function EditorStudio({
    */
   const isSectionPanelOpen = activeSectionIndex !== null;
 
+  // TEMP DEBUG — remove once the left-click-doesn't-open-the-toolbar report is diagnosed.
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[xite-debug] selection state", {
+      activeSectionIndex,
+      isSectionPanelOpen,
+      isSettingsOpen,
+      hasActiveSection: !!activeSection,
+      willRenderToolbar: !isSettingsOpen && isSectionPanelOpen && !!activeSection && activeSectionIndex !== null,
+    });
+  }, [activeSectionIndex, isSectionPanelOpen, isSettingsOpen, activeSection]);
+
   /** Deselecting. The popup closes with it, because its visibility is derived from this. */
   const clearSelection = useCallback(() => {
     setActiveSectionIndex(null);
@@ -2019,7 +2031,12 @@ export function EditorStudio({
                      * script attached, so selection can no longer depend on
                      * what that markup happens to do with the click afterwards.
                      */
-                    onClickCapture={() => setActiveSectionIndex(idx)}
+                    onClickCapture={(e) => {
+                      // TEMP DEBUG — remove once diagnosed.
+                      // eslint-disable-next-line no-console
+                      console.log("[xite-debug] onClickCapture fired", { idx, tag: (e.target as HTMLElement)?.tagName });
+                      setActiveSectionIndex(idx);
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
 
