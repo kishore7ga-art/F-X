@@ -282,3 +282,24 @@ body {
     animation: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Inline Text Editing Studio Styles (Double-Click Active Mode)
+   --------------------------------------------------------------------------- */
+.xite-text-editing,
+[contenteditable="true"] {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 3px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2), 0 0 10px rgba(37, 99, 235, 0.25) !important;
+  cursor: text !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  transition: outline 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+[contenteditable="true"]:focus {
+  outline: 2px solid #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 0 14px rgba(37, 99, 235, 0.35) !important;
+}
+

@@ -140,12 +140,14 @@ function classes(node: ElementNode): string {
 function looksLikeButton(node: ElementNode): boolean {
   if (node.tag === "button") return true;
   if (node.tag !== "a") return false;
-  if (BUTTON_CLASS.test(classes(node))) return true;
+  const cls = classes(node);
+  if (BUTTON_CLASS.test(cls)) return true;
+  if (cls.includes("rounded") && (cls.includes("bg-") || cls.includes("border") || cls.includes("shadow") || cls.includes("px-") || cls.includes("py-"))) return true;
   const css = style(node);
   const padded = /padding\s*:/.test(css);
   const filled = /background(-color)?\s*:/.test(css) || /border\s*:/.test(css);
   const rounded = /border-radius\s*:/.test(css);
-  return padded && (filled || rounded);
+  return (padded && (filled || rounded)) || (filled && rounded);
 }
 
 function isInsideNav(node: ElementNode): boolean {

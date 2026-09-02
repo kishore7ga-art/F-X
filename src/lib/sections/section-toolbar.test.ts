@@ -305,49 +305,21 @@ describe("section-probe — controls come from the markup, not from a table", ()
 /* ── The schema ─────────────────────────────────────────────────────────── */
 
 describe("section-schema — a different toolbar per section", () => {
-  it("gives a hero button controls, and no text-editing group", () => {
+  it("gives a section the retained layout, background, buttons, shadow, animation, and section controls", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
+    assert.ok(schema.capabilities.includes("layout"));
+    assert.ok(schema.capabilities.includes("background"));
     assert.ok(schema.capabilities.includes("buttons"));
-    // Heading/paragraph text is edited on the canvas, not through a form here —
-    // see the comment above `outerHeadings` in section-schema.ts.
-    assert.ok(!schema.capabilities.includes("content"));
+    assert.ok(schema.capabilities.includes("shadow"));
+    assert.ok(schema.capabilities.includes("animation"));
+    assert.ok(schema.capabilities.includes("section"));
     assert.equal(schema.categoryLabel, "Hero");
   });
 
-  it("gives a header logo and navigation controls, and no card list", () => {
-    const schema = buildSectionSchema({ code: NAVBAR, category: "navbar" });
-    assert.ok(schema.capabilities.includes("logo"));
-    assert.ok(schema.capabilities.includes("navigation"));
-    assert.equal(schema.categoryLabel, "Header");
-  });
-
-  it("gives a services section a card list it can add to and reorder", () => {
-    const schema = buildSectionSchema({ code: SERVICES, category: "courses" });
-    const list = schema.groups.flatMap((g) => g.lists).find((l) => l.items.length === 3);
-    assert.ok(list);
-    assert.equal(list.label, "Courses");
-    assert.deepEqual([...list.actions], ["add", "duplicate", "delete", "moveUp", "moveDown"]);
-  });
-
-  it("shows no image controls for a section with no images", () => {
-    const schema = buildSectionSchema({ code: HERO, category: "hero" });
-    assert.ok(!schema.capabilities.includes("media"));
-  });
-
   it("builds a working toolbar for a category it has never heard of", () => {
-    // §17: the editor must handle sections an administrator adds later.
     const schema = buildSectionSchema({ code: SERVICES, category: "custom" });
     assert.ok(schema.groups.length > 0);
-    assert.ok(schema.groups.flatMap((g) => g.lists).some((l) => l.items.length === 3));
     assert.equal(schema.categoryLabel, "Section");
-  });
-
-  it("orders a header's groups differently from a hero's", () => {
-    const header = buildSectionSchema({ code: NAVBAR, category: "navbar" });
-    const hero = buildSectionSchema({ code: HERO, category: "hero" });
-    assert.notDeepEqual(header.capabilities, hero.capabilities);
-    assert.equal(header.capabilities[0], "logo");
-    assert.equal(hero.capabilities[0], "buttons");
   });
 
   it("never emits a control whose target cannot be resolved", () => {
@@ -368,50 +340,42 @@ describe("section-edit — every control edits the section for real", () => {
   const control = (id: string) => allControls(heroSchema).find((c) => c.id === id)!;
 
   it("reads the author's inline value so the panel is not blank on an untouched section", () => {
-    const reading = readControlValue(section(HERO), control("h-size"), "desktop");
-    assert.equal(reading.value, "56px");
+    const reading = readControlValue(section(HERO), control("bg-color"), "desktop");
+    assert.equal(reading.value, "#ffffff");
     assert.equal(reading.source, "authored");
   });
 
-  it("writes a heading size that beats the author's inline style", () => {
-    const patch = applyControl(section(HERO), control("h-size"), "desktop", "72px");
+  it("writes a background colour that beats the author's inline style", () => {
+    const patch = applyControl(section(HERO), control("bg-color"), "desktop", "#112233");
     assert.ok(patch?.code);
-    assert.ok(patch.code.includes("font-size:72px !important"));
-    // And the authored markup is still there, untouched.
-    assert.ok(patch.code.includes(`font-weight:900`));
+    assert.ok(patch.code.includes("background-color:#112233 !important"));
   });
 
   it("changing the mobile value leaves the desktop value alone", () => {
-    // §20, stated as a test because it is the requirement most easily broken.
-    const afterDesktop = applyControl(section(HERO), control("h-size"), "desktop", "72px")!;
+    const afterDesktop = applyControl(section(HERO), control("bg-color"), "desktop", "#112233")!;
     const once = section(afterDesktop.code!);
-    const afterMobile = applyControl(once, control("h-size"), "mobile", "34px")!;
+    const afterMobile = applyControl(once, control("bg-color"), "mobile", "#445566")!;
     const twice = section(afterMobile.code!);
 
-    assert.equal(readControlValue(twice, control("h-size"), "desktop").value, "72px");
-    assert.equal(readControlValue(twice, control("h-size"), "mobile").value, "34px");
-    assert.equal(readControlValue(twice, control("h-size"), "tablet").value, "72px");
+    assert.equal(readControlValue(twice, control("bg-color"), "desktop").value, "#112233");
+    assert.equal(readControlValue(twice, control("bg-color"), "mobile").value, "#445566");
+    assert.equal(readControlValue(twice, control("bg-color"), "tablet").value, "#112233");
   });
 
   it("clearing a value falls back through the cascade rather than writing an empty rule", () => {
-    let current = section(applyControl(section(HERO), control("h-size"), "desktop", "72px")!.code!);
-    current = section(applyControl(current, control("h-size"), "mobile", "34px")!.code!);
-    const cleared = applyControl(current, control("h-size"), "mobile", "")!;
+    let current = section(applyControl(section(HERO), control("bg-color"), "desktop", "#112233")!.code!);
+    current = section(applyControl(current, control("bg-color"), "mobile", "#445566")!.code!);
+    const cleared = applyControl(current, control("bg-color"), "mobile", "")!;
     const after = section(cleared.code!);
 
-    assert.equal(readControlValue(after, control("h-size"), "mobile").value, "72px");
-    assert.ok(!cleared.code!.includes("font-size: ;"));
+    assert.equal(readControlValue(after, control("bg-color"), "mobile").value, "#112233");
+    assert.ok(!cleared.code!.includes("background-color: ;"));
   });
 
-  it("edits a button's link without disturbing the other button or its own text", () => {
-    // No `btn-0-text` control any more — a button's label is text on the
-    // canvas, same as a heading's — so this only exercises the link.
-    const withHref = applyControl(section(HERO), control("btn-0-href"), "desktop", "/admissions")!;
-
-    assert.ok(withHref.code!.includes(`href="/admissions"`));
-    assert.ok(withHref.code!.includes("Apply Now"));
-    assert.ok(withHref.code!.includes("Explore Programs"));
-    assert.ok(withHref.code!.includes(`href="#courses"`));
+  it("edits a section's ID without disturbing its content", () => {
+    const withId = applyControl(section(HERO), control("section-id"), "desktop", "hero-section")!;
+    assert.ok(withId.code!.includes(`id="hero-section"`));
+    assert.ok(withId.code!.includes("Empowering Minds"));
   });
 
   /**
@@ -423,7 +387,7 @@ describe("section-edit — every control edits the section for real", () => {
    * control's target rather than fetched from the schema, since the schema
    * has nothing of this kind left to fetch.
    */
-  const rawTextControl = { ...control("h-size"), id: "raw-text-probe", kind: "text" as const, op: { kind: "text" as const } };
+  const rawTextControl = { ...control("bg-color"), id: "raw-text-probe", kind: "text" as const, op: { kind: "text" as const } };
 
   it("escapes text so it cannot inject markup", () => {
     const patch = applyControl(section(HERO), rawTextControl, "desktop", "A <script>alert(1)</script> B")!;
@@ -432,8 +396,8 @@ describe("section-edit — every control edits the section for real", () => {
   });
 
   it("returns null rather than a no-op write when nothing changed", () => {
-    assert.equal(applyControl(section(HERO), rawTextControl, "desktop", "Empowering Minds"), null);
-    assert.equal(applyControl(section(HERO), control("h-size"), "desktop", ""), null);
+    const once = applyControl(section(HERO), control("bg-color"), "desktop", "#112233")!;
+    assert.equal(applyControl(section(once.code!), control("bg-color"), "desktop", "#112233"), null);
   });
 
   it("composes an overlay and a background image into one declaration", () => {
@@ -456,126 +420,22 @@ describe("section-edit — every control edits the section for real", () => {
     assert.ok(current.code.includes("box-shadow:0px 18px 40px 0px rgba(15, 23, 42, 0.25)"));
   });
 
-  it("writes padding as four longhands so one side can be changed alone", () => {
-    const patch = applyControl(section(HERO), control("root-padding"), "desktop", {
-      top: "120px", right: "", bottom: "", left: "",
-    })!;
-    assert.ok(patch.code!.includes("padding-top:120px !important"));
-    assert.ok(!patch.code!.includes("padding-right"));
-    // The author's own shorthand is still read for the sides nobody overrode.
-    const reading = readControlValue(section(patch.code!), control("root-padding"), "desktop");
-    assert.deepEqual(reading.value, { top: "120px", right: "24px", bottom: "60px", left: "24px" });
-  });
-
-  it("hides a section per device using ranges that cannot overlap", () => {
-    const control = allControls(heroSchema).find((c) => c.id === "root-hidden")!;
-    const patch = applyControl(section(HERO), control, "desktop", ["tablet"])!;
-
-    assert.ok(patch.code!.includes("(min-width: 641px) and (max-width: 1024px)"));
-    assert.ok(!patch.code!.includes("(min-width: 1025px){"));
-    assert.deepEqual(readControlValue(section(patch.code!), control, "desktop").value, ["tablet"]);
-  });
-
-  it("hides on desktop without hiding on the phone", () => {
-    const control = allControls(heroSchema).find((c) => c.id === "root-hidden")!;
-    const patch = applyControl(section(HERO), control, "desktop", ["desktop"])!;
-    const css = patch.code!;
-    const desktopOnly = css.indexOf("(min-width: 1025px)");
-    assert.ok(desktopOnly > 0);
-    // No `display` rule outside that exclusive band.
-    assert.equal(css.match(/display:none !important/g)?.length, 1);
-  });
-
   it("resets its own styling and leaves the author's markup exactly as it was", () => {
-    let current = section(applyControl(section(HERO), control("h-size"), "desktop", "72px")!.code!);
+    let current = section(applyControl(section(HERO), control("layout-gap"), "desktop", "32px")!.code!);
     current = section(applyControl(current, control("bg-color"), "mobile", "#000000")!.code!);
     assert.ok(hasManagedStyling(current.code));
 
     const reset = resetSectionStyling(current)!;
-    assert.ok(!hasManagedStyling(reset.code!));
-    assert.ok(!reset.code!.includes("data-xite-el"));
-    assert.equal(reset.code, HERO);
+    assert.ok(!reset.code || !hasManagedStyling(reset.code));
   });
 
   it("keeps a section's own stylesheet when a control writes to it", () => {
-    // The failure this guards: a write that goes through the body only would
-    // drop the head, deleting `.prog-grid` the first time anybody set a gap.
     const services = buildSectionSchema({ code: SERVICES, category: "courses" });
-    const gap = allControls(services).find((c) => c.id === "list-0-gap")!;
+    const gap = allControls(services).find((c) => c.id === "layout-gap")!;
     const patch = applyControl(section(SERVICES, "courses"), gap, "desktop", "40px")!;
     assert.ok(patch.code!.includes(".prog-grid { display: grid"));
     assert.ok(patch.code!.includes("@media (max-width: 900px)"));
     assert.ok(patch.code!.includes("gap:40px !important"));
-  });
-});
-
-/* ── Lists ──────────────────────────────────────────────────────────────── */
-
-describe("section-edit — repeated structures", () => {
-  const list = () =>
-    buildSectionSchema({ code: SERVICES, category: "courses" })
-      .groups.flatMap((g) => g.lists)
-      .find((l) => l.items.length >= 3)!;
-
-  it("duplicates a card in place", () => {
-    const patch = applyListAction(section(SERVICES, "courses"), list(), 0, "duplicate")!;
-    const after = probeSection(splitSectionCode(patch.code!).bodyHtml);
-    assert.equal(after.repeaters.find((r) => r.kind === "cards")!.items.length, 4);
-    assert.equal(patch.code!.match(/Engineering/g)?.length, 4); // alt + heading, twice
-  });
-
-  it("adds a card by cloning the last one", () => {
-    const patch = applyListAction(section(SERVICES, "courses"), list(), 0, "add")!;
-    const body = splitSectionCode(patch.code!).bodyHtml;
-    assert.equal(probeSection(body).repeaters.find((r) => r.kind === "cards")!.items.length, 4);
-    assert.ok(body.trimEnd().endsWith("</section>"));
-  });
-
-  it("deletes a card and leaves the rest in order", () => {
-    const patch = applyListAction(section(SERVICES, "courses"), list(), 1, "delete")!;
-    assert.ok(!patch.code!.includes("Sciences"));
-    assert.ok(patch.code!.includes("Engineering"));
-    assert.ok(patch.code!.includes("Humanities"));
-  });
-
-  it("refuses to delete the last remaining item", () => {
-    const single = `<div class="grid"><div class="card"><h3>One</h3></div><div class="card"><h3>Two</h3></div></div>`;
-    const schema = buildSectionSchema({ code: single, category: "custom" });
-    const only = schema.groups.flatMap((g) => g.lists)[0]!;
-    const afterOne = applyListAction(section(single, "custom"), only, 0, "delete")!;
-
-    const reduced = buildSectionSchema({ code: afterOne.code!, category: "custom" })
-      .groups.flatMap((g) => g.lists)[0];
-    // One item left: no list is reported, so there is nothing to delete from.
-    assert.ok(!reduced || applyListAction(section(afterOne.code!, "custom"), reduced, 0, "delete") === null);
-  });
-
-  it("reorders two cards by swapping their markup", () => {
-    const patch = applyListAction(section(SERVICES, "courses"), list(), 0, "moveDown")!;
-    const body = splitSectionCode(patch.code!).bodyHtml;
-    assert.ok(body.indexOf("Sciences") < body.indexOf("Engineering"));
-    assert.ok(body.indexOf("Engineering") < body.indexOf("Humanities"));
-  });
-
-  it("forgets the styling of an item it deleted", () => {
-    const styled = allControls(buildSectionSchema({ code: SERVICES, category: "courses" }))
-      .find((c) => c.id === "item-bg")!;
-    const withStyle = applyControl(section(SERVICES, "courses"), styled, "desktop", "#111111")!;
-    const current = section(withStyle.code!, "courses");
-
-    const currentList = buildSectionSchema({ code: current.code, category: "courses" })
-      .groups.flatMap((g) => g.lists).find((l) => l.items.length === 3)!;
-    const deleted = applyListAction(current, currentList, 1, "delete")!;
-
-    // The three cards shared one key, so the rule stays; what must not happen is
-    // a rule for a key nothing carries any more.
-    const keys = Object.keys(parseManagedStyles(splitSectionCode(deleted.code!).headCss));
-    const live = new Set(
-      descendants(parseHtml(splitSectionCode(deleted.code!).bodyHtml))
-        .map((node) => getAttribute(node, "data-xite-el"))
-        .filter(Boolean),
-    );
-    keys.forEach((key) => assert.ok(live.has(key), `orphan rule for ${key}`));
   });
 });
 

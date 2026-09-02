@@ -245,6 +245,12 @@ const GRADIENT_OPTIONS: readonly ControlOption[] = [
   { value: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)", label: "Amber to red" },
 ];
 
+const BUTTON_SHADOW_OPTIONS: readonly ControlOption[] = [
+  { value: "", label: "None" },
+  { value: "0 4px 14px -2px rgba(0, 0, 0, 0.12)", label: "Soft" },
+  { value: "0 10px 25px -4px rgba(0, 0, 0, 0.28)", label: "Strong" },
+];
+
 /* ── Control factories ──────────────────────────────────────────────────── */
 
 const at = (...paths: readonly ElementPath[]): ControlTarget => ({ kind: "elements", paths });
@@ -355,250 +361,21 @@ export function buildSectionSchema(section: {
     return created;
   };
 
-  /*
-   * Heading/paragraph *text* is edited on the canvas — click or double-click
-   * it directly — not through a form here. This toolbar used to also carry a
-   * "Content" group with Heading/Heading 2/Description/… text fields that
-   * duplicated the exact same edit through a second, redundant path. Removed;
-   * `outerHeadings`/`outerParagraphs` stay, because Typography below still
-   * needs them to target font/size/weight/colour for the same elements.
-   */
-  const outerHeadings = probe.headings.filter((entry) => !insideList(entry.path));
-  const outerParagraphs = probe.paragraphs.filter((entry) => !insideList(entry.path));
-
-  /* — Logo —————————————————————————————————————————————————— */
-
-  if (probe.logo) {
-    const logo = probe.logo;
-    const logoTarget = at(logo.path);
-    group("logo").controls.push(
-      { id: "logo-src", label: "Logo image", kind: "image", target: logoTarget, op: { kind: "attr", name: "src" }, responsive: false },
-      { id: "logo-alt", label: "Alt text", kind: "text", target: logoTarget, op: { kind: "attr", name: "alt" }, responsive: false },
-      lengthControl("logo-width", "Width", logoTarget, "width", { max: 600 }),
-      lengthControl("logo-height", "Height", logoTarget, "height", { max: 400 }),
-      lengthControl("logo-gap", "Spacing", logoTarget, "margin-right", { max: 120 }),
-    );
-
-    // A logo is usually wrapped in the link to the home page; that link is what
-    // "Logo link" means, and it is one level up rather than on the image.
-    const wrapper = logo.node.parent;
-    if (wrapper && wrapper.tag === "a") {
-      const wrapperPath = pathOfDescendant(probe.root, wrapper);
-      if (wrapperPath) {
-        group("logo").controls.push({
-          id: "logo-link",
-          label: "Logo link",
-          kind: "url",
-          target: at(wrapperPath),
-          op: { kind: "attr", name: "href" },
-          responsive: false,
-          placeholder: "/",
-        });
-      }
-    }
-  }
-
-  /* — Navigation ——————————————————————————————————————————— */
-
-  if (probe.navLinks.length > 0) {
-    const navGroup = group("navigation");
-    navGroup.lists.push({
-      id: "nav-items",
-      label: "Navigation items",
-      itemNoun: "Item",
-      containerPath: probe.navContainer?.path ?? [],
-      items: probe.navLinks.map((link, index) => ({
-        path: link.path,
-        label: trimLabel(link.text) || `Item ${index + 1}`,
-        // Just the link — the label itself is text on the canvas. See the
-        // comment on the repeater items below for the rule this follows.
-        controls: [
-          { id: "href", label: "Link", kind: "url", target: at(link.path), op: { kind: "attr", name: "href" }, responsive: false },
-        ],
-      })),
-      // No `add`: a navigation item is a link inside a structure whose markup
-      // varies wildly between headers, and cloning the last one is the only
-      // honest way to make a new one — which is exactly what `duplicate` is.
-      actions: ["duplicate", "delete", "moveUp", "moveDown"],
-      itemStyleControls: [
-        selectControl("nav-font", "Font", at(...probe.navLinks.map((l) => l.path)), "font-family", FONT_OPTIONS),
-        lengthControl("nav-size", "Font size", at(...probe.navLinks.map((l) => l.path)), "font-size", { max: 64 }),
-        selectControl("nav-weight", "Font weight", at(...probe.navLinks.map((l) => l.path)), "font-weight", WEIGHT_OPTIONS),
-        colorControl("nav-color", "Text colour", at(...probe.navLinks.map((l) => l.path)), "color"),
-      ],
-    });
-
-    if (probe.navContainer) {
-      const navTarget = at(probe.navContainer.path);
-      navGroup.controls.push(
-        lengthControl("nav-gap", "Item spacing", navTarget, "gap", { max: 96 }),
-        selectControl("nav-justify", "Alignment", navTarget, "justify-content", JUSTIFY_OPTIONS),
-      );
-    }
-  }
-
-  /* — Buttons ——————————————————————————————————————————————— */
-
-  const buttons = probe.actions.filter((entry) => !insideList(entry.path)).slice(0, 4);
-  buttons.forEach((button, index) => {
-    const target = at(button.path);
-    const prefix = buttons.length > 1 ? `Button ${index + 1} · ` : "";
-    group("buttons").controls.push(
-      // No text control — a button's label is text on the canvas, same as a heading's.
-      { id: `btn-${index}-href`, label: `${prefix}Link`, kind: "url", target, op: { kind: "attr", name: "href" }, responsive: false, placeholder: "#" },
-      colorControl(`btn-${index}-bg`, `${prefix}Background`, target, "background-color"),
-      colorControl(`btn-${index}-fg`, `${prefix}Text colour`, target, "color"),
-      lengthControl(`btn-${index}-radius`, `${prefix}Radius`, target, "border-radius", { max: 999 }),
-      lengthControl(`btn-${index}-size`, `${prefix}Font size`, target, "font-size", { max: 48 }),
-      styleControl(`btn-${index}-pad`, `${prefix}Padding`, target, "padding", {
-        kind: "box",
-        op: { kind: "box", prop: "padding" },
-      }),
-      styleControl(`btn-${index}-border`, `${prefix}Border`, target, "border", {
-        kind: "raw",
-        placeholder: "1px solid #cbd5e1",
-      }),
-    );
-  });
-
-  /* — Media ————————————————————————————————————————————————— */
-
-  const images = probe.images.filter((entry) => !insideList(entry.path)).slice(0, 3);
-  images.forEach((image, index) => {
-    const target = at(image.path);
-    const prefix = images.length > 1 ? `Image ${index + 1} · ` : "";
-    group("media").controls.push(
-      { id: `img-${index}-src`, label: `${prefix}Image`, kind: "image", target, op: { kind: "attr", name: "src" }, responsive: false },
-      { id: `img-${index}-alt`, label: `${prefix}Alt text`, kind: "text", target, op: { kind: "attr", name: "alt" }, responsive: false },
-      lengthControl(`img-${index}-w`, `${prefix}Width`, target, "width", { max: 2000 }),
-      lengthControl(`img-${index}-h`, `${prefix}Height`, target, "height", { max: 2000 }),
-      selectControl(`img-${index}-fit`, `${prefix}Fit`, target, "object-fit", FIT_OPTIONS),
-      styleControl(`img-${index}-pos`, `${prefix}Position`, target, "object-position", { kind: "raw", placeholder: "center" }),
-      lengthControl(`img-${index}-radius`, `${prefix}Radius`, target, "border-radius", { max: 999 }),
-    );
-  });
-
-  /* — Lists (cards, gallery, links, form fields) ——————————— */
-
-  probe.repeaters.forEach((repeater, listIndex) => {
-    const names = listLabelFor(category, repeater.kind);
-    const itemPaths = repeater.items.map((item) => item.path);
-    const allItems = at(...itemPaths);
-
-    const items: ControlListItem[] = repeater.items.map((item, index) => {
-      const controls: Control[] = [];
-      const add = (node: ElementNode | null, control: (path: ElementPath) => Control) => {
-        if (!node) return;
-        const path = pathOfDescendant(probe.root, node);
-        if (path) controls.push(control(path));
-      };
-
-      /*
-       * Visible text — a caption, a label, a title, a card's body copy — is
-       * edited on the canvas (click or double-click it), same as headings and
-       * paragraphs above. Only fields with no canvas equivalent stay here:
-       * an image's `src`, a link's `href`, a field's `placeholder`/`name`
-       * attribute. `alt` text is the one exception kept despite being an
-       * attribute rather than visible text — it isn't rendered at all, so
-       * there is nothing on the canvas to click.
-       */
-      if (repeater.kind === "images") {
-        add(firstIn(item.node, isImage), (path) => ({
-          id: "src", label: "Image", kind: "image", target: at(path), op: { kind: "attr", name: "src" }, responsive: false,
-        }));
-        add(firstIn(item.node, isImage), (path) => ({
-          id: "alt", label: "Alt text", kind: "text", target: at(path), op: { kind: "attr", name: "alt" }, responsive: false,
-        }));
-      } else if (repeater.kind === "fields") {
-        add(firstIn(item.node, isField), (path) => ({
-          id: "placeholder", label: "Placeholder", kind: "text", target: at(path), op: { kind: "attr", name: "placeholder" }, responsive: false,
-        }));
-        add(firstIn(item.node, isField), (path) => ({
-          id: "name", label: "Field name", kind: "text", target: at(path), op: { kind: "attr", name: "name" }, responsive: false,
-        }));
-      } else if (repeater.kind === "links") {
-        add(firstIn(item.node, isLink), (path) => ({
-          id: "href", label: "Link", kind: "url", target: at(path), op: { kind: "attr", name: "href" }, responsive: false,
-        }));
-      } else {
-        add(firstIn(item.node, isImage), (path) => ({
-          id: "image", label: "Image", kind: "image", target: at(path), op: { kind: "attr", name: "src" }, responsive: false,
-        }));
-        add(firstIn(item.node, isLink), (path) => ({
-          id: "href", label: "Link", kind: "url", target: at(path), op: { kind: "attr", name: "href" }, responsive: false,
-        }));
-      }
-
-      const label =
-        trimLabel(
-          textContent(probe.body, firstIn(item.node, isHeading) ?? item.node) ||
-            getAttribute(firstIn(item.node, isImage) ?? item.node, "alt") ||
-            "",
-        ) || `${names.item} ${index + 1}`;
-
-      return { path: item.path, label, controls };
-    });
-
-    const itemStyleControls: Control[] =
-      repeater.kind === "fields"
-        ? [
-            colorControl("field-bg", "Field background", allItems, "background-color"),
-            lengthControl("field-radius", "Field radius", allItems, "border-radius", { max: 999 }),
-          ]
-        : [
-            colorControl("item-bg", "Background", allItems, "background-color"),
-            styleControl("item-border", "Border", allItems, "border", { kind: "raw", placeholder: "1px solid #e2e8f0" }),
-            lengthControl("item-radius", "Radius", allItems, "border-radius", { max: 999 }),
-            styleControl("item-shadow", "Shadow", allItems, "box-shadow", { kind: "raw", placeholder: "0 10px 25px rgba(0,0,0,.08)" }),
-            styleControl("item-pad", "Padding", allItems, "padding", { kind: "box", op: { kind: "box", prop: "padding" } }),
-            styleControl("item-ratio", "Aspect ratio", allItems, "aspect-ratio", { kind: "raw", placeholder: "4 / 3" }),
-            selectControl("item-align", "Text alignment", allItems, "text-align", ALIGN_OPTIONS),
-          ];
-
-    group("list").lists.push({
-      id: `list-${listIndex}`,
-      label: names.group,
-      itemNoun: names.item,
-      containerPath: repeater.container.path,
-      items,
-      actions: ["add", "duplicate", "delete", "moveUp", "moveDown"],
-      itemStyleControls,
-    });
-
-    // The row the items sit in is where columns and gaps belong, and it is the
-    // container rather than the section — a services grid inside a padded
-    // section has its own column count.
-    const containerTarget = at(repeater.container.path);
-    group("layout").controls.push(
-      selectControl(`list-${listIndex}-cols`, `${names.group} columns`, containerTarget, "grid-template-columns", COLUMN_OPTIONS),
-      lengthControl(`list-${listIndex}-gap`, `${names.group} gap`, containerTarget, "gap", { max: 160 }),
-    );
-  });
-
-  /* — Layout ———————————————————————————————————————————————— */
-
+  /* — 1. Layout (Minimal: only element gap spacing slider with 'Auto' toggle) — */
   const layout = group("layout");
-  layout.controls.unshift(
-    lengthControl("root-min-height", "Section height", rootTarget, "min-height", { max: 2000, hint: "Minimum height" }),
-    lengthControl("root-max-width", "Content width", rootTarget, "max-width", { max: 3000 }),
-    selectControl("root-align", "Content alignment", rootTarget, "text-align", ALIGN_OPTIONS),
+  const mainTrack = probe.tracks.find((track) => !insideList(track.path));
+  const gapTarget = mainTrack ? at(mainTrack.path) : rootTarget;
+
+  layout.controls.push(
+    lengthControl("layout-gap", "Element Gap / Spacing", gapTarget, "gap", {
+      min: 0,
+      max: 80,
+      step: 4,
+      hint: "Spacing between elements in this section",
+    }),
   );
 
-  const mainTrack = probe.tracks.find((track) => !insideList(track.path));
-  if (mainTrack) {
-    const trackTarget = at(mainTrack.path);
-    layout.controls.push(
-      selectControl("track-cols", "Columns", trackTarget, "grid-template-columns", COLUMN_OPTIONS),
-      lengthControl("track-gap", "Gap", trackTarget, "gap", { max: 160 }),
-      selectControl("track-align", "Vertical alignment", trackTarget, "align-items", ALIGN_ITEMS_OPTIONS),
-      selectControl("track-justify", "Horizontal alignment", trackTarget, "justify-content", JUSTIFY_OPTIONS),
-      selectControl("track-direction", "Direction", trackTarget, "flex-direction", DIRECTION_OPTIONS),
-      lengthControl("track-width", "Container width", trackTarget, "max-width", { max: 3000 }),
-    );
-  }
-
-  /* — Background ———————————————————————————————————————————— */
-
+  /* — 2. Background (Color, image, or gradient controls) ————————————————— */
   group("background").controls.push(
     colorControl("bg-color", "Background colour", rootTarget, "background-color"),
     {
@@ -628,15 +405,49 @@ export function buildSectionSchema(section: {
     }),
   );
 
-  /* — Border and shadow ————————————————————————————————————— */
+  /* — Buttons (4 Core Minimal Controls: Shape, Shadow, Colors, Border) — */
+  const buttons = probe.actions.filter((btn) => !insideList(btn.path));
+  if (buttons.length > 0) {
+    const buttonsGrp = group("buttons");
+    buttons.forEach((btn, index) => {
+      const target = at(btn.path);
+      const prefix = `btn-${index}`;
+      const name = index === 0 ? "Primary Button" : index === 1 ? "Secondary Button" : `Button ${index + 1}`;
 
-  group("border").controls.push(
-    lengthControl("border-width", "Border width", rootTarget, "border-width", { max: 40 }),
-    selectControl("border-style", "Border style", rootTarget, "border-style", BORDER_STYLE_OPTIONS),
-    colorControl("border-color", "Border colour", rootTarget, "border-color"),
-    lengthControl("border-radius", "Border radius", rootTarget, "border-radius", { max: 999 }),
-  );
+      // 1. Shape / Corner Radius: 0px to 40px
+      buttonsGrp.controls.push(
+        lengthControl(`${prefix}-radius`, `${name} Shape`, target, "border-radius", {
+          min: 0,
+          max: 40,
+          step: 1,
+          hint: "Corner radius (0px to 40px)",
+        }),
+      );
 
+      // 2. Shadow: None | Soft | Strong
+      buttonsGrp.controls.push(
+        selectControl(`${prefix}-shadow`, `${name} Shadow`, target, "box-shadow", BUTTON_SHADOW_OPTIONS),
+      );
+
+      // 3. Colors: Background & Text
+      buttonsGrp.controls.push(
+        colorControl(`${prefix}-bg`, `${name} Background`, target, "background-color"),
+        colorControl(`${prefix}-color`, `${name} Text colour`, target, "color"),
+      );
+
+      // 4. Border Stroke: 0px to 3px
+      buttonsGrp.controls.push(
+        lengthControl(`${prefix}-border`, `${name} Border stroke`, target, "border-width", {
+          min: 0,
+          max: 3,
+          step: 1,
+          hint: "Border stroke (0px to 3px)",
+        }),
+      );
+    });
+  }
+
+  /* — 3. Shadow (X, Y, blur, spread, and shadow color adjustments) —————— */
   group("shadow").controls.push(
     lengthControl("shadow-x", "Offset X", rootTarget, "--x-shadow-x", { min: -200, max: 200 }),
     lengthControl("shadow-y", "Offset Y", rootTarget, "--x-shadow-y", { min: -200, max: 200 }),
@@ -652,18 +463,9 @@ export function buildSectionSchema(section: {
     }),
   );
 
-  /* — Animation ———————————————————————————————————————————— */
-
-  /**
-   * One control, not four. Each option is the full `animation` shorthand —
-   * name, duration, easing and fill-mode baked in together — rather than
-   * separate duration/delay/easing fields nobody asked for. The keyframes
-   * themselves live in `section-runtime.ts`, the one stylesheet guaranteed to
-   * be on every surface a section renders on (editor canvas, Admin preview,
-   * published site).
-   */
+  /* — 4. Animation (Entrance and hover animation effects) —————————————— */
   group("animation").controls.push(
-    selectControl("anim-preset", "Animation", rootTarget, "animation", [
+    selectControl("anim-preset", "Entrance effect", rootTarget, "animation", [
       { value: "", label: "None" },
       { value: "xite-fade-in 0.7s ease-out both", label: "Fade in" },
       { value: "xite-slide-up 0.7s ease-out both", label: "Slide up" },
@@ -672,73 +474,36 @@ export function buildSectionSchema(section: {
       { value: "xite-slide-right 0.7s ease-out both", label: "Slide right" },
       { value: "xite-zoom-in 0.7s ease-out both", label: "Zoom in" },
     ]),
+    selectControl("anim-transition", "Hover transition", rootTarget, "transition", [
+      { value: "", label: "None" },
+      { value: "all 0.2s ease", label: "Fast (0.2s)" },
+      { value: "all 0.3s ease", label: "Smooth (0.3s)" },
+      { value: "all 0.5s ease", label: "Gentle (0.5s)" },
+    ]),
   );
 
-  /* — Typography ———————————————————————————————————————————— */
-
-  const typography = group("typography");
-  const headingTarget = outerHeadings.length > 0 ? at(...outerHeadings.map((h) => h.path)) : null;
-  const bodyTarget = outerParagraphs.length > 0 ? at(...outerParagraphs.map((p) => p.path)) : null;
-
-  if (headingTarget) {
-    typography.controls.push(
-      selectControl("h-font", "Heading font", headingTarget, "font-family", FONT_OPTIONS),
-      lengthControl("h-size", "Heading size", headingTarget, "font-size", { max: 160 }),
-      selectControl("h-weight", "Heading weight", headingTarget, "font-weight", WEIGHT_OPTIONS),
-      colorControl("h-color", "Heading colour", headingTarget, "color"),
-      styleControl("h-leading", "Heading line height", headingTarget, "line-height", {
-        kind: "number", unit: "", min: 0.8, max: 3, step: 0.05,
-      }),
-      styleControl("h-tracking", "Heading letter spacing", headingTarget, "letter-spacing", {
-        kind: "number", unit: "px", min: -10, max: 20, step: 0.1,
-      }),
-      selectControl("h-transform", "Heading case", headingTarget, "text-transform", TRANSFORM_OPTIONS),
-    );
-  }
-
-  if (bodyTarget) {
-    typography.controls.push(
-      selectControl("p-font", "Body font", bodyTarget, "font-family", FONT_OPTIONS),
-      lengthControl("p-size", "Body size", bodyTarget, "font-size", { max: 80 }),
-      selectControl("p-weight", "Body weight", bodyTarget, "font-weight", WEIGHT_OPTIONS),
-      colorControl("p-color", "Body colour", bodyTarget, "color"),
-      styleControl("p-leading", "Body line height", bodyTarget, "line-height", {
-        kind: "number", unit: "", min: 0.8, max: 3, step: 0.05,
-      }),
-      lengthControl("p-width", "Text width", bodyTarget, "max-width", { max: 1600 }),
-    );
-  }
-
-  /* — Spacing ——————————————————————————————————————————————— */
-
-  group("spacing").controls.push(
-    { id: "root-padding", label: "Padding", kind: "box", target: rootTarget, op: { kind: "box", prop: "padding" }, responsive: true },
-    { id: "root-margin", label: "Margin", kind: "box", target: rootTarget, op: { kind: "box", prop: "margin" }, responsive: true },
+  /* — 5. Section (Preset variations, ID, and section-level options) ————— */
+  group("section").controls.push(
+    {
+      id: "section-title",
+      label: "Section name",
+      kind: "text",
+      target: { kind: "record" },
+      op: { kind: "title" },
+      responsive: false,
+      hint: "What this section is called in the editor. Not published.",
+    },
+    {
+      id: "section-id",
+      label: "Section ID / Anchor",
+      kind: "text",
+      target: rootTarget,
+      op: { kind: "attr", name: "id" },
+      responsive: false,
+      placeholder: "e.g. hero-section",
+      hint: "HTML anchor ID for in-page jump links.",
+    },
   );
-
-  /* — Responsive ———————————————————————————————————————————— */
-
-  group("responsive").controls.push({
-    id: "root-hidden",
-    label: "Hide on",
-    kind: "toggle",
-    target: rootTarget,
-    op: { kind: "hidden" },
-    responsive: false,
-    hint: "The section stays in the page and stops rendering at that width.",
-  });
-
-  /* — Section ——————————————————————————————————————————————— */
-
-  group("section").controls.push({
-    id: "section-title",
-    label: "Section name",
-    kind: "text",
-    target: { kind: "record" },
-    op: { kind: "title" },
-    responsive: false,
-    hint: "What this section is called in the editor. Not published.",
-  });
 
   /* — Assemble ——————————————————————————————————————————————— */
 

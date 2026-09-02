@@ -68,6 +68,8 @@ import { useViewport } from "@/hooks/useViewport";
 import { DEFAULT_WIDTH, nearestWidth, type DeviceMode } from "@/lib/viewport-presets";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { SectionToolbar } from "./SectionToolbar";
+import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
+import { CanvaCanvasOverlay } from "./canvas/CanvaCanvasOverlay";
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SectionPatch } from "@/lib/sections/section-edit";
 import { DrawerPanel } from "./DrawerPanel";
@@ -508,16 +510,29 @@ export function EditorStudio({
 
   /**
    * Report something, in the status line above the toolbar.
-   *
-   * This used to be `setToastMessage(null)` — every call, unconditionally,
-   * with a comment saying popups were disabled. The calls stayed, so eleven
-   * places in this file described what had just happened to nobody. Popups
-   * genuinely are gone; this is a single non-blocking status line that
-   * replaces its own message.
    */
   const showToastNotification = useCallback((message: string) => {
     setSwapNotice(message || null);
   }, []);
+
+  // Canva-Like Interactive Canvas Engine directly on top of the live preview DOM
+  const inPlaceEditor = useCanvaInteractions({
+    sections,
+    activeSectionIndex,
+    onUpdateSectionCode: (sectionIndex, newBodyHtml) => {
+      setSectionsWithHistory((prev) =>
+        prev.map((sec, i) =>
+          i === sectionIndex
+            ? {
+                ...sec,
+                code: recomposeSectionCode(sec.code, newBodyHtml),
+              }
+            : sec,
+        ),
+      );
+    },
+    showToast: showToastNotification,
+  });
 
   // Right-Click Image, Logo & Background Editor Modal State
   const [imagePopup, setImagePopup] = useState<{
@@ -555,6 +570,43 @@ export function EditorStudio({
     }
     setImagePopup((prev) => (prev ? { ...prev, ...val } : val));
   };
+
+  /**
+   * Dedicated Context Menu / Custom Multi-Edit Toolbar State.
+   *
+   * Strict state separation:
+   * - `activeSectionIndex`: section selection & active outline/ring.
+   * - `customToolbarState`: context-menu-driven multi-option edit toolbar (`SectionToolbar`).
+   *
+   * Left-click: Only selects/highlights that section. Standard toolbar stays active & visible.
+   * Right-click: Intercepts contextmenu, keeps section selected, and opens this custom edit toolbar.
+   */
+  const [customToolbarState, setCustomToolbarState] = useState<{
+    isOpen: boolean;
+    sectionIndex: number | null;
+    position: { x: number; y: number } | null;
+  }>({
+    isOpen: false,
+    sectionIndex: null,
+    position: null,
+  });
+
+  const openCustomToolbar = useCallback((idx: number) => {
+    setActiveSectionIndex(idx);
+    setCustomToolbarState({
+      isOpen: true,
+      sectionIndex: idx,
+      position: null,
+    });
+  }, []);
+
+  const closeCustomToolbar = useCallback(() => {
+    setCustomToolbarState({
+      isOpen: false,
+      sectionIndex: null,
+      position: null,
+    });
+  }, []);
 
   /**
    * Strips the wrappers the canvas adds, so what is saved is the section.
@@ -878,7 +930,7 @@ export function EditorStudio({
     setActiveSectionIndex(0);
   }, [editor.activePage.id, setSectionsWithHistory, setActiveSectionIndex]);
 
-  // Save active inline text edit and update section code in state when clicking outside
+  // Save active inline text edit and update section code in state when clicking outside / blurring
   const finishInlineTextEditing = useCallback(() => {
     const textElem = activeEditingElemRef.current;
     const sectionIndex = activeEditingSectionIdxRef.current;
@@ -886,17 +938,24 @@ export function EditorStudio({
 
     if (!textElem || sectionIndex === null || !container) return;
 
+    // Reset visual editing styles and contentEditable attribute
+    textElem.classList.remove("xite-text-editing");
     textElem.contentEditable = "false";
+    textElem.removeAttribute("contenteditable");
     textElem.style.outline = "";
     textElem.style.outlineOffset = "";
     textElem.style.borderRadius = "";
     textElem.style.backgroundColor = "";
+    textElem.style.boxShadow = "";
+    textElem.style.cursor = "";
+    textElem.style.userSelect = "";
+    textElem.style.transition = "";
 
     activeEditingElemRef.current = null;
     activeEditingSectionIdxRef.current = null;
     activeEditingContainerRef.current = null;
 
-    const canvasBox = container.querySelector(".section-canvas-box") as HTMLElement;
+    const canvasBox = (container.querySelector(".section-canvas-box") || container) as HTMLElement;
     const targetNode = canvasBox || container;
 
     const clone = targetNode.cloneNode(true) as HTMLElement;
@@ -904,13 +963,18 @@ export function EditorStudio({
     const badges = clone.querySelectorAll('.pointer-events-none');
     badges.forEach((b) => b.remove());
 
-    const editables = clone.querySelectorAll('[contenteditable]');
+    const editables = clone.querySelectorAll('[contenteditable], .xite-text-editing');
     editables.forEach((el) => {
       el.removeAttribute('contenteditable');
+      el.classList.remove('xite-text-editing');
       (el as HTMLElement).style.outline = '';
       (el as HTMLElement).style.outlineOffset = '';
       (el as HTMLElement).style.borderRadius = '';
       (el as HTMLElement).style.backgroundColor = '';
+      (el as HTMLElement).style.boxShadow = '';
+      (el as HTMLElement).style.cursor = '';
+      (el as HTMLElement).style.userSelect = '';
+      (el as HTMLElement).style.transition = '';
     });
 
     const newBody = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
@@ -938,84 +1002,199 @@ export function EditorStudio({
     }
   }, [cleanCanvasWrapperFromCode, setSectionsWithHistory, showToastNotification]);
 
-  // Global document click handler to finish inline text editing when clicking outside
+  // Global document click handler to close SectionToolbar and finish inline text editing when left-clicking outside
   useEffect(() => {
     const handleDocumentMouseDown = (e: MouseEvent) => {
-      if (activeEditingElemRef.current) {
-        const target = e.target as HTMLElement;
-        if (target && !activeEditingElemRef.current.contains(target)) {
-          finishInlineTextEditing();
+      // Only process standard left-clicks (button === 0)
+      if (e.button !== 0) return;
+
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      // Finish inline text editing if clicking outside active text element
+      if (activeEditingElemRef.current && !activeEditingElemRef.current.contains(target)) {
+        finishInlineTextEditing();
+      }
+
+      // Close SectionToolbar and restore normal toolbar when left-clicking outside SectionToolbar
+      if (customToolbarState.isOpen) {
+        const isInsideSectionToolbar = target.closest('div[role="dialog"][aria-label*="section settings"]') !== null;
+        if (!isInsideSectionToolbar) {
+          closeCustomToolbar();
         }
       }
     };
+
     document.addEventListener("mousedown", handleDocumentMouseDown);
     return () => {
       document.removeEventListener("mousedown", handleDocumentMouseDown);
     };
-  }, [finishInlineTextEditing]);
+  }, [finishInlineTextEditing, customToolbarState.isOpen, closeCustomToolbar]);
 
-  // Handle double-click inline text editing directly on section canvas
-  const handleSectionDoubleClick = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
-    e.stopPropagation();
-    const target = e.target as HTMLElement;
+  const sectionsRef = useRef(sections);
+  // Activate inline text editing on any clicked text element
+  const activateInlineTextEditing = useCallback((
+    target: HTMLElement,
+    sectionIndex: number,
+    sectionContainer: HTMLElement,
+    clickX?: number,
+    clickY?: number
+  ) => {
     if (!target) return;
 
-    // Ignore container sections & structural wrappers
-    if (target.tagName === "SECTION" || target.tagName === "HEADER" || target.tagName === "FOOTER" || target.tagName === "MAIN") return;
-    if (target.tagName === "IMG" || target.tagName === "SVG" || (target.tagName === "BUTTON" && target.classList.contains("hamburger-toggle-btn"))) return;
+    // Prevent default navigation if an <a> link is double-clicked
+    const anchor = target.closest("a");
+    if (anchor) {
+      anchor.onclick = (e) => e.preventDefault();
+    }
 
-    // Tags that can be edited inline
-    const editableTags = ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "A", "BUTTON", "LI", "STRONG", "EM", "B", "I", "TD", "TH", "DIV"];
+    // Ignore structural container sections & non-text elements like images/svgs
+    if (["SECTION", "HEADER", "FOOTER", "MAIN", "IMG", "SVG"].includes(target.tagName)) return;
+    if (target.tagName === "BUTTON" && target.classList.contains("hamburger-toggle-btn")) return;
 
-    let textElem: HTMLElement | null = target;
-    while (textElem && textElem !== e.currentTarget && !editableTags.includes(textElem.tagName)) {
+    // Prefer parent block elements (h1-h6, p, button, a, blockquote, li, label, figcaption) over inner formatting spans
+    const blockContainer = target.closest(
+      "h1, h2, h3, h4, h5, h6, p, button, a, blockquote, li, label, figcaption, td, th"
+    ) as HTMLElement | null;
+    const inlineContainer = target.closest("span, strong, em, b, i, small") as HTMLElement | null;
+
+    let textElem: HTMLElement | null =
+      blockContainer && sectionContainer.contains(blockContainer)
+        ? blockContainer
+        : inlineContainer && sectionContainer.contains(inlineContainer)
+        ? inlineContainer
+        : target;
+
+    const editableTags = [
+      "H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "A", "BUTTON", "LI",
+      "STRONG", "EM", "B", "I", "TD", "TH", "LABEL", "DIV", "BLOCKQUOTE", "FIGCAPTION", "SMALL"
+    ];
+
+    while (textElem && textElem !== sectionContainer && !editableTags.includes(textElem.tagName)) {
       textElem = textElem.parentElement;
     }
 
-    if (!textElem || textElem === e.currentTarget) {
+    if (!textElem || textElem === sectionContainer) {
       textElem = target;
     }
 
-    if (textElem.tagName === "DIV" && textElem.children.length > 2) return;
+    if (textElem.tagName === "DIV" && textElem.children.length > 2) {
+      const child = textElem.querySelector("h1, h2, h3, h4, h5, h6, p, span, a, button, li, blockquote") as HTMLElement;
+      if (child) textElem = child;
+      else return;
+    }
 
-    // Finish previous edit first if user double-clicked another element directly
+    // Finish previous edit first if any
     if (activeEditingElemRef.current && activeEditingElemRef.current !== textElem) {
       finishInlineTextEditing();
     }
 
-    // Set active editing references
+    // Set active references
     activeEditingElemRef.current = textElem;
     activeEditingSectionIdxRef.current = sectionIndex;
-    activeEditingContainerRef.current = e.currentTarget;
+    activeEditingContainerRef.current = sectionContainer;
 
-    // Enable inline content editing with high-visibility blue dashed outline
+    // Enable inline content editing with high-visibility blue editing outline & glow
+    textElem.classList.add("xite-text-editing");
+    textElem.setAttribute("contenteditable", "true");
     textElem.contentEditable = "true";
     textElem.style.userSelect = "text";
     (textElem.style as any).webkitUserSelect = "text";
-    textElem.style.outline = "2px dashed #2563eb";
-    textElem.style.outlineOffset = "4px";
+    textElem.style.outline = "2px solid #3b82f6";
+    textElem.style.outlineOffset = "3px";
     textElem.style.borderRadius = "4px";
-    textElem.style.backgroundColor = "rgba(37, 99, 235, 0.08)";
+    textElem.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.2), 0 0 10px rgba(59, 130, 246, 0.25)";
+    textElem.style.cursor = "text";
+    textElem.style.transition = "outline 0.15s ease, box-shadow 0.15s ease";
 
-    setTimeout(() => {
-      textElem?.focus();
-      try {
-        const range = document.createRange();
-        range.selectNodeContents(textElem!);
+    // Focus & place caret right where user clicked
+    textElem.focus();
+
+    if (typeof document !== "undefined") {
+      let range: Range | null = null;
+      if (clickX !== undefined && clickY !== undefined) {
+        if ((document as any).caretRangeFromPoint) {
+          range = (document as any).caretRangeFromPoint(clickX, clickY);
+        } else if ((document as any).caretPositionFromPoint) {
+          const pos = (document as any).caretPositionFromPoint(clickX, clickY);
+          if (pos) {
+            range = document.createRange();
+            range.setStart(pos.offsetNode, pos.offset);
+            range.collapse(true);
+          }
+        }
+      }
+      if (range) {
         const sel = window.getSelection();
         sel?.removeAllRanges();
         sel?.addRange(range);
-      } catch (err) {
-        // ignore selection error
+      } else {
+        try {
+          const r = document.createRange();
+          r.selectNodeContents(textElem);
+          const sel = window.getSelection();
+          sel?.removeAllRanges();
+          sel?.addRange(r);
+        } catch {}
       }
-    }, 20);
+    }
 
-    textElem.onkeydown = (keyEvent) => {
+    // Enter & Escape key handlers
+    textElem.onkeydown = (keyEvent: KeyboardEvent) => {
       if (keyEvent.key === "Escape") {
         keyEvent.preventDefault();
+        keyEvent.stopPropagation();
         finishInlineTextEditing();
+        return;
+      }
+
+      if (keyEvent.key === "Enter") {
+        const tag = textElem!.tagName.toLowerCase();
+        const isSingleLine = ["h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "span", "label", "th", "td"].includes(tag);
+        if (isSingleLine && !keyEvent.shiftKey) {
+          keyEvent.preventDefault();
+          keyEvent.stopPropagation();
+          finishInlineTextEditing();
+        }
       }
     };
+  }, [finishInlineTextEditing]);
+
+  // Global document double-click listener for immediate inline text editing
+  useEffect(() => {
+    const handleDocumentDblClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      // Find if double click happened inside a section container
+      const sectionContainer = target.closest("[data-xite-section]") as HTMLElement | null;
+      if (!sectionContainer) return;
+
+      const sectionId = sectionContainer.getAttribute("data-xite-section");
+      const currentSections = sectionsRef.current;
+      const sectionIndex = currentSections.findIndex((s) => String(s.id) === String(sectionId));
+      if (sectionIndex === -1) return;
+
+      activateInlineTextEditing(target, sectionIndex, sectionContainer, e.clientX, e.clientY);
+    };
+
+    document.addEventListener("dblclick", handleDocumentDblClick, true);
+    return () => {
+      document.removeEventListener("dblclick", handleDocumentDblClick, true);
+    };
+  }, [activateInlineTextEditing]);
+
+  // Handle double-click inline text editing directly on section canvas
+  const handleSectionDoubleClick = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    activateInlineTextEditing(
+      e.target as HTMLElement,
+      sectionIndex,
+      e.currentTarget,
+      e.clientX,
+      e.clientY
+    );
   };
 
   // Smoothly scroll canvas viewport to top Navbar header section
@@ -1299,25 +1478,29 @@ export function EditorStudio({
     showToastNotification("⚡ Campus map location & directions updated!");
   };
 
-  // Right-click handler for Images, Logos, Section Backgrounds, Maps, and Buttons
+  // Right-click Context Menu Handler: Intercepts native menu, selects section, and opens custom edit toolbar
   const handleSectionContextMenu = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
     const target = e.target as HTMLElement;
     if (!target) return;
 
     /**
-     * Right-click opens the same toolbar left-click does, for any section,
-     * whatever is under the cursor.
-     *
-     * This used to be silent for anything that wasn't an image, logo,
-     * background, map or link/button — no branch below matched, nothing
-     * called `preventDefault()`, and the browser's own menu (Back/Reload/
-     * Inspect) showed instead. Selecting first and always calling
-     * `preventDefault()` here means right-click never again falls through to
-     * that native menu, and it never has to depend on which of the more
-     * specific popups below happens to match.
+     * Right-Click (Custom Edit Toolbar):
+     * 1. Intercept context menu event (preventDefault and stopPropagation).
+     * 2. Select and highlight the target section.
+     * 3. Display the custom multi-option edit toolbar anchored/docked for this section.
      */
     e.preventDefault();
+    e.stopPropagation();
+
+    // Select and highlight this specific section
     setActiveSectionIndex(sectionIndex);
+
+    // Open custom multi-edit toolbar for the right-clicked section
+    setCustomToolbarState({
+      isOpen: true,
+      sectionIndex,
+      position: { x: e.clientX, y: e.clientY },
+    });
 
     // 📍 1. Map & Location iFrame / Button Target Detection
     const secObj = sections[sectionIndex];
@@ -1804,39 +1987,14 @@ export function EditorStudio({
    */
   const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
 
-  /**
-   * Whether the section popup is open — derived from selection, not tracked
-   * on its own.
-   *
-   * It used to be independent state, opened only by a dock button, on the
-   * reasoning that selection happens constantly and a panel on every click is
-   * a panel in the way. In practice that meant an extra click before you could
-   * see or change anything about the section you just selected, and the
-   * "Content" group it opened onto largely duplicated editing text right on
-   * the canvas. Selecting *is* now the request to see that section's style
-   * controls — deselecting is what puts them away. Because the popup is keyed
-   * on the section id (see `SectionToolbar`'s own top comment), switching from
-   * the hero to the footer still swaps the controls in place rather than
-   * carrying any state across.
-   */
-  const isSectionPanelOpen = activeSectionIndex !== null;
+  const isSectionPanelOpen = customToolbarState.isOpen && customToolbarState.sectionIndex !== null;
+  const customToolbarSection = customToolbarState.sectionIndex !== null ? sections[customToolbarState.sectionIndex] ?? null : null;
 
-  // TEMP DEBUG — remove once the left-click-doesn't-open-the-toolbar report is diagnosed.
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log("[xite-debug] selection state", {
-      activeSectionIndex,
-      isSectionPanelOpen,
-      isSettingsOpen,
-      hasActiveSection: !!activeSection,
-      willRenderToolbar: !isSettingsOpen && isSectionPanelOpen && !!activeSection && activeSectionIndex !== null,
-    });
-  }, [activeSectionIndex, isSectionPanelOpen, isSettingsOpen, activeSection]);
-
-  /** Deselecting. The popup closes with it, because its visibility is derived from this. */
+  /** Deselecting section and closing custom edit toolbar. */
   const clearSelection = useCallback(() => {
     setActiveSectionIndex(null);
-  }, [setActiveSectionIndex]);
+    closeCustomToolbar();
+  }, [setActiveSectionIndex, closeCustomToolbar]);
 
   /**
    * The device the panel is editing, taken from the canvas rather than kept
@@ -1872,10 +2030,11 @@ export function EditorStudio({
    */
   const handleSectionPatch = useCallback(
     (patch: SectionPatch) => {
-      if (activeSectionIndex === null) return;
+      const targetIndex = customToolbarState.sectionIndex ?? activeSectionIndex;
+      if (targetIndex === null) return;
       setSectionsWithHistory((prev) =>
         prev.map((sec, index) =>
-          index === activeSectionIndex
+          index === targetIndex
             ? {
                 ...sec,
                 ...(patch.code !== undefined ? { code: patch.code } : null),
@@ -1885,28 +2044,39 @@ export function EditorStudio({
         ),
       );
     },
-    [activeSectionIndex, setSectionsWithHistory],
+    [customToolbarState.sectionIndex, activeSectionIndex, setSectionsWithHistory],
   );
 
-  /** Escape deselects, which closes the panel and restores the default toolbar. */
+  /** Escape dismisses active inline text edit, custom edit toolbar, or clears selection. */
   useEffect(() => {
-    if (activeSectionIndex === null) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (activeEditingElemRef.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        finishInlineTextEditing();
+        return;
+      }
       const target = event.target as HTMLElement | null;
-      // Not while typing into one of the panel's own fields, and not while an
-      // element on the canvas is being edited inline — Escape belongs to the
-      // field first.
-      if (target?.isContentEditable) return;
+      if (target?.isContentEditable) {
+        target.blur();
+        return;
+      }
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) {
         target.blur();
         return;
       }
-      clearSelection();
+      if (customToolbarState.isOpen) {
+        closeCustomToolbar();
+        return;
+      }
+      if (activeSectionIndex !== null) {
+        clearSelection();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeSectionIndex, clearSelection]);
+  }, [customToolbarState.isOpen, activeSectionIndex, closeCustomToolbar, clearSelection, finishInlineTextEditing]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-y-auto">
@@ -1918,248 +2088,82 @@ export function EditorStudio({
         onClick={clearSelection}
         className="flex-1 w-full flex flex-col items-stretch justify-start cursor-pointer min-h-screen bg-slate-100/90 px-4 sm:px-8 py-0"
       >
-        {/*
-          The site, at the width it says it is.
-
-          Everything about *fitting* that width onto this screen lives in
-          `ResponsiveCanvas` and is done with a transform, so the canvas keeps
-          its real CSS width and the sections resolve their container queries
-          against the number on the toolbar. The pane, the toolbar and the
-          drawers are all outside it and are never scaled — resizing the preview
-          must not resize the editor.
-        */}
         <ResponsiveCanvas
-          viewport={viewport}
-          themeId={themeId}
-          fontId={fontId}
-          onScaleChange={setCanvasScale}
-          paneClassName="py-4"
-          chromeClassName="shadow-2xl rounded-2xl border border-slate-300 bg-white"
-          /*
-           * The canvas hugs its sections. It reserves no height at all.
-           *
-           * `min-h-screen` is right on the published site — a short page should
-           * still fill the viewport with the site's own background rather than
-           * ending in a band of nothing. In the editor it produced the opposite
-           * impression: a tenant whose only section is a 50px header got that
-           * header and then a screenful of flat navy, which reads as a page
-           * that failed to load rather than a site with one section in it.
-           *
-           * It became `min-h-[40vh]`, which only made the band shorter — 40% of
-           * the window is still several hundred pixels of the site's surface
-           * colour below a header, and it is still the thing a tenant asks
-           * about. `fillViewport: false` already tells the runtime not to
-           * reserve a screenful; this class was reserving one anyway, on top of
-           * it. Now nothing does, and a one-section page is exactly as tall as
-           * that section.
-           *
-           * The empty state does not depend on this — it carries its own
-           * `min-h-[60vh]` centring box, because an empty page needs somewhere
-           * to put the card and a page with sections does not.
-           */
-          /*
-           * An empty page is not a dark page.
-           *
-           * The canvas stands in for `<body>`, so the runtime paints it in the
-           * site's own surface colour — a deep navy under the default theme.
-           * That is right the moment there is a section on it, and wrong before
-           * there is: a tenant who opens a page they have just created sees a
-           * screen of flat navy with a card floating on it, which reads as a
-           * page that failed to load rather than a page with nothing on it yet.
-           *
-           * The same reasoning as `min-h-[40vh]` above, one step further. A
-           * plain class beats the runtime rule without `!important` because the
-           * runtime scopes itself with `:where()`, which carries no specificity
-           * — the whole reason that choice was made.
-           */
-          canvasClassName={sections.length === 0 ? "bg-white" : ""}
-        >
+            viewport={viewport}
+            themeId={themeId}
+            fontId={fontId}
+            onScaleChange={setCanvasScale}
+            paneClassName="py-4"
+            chromeClassName="shadow-2xl rounded-2xl border border-slate-300 bg-white"
+            canvasClassName={sections.length === 0 ? "bg-white" : ""}
+          >
           {sections.length === 0 ? (
-            /* Empty Canvas State
-               Wrapped in its own centring box rather than relying on the canvas
-               to centre it. The canvas used to be a flex column with
-               `items-center`; it is a plain block now, because it stands in for
-               `<body>` and has to lay sections out the way a document does. This
-               card is editor chrome, not content, so it does its own centring
-               instead of dictating how sections are laid out. */
+            /* Empty Canvas State */
             <div className="w-full min-h-[60vh] flex items-center justify-center p-6">
-            <div className="text-center space-y-4 max-w-md w-full p-8 bg-slate-50 border border-slate-200 rounded-2xl shadow-lg">
-              <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-700">
-                <Layout className="w-8 h-8" />
+              <div className="text-center space-y-4 max-w-md w-full p-8 bg-slate-50 border border-slate-200 rounded-2xl shadow-lg">
+                <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-700">
+                  <Layout className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-extrabold text-slate-900">Empty Page Canvas</h2>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  No sections have been added for page {currentPage.name}. Click below to add sections to this page.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  <AddSectionButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void seedPageFromAdminDefaults();
+                    }}
+                    label="Add Section"
+                  />
+                </div>
               </div>
-              <h2 className="text-xl font-extrabold text-slate-900">Empty Page Canvas</h2>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                No sections have been added for page {currentPage.name}. Click below to add sections to this page.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                <AddSectionButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void seedPageFromAdminDefaults();
-                  }}
-                  label="Add Section"
-                />
-              </div>
-            </div>
             </div>
           ) : (
             /* Pure Section Rendering for Current Page */
             <div className="w-full">
               {sections.map((sec, idx) => {
-                // The navbar, by its resolved category. Four overlapping string tests used
-                // to answer this, one of which was `idx === 0` — so on a page with no
-                // navbar the first section, whatever it was, got the navbar z-index.
                 const isHeader = sec.category === "navbar";
                 return (
                   <div
                     key={sec.id}
-                    /**
-                     * Selection, on its own listener, in the capture phase.
-                     *
-                     * A section's own markup can carry a `<script>` — see the
-                     * "Section Script Execution" effect above, which actually
-                     * runs them, not just renders them inertly. A template's
-                     * anchor-smooth-scroll or counter boilerplate calling
-                     * `stopPropagation()` on its own click is ordinary code for
-                     * a script that has no idea it is running inside an editor.
-                     * Bubble-phase `stopPropagation()` on a descendant node
-                     * stops the click before it ever reaches this wrapper's
-                     * `onClick`, so a Hero with such a script never selected —
-                     * right-click still worked, because `contextmenu` is a
-                     * different event that script never touched. Capture runs
-                     * top-down before any bubble-phase listener a section's own
-                     * script attached, so selection can no longer depend on
-                     * what that markup happens to do with the click afterwards.
-                     */
                     onClickCapture={(e) => {
-                      // TEMP DEBUG — remove once diagnosed.
-                      // eslint-disable-next-line no-console
-                      console.log("[xite-debug] onClickCapture fired", { idx, tag: (e.target as HTMLElement)?.tagName });
                       setActiveSectionIndex(idx);
+                      inPlaceEditor.handleElementClick(e.target as HTMLElement, idx, e);
+                      const btnTarget = (e.target as HTMLElement).closest("a, button");
+                      if (btnTarget) {
+                        openCustomToolbar(idx);
+                      }
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
+                    }}
+                    onDoubleClickCapture={(e) => {
+                      inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
+                    }}
+                    onDoubleClick={(e) => {
+                      inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
+                    }}
+                    onMouseDown={(e) => {
+                      if (inPlaceEditor.isEditingText) return;
+                      if (e.button !== 0) return;
+                      const targetEl = e.target as HTMLElement;
+                      if (targetEl.tagName === "INPUT" || targetEl.tagName === "TEXTAREA" || targetEl.isContentEditable) return;
 
-                      const target = e.target as HTMLElement;
-                      if (!target) return;
+                      // If clicking on or inside selected element (or any draggable element), initiate drag
+                      const candidate = inPlaceEditor.selectedElement && inPlaceEditor.selectedElement.element.contains(targetEl)
+                        ? inPlaceEditor.selectedElement.element
+                        : (targetEl.closest("h1, h2, h3, h4, h5, h6, p, button, a, img, .card, [data-card], .badge, [data-badge], li") as HTMLElement | null);
 
-                      // Skip images, svgs, or hamburger toggles for inline text edit
-                      if (
-                        target.tagName === "IMG" ||
-                        target.tagName === "SVG" ||
-                        target.closest("button.hamburger-toggle-btn") ||
-                        target.getAttribute("data-logo") === "true"
-                      ) {
-                        return;
+                      if (candidate && !candidate.hasAttribute("data-xite-section") && !candidate.classList.contains("section-wrapper-container")) {
+                        inPlaceEditor.handlePointerDragStart(e, candidate, idx);
                       }
-
-                      // Find editable text element (e.g. h1-h6, p, span, a, button, li, strong, em, b, i, td, th)
-                      const editableTarget =
-                        (target.closest("h1, h2, h3, h4, h5, h6, p, span, a, button, li, strong, em, b, i, td, th, label") as HTMLElement) ||
-                        (target.childNodes.length === 1 && target.childNodes[0]?.nodeType === Node.TEXT_NODE ? target : null);
-
-                      if (editableTarget && !editableTarget.isContentEditable) {
-                        editableTarget.contentEditable = "true";
-                        editableTarget.style.userSelect = "text";
-                        (editableTarget.style as any).webkitUserSelect = "text";
-                        editableTarget.style.outline = "2px solid #38bdf8";
-                        editableTarget.style.outlineOffset = "3px";
-                        editableTarget.style.borderRadius = "4px";
-                        editableTarget.style.cursor = "text";
-
-                        try {
-                          editableTarget.focus();
-                        } catch {}
-
-                        /**
-                         * Commit while typing, not on the way out.
-                         *
-                         * Blur fires on the mousedown that begins the *next*
-                         * click. Committing there re-rendered the canvas in the
-                         * middle of that gesture — `dangerouslySetInnerHTML`
-                         * replaced the subtree, mouseup landed on a node that was
-                         * not the mousedown target, and the browser therefore
-                         * never dispatched the click. Clicking into a heading and
-                         * then clicking another section silently did nothing; it
-                         * took a second click to select anything.
-                         *
-                         * Debounced `input` also fixes a quieter problem. The
-                         * capture serialises the DOM, and the browser's
-                         * serialiser normalises attribute order, quoting and
-                         * whitespace — so the "new" code differed from the
-                         * authored HTML even when nothing was typed. Every click
-                         * into text rewrote the section, pushed an undo entry and
-                         * triggered an autosave for an edit nobody made. No typing
-                         * now means no `input`, which means no write.
-                         */
-                        const commit = () => {
-                          const wrapper = editableTarget.closest(".section-wrapper-container") as HTMLElement;
-                          const canvasBox = (wrapper?.querySelector(".section-canvas-box") || wrapper) as HTMLElement;
-                          if (!canvasBox) return;
-
-                          const clone = canvasBox.cloneNode(true) as HTMLElement;
-                          clone.querySelectorAll("[contenteditable]").forEach((el) => {
-                            el.removeAttribute("contenteditable");
-                            (el as HTMLElement).style.outline = "";
-                            (el as HTMLElement).style.outlineOffset = "";
-                            (el as HTMLElement).style.borderRadius = "";
-                            (el as HTMLElement).style.cursor = "";
-                            (el as HTMLElement).style.userSelect = "";
-                          });
-
-                          const newBody = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
-                          setSectionsWithHistory((prev) => {
-                            const current = prev[idx];
-                            if (!newBody || !current) return prev;
-                            // Head from the stored section, body from the
-                            // canvas. See the note on the link popup's commit.
-                            const newCode = recomposeSectionCode(current.code, newBody);
-                            if (current.code === newCode) return prev;
-                            return prev.map((s, i) => (i === idx ? { ...s, code: newCode } : s));
-                          });
-                        };
-
-                        let commitTimer: ReturnType<typeof setTimeout> | null = null;
-                        const handleInput = () => {
-                          if (commitTimer) clearTimeout(commitTimer);
-                          commitTimer = setTimeout(commit, 400);
-                        };
-
-                        const handleBlur = () => {
-                          editableTarget.contentEditable = "false";
-                          editableTarget.style.outline = "";
-                          editableTarget.style.outlineOffset = "";
-                          editableTarget.style.borderRadius = "";
-                          editableTarget.style.cursor = "";
-                          editableTarget.style.userSelect = "";
-                          editableTarget.removeEventListener("blur", handleBlur);
-                          editableTarget.removeEventListener("keydown", handleKey);
-                          editableTarget.removeEventListener("input", handleInput);
-
-                          // A pending keystroke must not be lost, but it must also
-                          // not land inside this click. The frame after mouseup is
-                          // late enough for the click to have been dispatched.
-                          if (commitTimer) {
-                            clearTimeout(commitTimer);
-                            commitTimer = null;
-                            requestAnimationFrame(() => requestAnimationFrame(commit));
-                          }
-                        };
-
-                        const handleKey = (keyEvent: KeyboardEvent) => {
-                          if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
-                            const tag = editableTarget.tagName.toLowerCase();
-                            if (["h1", "h2", "h3", "h4", "h5", "h6", "a", "button", "span"].includes(tag)) {
-                              keyEvent.preventDefault();
-                              editableTarget.blur();
-                            }
-                          }
-                        };
-
-                        editableTarget.addEventListener("blur", handleBlur);
-                        editableTarget.addEventListener("keydown", handleKey);
-                        editableTarget.addEventListener("input", handleInput);
-                      }
+                    }}
+                    onMouseMove={(e) => {
+                      inPlaceEditor.handleElementHover(e.target as HTMLElement);
+                    }}
+                    onMouseLeave={() => {
+                      inPlaceEditor.handleElementHover(null);
                     }}
                     onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
                     data-xite-section={sec.id}
@@ -2270,6 +2274,19 @@ export function EditorStudio({
             </div>
           )}
         </ResponsiveCanvas>
+
+        {/* Live In-Place Canva Overlay: Selection bounding box with 4 corner anchors, snap guides, drop indicator */}
+        <CanvaCanvasOverlay
+          selectedElement={inPlaceEditor.selectedElement}
+          hoveredRect={inPlaceEditor.hoveredRect}
+          isEditingText={inPlaceEditor.isEditingText}
+          isDragging={inPlaceEditor.isDragging}
+          snapGuides={inPlaceEditor.snapGuides}
+          distanceBadges={inPlaceEditor.distanceBadges}
+          dropIndicator={inPlaceEditor.dropIndicator}
+          onDragStart={inPlaceEditor.handlePointerDragStart}
+          onStartEdit={inPlaceEditor.handleElementDoubleClick}
+        />
 
         {/* Clearance for the floating dock, and the only such clearance.
             `main` also carried `pb-64`, so 256px of padding and this 192px
@@ -2527,26 +2544,21 @@ export function EditorStudio({
       )}
 
       {/*
-        The section's toolbar, as a popup over the canvas.
-
-        Present the instant a section is selected — §1 and §12 of the brief
-        without the side panel that used to enforce them. Keyed on the section
-        id, so clicking from the hero to the footer discards the previous
-        section's component rather than reconciling it: there is no state that
-        could survive from one selection into the next, and therefore no stale
-        toolbar.
+        The dynamic Section Settings & Properties Bar (SectionToolbar).
+        Active only when a section is right-clicked (isSectionPanelOpen).
       */}
-      {!isSettingsOpen && isSectionPanelOpen && activeSection && activeSectionIndex !== null && (
+      {!isSettingsOpen && !isDrawerOpen && isSectionPanelOpen && customToolbarSection && customToolbarState.sectionIndex !== null && (
         <SectionToolbar
-          key={activeSection.id}
-          section={activeSection}
-          position={{ index: activeSectionIndex, total: sections.length }}
+          key={customToolbarSection.id}
+          section={customToolbarSection}
+          position={{ index: customToolbarState.sectionIndex, total: sections.length }}
           device={sectionDevice}
           dockPosition={dockPosition}
+          selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
           onDeviceChange={handleSectionDeviceChange}
           onPatch={handleSectionPatch}
-          /* Its visibility is derived from selection, so closing it means deselecting. */
-          onClose={clearSelection}
+          /* Back button / Deselect: returns to normal dock */
+          onClose={closeCustomToolbar}
           onUndo={handleUndo}
           onRedo={handleRedo}
           canUndo={editor.canUndo}
@@ -2557,20 +2569,7 @@ export function EditorStudio({
         />
       )}
 
-      {/*
-       * Floating Bottom Toolbar Dock - Hidden when Settings Studio or the
-       * Pages/Colors/Fonts drawer is open, and while a section is selected —
-       * `SectionToolbar` above takes its place at that point, not beside it.
-       *
-       * The drawer's own "Add New Page" button is fixed to the bottom of its
-       * panel, which lands in the exact same 52px strip the toolbar docks to
-       * at the bottom of the screen. Both are `position: fixed` with the same
-       * z-index, and the toolbar renders later in the DOM, so it painted over
-       * the drawer's button and made it unreachable — not literally deleted,
-       * just permanently covered. Hiding the toolbar while the drawer is open
-       * is the same fix already applied for Settings, just extended to cover
-       * the other full-screen overlay.
-       */}
+      {/* General EditorToolbar dock - Shown when SectionToolbar is not open */}
       {!isSettingsOpen && !isDrawerOpen && !isSectionPanelOpen && (
         <EditorToolbar
           subdomain={subdomain}
@@ -2591,6 +2590,7 @@ export function EditorStudio({
           hasSections={sections.length > 0}
           isSectionSelected={activeSectionIndex !== null}
           onAddSection={() => setShowAddSectionModal(true)}
+          onAddText={inPlaceEditor.addTextToActiveSection}
           onDuplicateSection={handleDuplicateSection}
           onSwapVariant={() => handleSwapVariant(1)}
           variantCount={activeVariantCount}

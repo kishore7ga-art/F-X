@@ -83,6 +83,8 @@ import { buildSectionSchema, allControls, type Control, type ControlList } from 
 import { DEVICES, type Device } from "@/lib/sections/section-managed-css";
 import type { SectionCategory } from "@/lib/sections/section-capabilities";
 import type { SaveStatus } from "@/hooks/useEditorPages";
+import { BoundedDimensionControl } from "./BoundedDimensionControl";
+import { SingleRowButtonPanel } from "./ButtonSettingsControl";
 
 type Props = {
   section: { id: string; title: string; code: string; category: string };
@@ -91,6 +93,7 @@ type Props = {
   device: Device;
   /** Which edge the dock normally sits on — this panel takes its place there. */
   dockPosition?: "bottom" | "top" | "left" | "right";
+  selectedCanvasElement?: HTMLElement | null;
   onDeviceChange: (device: Device) => void;
   /** Writes through the editor's own mutation path — undo, autosave and all. */
   onPatch: (patch: SectionPatch) => void;
@@ -111,20 +114,21 @@ const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
   mobile: { label: "Mobile", Icon: Smartphone },
 };
 
-/** How tall (horizontal docks) or wide (vertical docks) the panel gets, at most. */
-const PANEL_EXTENT = "min(52vh, 460px)";
+/** Maximum height for horizontal docks so the panel hugs its content without empty space. */
+const PANEL_MAX_HEIGHT = "min(38vh, 280px)";
+const PANEL_WIDTH = "320px";
 
-/** Fixed positioning for whichever edge the dock is on — full width or full height there. */
+/** Fixed positioning for whichever edge the dock is on — hugs content tightly. */
 function dockedStyle(dock: "bottom" | "top" | "left" | "right"): React.CSSProperties {
   switch (dock) {
     case "top":
-      return { top: 0, left: 0, right: 0, height: PANEL_EXTENT };
+      return { top: 0, left: 0, right: 0, maxHeight: PANEL_MAX_HEIGHT };
     case "left":
-      return { left: 0, top: 0, bottom: 0, width: PANEL_EXTENT };
+      return { left: 0, top: 0, bottom: 0, width: PANEL_WIDTH };
     case "right":
-      return { right: 0, top: 0, bottom: 0, width: PANEL_EXTENT };
+      return { right: 0, top: 0, bottom: 0, width: PANEL_WIDTH };
     default:
-      return { bottom: 0, left: 0, right: 0, height: PANEL_EXTENT };
+      return { bottom: 0, left: 0, right: 0, maxHeight: PANEL_MAX_HEIGHT };
   }
 }
 
@@ -140,6 +144,7 @@ export function SectionToolbar({
   position,
   device,
   dockPosition = "bottom",
+  selectedCanvasElement = null,
   onDeviceChange,
   onPatch,
   onClose,
@@ -161,6 +166,21 @@ export function SectionToolbar({
     [section.code, section.category],
   );
 
+  // Discover buttons in the section
+  const buttonsGroup = schema.groups.find((g) => g.id === "buttons");
+  const buttonIndices = useMemo(() => {
+    if (!buttonsGroup) return [];
+    const set = new Set<number>();
+    buttonsGroup.controls.forEach((c) => {
+      const m = c.id.match(/^btn-(\d+)-/);
+      if (m) set.add(parseInt(m[1], 10));
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [buttonsGroup]);
+
+  const buttonCount = buttonIndices.length;
+  const [activeButtonIndex, setActiveButtonIndex] = useState<number>(0);
+
   const readings = useMemo(
     () => readControlValues(editable, allControls(schema), device),
     [editable, schema, device],
@@ -169,20 +189,48 @@ export function SectionToolbar({
   /** Whether Reset has anything to do. One parse, not one per render. */
   const canReset = useMemo(() => hasManagedStyling(section.code), [section.code]);
 
-  /**
-   * Which group's tab is showing.
-   *
-   * Initialised from the schema rather than synchronised to it by an effect,
-   * because `EditorStudio` renders this component with `key={section.id}`: a
-   * different section is a different component instance, so "Buttons was open
-   * on the hero" cannot leak onto the footer the person just clicked. Falls
-   * back to the first group a category doesn't explicitly default-open, so
-   * there is always a real tab active rather than a blank panel.
-   */
   const [activeGroupId, setActiveGroupId] = useState<string | undefined>(
-    () => schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id,
+    () => schema.groups.find((group) => group.id === "layout")?.id ?? schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id,
   );
   const activeGroup = schema.groups.find((group) => group.id === activeGroupId) ?? schema.groups[0];
+
+  // If user selected a button on canvas, dynamically target it and open Buttons tab
+  useEffect(() => {
+    if (!selectedCanvasElement || buttonCount === 0) return;
+    const btnNode = selectedCanvasElement.closest("a, button");
+    if (!btnNode) return;
+
+    const secEl = btnNode.closest("[data-xite-section]");
+    if (!secEl) return;
+    const allBtns = Array.from(secEl.querySelectorAll("a, button")).filter((el) => {
+      const cls = el.className || "";
+      return (
+        el.tagName === "BUTTON" ||
+        /btn|button|cta|apply|action/i.test(cls) ||
+        (el as HTMLElement).style.borderRadius ||
+        (el as HTMLElement).style.backgroundColor
+      );
+    });
+
+    const foundIdx = allBtns.indexOf(btnNode as any);
+    if (foundIdx >= 0 && foundIdx < buttonCount) {
+      setActiveButtonIndex(foundIdx);
+      setActiveGroupId("buttons");
+    }
+  }, [selectedCanvasElement, buttonCount]);
+
+  const activeButtonControls = useMemo(() => {
+    if (!buttonsGroup || buttonCount === 0) return null;
+    const safeIdx = Math.min(activeButtonIndex, buttonCount - 1);
+    const prefix = `btn-${safeIdx}`;
+    return {
+      radius: buttonsGroup.controls.find((c) => c.id === `${prefix}-radius`),
+      shadow: buttonsGroup.controls.find((c) => c.id === `${prefix}-shadow`),
+      bg: buttonsGroup.controls.find((c) => c.id === `${prefix}-bg`),
+      textColor: buttonsGroup.controls.find((c) => c.id === `${prefix}-color`),
+      border: buttonsGroup.controls.find((c) => c.id === `${prefix}-border`),
+    };
+  }, [buttonsGroup, buttonCount, activeButtonIndex]);
 
   const [openLists, setOpenLists] = useState<Set<string>>(
     () => new Set(schema.groups.flatMap((group) => group.lists.slice(0, 1)).map((list) => list.id)),
@@ -380,7 +428,7 @@ export function SectionToolbar({
 
       {/* ── Group tabs ────────────────────────────────────────────────── */}
       {schema.groups.length > 0 && (
-        <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-100 px-3 py-1.5">
+        <div className="flex shrink-0 items-center justify-center gap-1.5 overflow-x-auto border-b border-slate-100 px-3 py-1.5 bg-slate-50/60">
           {schema.groups.map((group) => {
             const active = group.id === activeGroup?.id;
             return (
@@ -389,8 +437,8 @@ export function SectionToolbar({
                 type="button"
                 onClick={() => setActiveGroupId(group.id)}
                 aria-pressed={active}
-                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold transition ${
-                  active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-bold transition-all duration-150 ${
+                  active ? "bg-slate-900 text-white shadow-sm ring-1 ring-slate-900" : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
                 }`}
               >
                 {group.label}
@@ -401,7 +449,7 @@ export function SectionToolbar({
       )}
 
       {/* ── The active group's controls ───────────────────────────────── */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+      <div className="overflow-y-auto px-4 py-2.5 max-h-[190px]">
         {schema.groups.length === 0 && (
           <p className="text-[11px] font-medium leading-relaxed text-slate-500">
             This section&rsquo;s markup offers nothing this toolbar can edit. Its text can still be
@@ -409,8 +457,43 @@ export function SectionToolbar({
           </p>
         )}
 
-        {activeGroup && (
-          <div className="grid grid-cols-1 gap-x-5 gap-y-3 [grid-template-columns:repeat(auto-fill,minmax(200px,1fr))]">
+        {/* Dedicated Single Horizontal Row Buttons Panel */}
+        {activeGroup?.id === "buttons" && activeButtonControls ? (
+          <div className="py-1">
+            <SingleRowButtonPanel
+              buttonCount={buttonCount}
+              activeButtonIndex={activeButtonIndex}
+              onSelectButtonIndex={setActiveButtonIndex}
+              radiusValue={activeButtonControls.radius ? displayValue(activeButtonControls.radius) : ""}
+              onCommitRadius={(val) => {
+                if (activeButtonControls.radius) commit(activeButtonControls.radius, val);
+              }}
+              shadowValue={activeButtonControls.shadow ? displayValue(activeButtonControls.shadow) : ""}
+              onCommitShadow={(val) => {
+                if (activeButtonControls.shadow) commit(activeButtonControls.shadow, val);
+              }}
+              bgValue={activeButtonControls.bg ? displayValue(activeButtonControls.bg) : ""}
+              onDraftBg={(val) => {
+                if (activeButtonControls.bg) commitDebounced(activeButtonControls.bg, val);
+              }}
+              onCommitBg={(val) => {
+                if (activeButtonControls.bg) commit(activeButtonControls.bg, val);
+              }}
+              textColorValue={activeButtonControls.textColor ? displayValue(activeButtonControls.textColor) : ""}
+              onDraftTextColor={(val) => {
+                if (activeButtonControls.textColor) commitDebounced(activeButtonControls.textColor, val);
+              }}
+              onCommitTextColor={(val) => {
+                if (activeButtonControls.textColor) commit(activeButtonControls.textColor, val);
+              }}
+              borderValue={activeButtonControls.border ? displayValue(activeButtonControls.border) : ""}
+              onCommitBorder={(val) => {
+                if (activeButtonControls.border) commit(activeButtonControls.border, val);
+              }}
+            />
+          </div>
+        ) : activeGroup ? (
+          <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 [grid-template-columns:repeat(auto-fill,minmax(190px,1fr))]">
             {activeGroup.controls.map((control) => (
               <ControlRow
                 key={controlValueKey(control)}
@@ -441,7 +524,7 @@ export function SectionToolbar({
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/*
@@ -451,7 +534,7 @@ export function SectionToolbar({
         Escape away — this panel only holds what has no equivalent there.
         Reset is that: it belongs to the styling this panel writes.
       */}
-      <footer className="flex shrink-0 justify-end border-t border-slate-100 px-3.5 py-2">
+      <footer className="flex shrink-0 justify-end border-t border-slate-100 px-3.5 py-1.5 bg-slate-50/50">
         <button
           type="button"
           onClick={reset}
@@ -680,22 +763,27 @@ function ControlRow({
    * which editing here will override *for this device only*; and the author's
    * own markup, which nothing has overridden yet.
    */
-  const provenance =
-    reading.source === "managed" && reading.from && reading.from !== device
-      ? `From ${DEVICE_META[reading.from].label}`
-      : reading.source === "authored" && String(reading.value)
-        ? "From the section"
-        : null;
+  // Use BoundedDimensionControl for all number/dimension inputs (height, width, gap, border-radius, etc.)
+  if (control.kind === "number") {
+    return (
+      <BoundedDimensionControl
+        label={control.label}
+        value={draft}
+        min={control.min}
+        max={control.max}
+        step={control.step}
+        unit={control.unit || "px"}
+        hint={control.hint}
+        onDraft={onDraft}
+        onCommit={onCommit}
+      />
+    );
+  }
 
   return (
     <label className="block">
       <span className="mb-1 flex items-center justify-between gap-2">
         <span className="text-[10px] font-bold text-slate-500">{control.label}</span>
-        {provenance && (
-          <span className="shrink-0 text-[9px] font-semibold text-slate-300" title={control.hint}>
-            {provenance}
-          </span>
-        )}
       </span>
       <ControlInput control={control} reading={reading} draft={draft} onDraft={onDraft} onCommit={onCommit} />
       {control.hint && <span className="mt-1 block text-[9px] leading-snug text-slate-400">{control.hint}</span>}

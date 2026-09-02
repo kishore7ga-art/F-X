@@ -49,6 +49,7 @@ interface EditorToolbarProps {
   hasSections?: boolean;
   isSectionSelected?: boolean;
   onAddSection?: () => void;
+  onAddText?: () => void;
   onDuplicateSection?: () => void;
   onSwapVariant?: () => void;
   /**
@@ -107,6 +108,7 @@ export function EditorToolbar({
   hasSections = true,
   isSectionSelected = true,
   onAddSection,
+  onAddText,
   onDuplicateSection,
   onSwapVariant,
   variantCount = 0,
@@ -703,6 +705,29 @@ export function EditorToolbar({
                 <Plus style={{ width: "17px", height: "17px", strokeWidth: 2.2, color: "#334155" }} />
               </button>
 
+              {/* Direct '+ Add Text' Button */}
+              <button
+                onClick={onAddText}
+                disabled={!isSectionSelected || !onAddText}
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "none",
+                  backgroundColor: "transparent",
+                  cursor: isSectionSelected && onAddText ? "pointer" : "default",
+                  color: isSectionSelected && onAddText ? "#334155" : "#cbd5e1",
+                  flexShrink: 0,
+                  ...buttonHoverStyle,
+                }}
+                title={isSectionSelected ? "+ Add Text to Section" : "Select a section to add text"}
+                aria-label="+ Add Text"
+              >
+                <Type style={{ width: "16px", height: "16px", strokeWidth: 2.2, color: isSectionSelected && onAddText ? "#334155" : "#cbd5e1" }} />
+              </button>
+
               {/* Duplicate Section Button */}
               <button
                 onClick={onDuplicateSection}
@@ -1222,6 +1247,29 @@ export function EditorToolbar({
                   aria-label={addSectionTitle}
                 >
                   <Plus style={{ width: "17px", height: "17px", strokeWidth: 2.2, color: "#334155" }} />
+                </button>
+
+                {/* Direct '+ Add Text' Button */}
+                <button
+                  onClick={onAddText}
+                  disabled={!isSectionSelected || !onAddText}
+                  style={{
+                    width: "30px",
+                    height: "30px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    cursor: isSectionSelected && onAddText ? "pointer" : "default",
+                    color: isSectionSelected && onAddText ? "#334155" : "#cbd5e1",
+                    flexShrink: 0,
+                    ...buttonHoverStyle,
+                  }}
+                  title={isSectionSelected ? "+ Add Text to Section" : "Select a section to add text"}
+                  aria-label="+ Add Text"
+                >
+                  <Type style={{ width: "16px", height: "16px", strokeWidth: 2.2, color: isSectionSelected && onAddText ? "#334155" : "#cbd5e1" }} />
                 </button>
 
                 <button

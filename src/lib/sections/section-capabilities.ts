@@ -32,81 +32,53 @@ import type { SectionCategoryId, UNCATEGORISED } from "./categories";
 
 /** A group of related controls in the section toolbar. */
 export type CapabilityId =
-  | "section"
-  | "content"
-  | "logo"
-  | "navigation"
-  | "buttons"
-  | "media"
-  | "list"
   | "layout"
   | "background"
-  | "border"
+  | "buttons"
   | "shadow"
   | "animation"
-  | "typography"
-  | "spacing"
-  | "responsive";
+  | "section";
 
 export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
 
 /**
- * The order groups appear in when a category says nothing else.
- *
- * Content first, because it is what people came to change. Section actions
- * last, because "Delete" is not what a panel should open on.
+ * The order groups appear in the toolbar.
  */
 export const DEFAULT_ORDER: readonly CapabilityId[] = [
-  "content",
-  "media",
-  "list",
-  "buttons",
   "layout",
   "background",
-  "typography",
-  "spacing",
-  "border",
+  "buttons",
   "shadow",
   "animation",
-  "responsive",
   "section",
 ];
 
-/**
- * Per-category ordering, listing only what differs from the default.
- *
- * A category names the groups it wants first; everything else follows in
- * `DEFAULT_ORDER`. Written this way so adding a control group later does not
- * mean editing twenty lists.
- */
 export const CATEGORY_ORDER: Partial<Record<SectionCategory, readonly CapabilityId[]>> = {
-  navbar: ["logo", "navigation", "buttons", "layout", "background", "spacing", "responsive"],
-  hero: ["content", "buttons", "media", "layout", "background", "typography", "spacing", "responsive"],
-  cta: ["content", "buttons", "background", "layout", "typography", "spacing", "responsive"],
-  about: ["content", "media", "layout", "typography", "background", "spacing", "responsive"],
-  vision: ["content", "list", "layout", "typography", "background", "spacing", "responsive"],
-  courses: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  departments: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  facilities: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  research: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  admissions: ["content", "list", "buttons", "layout", "background", "typography", "spacing", "responsive"],
-  placements: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  highlights: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  achievements: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  news: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  events: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  gallery: ["media", "list", "layout", "spacing", "background", "responsive"],
-  testimonials: ["content", "list", "layout", "background", "typography", "spacing", "responsive"],
-  contact: ["content", "list", "buttons", "layout", "background", "typography", "spacing", "responsive"],
-  map: ["content", "media", "layout", "spacing", "responsive"],
-  footer: ["logo", "content", "navigation", "list", "layout", "background", "typography", "spacing", "responsive"],
+  navbar: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  hero: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  cta: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  about: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  vision: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  courses: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  departments: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  facilities: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  research: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  admissions: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  placements: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  highlights: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  achievements: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  news: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  events: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  gallery: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  testimonials: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  contact: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  map: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  footer: ["buttons", "layout", "background", "shadow", "animation", "section"],
 };
 
 /** The groups, in the order this category wants them. */
 export function groupOrderFor(category: SectionCategory): readonly CapabilityId[] {
-  const preferred = CATEGORY_ORDER[category] ?? [];
-  const rest = DEFAULT_ORDER.filter((id) => !preferred.includes(id));
-  return [...preferred, ...rest];
+  return DEFAULT_ORDER;
 }
 
 /** The groups a category opens with, so the panel is useful without a click. */
@@ -188,19 +160,10 @@ export function categoryLabel(category: SectionCategory): string {
 }
 
 export const GROUP_LABEL: Record<CapabilityId, string> = {
-  section: "Section",
-  content: "Content",
-  logo: "Logo",
-  navigation: "Navigation",
-  buttons: "Buttons",
-  media: "Media",
-  list: "Items",
   layout: "Layout",
   background: "Background",
-  border: "Border",
+  buttons: "Buttons",
   shadow: "Shadow",
   animation: "Animation",
-  typography: "Typography",
-  spacing: "Spacing",
-  responsive: "Responsive",
+  section: "Section",
 };

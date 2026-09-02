@@ -233,7 +233,7 @@ export function reducer(state: EditorState, action: Action): EditorState {
         pages,
         order,
         activePageId,
-        activeSectionIndex: pages[activePageId]!.sections.length > 0 ? 0 : null,
+        activeSectionIndex: null,
         booting: false,
       };
     }
@@ -253,7 +253,7 @@ export function reducer(state: EditorState, action: Action): EditorState {
         pages: { ...state.pages, [action.pageId]: page },
         order: withOrder(state.order, action.pageId),
         activePageId: action.pageId,
-        activeSectionIndex: page.sections.length > 0 ? 0 : null,
+        activeSectionIndex: null,
       };
     }
 
