@@ -28,7 +28,7 @@ interface SectionVisualEditorProps {
  * icon glyph or text run nested inside it.
  */
 const SELECTABLE_SELECTOR =
-  "button, a, img, svg, h1, h2, h3, h4, h5, h6, p, li, label, figcaption, [data-card], [class*='card']";
+  "button, a, img, svg, h1, h2, h3, h4, h5, h6, p, li, label, figcaption, [data-card], .card";
 
 /**
  * A full-screen, single-section canvas: exactly one section rendered alone,
