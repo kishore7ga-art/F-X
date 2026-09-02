@@ -100,6 +100,18 @@ export function useCanvaInteractions({
     initialRect: DOMRect;
     parentContainer: HTMLElement;
     siblings: HTMLElement[];
+    /**
+     * The dragged element's own visual scale (its screen-pixel rect over its
+     * un-transformed layout size). The Visual Editor renders sections inside
+     * `ResponsiveCanvas`, which shrinks the whole canvas with a CSS
+     * `transform: scale(...)` whenever the chosen viewport is wider than the
+     * pane — desktop widths in a normal browser window, essentially always.
+     * `deltaX`/`deltaY` below are real cursor-movement pixels; applying them
+     * as-is to `translate3d` on an element inside that scaled ancestor gets
+     * scaled down a second time, so the element visibly lags the cursor.
+     * Dividing by this factor cancels the ancestor's scale back out.
+     */
+    scale: number;
   } | null>(null);
 
   const dropTargetIndexRef = useRef<number | null>(null);
@@ -317,6 +329,9 @@ export function useCanvaInteractions({
       (child) => child !== element && !child.classList.contains("xite-editor-ui")
     ) as HTMLElement[];
 
+    const measuredWidth = (element as HTMLElement).offsetWidth;
+    const scale = measuredWidth > 0 && initialRect.width > 0 ? initialRect.width / measuredWidth : 1;
+
     dragTargetRef.current = {
       element,
       sectionIndex,
@@ -325,6 +340,7 @@ export function useCanvaInteractions({
       initialRect,
       parentContainer: parent,
       siblings,
+      scale,
     };
 
     setIsDragging(true);
@@ -336,15 +352,31 @@ export function useCanvaInteractions({
 
     let pendingRafId: number | null = null;
     let latestPointerEvent: { clientX: number; clientY: number } | null = null;
+    /**
+     * Below this many pixels of movement, nothing happens yet.
+     *
+     * `handlePointerDragStart` now fires on every mousedown on a selectable
+     * element (see SectionVisualEditor), not only from a dedicated drag
+     * handle — so an ordinary click has to pass through here too, and without
+     * this guard a single pixel of jitter on mouseup would be read as an
+     * intentional reorder.
+     */
+    const DRAG_ACTIVATION_THRESHOLD = 4;
+    let dragActivated = false;
 
     const processDragFrame = () => {
       pendingRafId = null;
       if (!dragTargetRef.current || !latestPointerEvent) return;
       const { clientX, clientY } = latestPointerEvent;
-      const { element: draggedEl, startX, startY, initialRect: origRect, siblings: sibs } = dragTargetRef.current;
+      const { element: draggedEl, startX, startY, initialRect: origRect, siblings: sibs, scale } = dragTargetRef.current;
 
       let deltaX = clientX - startX;
       let deltaY = clientY - startY;
+
+      if (!dragActivated) {
+        if (Math.hypot(deltaX, deltaY) < DRAG_ACTIVATION_THRESHOLD) return;
+        dragActivated = true;
+      }
 
       const currentLeft = origRect.left + deltaX;
       const currentRight = origRect.right + deltaX;
@@ -449,8 +481,9 @@ export function useCanvaInteractions({
       setSnapGuides(Array.from(guidesMap.values()));
       setDistanceBadges(Array.from(badgesMap.values()));
 
-      // Apply live smooth transform on dragged element
-      draggedEl.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+      // Apply live smooth transform on dragged element, compensated for the
+      // canvas's own scale so it tracks the cursor 1:1 at any viewport zoom
+      draggedEl.style.transform = `translate3d(${deltaX / scale}px, ${deltaY / scale}px, 0)`;
       draggedEl.style.opacity = "0.75";
       draggedEl.style.zIndex = "999";
 

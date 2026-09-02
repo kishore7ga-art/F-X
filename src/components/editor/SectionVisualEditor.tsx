@@ -126,6 +126,36 @@ export function SectionVisualEditor({
     [isEditingText, setSelectedElement],
   );
 
+  /**
+   * Click-and-hold directly on an element to move it — no separate "select,
+   * then grab the little handle above it" step. Selecting and starting the
+   * drag happen together on mousedown; if the pointer never actually moves
+   * past a few pixels (an ordinary click), handlePointerDragStart's own
+   * activation threshold makes this a no-op beyond the selection.
+   */
+  const handleCanvasMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.button !== 0 || isEditingText) return;
+
+      const container = e.currentTarget as HTMLElement;
+      const raw = e.target as HTMLElement;
+      if (raw === container) return;
+
+      const resolved = raw.closest(SELECTABLE_SELECTOR) as HTMLElement | null;
+      const target = resolved && container.contains(resolved) ? resolved : raw;
+
+      setSelectedElement({
+        tag: target.tagName.toLowerCase(),
+        label: getElementLabel(target),
+        rect: target.getBoundingClientRect(),
+        element: target,
+        sectionIndex: 0,
+      });
+      inPlaceEditor.handlePointerDragStart(e, target, 0);
+    },
+    [isEditingText, setSelectedElement, inPlaceEditor],
+  );
+
   const handleCanvasMouseOver = useCallback(
     (e: React.MouseEvent) => {
       if (isEditingText || inPlaceEditor.isDragging) return;
@@ -226,6 +256,7 @@ export function SectionVisualEditor({
         >
           <div
             data-xite-section={section.id}
+            onMouseDown={handleCanvasMouseDown}
             onClickCapture={handleCanvasClick}
             onDoubleClickCapture={handleCanvasDoubleClick}
             onMouseOver={handleCanvasMouseOver}
