@@ -123,6 +123,7 @@ export function useCanvaInteractions({
     };
   }, [refreshSelectionRect]);
 
+
   /**
    * Finish inline editing: clean up styles and commit HTML to persistent project store
    */
@@ -149,6 +150,7 @@ export function useCanvaInteractions({
     el.style.userSelect = "";
     (el.style as any).webkitUserSelect = "";
     el.style.cursor = "";
+    el.style.caretColor = "";
 
     activeEditingElemRef.current = null;
     activeEditingSectionIdxRef.current = null;
@@ -172,7 +174,7 @@ export function useCanvaInteractions({
   }, [onUpdateSectionCode, showToast, refreshSelectionRect]);
 
   /**
-   * 1. Double-Click Inline Editing (contentEditable)
+   * 1. Native Double-Click Inline Editing (contentEditable with subtle text cursor, no blue frame)
    */
   const handleElementDoubleClick = useCallback((target: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
     if (e) {
@@ -202,17 +204,15 @@ export function useCanvaInteractions({
     originalTextRef.current = textElem.innerHTML;
     setIsEditingText(true);
 
-    // Immediately set contentEditable="true"
+    // Set contentEditable="true" natively with subtle text cursor (no large blue frame wrapper)
     textElem.classList.add("xite-text-editing");
     textElem.setAttribute("contenteditable", "true");
     textElem.contentEditable = "true";
 
-    // Add active blue border: outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 4px;
-    textElem.style.outline = "2px solid #2563eb";
-    textElem.style.outlineOffset = "2px";
-    textElem.style.borderRadius = "4px";
-    textElem.style.boxShadow = "0 0 0 3px rgba(37, 99, 235, 0.2)";
+    textElem.style.outline = "none";
+    textElem.style.boxShadow = "none";
     textElem.style.cursor = "text";
+    textElem.style.caretColor = "#2563eb";
     textElem.style.userSelect = "text";
     (textElem.style as any).webkitUserSelect = "text";
 
@@ -273,7 +273,7 @@ export function useCanvaInteractions({
   }, [finishInlineTextEditing]);
 
   /**
-   * Single-click: Selects the element and shows a clean 1px selection bounding box with 4 corner anchor dots
+   * Single-click: clean canvas without persistent outer blue selection boxes or bounding overlays
    */
   const handleElementClick = useCallback((target: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
     // If currently editing text, stop click propagation so parent does not intercept focus
@@ -286,50 +286,17 @@ export function useCanvaInteractions({
       finishInlineTextEditing();
     }
 
-    if (e) {
-      e.stopPropagation();
-    }
-
-    // Ignore section root container itself
-    if (target.hasAttribute("data-xite-section") || target.classList.contains("section-wrapper-container")) {
-      setSelectedElement(null);
-      return;
-    }
-
-    // Find reasonable target (card, badge, heading, p, button, a, img, etc.)
-    const selectable =
-      (target.closest("h1, h2, h3, h4, h5, h6, p, button, a, img, .card, [data-card], .badge, [data-badge], li, div > div") as HTMLElement) ||
-      target;
-
-    const rect = selectable.getBoundingClientRect();
-    const label = getElementLabel(selectable);
-
-    setSelectedElement({
-      tag: selectable.tagName.toLowerCase(),
-      label,
-      rect,
-      element: selectable,
-      sectionIndex,
-    });
+    // Keep preview clean and native without bounding boxes or rings
+    setSelectedElement(null);
   }, [finishInlineTextEditing]);
 
   /**
-   * Mouse hover: shows subtle outline with label
+   * Mouse hover: clean preview canvas without dashed boxes
    */
   const handleElementHover = useCallback((target: HTMLElement | null) => {
-    if (!target || isEditingText || isDragging) {
-      setHoveredRect(null);
-      return;
-    }
-    if (target.hasAttribute("data-xite-section") || target.classList.contains("section-wrapper-container")) {
-      setHoveredRect(null);
-      return;
-    }
-    const hoverTarget =
-      (target.closest("h1, h2, h3, h4, h5, h6, p, button, a, img, li, .card, .badge, [data-badge]") as HTMLElement) || target;
-    const rect = hoverTarget.getBoundingClientRect();
-    setHoveredRect({ rect, label: getElementLabel(hoverTarget) });
-  }, [isEditingText, isDragging]);
+    // Keep canvas preview completely clean and unbordered
+    setHoveredRect(null);
+  }, []);
 
   /**
    * 2. Free / Flow Drag & Drop with Magnetic Snap Guidelines (#ec4899)

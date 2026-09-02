@@ -5,5 +5,8 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const college = await getCurrentCollegeOrNull();
-  redirect(`/editor/${college?.subdomain || "greenfield"}`);
+  if (college?.subdomain) {
+    redirect(`/editor/${college.subdomain}`);
+  }
+  redirect("/login");
 }

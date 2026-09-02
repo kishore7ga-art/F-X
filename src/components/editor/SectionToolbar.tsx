@@ -104,6 +104,7 @@ type Props = {
   canUndo?: boolean;
   canRedo?: boolean;
   onDeleteSection?: () => void;
+  onOpenVisualEditor?: () => void;
   saveStatus?: SaveStatus;
   saveError?: string | null;
 };
@@ -153,6 +154,7 @@ export function SectionToolbar({
   canUndo = false,
   canRedo = false,
   onDeleteSection,
+  onOpenVisualEditor,
   saveStatus = "idle",
   saveError = null,
 }: Props) {
@@ -382,6 +384,18 @@ export function SectionToolbar({
             );
           })}
         </div>
+
+        {onOpenVisualEditor && (
+          <button
+            type="button"
+            onClick={onOpenVisualEditor}
+            title="Open Dedicated Visual Editor to Reorder / Swap Cards"
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 text-[10px] font-bold shadow-xs transition"
+          >
+            <Layers className="h-3.5 w-3.5" />
+            <span>Visual Editor</span>
+          </button>
+        )}
 
         <div className="ml-auto flex items-center gap-1">
           <button

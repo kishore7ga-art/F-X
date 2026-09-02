@@ -69,7 +69,7 @@ import { DEFAULT_WIDTH, nearestWidth, type DeviceMode } from "@/lib/viewport-pre
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { SectionToolbar } from "./SectionToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
-import { CanvaCanvasOverlay } from "./canvas/CanvaCanvasOverlay";
+import { SectionVisualEditor } from "./SectionVisualEditor";
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SectionPatch } from "@/lib/sections/section-edit";
 import { DrawerPanel } from "./DrawerPanel";
@@ -369,6 +369,9 @@ export function EditorStudio({
     const timer = setTimeout(() => setSwapNotice(null), 3200);
     return () => clearTimeout(timer);
   }, [swapNotice]);
+
+  /** Dedicated Visual Editor modal state for moving/reordering section cards */
+  const [isVisualEditorOpen, setIsVisualEditorOpen] = useState(false);
 
   const [library, setLibrary] = useState<SectionLibrary>({ sections: [], byCategory: {} });
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -2144,117 +2147,20 @@ export function EditorStudio({
                     onDoubleClick={(e) => {
                       inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
                     }}
-                    onMouseDown={(e) => {
-                      if (inPlaceEditor.isEditingText) return;
-                      if (e.button !== 0) return;
-                      const targetEl = e.target as HTMLElement;
-                      if (targetEl.tagName === "INPUT" || targetEl.tagName === "TEXTAREA" || targetEl.isContentEditable) return;
-
-                      // If clicking on or inside selected element (or any draggable element), initiate drag
-                      const candidate = inPlaceEditor.selectedElement && inPlaceEditor.selectedElement.element.contains(targetEl)
-                        ? inPlaceEditor.selectedElement.element
-                        : (targetEl.closest("h1, h2, h3, h4, h5, h6, p, button, a, img, .card, [data-card], .badge, [data-badge], li") as HTMLElement | null);
-
-                      if (candidate && !candidate.hasAttribute("data-xite-section") && !candidate.classList.contains("section-wrapper-container")) {
-                        inPlaceEditor.handlePointerDragStart(e, candidate, idx);
-                      }
-                    }}
-                    onMouseMove={(e) => {
-                      inPlaceEditor.handleElementHover(e.target as HTMLElement);
-                    }}
-                    onMouseLeave={() => {
-                      inPlaceEditor.handleElementHover(null);
-                    }}
                     onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
                     data-xite-section={sec.id}
                     style={{
-                      // Only the header is lifted, and only because a sticky one
-                      // has to stay above what follows it. Everything else keeps
-                      // natural document order.
-                      //
-                      // This used to descend — `20 - idx` — which put every
-                      // section *above* the one after it, the exact reverse of how
-                      // HTML stacks. Any section whose content leaves its box (an
-                      // overlapping card, a wave divider, a decoration hanging off
-                      // the bottom) then covered the top of its neighbour and took
-                      // the clicks meant for it: clicking one section selected the
-                      // previous one. Reproduced with a 70px overhang — the click
-                      // landed on `#overhang` and selected the hero instead of the
-                      // section actually under the cursor.
                       ...(isHeader ? { zIndex: 40 } : null),
                       position: "relative",
                     }}
-                    // No clipping: `overflow: hidden` cut off every shadow, dropdown
-                    // and sticky element a section had, none of which the Admin's
-                    // iframe clips.
-                    /* The selection ring is drawn *inside* the section's own
-                       box. `ring-offset-2 ring-offset-slate-900` used to paint
-                       2px of dark slate between the section and the ring —
-                       which on a light section reads as a black border, and
-                       with the seams now collapsed was the last thing still
-                       drawing a line between two sections. Inset also means
-                       selecting a section no longer changes its size. */
-                    className={`w-full relative transition-all group section-wrapper-container ${
-                      activeSectionIndex === idx ? "ring-2 ring-inset ring-cyan-500/80" : "cursor-default"
-                    }`}
+                    className="w-full relative transition-all group section-wrapper-container cursor-default"
                   >
-                    {/*
-                      What is selected, said in words as well as with a ring.
-
-                      §19 asks for a label, and a ring alone genuinely is not
-                      enough on this canvas: sections butt against each other
-                      with no seam between them, so an inset ring on a section
-                      whose top and bottom are off-screen is two vertical lines
-                      at the edges of the viewport and nothing else.
-
-                      It is a **sibling** of `.section-canvas-box`, never an
-                      ancestor of it, which is what keeps it out of the
-                      section's own styling: inheritance flows downward, and the
-                      containment boundary the whole architecture rests on is
-                      the canvas box itself. `pointer-events-none` so it cannot
-                      take a click meant for the section under it, and it is
-                      absolutely positioned so it reserves no space — selecting
-                      a section must not move it.
-                    */}
-                    {activeSectionIndex === idx && (
-                      <div className="pointer-events-none absolute left-0 top-0 z-40 flex items-center gap-1.5 rounded-br-lg bg-cyan-500 px-2 py-1 text-[10px] font-black tracking-tight text-white shadow-sm">
-                        <span className="opacity-70">{idx + 1}</span>
-                        <span className="max-w-[220px] truncate">{sec.title}</span>
-                      </div>
-                    )}
-
-                    {/*
-                      The one element the editor puts *inside* the canvas, and
-                      it is not allowed to say anything about the section.
-
-                      It carried `w-full block p-0 m-0 text-left`. Three of
-                      those are what a plain `<div>` does anyway; `text-left`
-                      is not. `text-align` is inherited, this element sits
-                      inside the containment boundary — which resets what
-                      *ancestors* say, and this is a descendant — so every
-                      section on the canvas was laid out with `text-align:
-                      left` where the Admin's iframe and the published site
-                      inherit `start`. Identical in English and wrong in
-                      Arabic; and more to the point, an editor utility class
-                      had become part of the site's design.
-
-                      `display: contents` removes the box altogether, so
-                      `.section-canvas-box` is laid out as a direct child of
-                      the section wrapper — which is exactly the shape
-                      `PreviewSiteViewer` renders. The element exists only
-                      because `dangerouslySetInnerHTML` cannot share a node
-                      with the empty-section notice below.
-                    */}
                     <div
                       dangerouslySetInnerHTML={{ __html: canvasHtml(sec.code) }}
                       style={{ display: "contents" }}
                     />
 
-                    {/* This section occupies space and shows nothing.
-                        Said out loud rather than left as an unexplained coloured
-                        band, which is what it looks like otherwise — and which
-                        reads as the editor having inserted a gap rather than as
-                        a section that failed to render. */}
+                    {/* This section occupies space and shows nothing */}
                     {emptySectionIds.has(sec.id) && (
                       <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-6">
                         <div className="pointer-events-auto max-w-md rounded-xl border border-amber-400/40 bg-amber-950/85 px-4 py-3 text-center shadow-lg backdrop-blur-sm">
@@ -2274,19 +2180,6 @@ export function EditorStudio({
             </div>
           )}
         </ResponsiveCanvas>
-
-        {/* Live In-Place Canva Overlay: Selection bounding box with 4 corner anchors, snap guides, drop indicator */}
-        <CanvaCanvasOverlay
-          selectedElement={inPlaceEditor.selectedElement}
-          hoveredRect={inPlaceEditor.hoveredRect}
-          isEditingText={inPlaceEditor.isEditingText}
-          isDragging={inPlaceEditor.isDragging}
-          snapGuides={inPlaceEditor.snapGuides}
-          distanceBadges={inPlaceEditor.distanceBadges}
-          dropIndicator={inPlaceEditor.dropIndicator}
-          onDragStart={inPlaceEditor.handlePointerDragStart}
-          onStartEdit={inPlaceEditor.handleElementDoubleClick}
-        />
 
         {/* Clearance for the floating dock, and the only such clearance.
             `main` also carried `pb-64`, so 256px of padding and this 192px
@@ -2564,10 +2457,39 @@ export function EditorStudio({
           canUndo={editor.canUndo}
           canRedo={editor.canRedo}
           onDeleteSection={handleDeleteSection}
+          onOpenVisualEditor={() => setIsVisualEditorOpen(true)}
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
         />
       )}
+
+      {/* Dedicated Visual Editor for Structural Changes (Move / Reorder Cards) */}
+      <SectionVisualEditor
+        isOpen={isVisualEditorOpen}
+        section={
+          customToolbarState.sectionIndex !== null && sections[customToolbarState.sectionIndex]
+            ? sections[customToolbarState.sectionIndex]
+            : activeSectionIndex !== null && sections[activeSectionIndex]
+            ? sections[activeSectionIndex]
+            : null
+        }
+        onClose={() => setIsVisualEditorOpen(false)}
+        onUpdateSectionCode={(newCode) => {
+          const targetIdx = customToolbarState.sectionIndex ?? activeSectionIndex;
+          if (targetIdx !== null) {
+            setSectionsWithHistory((prev) =>
+              prev.map((sec, i) =>
+                i === targetIdx
+                  ? {
+                      ...sec,
+                      code: recomposeSectionCode(sec.code, newCode),
+                    }
+                  : sec,
+              ),
+            );
+          }
+        }}
+      />
 
       {/* General EditorToolbar dock - Shown when SectionToolbar is not open */}
       {!isSettingsOpen && !isDrawerOpen && !isSectionPanelOpen && (
