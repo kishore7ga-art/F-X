@@ -2389,7 +2389,7 @@ export function EditorStudio({
                   style={{ width: "16px", height: "16px", accentColor: "#ffffff", cursor: "pointer" }}
                 />
                 <span style={{ fontSize: "13px", fontWeight: 700, color: "#e4e4e7" }}>
-                  Open in New Tab (<code style={{ color: "#ffffff", fontFamily: "monospace" }}>target="_blank"</code>)
+                  Open in New Tab (<code style={{ color: "#ffffff", fontFamily: "monospace" }}>target=&quot;_blank&quot;</code>)
                 </span>
               </label>
 

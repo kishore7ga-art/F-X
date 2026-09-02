@@ -121,10 +121,6 @@ export const CardItem = ({
   const ref = useRef<HTMLDivElement>(null);
   const [isMouseEnter] = useMouseEnter();
 
-  useEffect(() => {
-    handleAnimations();
-  }, [isMouseEnter]);
-
   const handleAnimations = () => {
     if (!ref.current) return;
     if (isMouseEnter) {
@@ -133,6 +129,10 @@ export const CardItem = ({
       ref.current.style.transform = `translateX(0px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`;
     }
   };
+
+  useEffect(() => {
+    handleAnimations();
+  }, [isMouseEnter]);
 
   const TagComp = Tag as any;
   return (
