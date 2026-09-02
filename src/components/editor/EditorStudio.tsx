@@ -2238,6 +2238,10 @@ export function EditorStudio({
             );
           }
         }}
+        viewport={viewport}
+        themeId={themeId}
+        fontId={fontId}
+        canvasHtml={canvasHtml}
       />
 
       {/* General EditorToolbar dock - Shown when SectionToolbar is not open */}

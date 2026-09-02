@@ -29,7 +29,7 @@ interface UseCanvaInteractionsProps {
 /**
  * Returns a human-friendly label for an element tag or role
  */
-function getElementLabel(el: HTMLElement): string {
+export function getElementLabel(el: HTMLElement): string {
   const tag = el.tagName.toLowerCase();
   if (tag.startsWith("h") && tag.length === 2) return `Heading ${tag[1]}`;
   if (tag === "p") return "Paragraph";

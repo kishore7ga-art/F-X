@@ -1374,7 +1374,7 @@ export function EditorToolbar({
                         boxShadow: "0 1px 4px rgba(37,99,235,0.35)",
                         flexShrink: 0,
                       }}
-                      title="Open Visual Layout Editor — drag to reorder cards & slots"
+                      title="Open Visual Editor — drag any element to reposition it, with snap guides"
                     >
                       <Layers style={{ width: "13px", height: "13px", strokeWidth: 2 }} />
                       Visual Editor
