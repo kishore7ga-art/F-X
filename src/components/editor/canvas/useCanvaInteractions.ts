@@ -204,22 +204,24 @@ export function useCanvaInteractions({
     originalTextRef.current = textElem.innerHTML;
     setIsEditingText(true);
 
-    // Set contentEditable="true" natively with subtle text cursor (no large blue frame wrapper)
+    // Set contentEditable with clear blue visual outline so user knows they're editing
     textElem.classList.add("xite-text-editing");
     textElem.setAttribute("contenteditable", "true");
     textElem.contentEditable = "true";
 
-    textElem.style.outline = "none";
-    textElem.style.boxShadow = "none";
+    textElem.style.outline = "2px solid #3b82f6";
+    textElem.style.outlineOffset = "3px";
+    textElem.style.borderRadius = "4px";
+    textElem.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.2)";
     textElem.style.cursor = "text";
     textElem.style.caretColor = "#2563eb";
     textElem.style.userSelect = "text";
     (textElem.style as any).webkitUserSelect = "text";
 
-    // Programmatically run element.focus()
+    // Programmatically focus the element
     textElem.focus();
 
-    // Use window.getSelection() to place blinking caret precisely where clicked
+    // Place blinking caret precisely where user clicked
     if (e && e.clientX && e.clientY) {
       try {
         if ((document as any).caretRangeFromPoint) {
@@ -243,7 +245,7 @@ export function useCanvaInteractions({
       } catch {}
     }
 
-    // Key handlers: Escape reverts & blurs; Enter commits on single-line tags
+    // Key handlers: Escape reverts; Enter commits on single-line tags
     textElem.onkeydown = (keyEvent: KeyboardEvent) => {
       if (keyEvent.key === "Escape") {
         keyEvent.preventDefault();
@@ -266,7 +268,7 @@ export function useCanvaInteractions({
       }
     };
 
-    // onBlur handler: Disables contentEditable, sanitizes text, dispatches update
+    // CRITICAL: onBlur saves the edit to the persistent project store
     textElem.onblur = () => {
       finishInlineTextEditing(false);
     };

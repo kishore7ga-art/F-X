@@ -90,6 +90,8 @@ interface EditorToolbarProps {
    * says where it went, so the panel can step aside.
    */
   onDockPositionChange?: (position: "bottom" | "top" | "left" | "right") => void;
+  /** Opens the dedicated Visual Editor modal for card reordering */
+  onOpenVisualEditor?: () => void;
 }
 
 export function EditorToolbar({
@@ -124,6 +126,7 @@ export function EditorToolbar({
   saveStatus = "idle",
   saveError = null,
   onDockPositionChange,
+  onOpenVisualEditor,
 }: EditorToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1347,6 +1350,37 @@ export function EditorToolbar({
                 >
                   <RefreshCw style={{ width: "16px", height: "16px", strokeWidth: 1.8, color: "#334155" }} />
                 </button>
+
+                {/* Visual Editor Button — always visible when a section is selected */}
+                {onOpenVisualEditor && isSectionSelected && (
+                  <>
+                    <div style={{ height: "18px", width: "1.5px", backgroundColor: "#cbd5e1", margin: "0 4px", flexShrink: 0 }} />
+                    <button
+                      onClick={onOpenVisualEditor}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        height: "28px",
+                        padding: "0 10px",
+                        border: "none",
+                        borderRadius: "7px",
+                        backgroundColor: "#2563eb",
+                        color: "#ffffff",
+                        cursor: "pointer",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 1px 4px rgba(37,99,235,0.35)",
+                        flexShrink: 0,
+                      }}
+                      title="Open Visual Layout Editor — drag to reorder cards & slots"
+                    >
+                      <Layers style={{ width: "13px", height: "13px", strokeWidth: 2 }} />
+                      Visual Editor
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </>

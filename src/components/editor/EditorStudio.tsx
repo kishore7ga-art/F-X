@@ -2527,6 +2527,7 @@ export function EditorStudio({
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
           onDockPositionChange={setDockPosition}
+          onOpenVisualEditor={() => setIsVisualEditorOpen(true)}
         />
       )}
 
