@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import { ApiError, uploadImage } from "@/lib/api-client";
 import {
@@ -423,11 +423,6 @@ export function EditorStudio({
     link.href = themeFontsHref();
     document.head.appendChild(link);
   }, []);
-
-  // Active inline text editing state tracking
-  const activeEditingElemRef = useRef<HTMLElement | null>(null);
-  const activeEditingSectionIdxRef = useRef<number | null>(null);
-  const activeEditingContainerRef = useRef<HTMLElement | null>(null);
 
   /**
    * Undo and redo, per page.
@@ -933,79 +928,7 @@ export function EditorStudio({
     setActiveSectionIndex(0);
   }, [editor.activePage.id, setSectionsWithHistory, setActiveSectionIndex]);
 
-  // Save active inline text edit and update section code in state when clicking outside / blurring
-  const finishInlineTextEditing = useCallback(() => {
-    const textElem = activeEditingElemRef.current;
-    const sectionIndex = activeEditingSectionIdxRef.current;
-    const container = activeEditingContainerRef.current;
-
-    if (!textElem || sectionIndex === null || !container) return;
-
-    // Reset visual editing styles and contentEditable attribute
-    textElem.classList.remove("xite-text-editing");
-    textElem.contentEditable = "false";
-    textElem.removeAttribute("contenteditable");
-    textElem.style.outline = "";
-    textElem.style.outlineOffset = "";
-    textElem.style.borderRadius = "";
-    textElem.style.backgroundColor = "";
-    textElem.style.boxShadow = "";
-    textElem.style.cursor = "";
-    textElem.style.userSelect = "";
-    textElem.style.transition = "";
-
-    activeEditingElemRef.current = null;
-    activeEditingSectionIdxRef.current = null;
-    activeEditingContainerRef.current = null;
-
-    const canvasBox = (container.querySelector(".section-canvas-box") || container) as HTMLElement;
-    const targetNode = canvasBox || container;
-
-    const clone = targetNode.cloneNode(true) as HTMLElement;
-
-    const badges = clone.querySelectorAll('.pointer-events-none');
-    badges.forEach((b) => b.remove());
-
-    const editables = clone.querySelectorAll('[contenteditable], .xite-text-editing');
-    editables.forEach((el) => {
-      el.removeAttribute('contenteditable');
-      el.classList.remove('xite-text-editing');
-      (el as HTMLElement).style.outline = '';
-      (el as HTMLElement).style.outlineOffset = '';
-      (el as HTMLElement).style.borderRadius = '';
-      (el as HTMLElement).style.backgroundColor = '';
-      (el as HTMLElement).style.boxShadow = '';
-      (el as HTMLElement).style.cursor = '';
-      (el as HTMLElement).style.userSelect = '';
-      (el as HTMLElement).style.transition = '';
-    });
-
-    const newBody = cleanCanvasWrapperFromCode(clone.innerHTML || clone.outerHTML);
-    if (newBody) {
-      setSectionsWithHistory((prev) =>
-        prev.map((sec, i) =>
-          i === sectionIndex
-            ? {
-                ...sec,
-                /**
-                 * Head from the stored section, body from the canvas.
-                 *
-                 * The canvas holds no `<style>` — the runtime lifted it out and
-                 * fenced it to this section — so saving what the DOM returns
-                 * verbatim would delete the section's whole stylesheet the
-                 * first time anybody fixed a typo. `sec.code` is read from
-                 * `prev` rather than a closure so it is always the current one.
-                 */
-                code: recomposeSectionCode(sec.code, newBody),
-              }
-            : sec,
-        ),
-      );
-      showToastNotification("Text content updated");
-    }
-  }, [cleanCanvasWrapperFromCode, setSectionsWithHistory, showToastNotification]);
-
-  // Global document click handler to close SectionToolbar and finish inline text editing when left-clicking outside
+  // Global document click handler to close SectionToolbar when left-clicking outside
   useEffect(() => {
     const handleDocumentMouseDown = (e: MouseEvent) => {
       // Only process standard left-clicks (button === 0)
@@ -1013,11 +936,6 @@ export function EditorStudio({
 
       const target = e.target as HTMLElement | null;
       if (!target) return;
-
-      // Finish inline text editing if clicking outside active text element
-      if (activeEditingElemRef.current && !activeEditingElemRef.current.contains(target)) {
-        finishInlineTextEditing();
-      }
 
       // Close SectionToolbar and restore normal toolbar when left-clicking outside SectionToolbar
       if (customToolbarState.isOpen) {
@@ -1032,173 +950,7 @@ export function EditorStudio({
     return () => {
       document.removeEventListener("mousedown", handleDocumentMouseDown);
     };
-  }, [finishInlineTextEditing, customToolbarState.isOpen, closeCustomToolbar]);
-
-  const sectionsRef = useRef(sections);
-  // Activate inline text editing on any clicked text element
-  const activateInlineTextEditing = useCallback((
-    target: HTMLElement,
-    sectionIndex: number,
-    sectionContainer: HTMLElement,
-    clickX?: number,
-    clickY?: number
-  ) => {
-    if (!target) return;
-
-    // Prevent default navigation if an <a> link is double-clicked
-    const anchor = target.closest("a");
-    if (anchor) {
-      anchor.onclick = (e) => e.preventDefault();
-    }
-
-    // Ignore structural container sections & non-text elements like images/svgs
-    if (["SECTION", "HEADER", "FOOTER", "MAIN", "IMG", "SVG"].includes(target.tagName)) return;
-    if (target.tagName === "BUTTON" && target.classList.contains("hamburger-toggle-btn")) return;
-
-    // Prefer parent block elements (h1-h6, p, button, a, blockquote, li, label, figcaption) over inner formatting spans
-    const blockContainer = target.closest(
-      "h1, h2, h3, h4, h5, h6, p, button, a, blockquote, li, label, figcaption, td, th"
-    ) as HTMLElement | null;
-    const inlineContainer = target.closest("span, strong, em, b, i, small") as HTMLElement | null;
-
-    let textElem: HTMLElement | null =
-      blockContainer && sectionContainer.contains(blockContainer)
-        ? blockContainer
-        : inlineContainer && sectionContainer.contains(inlineContainer)
-        ? inlineContainer
-        : target;
-
-    const editableTags = [
-      "H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "A", "BUTTON", "LI",
-      "STRONG", "EM", "B", "I", "TD", "TH", "LABEL", "DIV", "BLOCKQUOTE", "FIGCAPTION", "SMALL"
-    ];
-
-    while (textElem && textElem !== sectionContainer && !editableTags.includes(textElem.tagName)) {
-      textElem = textElem.parentElement;
-    }
-
-    if (!textElem || textElem === sectionContainer) {
-      textElem = target;
-    }
-
-    if (textElem.tagName === "DIV" && textElem.children.length > 2) {
-      const child = textElem.querySelector("h1, h2, h3, h4, h5, h6, p, span, a, button, li, blockquote") as HTMLElement;
-      if (child) textElem = child;
-      else return;
-    }
-
-    // Finish previous edit first if any
-    if (activeEditingElemRef.current && activeEditingElemRef.current !== textElem) {
-      finishInlineTextEditing();
-    }
-
-    // Set active references
-    activeEditingElemRef.current = textElem;
-    activeEditingSectionIdxRef.current = sectionIndex;
-    activeEditingContainerRef.current = sectionContainer;
-
-    // Enable inline content editing with high-visibility blue editing outline & glow
-    textElem.classList.add("xite-text-editing");
-    textElem.setAttribute("contenteditable", "true");
-    textElem.contentEditable = "true";
-    textElem.style.userSelect = "text";
-    (textElem.style as any).webkitUserSelect = "text";
-    textElem.style.outline = "2px solid #3b82f6";
-    textElem.style.outlineOffset = "3px";
-    textElem.style.borderRadius = "4px";
-    textElem.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.2), 0 0 10px rgba(59, 130, 246, 0.25)";
-    textElem.style.cursor = "text";
-    textElem.style.transition = "outline 0.15s ease, box-shadow 0.15s ease";
-
-    // Focus & place caret right where user clicked
-    textElem.focus();
-
-    if (typeof document !== "undefined") {
-      let range: Range | null = null;
-      if (clickX !== undefined && clickY !== undefined) {
-        if ((document as any).caretRangeFromPoint) {
-          range = (document as any).caretRangeFromPoint(clickX, clickY);
-        } else if ((document as any).caretPositionFromPoint) {
-          const pos = (document as any).caretPositionFromPoint(clickX, clickY);
-          if (pos) {
-            range = document.createRange();
-            range.setStart(pos.offsetNode, pos.offset);
-            range.collapse(true);
-          }
-        }
-      }
-      if (range) {
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      } else {
-        try {
-          const r = document.createRange();
-          r.selectNodeContents(textElem);
-          const sel = window.getSelection();
-          sel?.removeAllRanges();
-          sel?.addRange(r);
-        } catch {}
-      }
-    }
-
-    // Enter & Escape key handlers
-    textElem.onkeydown = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") {
-        keyEvent.preventDefault();
-        keyEvent.stopPropagation();
-        finishInlineTextEditing();
-        return;
-      }
-
-      if (keyEvent.key === "Enter") {
-        const tag = textElem!.tagName.toLowerCase();
-        const isSingleLine = ["h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "span", "label", "th", "td"].includes(tag);
-        if (isSingleLine && !keyEvent.shiftKey) {
-          keyEvent.preventDefault();
-          keyEvent.stopPropagation();
-          finishInlineTextEditing();
-        }
-      }
-    };
-  }, [finishInlineTextEditing]);
-
-  // Global document double-click listener for immediate inline text editing
-  useEffect(() => {
-    const handleDocumentDblClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-
-      // Find if double click happened inside a section container
-      const sectionContainer = target.closest("[data-xite-section]") as HTMLElement | null;
-      if (!sectionContainer) return;
-
-      const sectionId = sectionContainer.getAttribute("data-xite-section");
-      const currentSections = sectionsRef.current;
-      const sectionIndex = currentSections.findIndex((s) => String(s.id) === String(sectionId));
-      if (sectionIndex === -1) return;
-
-      activateInlineTextEditing(target, sectionIndex, sectionContainer, e.clientX, e.clientY);
-    };
-
-    document.addEventListener("dblclick", handleDocumentDblClick, true);
-    return () => {
-      document.removeEventListener("dblclick", handleDocumentDblClick, true);
-    };
-  }, [activateInlineTextEditing]);
-
-  // Handle double-click inline text editing directly on section canvas
-  const handleSectionDoubleClick = (e: React.MouseEvent<HTMLDivElement>, sectionIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    activateInlineTextEditing(
-      e.target as HTMLElement,
-      sectionIndex,
-      e.currentTarget,
-      e.clientX,
-      e.clientY
-    );
-  };
+  }, [customToolbarState.isOpen, closeCustomToolbar]);
 
   // Smoothly scroll canvas viewport to top Navbar header section
   const handleJumpToNavbarLogo = () => {
@@ -2054,10 +1806,10 @@ export function EditorStudio({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (activeEditingElemRef.current) {
+      if (inPlaceEditor.isEditingText) {
         event.preventDefault();
         event.stopPropagation();
-        finishInlineTextEditing();
+        inPlaceEditor.finishInlineTextEditing(true);
         return;
       }
       const target = event.target as HTMLElement | null;
@@ -2079,7 +1831,7 @@ export function EditorStudio({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [customToolbarState.isOpen, activeSectionIndex, closeCustomToolbar, clearSelection, finishInlineTextEditing]);
+  }, [customToolbarState.isOpen, activeSectionIndex, closeCustomToolbar, clearSelection, inPlaceEditor.isEditingText, inPlaceEditor.finishInlineTextEditing]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-y-auto">
@@ -2142,9 +1894,6 @@ export function EditorStudio({
                       e.stopPropagation();
                     }}
                     onDoubleClickCapture={(e) => {
-                      inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
-                    }}
-                    onDoubleClick={(e) => {
                       inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
                     }}
                     onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
