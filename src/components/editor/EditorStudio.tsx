@@ -538,15 +538,14 @@ export function EditorStudio({
     y: number;
     sectionIndex: number;
     targetElement: HTMLElement;
-    targetType: "logo" | "image" | "background";
+    targetType: "logo" | "image";
     logoText: string;
     bgColor: string;
     imageUrl: string;
     originalUrl: string;
     linkUrl: string;
     applyAllLogos: boolean;
-    applyAllBackgrounds: boolean;
-    activeTab: "logo" | "background" | "image" | "style";
+    activeTab: "logo" | "image" | "style";
     objectFit: "cover" | "contain" | "fill";
     borderRadius: string;
   } | null>(null);
@@ -1007,12 +1006,6 @@ export function EditorStudio({
           targetElement.style.backgroundColor = finalBgColor;
         }
       }
-    } else if (targetType === "background") {
-      if (finalImageUrl) {
-        targetElement.style.backgroundImage = `url("${finalImageUrl}")`;
-        targetElement.style.backgroundSize = "cover";
-        targetElement.style.backgroundPosition = "center";
-      }
     } else {
       if (targetElement.tagName === "IMG") {
         (targetElement as HTMLImageElement).src = finalImageUrl;
@@ -1050,12 +1043,6 @@ export function EditorStudio({
           return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
         }
 
-        // Bulk apply all section background images across page
-        if (targetType === "background" && updatedPopup.applyAllBackgrounds && finalImageUrl) {
-          newCode = newCode.replace(/background-image:\s*url\([^)]+\)/gi, `background-image: url("${finalImageUrl}")`);
-          return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
-        }
-
         // Update target section HTML
         if (idx === sectionIndex && container) {
           const clone = container.cloneNode(true) as HTMLElement;
@@ -1086,11 +1073,6 @@ export function EditorStudio({
             } else if (originalUrl && clone.innerHTML.includes(originalUrl)) {
               clone.innerHTML = clone.innerHTML.replaceAll(originalUrl, finalImageUrl);
             }
-          } else if (targetType === "background" && finalImageUrl) {
-            const bgElem = clone.querySelector('[style*="background-image"]') || clone.firstElementChild || clone;
-            (bgElem as HTMLElement).style.backgroundImage = `url("${finalImageUrl}")`;
-            (bgElem as HTMLElement).style.backgroundSize = "cover";
-            (bgElem as HTMLElement).style.backgroundPosition = "center";
           } else if (targetType === "logo") {
             if (finalImageUrl) {
               const logoElem = clone.querySelector('img[data-logo="true"]') || clone.querySelector('img.logo') || clone.querySelector('img');
@@ -1288,7 +1270,7 @@ export function EditorStudio({
     }
 
     let currElem: HTMLElement | null = target;
-    let targetType: "logo" | "image" | "background" | null = null;
+    let targetType: "logo" | "image" | null = null;
     let imageUrl = "";
     let logoText = "";
     let bgColor = "#2563eb";
@@ -1301,7 +1283,6 @@ export function EditorStudio({
       const cls = (currElem.className || "").toString().toLowerCase();
       const isDataLogo = currElem.getAttribute("data-logo") === "true";
       const compStyle = window.getComputedStyle(currElem);
-      const bgImg = compStyle.backgroundImage || currElem.style.backgroundImage || "";
 
       if (currElem.tagName === "A" || currElem.getAttribute("href")) {
         linkUrl = currElem.getAttribute("href") || "";
@@ -1326,31 +1307,11 @@ export function EditorStudio({
         }
         bgColor = compStyle.backgroundColor !== "rgba(0, 0, 0, 0)" ? compStyle.backgroundColor : "#2563eb";
         break;
-      } else if (bgImg && bgImg !== "none" && bgImg.includes("url(")) {
-        targetType = "background";
-        const match = bgImg.match(/url\(["']?(.*?)["']?\)/);
-        if (match && match[1]) imageUrl = match[1];
-        break;
       }
       currElem = currElem.parentElement;
     }
 
-    // Fallback: check section background if right clicked empty space
-    if (!targetType) {
-      const secWrapper = target.closest(".section-wrapper-container") as HTMLElement;
-      if (secWrapper) {
-        const compStyle = window.getComputedStyle(secWrapper);
-        const bgImg = compStyle.backgroundImage || secWrapper.style.backgroundImage || "";
-        if (bgImg && bgImg !== "none" && bgImg.includes("url(")) {
-          targetType = "background";
-          const match = bgImg.match(/url\(["']?(.*?)["']?\)/);
-          if (match && match[1]) imageUrl = match[1];
-          currElem = secWrapper;
-        }
-      }
-    }
-
-    // Open Image & Logo Customizer Modal if Image/Logo/Background detected
+    // Open Image & Logo Customizer Modal if Image/Logo detected
     if (targetType && currElem) {
       e.preventDefault();
       e.stopPropagation();
@@ -1370,8 +1331,7 @@ export function EditorStudio({
         originalUrl: imageUrl,
         linkUrl: linkUrl || "/home",
         applyAllLogos: targetType === "logo",
-        applyAllBackgrounds: targetType === "background",
-        activeTab: targetType === "logo" ? "logo" : targetType === "background" ? "background" : "image",
+        activeTab: targetType === "logo" ? "logo" : "image",
         objectFit,
         borderRadius,
       });
@@ -2547,7 +2507,7 @@ export function EditorStudio({
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff", letterSpacing: "-0.01em" }}>
-                      {imagePopup.targetType === "logo" ? "Edit Logo & Branding" : imagePopup.targetType === "background" ? "Edit Section Background" : "Edit Image"}
+                      {imagePopup.targetType === "logo" ? "Edit Logo & Branding" : "Edit Image"}
                     </h3>
                     <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "9999px", backgroundColor: "#18181b", color: "#a1a1aa", border: "1px solid #27272a", textTransform: "uppercase" }}>
                       AUTO-{imagePopup.targetType}
@@ -2587,7 +2547,7 @@ export function EditorStudio({
               {/* 1. File Upload from Device */}
               <div>
                 <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  {imagePopup.targetType === "logo" ? "Upload Logo Image File" : imagePopup.targetType === "background" ? "Upload Background Image File" : "Upload Image File from Device"}
+                  {imagePopup.targetType === "logo" ? "Upload Logo Image File" : "Upload Image File from Device"}
                 </label>
                 <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "44px", backgroundColor: "#09090b", border: "1px dashed #3f3f46", borderRadius: "12px", color: "#ffffff", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
                   <span>📁 Select Image File from Device</span>
@@ -2608,7 +2568,7 @@ export function EditorStudio({
               {/* 2. Custom Image / Background / Logo URL Input */}
               <div>
                 <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  {imagePopup.targetType === "logo" ? "Logo Image URL" : imagePopup.targetType === "background" ? "Background Image URL" : "Image URL"}
+                  {imagePopup.targetType === "logo" ? "Logo Image URL" : "Image URL"}
                 </label>
                 <input
                   type="text"
@@ -2647,21 +2607,6 @@ export function EditorStudio({
                     </span>
                   </label>
                 </>
-              )}
-
-              {/* 4. Section Background Specific Sync Toggle */}
-              {imagePopup.targetType === "background" && (
-                <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#09090b", padding: "10px 14px", borderRadius: "12px", border: "1px solid #27272a", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={imagePopup.applyAllBackgrounds}
-                    onChange={(e) => handleUpdateAndSaveImage({ applyAllBackgrounds: e.target.checked })}
-                    style={{ width: "16px", height: "16px", accentColor: "#ffffff", cursor: "pointer" }}
-                  />
-                  <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
-                    Apply background image to ALL sections on this page
-                  </span>
-                </label>
               )}
 
             </div>
