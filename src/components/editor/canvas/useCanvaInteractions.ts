@@ -112,6 +112,16 @@ export function useCanvaInteractions({
      * Dividing by this factor cancels the ancestor's scale back out.
      */
     scale: number;
+    /**
+     * `position: absolute` / `fixed` elements — badges pinned around a hero
+     * image, a floating price tag, anything laid out by coordinates rather
+     * than flow. Reordering their DOM position (the in-flow path below) does
+     * nothing visible for these, so they're moved by writing `left`/`top`
+     * directly instead of a `transform` that then gets reset on drop.
+     */
+    isOutOfFlow: boolean;
+    startLeft: number;
+    startTop: number;
   } | null>(null);
 
   const dropTargetIndexRef = useRef<number | null>(null);
@@ -332,6 +342,9 @@ export function useCanvaInteractions({
     const measuredWidth = (element as HTMLElement).offsetWidth;
     const scale = measuredWidth > 0 && initialRect.width > 0 ? initialRect.width / measuredWidth : 1;
 
+    const computedPosition = window.getComputedStyle(element).position;
+    const isOutOfFlow = computedPosition === "absolute" || computedPosition === "fixed";
+
     dragTargetRef.current = {
       element,
       sectionIndex,
@@ -341,6 +354,9 @@ export function useCanvaInteractions({
       parentContainer: parent,
       siblings,
       scale,
+      isOutOfFlow,
+      startLeft: element.offsetLeft,
+      startTop: element.offsetTop,
     };
 
     setIsDragging(true);
@@ -368,7 +384,17 @@ export function useCanvaInteractions({
       pendingRafId = null;
       if (!dragTargetRef.current || !latestPointerEvent) return;
       const { clientX, clientY } = latestPointerEvent;
-      const { element: draggedEl, startX, startY, initialRect: origRect, siblings: sibs, scale } = dragTargetRef.current;
+      const {
+        element: draggedEl,
+        startX,
+        startY,
+        initialRect: origRect,
+        siblings: sibs,
+        scale,
+        isOutOfFlow,
+        startLeft,
+        startTop,
+      } = dragTargetRef.current;
 
       let deltaX = clientX - startX;
       let deltaY = clientY - startY;
@@ -481,6 +507,21 @@ export function useCanvaInteractions({
       setSnapGuides(Array.from(guidesMap.values()));
       setDistanceBadges(Array.from(badgesMap.values()));
 
+      if (isOutOfFlow) {
+        // Positioned by coordinates, not flow: move it by writing left/top
+        // directly (scale-compensated) so the new position survives drop —
+        // a transform here would just get reset with nothing to replace it.
+        draggedEl.style.left = `${startLeft + deltaX / scale}px`;
+        draggedEl.style.top = `${startTop + deltaY / scale}px`;
+        draggedEl.style.right = "auto";
+        draggedEl.style.bottom = "auto";
+        draggedEl.style.opacity = "0.85";
+        draggedEl.style.zIndex = "999";
+        dropTargetIndexRef.current = null;
+        setDropIndicator(null);
+        return;
+      }
+
       // Apply live smooth transform on dragged element, compensated for the
       // canvas's own scale so it tracks the cursor 1:1 at any viewport zoom
       draggedEl.style.transform = `translate3d(${deltaX / scale}px, ${deltaY / scale}px, 0)`;
@@ -577,11 +618,17 @@ export function useCanvaInteractions({
       window.removeEventListener("mouseup", onPointerUp);
 
       if (!dragTargetRef.current) return;
-      const { element: draggedEl, sectionIndex: secIdx, parentContainer, siblings: sibs } = dragTargetRef.current;
+      const { element: draggedEl, sectionIndex: secIdx, parentContainer, siblings: sibs, isOutOfFlow } = dragTargetRef.current;
       const insertIndex = dropTargetIndexRef.current;
 
-      // Reset dragged styling
-      draggedEl.style.transform = "";
+      // Reset the transient drag styling. Left/top are the committed result
+      // for an out-of-flow element, not transient state, so they're untouched
+      // — and so is transform: an out-of-flow drag never writes one (some of
+      // these badges are centered with `transform: translate(-50%, -50%)`
+      // alongside their left/top, and clearing it here would un-center them).
+      if (!isOutOfFlow) {
+        draggedEl.style.transform = "";
+      }
       draggedEl.style.opacity = "";
       draggedEl.style.zIndex = "";
 
@@ -590,7 +637,19 @@ export function useCanvaInteractions({
       setDropIndicator(null);
       setIsDragging(false);
 
-      if (insertIndex !== null && parentContainer) {
+      if (isOutOfFlow) {
+        if (dragActivated) {
+          const secContainer = draggedEl.closest("[data-xite-section]") as HTMLElement | null;
+          if (secContainer) {
+            const canvasBox = (secContainer.querySelector(".section-canvas-box") || secContainer) as HTMLElement;
+            const cleanHtml = sanitizeCleanDom(canvasBox);
+            if (cleanHtml) {
+              onUpdateSectionCode(secIdx, cleanHtml);
+              showToast?.("Element moved");
+            }
+          }
+        }
+      } else if (insertIndex !== null && parentContainer) {
         // Reorder cleanly within container flow
         if (insertIndex >= sibs.length) {
           parentContainer.appendChild(draggedEl);
