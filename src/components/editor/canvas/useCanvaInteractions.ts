@@ -103,7 +103,7 @@ export function useCanvaInteractions({
     siblings: HTMLElement[];
     /**
      * The dragged element's own visual scale (its screen-pixel rect over its
-     * un-transformed layout size). The Visual Editor renders sections inside
+     * un-transformed layout size). The studio canvas renders sections inside
      * `ResponsiveCanvas`, which shrinks the whole canvas with a CSS
      * `transform: scale(...)` whenever the chosen viewport is wider than the
      * pane — desktop widths in a normal browser window, essentially always.
@@ -373,8 +373,8 @@ export function useCanvaInteractions({
      * Below this many pixels of movement, nothing happens yet.
      *
      * `handlePointerDragStart` now fires on every mousedown on a selectable
-     * element (see SectionVisualEditor), not only from a dedicated drag
-     * handle — so an ordinary click has to pass through here too, and without
+     * element, not only from a dedicated drag handle — so an ordinary click
+     * has to pass through here too, and without
      * this guard a single pixel of jitter on mouseup would be read as an
      * intentional reorder.
      */

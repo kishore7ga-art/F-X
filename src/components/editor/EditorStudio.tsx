@@ -69,7 +69,6 @@ import { DEFAULT_WIDTH, nearestWidth, type DeviceMode } from "@/lib/viewport-pre
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { SectionToolbar } from "./SectionToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
-import { SectionVisualEditor } from "./SectionVisualEditor";
 import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import type { Device } from "@/lib/sections/section-managed-css";
@@ -371,9 +370,6 @@ export function EditorStudio({
     const timer = setTimeout(() => setSwapNotice(null), 3200);
     return () => clearTimeout(timer);
   }, [swapNotice]);
-
-  /** Dedicated Visual Editor modal state for moving/reordering section cards */
-  const [isVisualEditorOpen, setIsVisualEditorOpen] = useState(false);
 
   const [library, setLibrary] = useState<SectionLibrary>({ sections: [], byCategory: {} });
   const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -2188,7 +2184,6 @@ export function EditorStudio({
           canUndo={editor.canUndo}
           canRedo={editor.canRedo}
           onDeleteSection={handleDeleteSection}
-          onOpenVisualEditor={() => setIsVisualEditorOpen(true)}
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
         />
@@ -2203,38 +2198,6 @@ export function EditorStudio({
           selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
         />
       )}
-
-      {/* Dedicated Visual Editor for Structural Changes (Move / Reorder Cards) */}
-      <SectionVisualEditor
-        isOpen={isVisualEditorOpen}
-        section={
-          customToolbarState.sectionIndex !== null && sections[customToolbarState.sectionIndex]
-            ? sections[customToolbarState.sectionIndex]
-            : activeSectionIndex !== null && sections[activeSectionIndex]
-            ? sections[activeSectionIndex]
-            : null
-        }
-        onClose={() => setIsVisualEditorOpen(false)}
-        onUpdateSectionCode={(newCode) => {
-          const targetIdx = customToolbarState.sectionIndex ?? activeSectionIndex;
-          if (targetIdx !== null) {
-            setSectionsWithHistory((prev) =>
-              prev.map((sec, i) =>
-                i === targetIdx
-                  ? {
-                      ...sec,
-                      code: recomposeSectionCode(sec.code, newCode),
-                    }
-                  : sec,
-              ),
-            );
-          }
-        }}
-        viewport={viewport}
-        themeId={themeId}
-        fontId={fontId}
-        canvasHtml={canvasHtml}
-      />
 
       {/* General EditorToolbar dock - Shown when SectionToolbar is not open */}
       {!isSettingsOpen && !isDrawerOpen && !isSectionPanelOpen && (
@@ -2272,7 +2235,6 @@ export function EditorStudio({
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
           onDockPositionChange={setDockPosition}
-          onOpenVisualEditor={() => setIsVisualEditorOpen(true)}
         />
       )}
 
