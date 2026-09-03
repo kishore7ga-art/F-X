@@ -248,6 +248,7 @@ export function SectionToolbar({
       shadow: backgroundGroup.controls.find((c) => c.id === "bg-shadow"),
       density: backgroundGroup.controls.find((c) => c.id === "bg-density"),
       blur: backgroundGroup.controls.find((c) => c.id === "bg-blur"),
+      video: backgroundGroup.controls.find((c) => c.id === "bg-video"),
     };
   }, [backgroundGroup]);
 
@@ -277,6 +278,7 @@ export function SectionToolbar({
    * a callback that outlives its render reads it.
    */
   const latest = useRef(editable);
+  latest.current = editable;
   useEffect(() => {
     latest.current = editable;
   }, [editable]);
@@ -290,10 +292,25 @@ export function SectionToolbar({
 
   const commit = useCallback(
     (control: Control, value: ControlValue) => {
+      // Instant visual reflection on canvas element
+      try {
+        const secEl = document.querySelector(`[data-xite-section="${section.id}"]`) as HTMLElement | null;
+        if (secEl) {
+          const rootInner = (secEl.querySelector("header, section, footer, main, div") || secEl) as HTMLElement;
+          if (control.id === "bg-color") {
+            rootInner.style.backgroundColor = String(value);
+          } else if (control.id === "bg-image") {
+            rootInner.style.backgroundImage = value ? `url("${value}")` : "";
+            rootInner.style.backgroundSize = "cover";
+            rootInner.style.backgroundPosition = "center";
+          }
+        }
+      } catch {}
+
       const patch = applyControl(latest.current, control, device, value);
       if (patch) onPatch(patch);
     },
-    [device, onPatch],
+    [device, onPatch, section.id],
   );
 
   /**
@@ -511,6 +528,13 @@ export function SectionToolbar({
               blurValue={activeBackgroundControls.blur ? displayValue(activeBackgroundControls.blur) : ""}
               onCommitBlur={(val) => {
                 if (activeBackgroundControls.blur) commit(activeBackgroundControls.blur, val);
+              }}
+              videoValue={activeBackgroundControls.video ? displayValue(activeBackgroundControls.video) : ""}
+              onDraftVideo={(val) => {
+                if (activeBackgroundControls.video) commitDebounced(activeBackgroundControls.video, val, 100);
+              }}
+              onCommitVideo={(val) => {
+                if (activeBackgroundControls.video) commit(activeBackgroundControls.video, val);
               }}
             />
           </div>

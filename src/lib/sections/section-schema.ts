@@ -371,6 +371,7 @@ export function buildSectionSchema(section: {
     styleControl("bg-shadow", "Image shadow", rootTarget, "box-shadow"),
     styleControl("bg-density", "Image density", rootTarget, "--x-bg-size"),
     styleControl("bg-blur", "Image blur", rootTarget, "--x-bg-blur"),
+    styleControl("bg-video", "Background video", rootTarget, "--x-bg-video"),
     colorControl("bg-overlay", "Overlay colour", rootTarget, "--x-overlay"),
     styleControl("bg-overlay-opacity", "Overlay opacity", rootTarget, "--x-overlay-opacity", {
       kind: "number",

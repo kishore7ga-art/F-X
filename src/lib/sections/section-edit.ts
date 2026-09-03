@@ -176,6 +176,7 @@ const BACKGROUND_VARS = [
   "--x-overlay-opacity",
   "--x-bg-size",
   "--x-bg-blur",
+  "--x-bg-video",
 ] as const;
 const SHADOW_VARS = [
   "--x-shadow-x", "--x-shadow-y", "--x-shadow-blur", "--x-shadow-spread",
@@ -478,6 +479,7 @@ function writeStyles(
   const { body, keys } = ensureKeys(parts.bodyHtml, paths);
   if (keys.length === 0) return null;
 
+  let updatedBody = body;
   let styles = parseManagedStyles(parts.headCss);
   keys.forEach((key) => {
     Object.entries(props).forEach(([prop, value]) => {
@@ -488,10 +490,36 @@ function writeStyles(
     }
   });
 
+  // Handle background video in markup
+  if (props["--x-bg-video"] !== undefined) {
+    const videoUrl = props["--x-bg-video"]?.trim() || "";
+    updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/div>/gi, "");
+    if (videoUrl) {
+      const videoHtml = `<div class="xite-bg-video-container" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 0;"><video src="${videoUrl}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div></div>`;
+      updatedBody = updatedBody.replace(/(<(?:header|section|footer|div)[^>]*>)/i, (match) => {
+        let rootTag = match;
+        if (/style=["']([^"']*)["']/i.test(rootTag)) {
+          rootTag = rootTag.replace(/style=["']([^"']*)["']/i, (_m, s) => {
+            let ns = s;
+            if (!/position\s*:/i.test(ns)) ns += ";position:relative;";
+            if (!/overflow\s*:/i.test(ns)) ns += ";overflow:hidden;";
+            return `style="${ns}"`;
+          });
+        } else {
+          rootTag = rootTag.replace(/>$/, ' style="position:relative;overflow:hidden;">');
+        }
+        return `${rootTag}\n${videoHtml}`;
+      });
+    }
+  } else if (props["--x-bg-image"] || props["background-color"]) {
+    // Clear video container when image or colour is set
+    updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/div>/gi, "");
+  }
+
   return joinSectionCode({
     ...parts,
     headCss: writeManagedRegion(parts.headCss, styles),
-    bodyHtml: body,
+    bodyHtml: updatedBody,
   });
 }
 
