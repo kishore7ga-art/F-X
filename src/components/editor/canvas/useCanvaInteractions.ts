@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { SnapGuide, DistanceBadge } from "@/stores/useVisualCanvasStore";
+import { recomposeSectionCode } from "@/lib/section-runtime";
 
 export interface SelectedElementInfo {
   tag: string;
@@ -98,6 +99,29 @@ export function findTextEditableElement(target: HTMLElement | null): HTMLElement
 }
 
 /**
+ * Helper to compute a relative CSS selector path for an element within a container
+ */
+function getElementPath(el: HTMLElement, root: HTMLElement): string {
+  if (el === root) return "";
+  const parts: string[] = [];
+  let curr: HTMLElement | null = el;
+  while (curr && curr !== root) {
+    const parentEl: HTMLElement | null = curr.parentElement;
+    if (!parentEl) break;
+    const tag = curr.tagName.toLowerCase();
+    const siblings = Array.from(parentEl.children).filter((c): c is HTMLElement => c instanceof HTMLElement && c.tagName.toLowerCase() === tag);
+    if (siblings.length > 1) {
+      const idx = siblings.indexOf(curr) + 1;
+      parts.unshift(`${tag}:nth-of-type(${idx})`);
+    } else {
+      parts.unshift(tag);
+    }
+    curr = parentEl;
+  }
+  return parts.join(" > ");
+}
+
+/**
  * Strips editor-added attributes, temporary styles, and helper nodes from a cloned HTML tree
  */
 function sanitizeCleanDom(node: HTMLElement): string {
@@ -126,7 +150,10 @@ function sanitizeCleanDom(node: HTMLElement): string {
     (htmlEl.style as any).webkitUserSelect = "";
   });
 
-  return clone.innerHTML;
+  if (clone.classList.contains("section-canvas-box")) {
+    return clone.innerHTML;
+  }
+  return clone.outerHTML;
 }
 
 export function useCanvaInteractions({
@@ -138,6 +165,7 @@ export function useCanvaInteractions({
   const [selectedElement, setSelectedElement] = useState<SelectedElementInfo | null>(null);
   const [hoveredRect, setHoveredRect] = useState<{ rect: DOMRect; label: string } | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [distanceBadges, setDistanceBadges] = useState<DistanceBadge[]>([]);
@@ -146,6 +174,9 @@ export function useCanvaInteractions({
 
   const activeEditingElemRef = useRef<HTMLElement | null>(null);
   const activeEditingSectionIdxRef = useRef<number | null>(null);
+  const activeEditingSectionIdRef = useRef<string | null>(null);
+  const activeEditingPathRef = useRef<string | null>(null);
+  const activeEditingSecContainerRef = useRef<HTMLElement | null>(null);
   const originalTextRef = useRef<string>("");
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -214,10 +245,17 @@ export function useCanvaInteractions({
 
     const el = activeEditingElemRef.current;
     const secIdx = activeEditingSectionIdxRef.current;
+    const secId = activeEditingSectionIdRef.current;
+    const path = activeEditingPathRef.current;
+    const storedSecContainer = activeEditingSecContainerRef.current;
+
     if (!el || secIdx === null) {
       setIsEditingText(false);
+      setEditingSectionId(null);
       return;
     }
+
+    const newText = el.innerHTML;
 
     if (revert && originalTextRef.current) {
       el.innerHTML = originalTextRef.current;
@@ -238,26 +276,66 @@ export function useCanvaInteractions({
 
     activeEditingElemRef.current = null;
     activeEditingSectionIdxRef.current = null;
+    activeEditingSectionIdRef.current = null;
+    activeEditingPathRef.current = null;
+    activeEditingSecContainerRef.current = null;
     originalTextRef.current = "";
     setIsEditingText(false);
+    setEditingSectionId(null);
 
     if (!revert) {
-      // Find the section wrapper and commit changes to store
-      const secContainer = el.closest("[data-xite-section]") as HTMLElement | null;
-      if (secContainer) {
+      // Find the section wrapper in the live DOM
+      let secContainer = storedSecContainer && storedSecContainer.isConnected ? storedSecContainer : null;
+      if (!secContainer && secId && typeof document !== "undefined") {
+        secContainer = document.querySelector(`[data-xite-section="${secId}"]`) as HTMLElement | null;
+      }
+      if (!secContainer && el.isConnected) {
+        secContainer = el.closest("[data-xite-section]") as HTMLElement | null;
+      }
+
+      const sectionId = secId || secContainer?.getAttribute("data-xite-section");
+      const resolvedIdx = sectionId ? sections.findIndex((s) => s.id === sectionId) : -1;
+      const targetIdx = resolvedIdx !== -1 ? resolvedIdx : secIdx;
+
+      if (secContainer && targetIdx !== null && targetIdx >= 0 && targetIdx < sections.length) {
+        // If element was detached during an intermediate re-render, restore newText to the live element
+        if (!el.isConnected && path) {
+          try {
+            const liveEl = secContainer.querySelector(path) as HTMLElement | null;
+            if (liveEl) liveEl.innerHTML = newText;
+          } catch {}
+        }
+
         const canvasBox = (secContainer.querySelector(".section-canvas-box") ||
           secContainer.querySelector("header, section, footer, main") ||
           secContainer) as HTMLElement;
         const cleanHtml = sanitizeCleanDom(canvasBox);
         if (cleanHtml) {
-          onUpdateSectionCode(secIdx, cleanHtml);
+          onUpdateSectionCode(targetIdx, cleanHtml);
           showToast?.("Text updated");
         }
       }
     }
 
     refreshSelectionRect();
-  }, [onUpdateSectionCode, showToast, refreshSelectionRect]);
+  }, [sections, onUpdateSectionCode, showToast, refreshSelectionRect]);
+
+  // Global capture mousedown: committing active text edit before any click, selection or re-render occurs
+  useEffect(() => {
+    const handleDocumentMouseDown = (e: MouseEvent) => {
+      if (!activeEditingElemRef.current) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (activeEditingElemRef.current === target || activeEditingElemRef.current.contains(target))) {
+        return;
+      }
+      finishInlineTextEditing(false);
+    };
+
+    window.addEventListener("mousedown", handleDocumentMouseDown, true);
+    return () => {
+      window.removeEventListener("mousedown", handleDocumentMouseDown, true);
+    };
+  }, [finishInlineTextEditing]);
 
   /**
    * Activates inline contenteditable text editing with caret focus
@@ -286,9 +364,16 @@ export function useCanvaInteractions({
       return;
     }
 
+    const secContainer = element.closest("[data-xite-section]") as HTMLElement | null;
+    const secId = secContainer?.getAttribute("data-xite-section") || (sectionIndex >= 0 && sectionIndex < sections.length ? sections[sectionIndex].id : null);
+
     activeEditingElemRef.current = element;
     activeEditingSectionIdxRef.current = sectionIndex;
+    activeEditingSectionIdRef.current = secId;
+    activeEditingSecContainerRef.current = secContainer;
+    activeEditingPathRef.current = secContainer ? getElementPath(element, secContainer) : null;
     originalTextRef.current = element.innerHTML;
+    setEditingSectionId(secId);
     setIsEditingText(true);
 
     // Set contentEditable with high-visibility blue editing outline & glow
@@ -308,29 +393,16 @@ export function useCanvaInteractions({
     // Focus element
     element.focus();
 
-    // Place blinking caret precisely where user clicked
-    if (e && e.clientX && e.clientY && typeof document !== "undefined") {
-      try {
-        if ((document as any).caretRangeFromPoint) {
-          const range = (document as any).caretRangeFromPoint(e.clientX, e.clientY);
-          if (range) {
-            const sel = window.getSelection();
-            sel?.removeAllRanges();
-            sel?.addRange(range);
-          }
-        } else if ((document as any).caretPositionFromPoint) {
-          const pos = (document as any).caretPositionFromPoint(e.clientX, e.clientY);
-          if (pos) {
-            const range = document.createRange();
-            range.setStart(pos.offsetNode, pos.offset);
-            range.collapse(true);
-            const sel = window.getSelection();
-            sel?.removeAllRanges();
-            sel?.addRange(range);
-          }
-        }
-      } catch {}
-    }
+    // In double-click: select the element's text so the user can immediately type to replace or edit
+    try {
+      const sel = window.getSelection();
+      if (sel) {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    } catch {}
 
     // Key handlers: Escape reverts; Enter commits on single-line tags
     element.onkeydown = (keyEvent: KeyboardEvent) => {
@@ -378,31 +450,24 @@ export function useCanvaInteractions({
   }, []);
 
   /**
-   * 1. Click-to-Edit: clicking any text element activates inline text editing
+   * Single-click: does NOT hijack text editing, allowing natural text selection with mouse drag.
+   * If the user was editing text and clicks outside, commits and finishes editing.
    */
   const handleElementClick = useCallback((target: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
-    // If currently editing text and clicked inside it, let native cursor move
+    // If currently editing text and clicked inside it, let native cursor move / selection happen
     if (isEditingTarget(target)) {
-      e?.stopPropagation();
       return;
     }
 
-    // Find if user clicked a text-editable element
-    const textTarget = findTextEditableElement(target);
-    if (textTarget) {
-      activateTextEditing(textTarget, sectionIndex, e);
-      return;
-    }
-
-    // Otherwise, user clicked non-text background or wrapper
+    // If user was editing text and clicked outside, commit and finish
     if (activeEditingElemRef.current) {
-      finishInlineTextEditing();
+      finishInlineTextEditing(false);
     }
     setSelectedElement(null);
-  }, [isEditingTarget, findTextEditableElement, activateTextEditing, finishInlineTextEditing]);
+  }, [isEditingTarget, finishInlineTextEditing]);
 
   /**
-   * Double-click also activates text editing (or lets native word selection work inside active text)
+   * Double-click: activates inline text editing on any headline, paragraph, card text, button or link.
    */
   const handleElementDoubleClick = useCallback((target: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
     // If currently editing text and clicked inside it, let native word selection happen
@@ -804,6 +869,8 @@ export function useCanvaInteractions({
     handlePointerDragStart,
     finishInlineTextEditing,
     isEditingTarget,
+    editingSectionId,
+    isEditingSection: (idOrIdx: string | number) => typeof idOrIdx === "string" ? editingSectionId === idOrIdx : activeEditingSectionIdxRef.current === idOrIdx,
     setSelectedElement,
     setHoveredRect,
   };

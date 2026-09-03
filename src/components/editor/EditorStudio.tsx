@@ -206,6 +206,31 @@ function SaveStatusLine({
   );
 }
 
+interface SectionContentProps {
+  code: string;
+  sectionId: string;
+  isEditing: boolean;
+  canvasHtml: (code: string) => string;
+}
+
+const SectionContent = React.memo(function SectionContent({
+  code,
+  isEditing,
+  canvasHtml,
+}: SectionContentProps) {
+  const html = useMemo(() => canvasHtml(code), [code, canvasHtml]);
+  return (
+    <div
+      dangerouslySetInnerHTML={{ __html: html }}
+      style={{ display: "contents" }}
+    />
+  );
+}, (prev, next) => {
+  // If actively editing text in this section, NEVER touch or re-render its DOM
+  if (next.isEditing) return true;
+  return prev.code === next.code;
+});
+
 export function EditorStudio({
   subdomain = "greenfield",
   collegeName = "Greenfield University",
@@ -1820,8 +1845,13 @@ export function EditorStudio({
 
       {/* Main Studio Canvas Workspace */}
       <main
-        onClick={clearSelection}
-        className="flex-1 w-full flex flex-col items-stretch justify-start cursor-pointer min-h-screen bg-slate-100/90 px-4 sm:px-8 py-0"
+        onClick={() => {
+          if (inPlaceEditor.isEditingText) {
+            inPlaceEditor.finishInlineTextEditing(false);
+          }
+          clearSelection();
+        }}
+        className="flex-1 w-full flex flex-col items-stretch justify-start cursor-default min-h-screen bg-slate-100/90 px-4 sm:px-8 py-0"
       >
         <ResponsiveCanvas
             viewport={viewport}
@@ -1909,9 +1939,11 @@ export function EditorStudio({
                       }}
                       className="w-full relative transition-all group section-wrapper-container cursor-default"
                     >
-                      <div
-                        dangerouslySetInnerHTML={{ __html: canvasHtml(sec.code) }}
-                        style={{ display: "contents" }}
+                      <SectionContent
+                        code={sec.code}
+                        sectionId={sec.id}
+                        isEditing={inPlaceEditor.isEditingSection(sec.id)}
+                        canvasHtml={canvasHtml}
                       />
 
                       {/* This section occupies space and shows nothing */}
