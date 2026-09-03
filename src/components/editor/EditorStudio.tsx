@@ -219,8 +219,35 @@ const SectionContent = React.memo(function SectionContent({
   canvasHtml,
 }: SectionContentProps) {
   const html = useMemo(() => canvasHtml(code), [code, canvasHtml]);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    const playVideos = () => {
+      const videos = el.querySelectorAll<HTMLVideoElement>("video");
+      videos.forEach((v) => {
+        v.muted = true;
+        v.defaultMuted = true;
+        v.playsInline = true;
+        v.setAttribute("muted", "");
+        v.setAttribute("autoplay", "");
+        v.setAttribute("loop", "");
+        v.setAttribute("playsinline", "");
+        v.setAttribute("webkit-playsinline", "");
+        if (v.paused) {
+          v.play().catch(() => {});
+        }
+      });
+    };
+    playVideos();
+    const timer = setTimeout(playVideos, 200);
+    return () => clearTimeout(timer);
+  }, [html]);
+
   return (
     <div
+      ref={wrapperRef}
       dangerouslySetInnerHTML={{ __html: html }}
       style={{ display: "contents" }}
     />

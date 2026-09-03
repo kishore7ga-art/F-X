@@ -549,10 +549,11 @@ function writeStyles(
   // Handle background video in markup
   if (props["--x-bg-video"] !== undefined) {
     const videoUrl = props["--x-bg-video"]?.trim() || "";
-    updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/div>/gi, "");
+    updatedBody = updatedBody.replace(/<!--\s*xite-bg-video-start\s*-->[\s\S]*?<!--\s*xite-bg-video-end\s*-->/gi, "");
+    updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/video>(?:\s*<div[\s\S]*?<\/div>)?\s*<\/div>/gi, "");
     if (videoUrl) {
-      const videoHtml = `<div class="xite-bg-video-container" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 0;"><video src="${videoUrl}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div></div>`;
-      updatedBody = updatedBody.replace(/(<(?:header|section|footer|div)[^>]*>)/i, (match) => {
+      const videoHtml = `<!-- xite-bg-video-start --><div class="xite-bg-video-container" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 0;"><video src="${videoUrl}" autoplay loop muted playsinline webkit-playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div></div><!-- xite-bg-video-end -->`;
+      updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*>)/i, (match) => {
         let rootTag = match;
         if (/style=["']([^"']*)["']/i.test(rootTag)) {
           rootTag = rootTag.replace(/style=["']([^"']*)["']/i, (_m, s) => {
@@ -569,7 +570,8 @@ function writeStyles(
     }
   } else if (props["--x-bg-image"] || props["background-color"]) {
     // Clear video container when image or colour is set
-    updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/div>/gi, "");
+    updatedBody = updatedBody.replace(/<!--\s*xite-bg-video-start\s*-->[\s\S]*?<!--\s*xite-bg-video-end\s*-->/gi, "");
+    updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/video>(?:\s*<div[\s\S]*?<\/div>)?\s*<\/div>/gi, "");
   }
 
   // Handle background image in markup (both inline style and any background <img> or inner layer)
@@ -619,7 +621,8 @@ function writeStyles(
       });
 
       // 2. Remove video container
-      updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/div>/gi, "");
+      updatedBody = updatedBody.replace(/<!--\s*xite-bg-video-start\s*-->[\s\S]*?<!--\s*xite-bg-video-end\s*-->/gi, "");
+      updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/video>(?:\s*<div[\s\S]*?<\/div>)?\s*<\/div>/gi, "");
 
       // 3. Remove any background <img> elements
       updatedBody = updatedBody.replace(/<img[^>]*?(?:(?:absolute|inset-0)[^>]*?(?:object-cover|w-full)|(?:object-cover)[^>]*?(?:absolute|inset-0)|data-xite-bg-img)[^>]*?>/gi, "");

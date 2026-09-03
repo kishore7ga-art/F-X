@@ -238,16 +238,31 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
     const val = String(value || "").trim();
     const existingVideo = root.querySelector<HTMLVideoElement>(".xite-bg-video-container video");
     if (existingVideo) {
-      if (val) existingVideo.src = val;
-      else root.querySelector(".xite-bg-video-container")?.remove();
+      if (val) {
+        existingVideo.src = val;
+        existingVideo.muted = true;
+        existingVideo.defaultMuted = true;
+        existingVideo.playsInline = true;
+        existingVideo.play().catch(() => {});
+      } else {
+        root.querySelector(".xite-bg-video-container")?.remove();
+      }
     } else if (val) {
+      root.querySelector(".xite-bg-video-container")?.remove();
       const container = document.createElement("div");
       container.className = "xite-bg-video-container";
       container.style.cssText = "position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 0;";
-      container.innerHTML = `<video src="${val}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div>`;
+      container.innerHTML = `<video src="${val}" autoplay loop muted playsinline webkit-playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div>`;
       root.style.position = "relative";
       root.style.overflow = "hidden";
       root.insertBefore(container, root.firstChild);
+      const vid = container.querySelector("video");
+      if (vid) {
+        vid.muted = true;
+        vid.defaultMuted = true;
+        vid.playsInline = true;
+        vid.play().catch(() => {});
+      }
     }
   } else if (controlId === "bg-image-shadow") {
     root.style.setProperty("box-shadow", String(value || "none"), "important");
