@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
 import { ApiError, uploadImage } from "@/lib/api-client";
 import {
@@ -71,6 +71,7 @@ import { SectionToolbar } from "./SectionToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
 import { SectionVisualEditor } from "./SectionVisualEditor";
 import { ToolbarTestHarness } from "./ToolbarTestHarness";
+import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SectionPatch } from "@/lib/sections/section-edit";
 import { DrawerPanel } from "./DrawerPanel";
@@ -1714,6 +1715,15 @@ export function EditorStudio({
     return new URLSearchParams(window.location.search).has("toolbarDebug");
   });
 
+  /**
+   * One observer over every section, rather than one per section: sections
+   * mount and unmount as pages change, but this wraps all of them, so it
+   * only needs to be set up once. See `useMediaCleanupOnReplace` for why a
+   * section with a background/hero video needs this at all.
+   */
+  const canvasRootRef = useRef<HTMLDivElement | null>(null);
+  useMediaCleanupOnReplace(canvasRootRef);
+
   const isSectionPanelOpen = customToolbarState.isOpen && customToolbarState.sectionIndex !== null;
   const customToolbarSection = customToolbarState.sectionIndex !== null ? sections[customToolbarState.sectionIndex] ?? null : null;
 
@@ -1848,7 +1858,7 @@ export function EditorStudio({
             </div>
           ) : (
             /* Pure Section Rendering for Current Page */
-            <div className="w-full">
+            <div className="w-full" ref={canvasRootRef}>
               {sections.map((sec, idx) => {
                 const isHeader = sec.category === "navbar";
                 return (

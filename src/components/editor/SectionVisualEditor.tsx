@@ -8,6 +8,7 @@ import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { useCanvaInteractions, getElementLabel } from "./canvas/useCanvaInteractions";
 import { CanvaCanvasOverlay } from "./canvas/CanvaCanvasOverlay";
 import { useElementSelection } from "./canvas/useElementSelection";
+import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 
 interface SectionVisualEditorProps {
   isOpen: boolean;
@@ -69,6 +70,7 @@ export function SectionVisualEditor({
    */
   const contentRef = useRef<HTMLDivElement | null>(null);
   const { resolveSelectable } = useElementSelection(contentRef, section?.code ?? "");
+  useMediaCleanupOnReplace(contentRef);
 
   // A fresh section (or a fresh open) starts with nothing selected — the
   // previous selection may point at a node from a different section's DOM.
