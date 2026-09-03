@@ -1902,12 +1902,47 @@ export function EditorStudio({
                           // User is editing text inside this element: allow native caret/selection movements
                           return;
                         }
+
+                        // Allow testing menu bar links and buttons without hijacking with the toolbar
+                        const link = target.closest("a");
+                        if (link && !inPlaceEditor.isEditingText) {
+                          const href = link.getAttribute("href") || "";
+                          if (href.startsWith("#")) {
+                            const anchor = href.slice(1).trim().toLowerCase();
+                            if (anchor) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              // Smoothly scroll to matching section by id, category, or title
+                              const targetSec =
+                                document.getElementById(anchor) ||
+                                document.querySelector(`[id*="${anchor}"]`) ||
+                                sections.map((s, i) => ({ s, i })).find(({ s }) => {
+                                  const cat = (s.category || "").toLowerCase();
+                                  const tit = (s.title || "").toLowerCase();
+                                  return cat.includes(anchor) || tit.includes(anchor);
+                                });
+
+                              if (targetSec && "i" in targetSec) {
+                                const secDom = document.querySelector(`[data-xite-section="${targetSec.s.id}"]`);
+                                secDom?.scrollIntoView({ behavior: "smooth", block: "start" });
+                              } else if (targetSec && "scrollIntoView" in targetSec) {
+                                (targetSec as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+                              }
+                              return;
+                            }
+                          } else if (href.startsWith("/") || href.startsWith("./")) {
+                            const slug = canonicalSlug(href);
+                            if (slug && editor.pages.some((p) => canonicalSlug(p.slug) === slug)) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              editor.selectPage(slug);
+                              return;
+                            }
+                          }
+                        }
+
                         setActiveSectionIndex(idx);
                         inPlaceEditor.handleElementClick(target, idx, e);
-                        const btnTarget = target.closest("a, button");
-                        if (btnTarget && !inPlaceEditor.isEditingText && !inPlaceEditor.isEditingTarget(target)) {
-                          openCustomToolbar(idx);
-                        }
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
