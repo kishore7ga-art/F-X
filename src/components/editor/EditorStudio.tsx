@@ -70,6 +70,7 @@ import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { SectionToolbar } from "./SectionToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
 import { SectionVisualEditor } from "./SectionVisualEditor";
+import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SectionPatch } from "@/lib/sections/section-edit";
 import { DrawerPanel } from "./DrawerPanel";
@@ -1702,6 +1703,17 @@ export function EditorStudio({
    */
   const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
 
+  /**
+   * Gate for the temporary `ToolbarTestHarness` debug HUD — on by default in
+   * non-production builds, and reachable in any environment via `?toolbarDebug=1`
+   * so it can be checked on a preview/staging deploy without a rebuild.
+   */
+  const [toolbarDebugEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    if (process.env.NODE_ENV !== "production") return true;
+    return new URLSearchParams(window.location.search).has("toolbarDebug");
+  });
+
   const isSectionPanelOpen = customToolbarState.isOpen && customToolbarState.sectionIndex !== null;
   const customToolbarSection = customToolbarState.sectionIndex !== null ? sections[customToolbarState.sectionIndex] ?? null : null;
 
@@ -2169,6 +2181,16 @@ export function EditorStudio({
           onOpenVisualEditor={() => setIsVisualEditorOpen(true)}
           saveStatus={editor.saveStatus}
           saveError={editor.saveError}
+        />
+      )}
+
+      {isSectionPanelOpen && customToolbarSection && toolbarDebugEnabled && (
+        <ToolbarTestHarness
+          key={customToolbarSection.id}
+          section={customToolbarSection}
+          device={sectionDevice}
+          onPatch={handleSectionPatch}
+          selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
         />
       )}
 
