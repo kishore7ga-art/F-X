@@ -117,21 +117,20 @@ const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
   mobile: { label: "Mobile", Icon: Smartphone },
 };
 
-/** Maximum height for horizontal docks so the panel hugs its content without empty space. */
-const PANEL_MAX_HEIGHT = "min(38vh, 280px)";
+/** Width for vertical side docks. */
 const PANEL_WIDTH = "320px";
 
-/** Fixed positioning for whichever edge the dock is on — hugs content tightly. */
+/** Fixed positioning for whichever edge the dock is on — hugs content tightly with zero excess height. */
 function dockedStyle(dock: "bottom" | "top" | "left" | "right"): React.CSSProperties {
   switch (dock) {
     case "top":
-      return { top: 0, left: 0, right: 0, maxHeight: PANEL_MAX_HEIGHT };
+      return { top: 0, left: 0, right: 0 };
     case "left":
       return { left: 0, top: 0, bottom: 0, width: PANEL_WIDTH };
     case "right":
       return { right: 0, top: 0, bottom: 0, width: PANEL_WIDTH };
     default:
-      return { bottom: 0, left: 0, right: 0, maxHeight: PANEL_MAX_HEIGHT };
+      return { bottom: 0, left: 0, right: 0 };
   }
 }
 
@@ -482,6 +481,7 @@ export function SectionToolbar({
   };
 
   const saveMeta = SAVE_STATUS_META[saveStatus];
+  const isHorizontal = dockPosition === "top" || dockPosition === "bottom";
 
   return (
     <div
@@ -490,106 +490,170 @@ export function SectionToolbar({
       onClick={(event) => event.stopPropagation()}
       onMouseDown={(event) => event.stopPropagation()}
       onPointerDown={(event) => event.stopPropagation()}
-      className="fixed z-[99999] flex flex-col overflow-hidden border border-slate-200 bg-white shadow-[0_-8px_30px_rgba(15,23,42,0.12)]"
+      className={`fixed z-[99999] flex flex-col overflow-hidden bg-white/95 backdrop-blur-md transition-all ${
+        dockPosition === "top"
+          ? "border-b border-slate-200/90 shadow-md"
+          : dockPosition === "bottom"
+          ? "border-t border-slate-200/90 shadow-[0_-8px_30px_rgba(15,23,42,0.12)]"
+          : "border border-slate-200 shadow-xl"
+      }`}
       style={dockedStyle(dockPosition)}
     >
       {/* ── Header: the handful of actions that matter mid-edit ─────────── */}
-      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-slate-200 px-3.5 py-2">
-        <button
-          type="button"
-          onClick={onClose}
-          title="Back to the toolbar (Esc)"
-          aria-label="Deselect and return to the toolbar"
-          className="flex items-center gap-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+      <header className="flex shrink-0 items-center justify-between gap-2.5 border-b border-slate-200/80 px-3 py-1.5 bg-white">
+        {/* Left: Back + Category + Title + Divider + Embedded Group Tabs */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={onClose}
+            title="Back to the toolbar (Esc)"
+            aria-label="Deselect and return to the toolbar"
+            className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
 
-        <div className="flex min-w-0 items-baseline gap-2">
-          <p className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-cyan-600">
-            {schema.categoryLabel}
-          </p>
-          <h2 className="truncate text-[11px] font-bold text-slate-500" title={section.title}>
-            {section.title}
-            <span className="ml-1.5 font-semibold text-slate-300">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="rounded bg-cyan-50 px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-cyan-700 border border-cyan-200/60">
+              {schema.categoryLabel}
+            </span>
+            <h2 className="truncate text-[11px] font-bold text-slate-700 max-w-[130px] sm:max-w-[180px]" title={section.title}>
+              {section.title}
+            </h2>
+            <span className="text-[10px] font-semibold text-slate-400">
               {position.index + 1}/{position.total}
             </span>
-          </h2>
+          </div>
+
+          {/* Embedded Group Tabs in horizontal mode */}
+          {isHorizontal && schema.groups.length > 0 && (
+            <>
+              <div className="h-4 w-px bg-slate-200 shrink-0 hidden md:block" />
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+                {schema.groups.map((group) => {
+                  const active = group.id === activeGroup?.id;
+                  return (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => setActiveGroupId(group.id)}
+                      aria-pressed={active}
+                      className={`shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
+                        active
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                    >
+                      {group.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Device tabs. These drive the editor's real viewport, so the canvas
-            and the values being edited always describe the same width — the
-            alternative is a panel showing mobile values beside a desktop
-            preview, which is worse than having no device tabs at all. */}
-        <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-0.5">
-          {DEVICES.map((id) => {
-            const { label, Icon } = DEVICE_META[id];
-            const active = device === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => onDeviceChange(id)}
-                aria-pressed={active}
-                title={label}
-                className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition ${
-                  active ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </button>
-            );
-          })}
-        </div>
+        {/* Right: Devices + Actions + Reset + Save Status */}
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+          {/* Device switcher */}
+          <div className="flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5 border border-slate-200/60">
+            {DEVICES.map((id) => {
+              const { label, Icon } = DEVICE_META[id];
+              const active = device === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onDeviceChange(id)}
+                  aria-pressed={active}
+                  title={label}
+                  className={`flex items-center justify-center rounded-md p-1 transition cursor-pointer ${
+                    active ? "bg-white text-slate-900 shadow-xs" : "text-slate-400 hover:text-slate-700"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </button>
+              );
+            })}
+          </div>
 
-        <div className="ml-auto flex items-center gap-1">
+          <div className="h-4 w-px bg-slate-200 shrink-0" />
+
+          {/* Undo / Redo */}
           <button
             type="button"
             onClick={onUndo}
             disabled={!onUndo || !canUndo}
-            title="Undo"
+            title="Undo (Ctrl+Z)"
             aria-label="Undo"
-            className={`rounded-lg p-1.5 transition ${canUndo ? "text-slate-600 hover:bg-slate-100" : "cursor-not-allowed text-slate-300"}`}
+            className={`rounded-lg p-1 transition ${canUndo ? "text-slate-600 hover:bg-slate-100 cursor-pointer" : "cursor-not-allowed text-slate-300"}`}
           >
-            <Undo2 className="h-4 w-4" />
+            <Undo2 className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
             onClick={onRedo}
             disabled={!onRedo || !canRedo}
-            title="Redo"
+            title="Redo (Ctrl+Y)"
             aria-label="Redo"
-            className={`rounded-lg p-1.5 transition ${canRedo ? "text-slate-600 hover:bg-slate-100" : "cursor-not-allowed text-slate-300"}`}
+            className={`rounded-lg p-1 transition ${canRedo ? "text-slate-600 hover:bg-slate-100 cursor-pointer" : "cursor-not-allowed text-slate-300"}`}
           >
-            <Redo2 className="h-4 w-4" />
+            <Redo2 className="h-3.5 w-3.5" />
           </button>
+
+          {/* Delete Section */}
           {onDeleteSection && (
             <button
               type="button"
               onClick={onDeleteSection}
               title="Delete this section"
               aria-label="Delete this section"
-              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+              className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition cursor-pointer"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
-          {/* Overlay on Hero toggle button for Navbar/Header sections */}
+
+          {/* Overlay on Hero toggle button */}
           {(section.category === "navbar" || position.index === 0) && onToggleOverlay && (
             <button
               type="button"
               onClick={onToggleOverlay}
               title={isOverlaid ? "Detach header from hero" : "Overlay header on hero"}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition shadow-xs ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold transition shadow-xs cursor-pointer ${
                 isOverlaid
-                  ? "bg-cyan-600 text-white hover:bg-cyan-500 shadow-cyan-700/20"
+                  ? "bg-cyan-600 text-white hover:bg-cyan-500"
                   : "bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200"
               }`}
             >
-              <Layers className="h-3.5 w-3.5" />
-              <span>{isOverlaid ? "Overlaid on Hero" : "Overlay on Hero"}</span>
+              <Layers className="h-3 w-3" />
+              <span className="hidden sm:inline">{isOverlaid ? "Overlaid" : "Overlay on Hero"}</span>
             </button>
           )}
+
+          {/* Reset styling button inside header for horizontal mode */}
+          {isHorizontal && (
+            <button
+              type="button"
+              onClick={reset}
+              disabled={!canReset}
+              title={
+                canReset
+                  ? "Remove every style this toolbar has applied to this section. Text edits are not affected."
+                  : "This section has no toolbar styling to reset"
+              }
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10.5px] font-bold transition cursor-pointer ${
+                canReset
+                  ? "text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+                  : "cursor-not-allowed text-slate-300"
+              }`}
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span className="hidden md:inline">Reset</span>
+            </button>
+          )}
+
+          {/* Save Status */}
           <span
             role="status"
             title={saveStatus === "failed" && saveError ? saveError : undefined}
@@ -601,8 +665,8 @@ export function SectionToolbar({
         </div>
       </header>
 
-      {/* ── Group tabs ────────────────────────────────────────────────── */}
-      {schema.groups.length > 0 && (
+      {/* ── Vertical Group tabs (only when docked to left or right sidebar) ── */}
+      {!isHorizontal && schema.groups.length > 0 && (
         <div className="flex shrink-0 items-center justify-center gap-1.5 overflow-x-auto border-b border-slate-100 px-3 py-1.5 bg-slate-50/60">
           {schema.groups.map((group) => {
             const active = group.id === activeGroup?.id;
@@ -612,7 +676,7 @@ export function SectionToolbar({
                 type="button"
                 onClick={() => setActiveGroupId(group.id)}
                 aria-pressed={active}
-                className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-bold transition-all duration-150 ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
                   active ? "bg-slate-900 text-white shadow-sm ring-1 ring-slate-900" : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
                 }`}
               >
@@ -623,8 +687,8 @@ export function SectionToolbar({
         </div>
       )}
 
-      {/* ── The active group's controls ───────────────────────────────── */}
-      <div className="overflow-y-auto px-4 py-2.5 max-h-[190px]">
+      {/* ── Active Controls Row ───────────────────────────────────────── */}
+      <div className={`overflow-x-auto ${isHorizontal ? "px-3 py-1 bg-slate-50/50" : "overflow-y-auto px-4 py-2.5 max-h-[190px]"}`}>
         {schema.groups.length === 0 && (
           <p className="text-[11px] font-medium leading-relaxed text-slate-500">
             This section&rsquo;s markup offers nothing this toolbar can edit. Its text can still be
@@ -634,7 +698,7 @@ export function SectionToolbar({
 
         {/* Dedicated Single Horizontal Row Background Panel */}
         {activeGroup?.id === "background" && activeBackgroundControls ? (
-          <div className="py-1">
+          <div className="py-0.5">
             <SingleRowBackgroundPanel
               colorValue={activeBackgroundControls.color ? displayValue(activeBackgroundControls.color) : ""}
               onDraftColor={(val) => {
@@ -692,7 +756,7 @@ export function SectionToolbar({
             />
           </div>
         ) : activeGroup?.id === "buttons" && activeButtonControls ? (
-          <div className="py-1">
+          <div className="py-0.5">
             <SingleRowButtonPanel
               buttonCount={buttonCount}
               activeButtonIndex={activeButtonIndex}
@@ -760,31 +824,27 @@ export function SectionToolbar({
         ) : null}
       </div>
 
-      {/*
-        Reset, and only Reset.
-
-        Move Up / Move Down / Swap / Duplicate stay on the normal dock, one
-        Escape away — this panel only holds what has no equivalent there.
-        Reset is that: it belongs to the styling this panel writes.
-      */}
-      <footer className="flex shrink-0 justify-end border-t border-slate-100 px-3.5 py-1.5 bg-slate-50/50">
-        <button
-          type="button"
-          onClick={reset}
-          disabled={!canReset}
-          title={
-            canReset
-              ? "Remove every style this toolbar has applied to this section. Text edits are not affected, and this can be undone."
-              : "This section has no toolbar styling to reset"
-          }
-          className={`flex items-center gap-1.5 text-[10px] font-bold transition ${
-            canReset ? "text-slate-500 hover:text-rose-600" : "cursor-not-allowed text-slate-300"
-          }`}
-        >
-          <RotateCcw className="h-3 w-3" />
-          Reset styling
-        </button>
-      </footer>
+      {/* Footer Reset: only in vertical sidebar mode */}
+      {!isHorizontal && (
+        <footer className="flex shrink-0 justify-end border-t border-slate-100 px-3.5 py-1.5 bg-slate-50/50">
+          <button
+            type="button"
+            onClick={reset}
+            disabled={!canReset}
+            title={
+              canReset
+                ? "Remove every style this toolbar has applied to this section. Text edits are not affected, and this can be undone."
+                : "This section has no toolbar styling to reset"
+            }
+            className={`flex items-center gap-1.5 text-[10px] font-bold transition cursor-pointer ${
+              canReset ? "text-slate-500 hover:text-rose-600" : "cursor-not-allowed text-slate-300"
+            }`}
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset styling
+          </button>
+        </footer>
+      )}
     </div>
   );
 }

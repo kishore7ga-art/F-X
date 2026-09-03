@@ -48,14 +48,16 @@ export interface SingleRowBackgroundPanelProps {
 
 const QUICK_PALETTES = [
   { name: "White", hex: "#ffffff" },
-  { name: "Dark Slate", hex: "#0f172a" },
-  { name: "Navy", hex: "#1e3a8a" },
+  { name: "Charcoal Black", hex: "#18181b" },
+  { name: "Slate Gray", hex: "#52525b" },
+  { name: "Coral Red", hex: "#ef4444" },
+  { name: "Rose Pink", hex: "#ec4899" },
+  { name: "Vibrant Orange", hex: "#f97316" },
+  { name: "Warm Amber", hex: "#eab308" },
+  { name: "Emerald Green", hex: "#10b981" },
+  { name: "Sky Cyan", hex: "#06b6d4" },
   { name: "Royal Blue", hex: "#2563eb" },
-  { name: "Indigo", hex: "#4f46e5" },
-  { name: "Emerald", hex: "#059669" },
-  { name: "Sunset Amber", hex: "#d97706" },
-  { name: "Rose", hex: "#e11d48" },
-  { name: "Violet", hex: "#7c3aed" },
+  { name: "Electric Violet", hex: "#8b5cf6" },
 ];
 
 const BACKGROUND_DESIGNS = [
@@ -264,14 +266,15 @@ export function SingleRowBackgroundPanel({
       {/* ── 2. Background Colour Mode ────────────────────────────────────────── */}
       {mode === "color" && (
         <>
-          {/* Quick Palettes */}
+          {/* Quick Palettes (Squircle modern swatches matching Image 3) */}
           <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">
               Palettes
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               {QUICK_PALETTES.map((p) => {
                 const isSelected = colorHex.toLowerCase() === p.hex.toLowerCase();
+                const isWhite = p.hex.toLowerCase() === "#ffffff";
                 return (
                   <button
                     key={p.hex}
@@ -284,10 +287,12 @@ export function SingleRowBackgroundPanel({
                       onDraftColor(p.hex);
                       onCommitColor(p.hex);
                     }}
-                    className={`w-5 h-5 rounded-full border transition-transform ${
+                    className={`w-[22px] h-[22px] rounded-[6px] transition-all duration-150 cursor-pointer ${
+                      isWhite ? "border border-slate-300" : "border border-black/10"
+                    } ${
                       isSelected
-                        ? "scale-110 ring-2 ring-slate-900 border-white shadow-xs"
-                        : "border-slate-300 hover:scale-105"
+                        ? "ring-2 ring-slate-900 ring-offset-1 scale-105 shadow-sm"
+                        : "hover:scale-105 opacity-90 hover:opacity-100"
                     }`}
                     style={{ backgroundColor: p.hex }}
                   />
@@ -299,7 +304,7 @@ export function SingleRowBackgroundPanel({
           {/* Native Colour Picker + Hex Input */}
           <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
             <span className="text-[10.5px] font-bold text-slate-500">The colour</span>
-            <div className="relative w-6 h-6 rounded-full border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
+            <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
               <input
                 type="color"
                 value={colorHex}

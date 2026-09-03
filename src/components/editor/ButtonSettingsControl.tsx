@@ -175,7 +175,7 @@ export function SingleRowButtonPanel({
         {/* Background Swatch */}
         <div className="flex items-center gap-1.5" title="Button Background Colour">
           <span className="text-[10.5px] font-bold text-slate-500">Colour</span>
-          <div className="relative w-6 h-6 rounded-full border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
+          <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
             <input
               type="color"
               value={bgHex}
@@ -190,7 +190,7 @@ export function SingleRowButtonPanel({
         {/* Text Colour Swatch */}
         <div className="flex items-center gap-1.5" title="Button Text Colour">
           <span className="text-[10.5px] font-bold text-slate-500">Text</span>
-          <div className="relative w-6 h-6 rounded-full border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
+          <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
             <input
               type="color"
               value={textHex}
@@ -199,7 +199,7 @@ export function SingleRowButtonPanel({
               className="absolute -inset-2 w-10 h-10 cursor-pointer opacity-0"
             />
             <div
-              className="w-full h-full flex items-center justify-center font-black text-[10px] border"
+              className="w-full h-full flex items-center justify-center font-black text-[10px] rounded-[5px]"
               style={{
                 backgroundColor: textColorValue || "#ffffff",
                 color: textColorValue === "#ffffff" ? "#0f172a" : "#ffffff",

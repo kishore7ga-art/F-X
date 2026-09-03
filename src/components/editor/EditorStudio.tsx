@@ -1851,7 +1851,9 @@ export function EditorStudio({
           }
           clearSelection();
         }}
-        className="flex-1 w-full flex flex-col items-stretch justify-start cursor-default min-h-screen bg-slate-100/90 px-4 sm:px-8 py-0"
+        className={`flex-1 w-full flex flex-col items-stretch justify-start cursor-default min-h-screen bg-slate-100/90 px-4 sm:px-8 ${
+          dockPosition === "top" ? "pt-24 pb-8" : "pt-4 pb-24"
+        }`}
       >
         <ResponsiveCanvas
             viewport={viewport}
