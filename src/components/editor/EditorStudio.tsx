@@ -27,6 +27,7 @@ import {
   MapPin,
   Footprints,
   Megaphone,
+  HelpCircle,
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
@@ -129,6 +130,7 @@ const SECTION_CATEGORIES: ReadonlyArray<{
   { id: "gallery", name: "Gallery / Campus Life", description: "Photo gallery, campus infrastructure & student life", icon: Image },
   { id: "testimonials", name: "Student Testimonials", description: "Alumni reviews, student experiences & stories", icon: Quote },
   { id: "achievements", name: "Achievements & Awards", description: "National awards, sports trophies & rankings", icon: Trophy },
+  { id: "faq", name: "FAQ / Questions", description: "Frequently asked questions, admissions Q&A & accordion help", icon: HelpCircle },
   { id: "contact", name: "Contact / Enquiry Form", description: "Admissions helpdesk, address & contact form", icon: Mail },
   { id: "map", name: "Map & Location", description: "Interactive campus map, directions & transportation", icon: MapPin },
   { id: "footer", name: "Footer", description: "Bottom copyright, quick links & social icons", icon: Footprints },
