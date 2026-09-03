@@ -292,8 +292,34 @@ function expandBox(value: string): BoxValue {
  * which is the part that has to be right.
  */
 function authoredValue(node: ElementNode, prop: string): string | null {
-  if (prop.startsWith("--x-")) return null;
   const decls = parseDeclarations(getAttribute(node, "style") || "");
+
+  if (prop === "--x-bg-image") {
+    const bgImg = decls["background-image"];
+    if (bgImg) {
+      const match = bgImg.match(/url\(["']?([^"')]+)["']?\)/i);
+      if (match && isUsableImageUrl(match[1])) return match[1];
+    }
+    const bg = decls.background;
+    if (bg) {
+      const match = bg.match(/url\(["']?([^"')]+)["']?\)/i);
+      if (match && isUsableImageUrl(match[1])) return match[1];
+    }
+    const all = descendants(node);
+    for (const child of all) {
+      if (child.tag === "img") {
+        const cls = (getAttribute(child, "class") || "").toLowerCase();
+        const style = (getAttribute(child, "style") || "").toLowerCase();
+        const src = getAttribute(child, "src") || "";
+        if ((cls.includes("object-cover") || style.includes("cover") || cls.includes("w-full")) && isUsableImageUrl(src)) {
+          return src;
+        }
+      }
+    }
+    return null;
+  }
+
+  if (prop.startsWith("--x-")) return null;
 
   const direct = decls[prop];
   if (direct) return direct;
@@ -544,6 +570,60 @@ function writeStyles(
   } else if (props["--x-bg-image"] || props["background-color"]) {
     // Clear video container when image or colour is set
     updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/div>/gi, "");
+  }
+
+  // Handle background image in markup (both inline style and any background <img> or inner layer)
+  if (props["--x-bg-image"] !== undefined) {
+    const imgUrl = props["--x-bg-image"]?.trim() || "";
+    if (imgUrl) {
+      // 1. Update any existing url(...) in root element's style attribute
+      updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i, (match, pre, quote, styleContent) => {
+        let sc = styleContent;
+        if (/background-image\s*:\s*url\([^)]+\)/i.test(sc)) {
+          sc = sc.replace(/background-image\s*:\s*url\([^)]+\)/gi, `background-image: url('${imgUrl}')`);
+        } else if (/url\([^)]+\)/i.test(sc)) {
+          sc = sc.replace(/url\([^)]+\)/gi, `url('${imgUrl}')`);
+        } else {
+          sc = sc.replace(/;?\s*$/, `; background-image: url('${imgUrl}'); background-size: cover; background-position: center;`);
+        }
+        return `${pre}${sc}${quote}`;
+      });
+
+      // 2. Update any background <img> tag if the section uses an img element
+      updatedBody = updatedBody.replace(/(<img[^>]*src=["'])[^"']+(["'][^>]*(?:object-cover|w-full|h-full|absolute|inset-0)[^>]*>)/gi, `$1${imgUrl}$2`);
+      updatedBody = updatedBody.replace(/(<img[^>]*(?:object-cover|w-full|h-full|absolute|inset-0)[^>]*src=["'])[^"']+(["'][^>]*>)/gi, `$1${imgUrl}$2`);
+
+      // 3. Update any inner container with background-image
+      updatedBody = updatedBody.replace(/(style=(["'])[\s\S]*?background(?:-image)?\s*:\s*[\s\S]*?url\()[^)]+(\)[\s\S]*?\2)/gi, `$1'${imgUrl}'$3`);
+    } else {
+      // Cleared image
+      updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i, (match, pre, quote, styleContent) => {
+        let sc = styleContent
+          .replace(/background-image\s*:\s*url\([^)]+\);?/gi, "")
+          .replace(/background-size\s*:\s*[^;]+;?/gi, "")
+          .replace(/background-position\s*:\s*[^;]+;?/gi, "")
+          .replace(/background-repeat\s*:\s*[^;]+;?/gi, "");
+        return `${pre}${sc}${quote}`;
+      });
+    }
+  }
+
+  // Handle background color in markup
+  if (props["background-color"] !== undefined) {
+    const bgColor = props["background-color"]?.trim() || "";
+    if (bgColor) {
+      updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i, (match, pre, quote, styleContent) => {
+        let sc = styleContent;
+        if (/background-color\s*:\s*[^;]+/i.test(sc)) {
+          sc = sc.replace(/background-color\s*:\s*[^;]+/gi, `background-color: ${bgColor}`);
+        } else if (/background\s*:\s*#[0-9a-f]{3,8}/i.test(sc)) {
+          sc = sc.replace(/background\s*:\s*#[0-9a-f]{3,8}/gi, `background: ${bgColor}`);
+        } else {
+          sc = sc.replace(/;?\s*$/, `; background-color: ${bgColor};`);
+        }
+        return `${pre}${sc}${quote}`;
+      });
+    }
   }
 
   return joinSectionCode({

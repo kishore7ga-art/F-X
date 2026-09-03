@@ -161,27 +161,27 @@ export function SingleRowBackgroundPanel({
     if (!file) return;
     setIsUploading(true);
     try {
-      // 1. Upload to server first! Server returns clean /uploads/... URL immediately
-      const { url } = await uploadImage(file);
-      if (url) {
-        onDraftImage(url);
-        onCommitImage(url);
-        return;
+      let finalUrl = "";
+      try {
+        const res = await uploadImage(file);
+        if (res?.url) finalUrl = res.url;
+      } catch (uploadErr) {
+        console.warn("[upload] Server upload failed, using compressed local preview:", uploadErr);
       }
-    } catch (uploadErr) {
-      console.warn("[upload] Server upload failed, using compressed local preview:", uploadErr);
-    }
 
-    try {
-      // 2. Fallback only if offline/error: compress to max 800px (~35KB, well under Chromium 2MB limit)
-      const compressedDataUrl = await compressImage(file, 800);
-      onDraftImage(compressedDataUrl);
-      onCommitImage(compressedDataUrl);
-    } catch (compressErr) {
-      console.error("[upload] Image processing failed:", compressErr);
+      if (!finalUrl) {
+        finalUrl = await compressImage(file, 800);
+      }
+
+      if (finalUrl) {
+        onDraftImage(finalUrl);
+        onCommitImage(finalUrl);
+      }
+    } catch (err) {
+      console.error("[upload] Image processing failed:", err);
     } finally {
       setIsUploading(false);
-      e.target.value = "";
+      if (e.target) e.target.value = "";
     }
   };
 

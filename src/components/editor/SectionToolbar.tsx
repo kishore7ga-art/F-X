@@ -142,6 +142,84 @@ const SAVE_STATUS_META: Record<SaveStatus, { color: string; text: string }> = {
   idle: { color: "#94a3b8", text: "No changes" },
 };
 
+function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, value: ControlValue) {
+  const root = (secEl.querySelector(".section-canvas-box > *") ||
+                secEl.querySelector("header, section, footer, main") ||
+                secEl.firstElementChild?.firstElementChild ||
+                secEl) as HTMLElement;
+
+  if (controlId === "bg-color") {
+    const val = String(value || "");
+    root.style.setProperty("background-color", val, "important");
+    const innerBg = root.querySelector<HTMLElement>(".bg-layer, [class*='bg-'], [style*='background']");
+    if (innerBg && innerBg !== root && !innerBg.closest("button, a, .card, [class*='card']")) {
+      innerBg.style.setProperty("background-color", val, "important");
+    }
+  } else if (controlId === "bg-image") {
+    const val = String(value || "").trim();
+    if (isUsableImageUrl(val)) {
+      const cssUrl = `url("${val}")`;
+      root.style.setProperty("background-image", cssUrl, "important");
+      root.style.setProperty("background-size", "cover", "important");
+      root.style.setProperty("background-position", "center", "important");
+      root.style.setProperty("background-repeat", "no-repeat", "important");
+
+      // Check for <img> element used as section background
+      const allImgs = Array.from(root.querySelectorAll<HTMLImageElement>("img"));
+      for (const img of allImgs) {
+        const cls = (img.className || "").toLowerCase();
+        const style = img.getAttribute("style") || "";
+        const parentStyle = img.parentElement?.getAttribute("style") || "";
+        const parentCls = (img.parentElement?.className || "").toLowerCase();
+        if (
+          cls.includes("object-cover") ||
+          cls.includes("w-full") ||
+          style.includes("cover") ||
+          parentStyle.includes("absolute") ||
+          parentCls.includes("absolute") ||
+          img.hasAttribute("data-xite-bg-img")
+        ) {
+          img.src = val;
+          break;
+        }
+      }
+
+      // Check for inner background container
+      const innerBg = root.querySelector<HTMLElement>(
+        "[style*='background-image'], [style*='background:'], [class*='bg-cover']"
+      );
+      if (innerBg && innerBg !== root && !innerBg.closest("button, a, .card, [class*='card']")) {
+        innerBg.style.setProperty("background-image", cssUrl, "important");
+        innerBg.style.setProperty("background-size", "cover", "important");
+        innerBg.style.setProperty("background-position", "center", "important");
+      }
+    } else {
+      root.style.removeProperty("background-image");
+    }
+  } else if (controlId === "bg-video") {
+    const val = String(value || "").trim();
+    const existingVideo = root.querySelector<HTMLVideoElement>(".xite-bg-video-container video");
+    if (existingVideo) {
+      if (val) existingVideo.src = val;
+      else root.querySelector(".xite-bg-video-container")?.remove();
+    } else if (val) {
+      const container = document.createElement("div");
+      container.className = "xite-bg-video-container";
+      container.style.cssText = "position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 0;";
+      container.innerHTML = `<video src="${val}" autoplay loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div>`;
+      root.style.position = "relative";
+      root.style.overflow = "hidden";
+      root.insertBefore(container, root.firstChild);
+    }
+  } else if (controlId === "bg-image-shadow") {
+    root.style.setProperty("box-shadow", String(value || "none"), "important");
+  } else if (controlId === "bg-image-density") {
+    root.style.setProperty("background-size", String(value || "cover"), "important");
+  } else if (controlId === "bg-image-blur") {
+    root.style.setProperty("filter", value && value !== "0px" ? `blur(${value})` : "none", "important");
+  }
+}
+
 export function SectionToolbar({
   section,
   position,
@@ -300,18 +378,7 @@ export function SectionToolbar({
       try {
         const secEl = document.querySelector(`[data-xite-section="${section.id}"]`) as HTMLElement | null;
         if (secEl) {
-          const rootInner = (secEl.querySelector("header, section, footer, main, div") || secEl) as HTMLElement;
-          if (control.id === "bg-color") {
-            rootInner.style.backgroundColor = String(value);
-          } else if (control.id === "bg-image") {
-            if (isUsableImageUrl(value as string)) {
-              rootInner.style.backgroundImage = `url("${value}")`;
-              rootInner.style.backgroundSize = "cover";
-              rootInner.style.backgroundPosition = "center";
-            } else {
-              rootInner.style.backgroundImage = "";
-            }
-          }
+          applyCanvasBackgroundDirectly(secEl, control.id, value);
         }
       } catch {}
 
@@ -332,6 +399,13 @@ export function SectionToolbar({
    */
   const commitDebounced = useCallback(
     (control: Control, value: string, delay = 300) => {
+      try {
+        const secEl = document.querySelector(`[data-xite-section="${section.id}"]`) as HTMLElement | null;
+        if (secEl) {
+          applyCanvasBackgroundDirectly(secEl, control.id, value);
+        }
+      } catch {}
+
       const key = controlValueKey(control);
       setDrafts((current) => ({ ...current, [key]: value }));
       clearTimeout(timers.current[key]);
@@ -345,7 +419,7 @@ export function SectionToolbar({
         });
       }, delay);
     },
-    [commit],
+    [commit, section.id],
   );
 
   const valueOf = (control: Control): ControlReading =>

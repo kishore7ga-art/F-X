@@ -495,3 +495,42 @@ describe("header overlay — header floats transparently over hero", () => {
   });
 });
 
+describe("background image & color markup sync", () => {
+  it("syncs new background image to both managed CSS and inline markup style", () => {
+    const heroCode = `<section style="background:#0f172a;color:#ffffff;padding:72px 40px;"><div class="container"><h1>Hero</h1></div></section>`;
+    const s = { ...section(heroCode, "hero"), category: "hero" as const };
+    const schema = buildSectionSchema(s);
+    const bgImageControl = schema.groups.find((g) => g.id === "background")?.controls.find((c) => c.id === "bg-image")!;
+
+    const patch = applyControl(s, bgImageControl, "desktop", "https://api.webxite.org/uploads/car.jpg");
+    assert.ok(patch?.code);
+    assert.ok(patch.code.includes("background-image:url(\"https://api.webxite.org/uploads/car.jpg\") !important"));
+    assert.ok(patch.code.includes("background-image: url('https://api.webxite.org/uploads/car.jpg')"));
+  });
+
+  it("updates existing background URL in markup when a new image is applied", () => {
+    const heroWithImage = `<section style="background: url('https://old-image.com/old.jpg') center/cover; color:#fff;"><h1>Hero</h1></section>`;
+    const s = { ...section(heroWithImage, "hero"), category: "hero" as const };
+    const schema = buildSectionSchema(s);
+    const bgImageControl = schema.groups.find((g) => g.id === "background")?.controls.find((c) => c.id === "bg-image")!;
+
+    const patch = applyControl(s, bgImageControl, "desktop", "https://api.webxite.org/uploads/new.jpg");
+    assert.ok(patch?.code);
+    assert.ok(!patch.code.includes("https://old-image.com/old.jpg"));
+    assert.ok(patch.code.includes("https://api.webxite.org/uploads/new.jpg"));
+  });
+
+  it("syncs background color to both managed CSS and markup", () => {
+    const heroCode = `<section style="background-color:#0f172a;color:#ffffff;"><h1>Hero</h1></section>`;
+    const s = { ...section(heroCode, "hero"), category: "hero" as const };
+    const schema = buildSectionSchema(s);
+    const bgColorControl = schema.groups.find((g) => g.id === "background")?.controls.find((c) => c.id === "bg-color")!;
+
+    const patch = applyControl(s, bgColorControl, "desktop", "#ef4444");
+    assert.ok(patch?.code);
+    assert.ok(patch.code.includes("background-color:#ef4444 !important"));
+    assert.ok(patch.code.includes("background-color: #ef4444"));
+  });
+});
+
+
