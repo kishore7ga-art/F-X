@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { X, Layers, Check, Move } from "lucide-react";
 import type { ViewportState } from "@/lib/viewport-presets";
 import type { EditorThemeId, EditorFontId } from "@/lib/editor-themes";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { useCanvaInteractions, getElementLabel } from "./canvas/useCanvaInteractions";
 import { CanvaCanvasOverlay } from "./canvas/CanvaCanvasOverlay";
+import { useElementSelection } from "./canvas/useElementSelection";
 
 interface SectionVisualEditorProps {
   isOpen: boolean;
@@ -19,16 +20,6 @@ interface SectionVisualEditorProps {
   /** The same tokenize+render pipeline the main canvas and the published site use. */
   canvasHtml: (code: string) => string;
 }
-
-/**
- * Elements a click can select for repositioning.
- *
- * Kept close to the tag list `handleElementDoubleClick` already resolves text
- * edits against, so clicking a button selects the button rather than the
- * icon glyph or text run nested inside it.
- */
-const SELECTABLE_SELECTOR =
-  "button, a, img, svg, h1, h2, h3, h4, h5, h6, p, li, label, figcaption, [data-card], .card";
 
 /**
  * A full-screen, single-section canvas: exactly one section rendered alone,
@@ -68,6 +59,16 @@ export function SectionVisualEditor({
 
   const { setSelectedElement, setHoveredRect, isEditingText, selectedElement, finishInlineTextEditing } =
     inPlaceEditor;
+
+  /**
+   * Points at the `dangerouslySetInnerHTML` wrapper, not the outer
+   * `[data-xite-section]` div — its children are exactly the section's
+   * parsed top-level elements, which is what a probed `ElementPath` indexes
+   * into. The outer div also holds the boundary badge and the guide
+   * `<style>` tag as siblings, so indexing from *it* would be off by two.
+   */
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const { resolveSelectable } = useElementSelection(contentRef, section?.code ?? "");
 
   // A fresh section (or a fresh open) starts with nothing selected — the
   // previous selection may point at a node from a different section's DOM.
@@ -112,18 +113,21 @@ export function SectionVisualEditor({
         return;
       }
 
-      const resolved = raw.closest(SELECTABLE_SELECTOR) as HTMLElement | null;
-      const target = resolved && container.contains(resolved) ? resolved : raw;
+      const hit = resolveSelectable(raw, container);
+      if (!hit) {
+        setSelectedElement(null);
+        return;
+      }
       e.stopPropagation();
       setSelectedElement({
-        tag: target.tagName.toLowerCase(),
-        label: getElementLabel(target),
-        rect: target.getBoundingClientRect(),
-        element: target,
+        tag: hit.element.tagName.toLowerCase(),
+        label: hit.label || getElementLabel(hit.element),
+        rect: hit.element.getBoundingClientRect(),
+        element: hit.element,
         sectionIndex: 0,
       });
     },
-    [isEditingText, setSelectedElement],
+    [isEditingText, setSelectedElement, resolveSelectable],
   );
 
   /**
@@ -141,19 +145,19 @@ export function SectionVisualEditor({
       const raw = e.target as HTMLElement;
       if (raw === container) return;
 
-      const resolved = raw.closest(SELECTABLE_SELECTOR) as HTMLElement | null;
-      const target = resolved && container.contains(resolved) ? resolved : raw;
+      const hit = resolveSelectable(raw, container);
+      if (!hit) return;
 
       setSelectedElement({
-        tag: target.tagName.toLowerCase(),
-        label: getElementLabel(target),
-        rect: target.getBoundingClientRect(),
-        element: target,
+        tag: hit.element.tagName.toLowerCase(),
+        label: hit.label || getElementLabel(hit.element),
+        rect: hit.element.getBoundingClientRect(),
+        element: hit.element,
         sectionIndex: 0,
       });
-      inPlaceEditor.handlePointerDragStart(e, target, 0);
+      inPlaceEditor.handlePointerDragStart(e, hit.element, 0);
     },
-    [isEditingText, setSelectedElement, inPlaceEditor],
+    [isEditingText, setSelectedElement, inPlaceEditor, resolveSelectable],
   );
 
   const handleCanvasMouseOver = useCallback(
@@ -162,11 +166,14 @@ export function SectionVisualEditor({
       const container = e.currentTarget as HTMLElement;
       const raw = e.target as HTMLElement;
       if (raw === container) return;
-      const resolved = raw.closest(SELECTABLE_SELECTOR) as HTMLElement | null;
-      const target = resolved && container.contains(resolved) ? resolved : raw;
-      setHoveredRect({ rect: target.getBoundingClientRect(), label: getElementLabel(target) });
+      const hit = resolveSelectable(raw, container);
+      if (!hit) {
+        setHoveredRect(null);
+        return;
+      }
+      setHoveredRect({ rect: hit.element.getBoundingClientRect(), label: hit.label || getElementLabel(hit.element) });
     },
-    [isEditingText, inPlaceEditor.isDragging, setHoveredRect],
+    [isEditingText, inPlaceEditor.isDragging, setHoveredRect, resolveSelectable],
   );
 
   const handleCanvasMouseLeave = useCallback(() => {
@@ -283,6 +290,7 @@ export function SectionVisualEditor({
               }
             `}</style>
             <div
+              ref={contentRef}
               dangerouslySetInnerHTML={{ __html: canvasHtml(section.code) }}
               style={{ display: "contents" }}
             />
