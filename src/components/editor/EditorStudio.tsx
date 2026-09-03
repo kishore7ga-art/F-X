@@ -1865,10 +1865,15 @@ export function EditorStudio({
                   <React.Fragment key={sec.id}>
                     <div
                       onClickCapture={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (inPlaceEditor.isEditingTarget(target)) {
+                          // User is editing text inside this element: allow native caret/selection movements
+                          return;
+                        }
                         setActiveSectionIndex(idx);
-                        inPlaceEditor.handleElementClick(e.target as HTMLElement, idx, e);
-                        const btnTarget = (e.target as HTMLElement).closest("a, button");
-                        if (btnTarget) {
+                        inPlaceEditor.handleElementClick(target, idx, e);
+                        const btnTarget = target.closest("a, button");
+                        if (btnTarget && !inPlaceEditor.isEditingText && !inPlaceEditor.isEditingTarget(target)) {
                           openCustomToolbar(idx);
                         }
                       }}
@@ -1876,7 +1881,11 @@ export function EditorStudio({
                         e.stopPropagation();
                       }}
                       onDoubleClickCapture={(e) => {
-                        inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
+                        const target = e.target as HTMLElement;
+                        if (inPlaceEditor.isEditingTarget(target)) {
+                          return;
+                        }
+                        inPlaceEditor.handleElementDoubleClick(target, idx, e);
                       }}
                       onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
                       data-xite-section={sec.id}

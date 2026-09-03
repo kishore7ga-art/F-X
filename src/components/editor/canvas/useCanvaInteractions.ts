@@ -43,6 +43,61 @@ export function getElementLabel(el: HTMLElement): string {
 }
 
 /**
+ * Detects if an element is text-editable and finds the most specific text node
+ */
+export function findTextEditableElement(target: HTMLElement | null): HTMLElement | null {
+  if (!target) return null;
+
+  // Ignore structural wrappers, form inputs, and media elements
+  const nonTextTags = new Set([
+    "SECTION", "HEADER", "FOOTER", "MAIN", "BODY", "HTML",
+    "IMG", "VIDEO", "AUDIO", "CANVAS", "SVG", "PATH", "CIRCLE", "RECT", "POLYGON", "G",
+    "INPUT", "TEXTAREA", "SELECT", "IFRAME"
+  ]);
+  if (nonTextTags.has(target.tagName.toUpperCase())) return null;
+
+  // 1. Direct standard text elements
+  const directText = target.closest<HTMLElement>(
+    "h1, h2, h3, h4, h5, h6, p, blockquote, figcaption, label, span, small, strong, em, b, i, u, s, cite, td, th"
+  );
+  if (directText) return directText;
+
+  // 2. Buttons & links (interactive text elements)
+  const actionText = target.closest<HTMLElement>("button, a, [data-badge]");
+  if (actionText) {
+    const innerText = actionText.querySelector<HTMLElement>("span, p, h1, h2, h3, h4, h5, h6");
+    if (innerText && actionText.contains(innerText)) {
+      return innerText;
+    }
+    return actionText;
+  }
+
+  // 3. If target is a DIV or LI containing text
+  const tag = target.tagName.toUpperCase();
+  if (tag === "DIV" || tag === "LI") {
+    const text = (target.textContent || "").trim();
+    if (text.length > 0) {
+      const inner = target.querySelector<HTMLElement>(
+        "h1, h2, h3, h4, h5, h6, p, span, small, strong, em, b, i, [data-badge]"
+      );
+      if (inner && target.contains(inner) && inner.children.length === 0) {
+        return inner;
+      }
+      if (target.children.length <= 2) {
+        return target;
+      }
+    }
+  }
+
+  // 4. Fallback: if target has non-empty text content and 0 child elements
+  if ((target.textContent || "").trim().length > 0 && target.children.length === 0) {
+    return target;
+  }
+
+  return null;
+}
+
+/**
  * Strips editor-added attributes, temporary styles, and helper nodes from a cloned HTML tree
  */
 function sanitizeCleanDom(node: HTMLElement): string {
@@ -92,6 +147,7 @@ export function useCanvaInteractions({
   const activeEditingElemRef = useRef<HTMLElement | null>(null);
   const activeEditingSectionIdxRef = useRef<number | null>(null);
   const originalTextRef = useRef<string>("");
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dragTargetRef = useRef<{
     element: HTMLElement;
@@ -151,6 +207,11 @@ export function useCanvaInteractions({
    * Finish inline editing: clean up styles and commit HTML to persistent project store
    */
   const finishInlineTextEditing = useCallback((revert = false) => {
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+
     const el = activeEditingElemRef.current;
     const secIdx = activeEditingSectionIdxRef.current;
     if (!el || secIdx === null) {
@@ -184,7 +245,9 @@ export function useCanvaInteractions({
       // Find the section wrapper and commit changes to store
       const secContainer = el.closest("[data-xite-section]") as HTMLElement | null;
       if (secContainer) {
-        const canvasBox = (secContainer.querySelector(".section-canvas-box") || secContainer) as HTMLElement;
+        const canvasBox = (secContainer.querySelector(".section-canvas-box") ||
+          secContainer.querySelector("header, section, footer, main") ||
+          secContainer) as HTMLElement;
         const cleanHtml = sanitizeCleanDom(canvasBox);
         if (cleanHtml) {
           onUpdateSectionCode(secIdx, cleanHtml);
@@ -197,55 +260,56 @@ export function useCanvaInteractions({
   }, [onUpdateSectionCode, showToast, refreshSelectionRect]);
 
   /**
-   * 1. Native Double-Click Inline Editing (contentEditable with subtle text cursor, no blue frame)
+   * Activates inline contenteditable text editing with caret focus
    */
-  const handleElementDoubleClick = useCallback((target: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+  const activateTextEditing = useCallback((element: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
+    if (!element) return;
+
+    // Prevent default navigation if element is an <a> or <button>
+    if (element.tagName === "A" || element.closest("a")) {
+      e?.preventDefault();
     }
 
-    // If clicking structural wrappers or media, ignore
-    if (["SECTION", "HEADER", "FOOTER", "MAIN", "IMG", "SVG", "PATH"].includes(target.tagName)) return;
-
-    // Find closest editable text node
-    let textElem: HTMLElement | null = target.closest(
-      "h1, h2, h3, h4, h5, h6, p, button, a, blockquote, li, label, figcaption, span, small, strong, em, [data-badge]"
-    ) as HTMLElement | null;
-
-    if (!textElem) {
-      textElem = target;
+    // Clear any pending blur timeout
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
     }
 
-    // Finish any prior edit
-    if (activeEditingElemRef.current && activeEditingElemRef.current !== textElem) {
+    // Finish any prior edit on a DIFFERENT element
+    if (activeEditingElemRef.current && activeEditingElemRef.current !== element) {
       finishInlineTextEditing();
     }
 
-    activeEditingElemRef.current = textElem;
+    // If already editing this exact element, keep it active
+    if (activeEditingElemRef.current === element && element.isContentEditable) {
+      return;
+    }
+
+    activeEditingElemRef.current = element;
     activeEditingSectionIdxRef.current = sectionIndex;
-    originalTextRef.current = textElem.innerHTML;
+    originalTextRef.current = element.innerHTML;
     setIsEditingText(true);
 
-    // Set contentEditable with clear blue visual outline so user knows they're editing
-    textElem.classList.add("xite-text-editing");
-    textElem.setAttribute("contenteditable", "true");
-    textElem.contentEditable = "true";
+    // Set contentEditable with high-visibility blue editing outline & glow
+    element.classList.add("xite-text-editing");
+    element.setAttribute("contenteditable", "true");
+    element.contentEditable = "true";
 
-    textElem.style.outline = "2px solid #3b82f6";
-    textElem.style.outlineOffset = "3px";
-    textElem.style.borderRadius = "4px";
-    textElem.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.2)";
-    textElem.style.cursor = "text";
-    textElem.style.caretColor = "#2563eb";
-    textElem.style.userSelect = "text";
-    (textElem.style as any).webkitUserSelect = "text";
+    element.style.outline = "2px solid #3b82f6";
+    element.style.outlineOffset = "3px";
+    element.style.borderRadius = "4px";
+    element.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.25)";
+    element.style.cursor = "text";
+    element.style.caretColor = "#2563eb";
+    element.style.userSelect = "text";
+    (element.style as any).webkitUserSelect = "text";
 
-    // Programmatically focus the element
-    textElem.focus();
+    // Focus element
+    element.focus();
 
     // Place blinking caret precisely where user clicked
-    if (e && e.clientX && e.clientY) {
+    if (e && e.clientX && e.clientY && typeof document !== "undefined") {
       try {
         if ((document as any).caretRangeFromPoint) {
           const range = (document as any).caretRangeFromPoint(e.clientX, e.clientY);
@@ -269,51 +333,89 @@ export function useCanvaInteractions({
     }
 
     // Key handlers: Escape reverts; Enter commits on single-line tags
-    textElem.onkeydown = (keyEvent: KeyboardEvent) => {
+    element.onkeydown = (keyEvent: KeyboardEvent) => {
       if (keyEvent.key === "Escape") {
         keyEvent.preventDefault();
         keyEvent.stopPropagation();
-        textElem?.blur();
+        element.blur();
         finishInlineTextEditing(true);
         return;
       }
       if (keyEvent.key === "Enter") {
-        const tag = textElem!.tagName.toLowerCase();
-        const isSingleLine = ["h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "span", "label"].includes(tag) ||
-          textElem!.classList.contains("badge") ||
-          textElem!.getAttribute("data-badge") !== null;
+        const tag = element.tagName.toLowerCase();
+        const isSingleLine = ["h1", "h2", "h3", "h4", "h5", "h6", "button", "a", "span", "label", "th", "td"].includes(tag) ||
+          element.classList.contains("badge") ||
+          element.getAttribute("data-badge") !== null;
         if (isSingleLine && !keyEvent.shiftKey) {
           keyEvent.preventDefault();
           keyEvent.stopPropagation();
-          textElem?.blur();
+          element.blur();
           finishInlineTextEditing(false);
         }
       }
     };
 
-    // CRITICAL: onBlur saves the edit to the persistent project store
-    textElem.onblur = () => {
-      finishInlineTextEditing(false);
+    // On blur: small debounce to allow intra-element focus transitions without premature cancel
+    element.onblur = () => {
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = setTimeout(() => {
+        if (activeEditingElemRef.current === element) {
+          const active = typeof document !== "undefined" ? document.activeElement : null;
+          if (active !== element && !element.contains(active)) {
+            finishInlineTextEditing(false);
+          }
+        }
+      }, 180);
     };
   }, [finishInlineTextEditing]);
 
   /**
-   * Single-click: clean canvas without persistent outer blue selection boxes or bounding overlays
+   * Check if a clicked element is inside the actively edited text element
+   */
+  const isEditingTarget = useCallback((target: HTMLElement | null): boolean => {
+    if (!target || !activeEditingElemRef.current) return false;
+    return activeEditingElemRef.current === target || activeEditingElemRef.current.contains(target);
+  }, []);
+
+  /**
+   * 1. Click-to-Edit: clicking any text element activates inline text editing
    */
   const handleElementClick = useCallback((target: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
-    // If currently editing text, stop click propagation so parent does not intercept focus
-    if (activeEditingElemRef.current?.contains(target)) {
+    // If currently editing text and clicked inside it, let native cursor move
+    if (isEditingTarget(target)) {
       e?.stopPropagation();
       return;
     }
 
+    // Find if user clicked a text-editable element
+    const textTarget = findTextEditableElement(target);
+    if (textTarget) {
+      activateTextEditing(textTarget, sectionIndex, e);
+      return;
+    }
+
+    // Otherwise, user clicked non-text background or wrapper
     if (activeEditingElemRef.current) {
       finishInlineTextEditing();
     }
-
-    // Keep preview clean and native without bounding boxes or rings
     setSelectedElement(null);
-  }, [finishInlineTextEditing]);
+  }, [isEditingTarget, findTextEditableElement, activateTextEditing, finishInlineTextEditing]);
+
+  /**
+   * Double-click also activates text editing (or lets native word selection work inside active text)
+   */
+  const handleElementDoubleClick = useCallback((target: HTMLElement, sectionIndex: number, e?: React.MouseEvent) => {
+    // If currently editing text and clicked inside it, let native word selection happen
+    if (isEditingTarget(target)) {
+      return;
+    }
+
+    const textTarget = findTextEditableElement(target);
+    if (textTarget) {
+      activateTextEditing(textTarget, sectionIndex, e);
+      return;
+    }
+  }, [isEditingTarget, findTextEditableElement, activateTextEditing]);
 
   /**
    * Mouse hover: clean preview canvas without dashed boxes
@@ -701,6 +803,7 @@ export function useCanvaInteractions({
     handleElementDoubleClick,
     handlePointerDragStart,
     finishInlineTextEditing,
+    isEditingTarget,
     setSelectedElement,
     setHoveredRect,
   };
