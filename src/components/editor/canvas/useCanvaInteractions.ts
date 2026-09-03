@@ -687,55 +687,6 @@ export function useCanvaInteractions({
     window.addEventListener("mouseup", onPointerUp);
   }, [isEditingText, onUpdateSectionCode, showToast, refreshSelectionRect]);
 
-  /**
-   * Direct '+ Add Text' Action
-   */
-  const addTextToActiveSection = useCallback(() => {
-    const secIdx = activeSectionIndex !== null ? activeSectionIndex : (sections.length > 0 ? 0 : null);
-    if (secIdx === null) {
-      showToast?.("Select a section to add text");
-      return;
-    }
-
-    const section = sections[secIdx];
-    if (!section) return;
-
-    const secContainer = document.querySelector(`[data-xite-section="${section.id}"]`) as HTMLElement | null;
-    if (!secContainer) return;
-
-    const canvasBox = (secContainer.querySelector(".section-canvas-box") || secContainer) as HTMLElement;
-
-    const newTextEl = document.createElement("p");
-    newTextEl.style.fontSize = "clamp(1rem, 2vw, 1.25rem)";
-    newTextEl.style.lineHeight = "1.6";
-    newTextEl.style.color = "inherit";
-    newTextEl.style.marginTop = "0.75rem";
-    newTextEl.style.marginBottom = "0.75rem";
-    newTextEl.style.maxWidth = "100%";
-    newTextEl.style.wordBreak = "break-word";
-    newTextEl.style.minWidth = "0";
-    newTextEl.textContent = "Click here to edit this text...";
-
-    if (selectedElement && selectedElement.element.isConnected && secContainer.contains(selectedElement.element)) {
-      selectedElement.element.insertAdjacentElement("afterend", newTextEl);
-    } else {
-      const track = canvasBox.querySelector("div, main, [class*='content'], [class*='container']") || canvasBox;
-      track.appendChild(newTextEl);
-    }
-
-    handleElementDoubleClick(newTextEl, secIdx);
-
-    try {
-      const range = document.createRange();
-      range.selectNodeContents(newTextEl);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-    } catch {}
-
-    showToast?.("Added text block — start typing now");
-  }, [activeSectionIndex, sections, selectedElement, handleElementDoubleClick, showToast]);
-
   return {
     selectedElement,
     hoveredRect,
@@ -750,7 +701,6 @@ export function useCanvaInteractions({
     handleElementDoubleClick,
     handlePointerDragStart,
     finishInlineTextEditing,
-    addTextToActiveSection,
     setSelectedElement,
     setHoveredRect,
   };

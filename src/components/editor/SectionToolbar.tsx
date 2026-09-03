@@ -85,6 +85,7 @@ import type { SectionCategory } from "@/lib/sections/section-capabilities";
 import type { SaveStatus } from "@/hooks/useEditorPages";
 import { BoundedDimensionControl } from "./BoundedDimensionControl";
 import { SingleRowButtonPanel } from "./ButtonSettingsControl";
+import { SingleRowBackgroundPanel } from "./BackgroundSettingsControl";
 
 type Props = {
   section: { id: string; title: string; code: string; category: string };
@@ -190,7 +191,7 @@ export function SectionToolbar({
   const canReset = useMemo(() => hasManagedStyling(section.code), [section.code]);
 
   const [activeGroupId, setActiveGroupId] = useState<string | undefined>(
-    () => schema.groups.find((group) => group.id === "layout")?.id ?? schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id,
+    () => schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id,
   );
   const activeGroup = schema.groups.find((group) => group.id === activeGroupId) ?? schema.groups[0];
 
@@ -225,12 +226,30 @@ export function SectionToolbar({
     const prefix = `btn-${safeIdx}`;
     return {
       radius: buttonsGroup.controls.find((c) => c.id === `${prefix}-radius`),
-      shadow: buttonsGroup.controls.find((c) => c.id === `${prefix}-shadow`),
+      border: buttonsGroup.controls.find((c) => c.id === `${prefix}-border`),
+      size: buttonsGroup.controls.find((c) => c.id === `${prefix}-size`),
       bg: buttonsGroup.controls.find((c) => c.id === `${prefix}-bg`),
       textColor: buttonsGroup.controls.find((c) => c.id === `${prefix}-color`),
-      border: buttonsGroup.controls.find((c) => c.id === `${prefix}-border`),
+      shadow: buttonsGroup.controls.find((c) => c.id === `${prefix}-shadow`),
     };
   }, [buttonsGroup, buttonCount, activeButtonIndex]);
+
+  const backgroundGroup = useMemo(
+    () => schema.groups.find((g) => g.id === "background"),
+    [schema.groups],
+  );
+
+  const activeBackgroundControls = useMemo(() => {
+    if (!backgroundGroup) return null;
+    return {
+      color: backgroundGroup.controls.find((c) => c.id === "bg-color"),
+      image: backgroundGroup.controls.find((c) => c.id === "bg-image"),
+      gradient: backgroundGroup.controls.find((c) => c.id === "bg-gradient"),
+      shadow: backgroundGroup.controls.find((c) => c.id === "bg-shadow"),
+      density: backgroundGroup.controls.find((c) => c.id === "bg-density"),
+      blur: backgroundGroup.controls.find((c) => c.id === "bg-blur"),
+    };
+  }, [backgroundGroup]);
 
   const [openLists, setOpenLists] = useState<Set<string>>(
     () => new Set(schema.groups.flatMap((group) => group.lists.slice(0, 1)).map((list) => list.id)),
@@ -331,6 +350,8 @@ export function SectionToolbar({
       role="dialog"
       aria-label={`${schema.categoryLabel} section settings`}
       onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+      onPointerDown={(event) => event.stopPropagation()}
       className="fixed z-[99999] flex flex-col overflow-hidden border border-slate-200 bg-white shadow-[0_-8px_30px_rgba(15,23,42,0.12)]"
       style={dockedStyle(dockPosition)}
     >
@@ -457,8 +478,43 @@ export function SectionToolbar({
           </p>
         )}
 
-        {/* Dedicated Single Horizontal Row Buttons Panel */}
-        {activeGroup?.id === "buttons" && activeButtonControls ? (
+        {/* Dedicated Single Horizontal Row Background Panel */}
+        {activeGroup?.id === "background" && activeBackgroundControls ? (
+          <div className="py-1">
+            <SingleRowBackgroundPanel
+              colorValue={activeBackgroundControls.color ? displayValue(activeBackgroundControls.color) : ""}
+              onDraftColor={(val) => {
+                if (activeBackgroundControls.color) commitDebounced(activeBackgroundControls.color, val);
+              }}
+              onCommitColor={(val) => {
+                if (activeBackgroundControls.color) commit(activeBackgroundControls.color, val);
+              }}
+              designValue={activeBackgroundControls.gradient ? displayValue(activeBackgroundControls.gradient) : ""}
+              onCommitDesign={(val) => {
+                if (activeBackgroundControls.gradient) commit(activeBackgroundControls.gradient, val);
+              }}
+              imageValue={activeBackgroundControls.image ? displayValue(activeBackgroundControls.image) : ""}
+              onDraftImage={(val) => {
+                if (activeBackgroundControls.image) commitDebounced(activeBackgroundControls.image, val);
+              }}
+              onCommitImage={(val) => {
+                if (activeBackgroundControls.image) commit(activeBackgroundControls.image, val);
+              }}
+              shadowValue={activeBackgroundControls.shadow ? displayValue(activeBackgroundControls.shadow) : ""}
+              onCommitShadow={(val) => {
+                if (activeBackgroundControls.shadow) commit(activeBackgroundControls.shadow, val);
+              }}
+              densityValue={activeBackgroundControls.density ? displayValue(activeBackgroundControls.density) : ""}
+              onCommitDensity={(val) => {
+                if (activeBackgroundControls.density) commit(activeBackgroundControls.density, val);
+              }}
+              blurValue={activeBackgroundControls.blur ? displayValue(activeBackgroundControls.blur) : ""}
+              onCommitBlur={(val) => {
+                if (activeBackgroundControls.blur) commit(activeBackgroundControls.blur, val);
+              }}
+            />
+          </div>
+        ) : activeGroup?.id === "buttons" && activeButtonControls ? (
           <div className="py-1">
             <SingleRowButtonPanel
               buttonCount={buttonCount}
@@ -468,9 +524,13 @@ export function SectionToolbar({
               onCommitRadius={(val) => {
                 if (activeButtonControls.radius) commit(activeButtonControls.radius, val);
               }}
-              shadowValue={activeButtonControls.shadow ? displayValue(activeButtonControls.shadow) : ""}
-              onCommitShadow={(val) => {
-                if (activeButtonControls.shadow) commit(activeButtonControls.shadow, val);
+              borderValue={activeButtonControls.border ? displayValue(activeButtonControls.border) : ""}
+              onCommitBorder={(val) => {
+                if (activeButtonControls.border) commit(activeButtonControls.border, val);
+              }}
+              sizeValue={activeButtonControls.size ? displayValue(activeButtonControls.size) : ""}
+              onCommitSize={(val) => {
+                if (activeButtonControls.size) commit(activeButtonControls.size, val);
               }}
               bgValue={activeButtonControls.bg ? displayValue(activeButtonControls.bg) : ""}
               onDraftBg={(val) => {
@@ -485,10 +545,6 @@ export function SectionToolbar({
               }}
               onCommitTextColor={(val) => {
                 if (activeButtonControls.textColor) commit(activeButtonControls.textColor, val);
-              }}
-              borderValue={activeButtonControls.border ? displayValue(activeButtonControls.border) : ""}
-              onCommitBorder={(val) => {
-                if (activeButtonControls.border) commit(activeButtonControls.border, val);
               }}
             />
           </div>

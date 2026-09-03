@@ -169,7 +169,14 @@ export function withAlpha(color: string, alpha: number): string {
 }
 
 /** Custom properties that are inputs to a composed declaration, not CSS to ship. */
-const BACKGROUND_VARS = ["--x-bg-image", "--x-gradient", "--x-overlay", "--x-overlay-opacity"] as const;
+const BACKGROUND_VARS = [
+  "--x-bg-image",
+  "--x-gradient",
+  "--x-overlay",
+  "--x-overlay-opacity",
+  "--x-bg-size",
+  "--x-bg-blur",
+] as const;
 const SHADOW_VARS = [
   "--x-shadow-x", "--x-shadow-y", "--x-shadow-blur", "--x-shadow-spread",
   "--x-shadow-color", "--x-shadow-opacity",
@@ -207,15 +214,16 @@ function recomposeComposites(styles: ManagedStyles, key: string, tier: Tier): Ma
 
   const hasLayers = layers.length > 0;
   next = setManagedProperty(next, key, device, "background-image", hasLayers ? layers.join(", ") : null);
-  next = setManagedProperty(next, key, device, "background-size", image ? "cover" : null);
+  const customSize = read("--x-bg-size");
+  next = setManagedProperty(next, key, device, "background-size", customSize || (image ? "cover" : null));
   next = setManagedProperty(next, key, device, "background-position", image ? "center" : null);
   next = setManagedProperty(next, key, device, "background-repeat", image ? "no-repeat" : null);
+  const blurValue = read("--x-bg-blur");
+  next = setManagedProperty(next, key, device, "backdrop-filter", blurValue ? `blur(${blurValue})` : null);
 
   /* One shadow, from six inputs. */
   const shadowInputs = SHADOW_VARS.map((prop) => read(prop));
-  if (shadowInputs.every((value) => !value)) {
-    next = setManagedProperty(next, key, device, "box-shadow", null);
-  } else {
+  if (shadowInputs.some((value) => Boolean(value && value.trim()))) {
     const px = (value: string | null, fallback: string) => (value && value.trim() ? value : fallback);
     const alpha = Number(read("--x-shadow-opacity") ?? "0.15");
     const color = withAlpha(read("--x-shadow-color") || "#000000", Number.isFinite(alpha) ? alpha : 0.15);

@@ -936,7 +936,7 @@ export function EditorStudio({
 
       // Close SectionToolbar and restore normal toolbar when left-clicking outside SectionToolbar
       if (customToolbarState.isOpen) {
-        const isInsideSectionToolbar = target.closest('div[role="dialog"][aria-label*="section settings"]') !== null;
+        const isInsideSectionToolbar = target.closest('[role="dialog"]') !== null;
         if (!isInsideSectionToolbar) {
           closeCustomToolbar();
         }
@@ -2164,78 +2164,63 @@ export function EditorStudio({
       )}
 
       {/*
-        The dynamic Section Settings & Properties Bar (SectionToolbar).
-        Active only when a section is right-clicked (isSectionPanelOpen).
+        Toolbar Dock: Mutually exclusive render.
+        When SectionToolbar is open, EditorToolbar is completely unmounted, ensuring zero overlap.
       */}
-      {!isSettingsOpen && !isDrawerOpen && isSectionPanelOpen && customToolbarSection && customToolbarState.sectionIndex !== null && (
-        <SectionToolbar
-          key={customToolbarSection.id}
-          section={customToolbarSection}
-          position={{ index: customToolbarState.sectionIndex, total: sections.length }}
-          device={sectionDevice}
-          dockPosition={dockPosition}
-          selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
-          onDeviceChange={handleSectionDeviceChange}
-          onPatch={handleSectionPatch}
-          /* Back button / Deselect: returns to normal dock */
-          onClose={closeCustomToolbar}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canUndo={editor.canUndo}
-          canRedo={editor.canRedo}
-          onDeleteSection={handleDeleteSection}
-          saveStatus={editor.saveStatus}
-          saveError={editor.saveError}
-        />
-      )}
-
-      {isSectionPanelOpen && customToolbarSection && toolbarDebugEnabled && (
-        <ToolbarTestHarness
-          key={customToolbarSection.id}
-          section={customToolbarSection}
-          device={sectionDevice}
-          onPatch={handleSectionPatch}
-          selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
-        />
-      )}
-
-      {/* General EditorToolbar dock - Shown when SectionToolbar is not open */}
-      {!isSettingsOpen && !isDrawerOpen && !isSectionPanelOpen && (
-        <EditorToolbar
-          subdomain={subdomain}
-          activePageSlug={editor.activePage.slug}
-          onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
-          isSettingsOpen={isSettingsOpen}
-          onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
-          viewport={viewport}
-          setViewport={setViewport}
-          canvasScale={canvasScale}
-          /* Empty when nothing is selected, so the toolbar can say so. This
-             passed the literal string "Hero" instead: clicking blank canvas
-             deselects — correctly — and the toolbar then named a section that
-             was neither selected nor, on most sites, even present. */
-          activeSectionTitle={
-            activeSectionIndex !== null ? sections[activeSectionIndex]?.title ?? "" : ""
-          }
-          hasSections={sections.length > 0}
-          isSectionSelected={activeSectionIndex !== null}
-          onAddSection={() => setShowAddSectionModal(true)}
-          onAddText={inPlaceEditor.addTextToActiveSection}
-          onDuplicateSection={handleDuplicateSection}
-          onSwapVariant={() => handleSwapVariant(1)}
-          variantCount={activeVariantCount}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canUndo={editor.canUndo}
-          canRedo={editor.canRedo}
-          onMoveUp={handleMoveUp}
-          onMoveDown={handleMoveDown}
-          onDeleteSection={handleDeleteSection}
-          onSyncAdminWebsite={handlePersistWebsiteSave}
-          saveStatus={editor.saveStatus}
-          saveError={editor.saveError}
-          onDockPositionChange={setDockPosition}
-        />
+      {!isSettingsOpen && !isDrawerOpen && (
+        isSectionPanelOpen && customToolbarSection && customToolbarState.sectionIndex !== null ? (
+          <SectionToolbar
+            key={customToolbarSection.id}
+            section={customToolbarSection}
+            position={{ index: customToolbarState.sectionIndex, total: sections.length }}
+            device={sectionDevice}
+            dockPosition={dockPosition}
+            selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
+            onDeviceChange={handleSectionDeviceChange}
+            onPatch={handleSectionPatch}
+            /* Back button / Deselect: returns to normal dock */
+            onClose={closeCustomToolbar}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={editor.canUndo}
+            canRedo={editor.canRedo}
+            onDeleteSection={handleDeleteSection}
+            saveStatus={editor.saveStatus}
+            saveError={editor.saveError}
+          />
+        ) : (
+          <EditorToolbar
+            subdomain={subdomain}
+            activePageSlug={editor.activePage.slug}
+            onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
+            isSettingsOpen={isSettingsOpen}
+            onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
+            viewport={viewport}
+            setViewport={setViewport}
+            canvasScale={canvasScale}
+            /* Empty when nothing is selected, so the toolbar can say so. */
+            activeSectionTitle={
+              activeSectionIndex !== null ? sections[activeSectionIndex]?.title ?? "" : ""
+            }
+            hasSections={sections.length > 0}
+            isSectionSelected={activeSectionIndex !== null}
+            onAddSection={() => setShowAddSectionModal(true)}
+            onDuplicateSection={handleDuplicateSection}
+            onSwapVariant={() => handleSwapVariant(1)}
+            variantCount={activeVariantCount}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={editor.canUndo}
+            canRedo={editor.canRedo}
+            onMoveUp={handleMoveUp}
+            onMoveDown={handleMoveDown}
+            onDeleteSection={handleDeleteSection}
+            onSyncAdminWebsite={handlePersistWebsiteSave}
+            saveStatus={editor.saveStatus}
+            saveError={editor.saveError}
+            onDockPositionChange={setDockPosition}
+          />
+        )
       )}
 
       {/* Floating Right-Click Button URL Navigation Popup */}

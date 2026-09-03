@@ -150,22 +150,7 @@ const ALIGN_OPTIONS: readonly ControlOption[] = [
   { value: "right", label: "Right" },
 ];
 
-const JUSTIFY_OPTIONS: readonly ControlOption[] = [
-  { value: "", label: "Inherit" },
-  { value: "flex-start", label: "Start" },
-  { value: "center", label: "Centre" },
-  { value: "flex-end", label: "End" },
-  { value: "space-between", label: "Space between" },
-  { value: "space-around", label: "Space around" },
-];
 
-const ALIGN_ITEMS_OPTIONS: readonly ControlOption[] = [
-  { value: "", label: "Inherit" },
-  { value: "flex-start", label: "Top" },
-  { value: "center", label: "Middle" },
-  { value: "flex-end", label: "Bottom" },
-  { value: "stretch", label: "Stretch" },
-];
 
 const DIRECTION_OPTIONS: readonly ControlOption[] = [
   { value: "", label: "Inherit" },
@@ -249,6 +234,13 @@ const BUTTON_SHADOW_OPTIONS: readonly ControlOption[] = [
   { value: "", label: "None" },
   { value: "0 4px 14px -2px rgba(0, 0, 0, 0.12)", label: "Soft" },
   { value: "0 10px 25px -4px rgba(0, 0, 0, 0.28)", label: "Strong" },
+];
+
+const BUTTON_SIZE_OPTIONS: readonly ControlOption[] = [
+  { value: "", label: "Default" },
+  { value: "6px 14px", label: "Small" },
+  { value: "10px 20px", label: "Medium" },
+  { value: "14px 28px", label: "Large" },
 ];
 
 /* ── Control factories ──────────────────────────────────────────────────── */
@@ -361,27 +353,9 @@ export function buildSectionSchema(section: {
     return created;
   };
 
-  /* — 1. Layout (gap, plus horizontal/vertical alignment of that same track) — */
-  const layout = group("layout");
-  const mainTrack = probe.tracks.find((track) => !insideList(track.path));
-  const gapTarget = mainTrack ? at(mainTrack.path) : rootTarget;
+  /* — 1. Background (Color, image, or gradient controls) ————————————————— */
 
-  layout.controls.push(
-    lengthControl("layout-gap", "Element Gap / Spacing", gapTarget, "gap", {
-      min: 0,
-      max: 80,
-      step: 4,
-      hint: "Spacing between elements in this section",
-    }),
-    selectControl("layout-justify", "Horizontal alignment", gapTarget, "justify-content", JUSTIFY_OPTIONS, {
-      hint: "How elements line up along the row",
-    }),
-    selectControl("layout-align", "Vertical alignment", gapTarget, "align-items", ALIGN_ITEMS_OPTIONS, {
-      hint: "How elements line up across the row",
-    }),
-  );
-
-  /* — 2. Background (Color, image, or gradient controls) ————————————————— */
+  /* — 2. Background (Color or Image controls) ————————————————— */
   group("background").controls.push(
     colorControl("bg-color", "Background colour", rootTarget, "background-color"),
     {
@@ -393,16 +367,12 @@ export function buildSectionSchema(section: {
       responsive: true,
       placeholder: "https://…",
     },
-    selectControl("bg-gradient", "Gradient", rootTarget, "--x-gradient", GRADIENT_OPTIONS),
+    selectControl("bg-gradient", "Designs", rootTarget, "--x-gradient", GRADIENT_OPTIONS),
+    styleControl("bg-shadow", "Image shadow", rootTarget, "box-shadow"),
+    styleControl("bg-density", "Image density", rootTarget, "--x-bg-size"),
+    styleControl("bg-blur", "Image blur", rootTarget, "--x-bg-blur"),
     colorControl("bg-overlay", "Overlay colour", rootTarget, "--x-overlay"),
     styleControl("bg-overlay-opacity", "Overlay opacity", rootTarget, "--x-overlay-opacity", {
-      kind: "number",
-      unit: "",
-      min: 0,
-      max: 1,
-      step: 0.05,
-    }),
-    styleControl("root-opacity", "Section opacity", rootTarget, "opacity", {
       kind: "number",
       unit: "",
       min: 0,
@@ -449,6 +419,11 @@ export function buildSectionSchema(section: {
           step: 1,
           hint: "Border stroke (0px to 3px)",
         }),
+      );
+
+      // 5. Button Size: Small | Medium | Large
+      buttonsGrp.controls.push(
+        selectControl(`${prefix}-size`, `${name} Size`, target, "padding", BUTTON_SIZE_OPTIONS),
       );
     });
   }

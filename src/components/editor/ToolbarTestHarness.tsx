@@ -103,28 +103,7 @@ const SAMPLE_IMAGE_URL = "https://picsum.photos/800/600";
 const SOFT_BUTTON_SHADOW = "0 4px 14px -2px rgba(0, 0, 0, 0.12)";
 
 function buildSteps(hasButtons: boolean): DiagStep[] {
-  const steps: DiagStep[] = [
-    {
-      group: "Layout",
-      name: "Element Gap",
-      action: "Slide gap to 32px",
-      controlId: "layout-gap",
-      value: "32px",
-      cssProp: "gap",
-      expectedLabel: "gap: 32px",
-      check: { kind: "exact", expected: "32px" },
-    },
-    {
-      group: "Layout",
-      name: "Element Gap — Auto",
-      action: "Click Auto (clear override)",
-      controlId: "layout-gap",
-      value: "",
-      cssProp: "gap",
-      expectedLabel: "gap resets to authored/default",
-      check: { kind: "changed" },
-    },
-  ];
+  const steps: DiagStep[] = [];
 
   if (hasButtons) {
     steps.push(

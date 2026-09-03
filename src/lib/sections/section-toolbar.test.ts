@@ -305,9 +305,8 @@ describe("section-probe — controls come from the markup, not from a table", ()
 /* ── The schema ─────────────────────────────────────────────────────────── */
 
 describe("section-schema — a different toolbar per section", () => {
-  it("gives a section the retained layout, background, buttons, shadow, animation, and section controls", () => {
+  it("gives a section the retained background, buttons, shadow, animation, and section controls", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
-    assert.ok(schema.capabilities.includes("layout"));
     assert.ok(schema.capabilities.includes("background"));
     assert.ok(schema.capabilities.includes("buttons"));
     assert.ok(schema.capabilities.includes("shadow"));
@@ -421,7 +420,7 @@ describe("section-edit — every control edits the section for real", () => {
   });
 
   it("resets its own styling and leaves the author's markup exactly as it was", () => {
-    let current = section(applyControl(section(HERO), control("layout-gap"), "desktop", "32px")!.code!);
+    let current = section(applyControl(section(HERO), control("shadow-blur"), "desktop", "32px")!.code!);
     current = section(applyControl(current, control("bg-color"), "mobile", "#000000")!.code!);
     assert.ok(hasManagedStyling(current.code));
 
@@ -431,11 +430,11 @@ describe("section-edit — every control edits the section for real", () => {
 
   it("keeps a section's own stylesheet when a control writes to it", () => {
     const services = buildSectionSchema({ code: SERVICES, category: "courses" });
-    const gap = allControls(services).find((c) => c.id === "layout-gap")!;
-    const patch = applyControl(section(SERVICES, "courses"), gap, "desktop", "40px")!;
+    const bg = allControls(services).find((c) => c.id === "bg-color")!;
+    const patch = applyControl(section(SERVICES, "courses"), bg, "desktop", "#123456")!;
     assert.ok(patch.code!.includes(".prog-grid { display: grid"));
     assert.ok(patch.code!.includes("@media (max-width: 900px)"));
-    assert.ok(patch.code!.includes("gap:40px !important"));
+    assert.ok(patch.code!.includes("background-color:#123456 !important"));
   });
 });
 

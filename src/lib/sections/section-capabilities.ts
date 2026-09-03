@@ -32,7 +32,6 @@ import type { SectionCategoryId, UNCATEGORISED } from "./categories";
 
 /** A group of related controls in the section toolbar. */
 export type CapabilityId =
-  | "layout"
   | "background"
   | "buttons"
   | "shadow"
@@ -45,7 +44,6 @@ export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
  * The order groups appear in the toolbar.
  */
 export const DEFAULT_ORDER: readonly CapabilityId[] = [
-  "layout",
   "background",
   "buttons",
   "shadow",
@@ -54,26 +52,26 @@ export const DEFAULT_ORDER: readonly CapabilityId[] = [
 ];
 
 export const CATEGORY_ORDER: Partial<Record<SectionCategory, readonly CapabilityId[]>> = {
-  navbar: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  hero: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  cta: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  about: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  vision: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  courses: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  departments: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  facilities: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  research: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  admissions: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  placements: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  highlights: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  achievements: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  news: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  events: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  gallery: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  testimonials: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  contact: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  map: ["buttons", "layout", "background", "shadow", "animation", "section"],
-  footer: ["buttons", "layout", "background", "shadow", "animation", "section"],
+  navbar: ["buttons", "background", "shadow", "animation", "section"],
+  hero: ["buttons", "background", "shadow", "animation", "section"],
+  cta: ["buttons", "background", "shadow", "animation", "section"],
+  about: ["buttons", "background", "shadow", "animation", "section"],
+  vision: ["buttons", "background", "shadow", "animation", "section"],
+  courses: ["buttons", "background", "shadow", "animation", "section"],
+  departments: ["buttons", "background", "shadow", "animation", "section"],
+  facilities: ["buttons", "background", "shadow", "animation", "section"],
+  research: ["buttons", "background", "shadow", "animation", "section"],
+  admissions: ["buttons", "background", "shadow", "animation", "section"],
+  placements: ["buttons", "background", "shadow", "animation", "section"],
+  highlights: ["buttons", "background", "shadow", "animation", "section"],
+  achievements: ["buttons", "background", "shadow", "animation", "section"],
+  news: ["buttons", "background", "shadow", "animation", "section"],
+  events: ["buttons", "background", "shadow", "animation", "section"],
+  gallery: ["buttons", "background", "shadow", "animation", "section"],
+  testimonials: ["buttons", "background", "shadow", "animation", "section"],
+  contact: ["buttons", "background", "shadow", "animation", "section"],
+  map: ["buttons", "background", "shadow", "animation", "section"],
+  footer: ["buttons", "background", "shadow", "animation", "section"],
 };
 
 /** The groups, in the order this category wants them. */
@@ -160,7 +158,6 @@ export function categoryLabel(category: SectionCategory): string {
 }
 
 export const GROUP_LABEL: Record<CapabilityId, string> = {
-  layout: "Layout",
   background: "Background",
   buttons: "Buttons",
   shadow: "Shadow",
