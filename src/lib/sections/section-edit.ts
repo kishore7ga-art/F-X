@@ -552,21 +552,27 @@ function writeStyles(
     updatedBody = updatedBody.replace(/<!--\s*xite-bg-video-start\s*-->[\s\S]*?<!--\s*xite-bg-video-end\s*-->/gi, "");
     updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/video>(?:\s*<div[\s\S]*?<\/div>)?\s*<\/div>/gi, "");
     if (videoUrl) {
-      const videoHtml = `<!-- xite-bg-video-start --><div class="xite-bg-video-container" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 0;"><video src="${videoUrl}" autoplay loop muted playsinline webkit-playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div></div><!-- xite-bg-video-end -->`;
-      updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*>)/i, (match) => {
-        let rootTag = match;
-        if (/style=["']([^"']*)["']/i.test(rootTag)) {
-          rootTag = rootTag.replace(/style=["']([^"']*)["']/i, (_m, s) => {
-            let ns = s;
-            if (!/position\s*:/i.test(ns)) ns += ";position:relative;";
-            if (!/overflow\s*:/i.test(ns)) ns += ";overflow:hidden;";
-            return `style="${ns}"`;
-          });
-        } else {
-          rootTag = rootTag.replace(/>$/, ' style="position:relative;overflow:hidden;">');
-        }
-        return `${rootTag}\n${videoHtml}`;
-      });
+      // 1. If markup already has an existing background video element, update its src
+      if (/<video[^>]*(?:object-cover|w-full|h-full|absolute|inset-0)[^>]*src=/i.test(updatedBody) || /<video[^>]*src=[^>]*(?:object-cover|w-full|h-full|absolute|inset-0)/i.test(updatedBody)) {
+        updatedBody = updatedBody.replace(/(<video[^>]*src=["'])[^"']+(["'][^>]*(?:object-cover|w-full|h-full|absolute|inset-0)[^>]*>)/gi, `$1${videoUrl}$2`);
+        updatedBody = updatedBody.replace(/(<video[^>]*(?:object-cover|w-full|h-full|absolute|inset-0)[^>]*src=["'])[^"']+(["'][^>]*>)/gi, `$1${videoUrl}$2`);
+      } else {
+        // 2. Otherwise insert .xite-bg-video-container with full isolation styles
+        const videoHtml = `<!-- xite-bg-video-start --><div class="xite-bg-video-container" style="position: absolute; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; margin: 0; padding: 0; border: 0; outline: 0; grid-column: 1 / -1; grid-row: 1 / -1; grid-area: 1 / 1 / -1 / -1; flex: 0 0 auto; order: -9999; overflow: hidden; pointer-events: none; z-index: 0; box-sizing: border-box;"><video src="${videoUrl}" autoplay loop muted playsinline webkit-playsinline style="position: absolute; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; object-fit: cover; object-position: center; pointer-events: none; margin: 0; padding: 0; border: 0;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div></div><!-- xite-bg-video-end -->`;
+        updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*>)/i, (match) => {
+          let rootTag = match;
+          if (/style=["']([^"']*)["']/i.test(rootTag)) {
+            rootTag = rootTag.replace(/style=["']([^"']*)["']/i, (_m, s) => {
+              let ns = s;
+              if (!/position\s*:/i.test(ns)) ns += ";position:relative;";
+              return `style="${ns}"`;
+            });
+          } else {
+            rootTag = rootTag.replace(/>$/, ' style="position:relative;">');
+          }
+          return `${rootTag}\n${videoHtml}`;
+        });
+      }
     }
   } else if (props["--x-bg-image"] || props["background-color"]) {
     // Clear video container when image or colour is set

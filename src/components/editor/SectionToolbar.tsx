@@ -236,7 +236,7 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
     }
   } else if (controlId === "bg-video") {
     const val = String(value || "").trim();
-    const existingVideo = root.querySelector<HTMLVideoElement>(".xite-bg-video-container video");
+    const existingVideo = root.querySelector<HTMLVideoElement>(".xite-bg-video-container video, video.xite-bg-video");
     if (existingVideo) {
       if (val) {
         existingVideo.src = val;
@@ -251,10 +251,11 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
       root.querySelector(".xite-bg-video-container")?.remove();
       const container = document.createElement("div");
       container.className = "xite-bg-video-container";
-      container.style.cssText = "position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; z-index: 0;";
-      container.innerHTML = `<video src="${val}" autoplay loop muted playsinline webkit-playsinline style="position: absolute; inset: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; object-fit: cover;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div>`;
-      root.style.position = "relative";
-      root.style.overflow = "hidden";
+      container.style.cssText = "position: absolute; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; margin: 0; padding: 0; border: 0; outline: 0; grid-column: 1 / -1; grid-row: 1 / -1; grid-area: 1 / 1 / -1 / -1; flex: 0 0 auto; order: -9999; overflow: hidden; pointer-events: none; z-index: 0; box-sizing: border-box;";
+      container.innerHTML = `<video src="${val}" autoplay loop muted playsinline webkit-playsinline style="position: absolute; inset: 0; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; min-width: 100%; min-height: 100%; object-fit: cover; object-position: center; pointer-events: none; margin: 0; padding: 0; border: 0;"></video><div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35);"></div>`;
+      if (getComputedStyle(root).position === "static") {
+        root.style.position = "relative";
+      }
       root.insertBefore(container, root.firstChild);
       const vid = container.querySelector("video");
       if (vid) {
