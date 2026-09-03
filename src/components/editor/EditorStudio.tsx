@@ -71,7 +71,7 @@ import { SectionToolbar } from "./SectionToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
 import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
-import type { Device } from "@/lib/sections/section-managed-css";
+import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css";
 import type { SectionPatch } from "@/lib/sections/section-edit";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
@@ -409,7 +409,7 @@ export function EditorStudio({
    * blocks are gone from this markup by design, and the runtime hook tokenises
    * them where it fences them.
    */
-  const canvasHtml = useCallback((code: string) => tokenizeSectionHtml(sectionCanvasHtml(code)), []);
+  const canvasHtml = useCallback((code: string) => tokenizeSectionHtml(sectionCanvasHtml(sanitizeCssUrls(code))), []);
 
   /** The three theme font families, loaded once for the whole editor. */
   useEffect(() => {

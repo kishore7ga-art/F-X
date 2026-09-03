@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { hexFromValue } from "@/lib/sections/section-edit";
 import { uploadImage } from "@/lib/api-client";
+import { isUsableImageUrl } from "@/lib/sections/section-managed-css";
 
 export interface SingleRowBackgroundPanelProps {
   // Background Color
@@ -88,8 +89,8 @@ const BLUR_PRESETS = [
   { label: "16px", value: "16px" },
 ];
 
-/** Resizes image client-side to max 1400px so uploaded image updates immediately with zero lag and no 413 error. */
-function compressImage(file: File, maxDim = 1400): Promise<string> {
+/** Resizes image client-side to max 800px (~35KB) so data URLs never exceed Chromium limits. */
+function compressImage(file: File, maxDim = 800): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -113,7 +114,7 @@ function compressImage(file: File, maxDim = 1400): Promise<string> {
         const ctx = canvas.getContext("2d");
         if (!ctx) return resolve(reader.result as string);
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
       };
       img.src = reader.result as string;
     };
@@ -140,7 +141,7 @@ export function SingleRowBackgroundPanel({
   onDraftVideo,
   onCommitVideo,
 }: SingleRowBackgroundPanelProps) {
-  const safeImage = String(imageValue || "").trim();
+  const safeImage = (imageValue && isUsableImageUrl(imageValue)) ? String(imageValue).trim() : "";
   const safeVideo = String(videoValue || "").trim();
 
   // Mode: "color" | "image" | "video"
@@ -160,30 +161,24 @@ export function SingleRowBackgroundPanel({
     if (!file) return;
     setIsUploading(true);
     try {
-      // 1. Immediately compress and commit so canvas updates live in <50ms!
-      const compressedDataUrl = await compressImage(file, 1400);
+      // 1. Upload to server first! Server returns clean /uploads/... URL immediately
+      const { url } = await uploadImage(file);
+      if (url) {
+        onDraftImage(url);
+        onCommitImage(url);
+        return;
+      }
+    } catch (uploadErr) {
+      console.warn("[upload] Server upload failed, using compressed local preview:", uploadErr);
+    }
+
+    try {
+      // 2. Fallback only if offline/error: compress to max 800px (~35KB, well under Chromium 2MB limit)
+      const compressedDataUrl = await compressImage(file, 800);
       onDraftImage(compressedDataUrl);
       onCommitImage(compressedDataUrl);
-
-      // 2. Upload to server asynchronously for permanent URL
-      uploadImage(file)
-        .then(({ url }) => {
-          if (url) {
-            onDraftImage(url);
-            onCommitImage(url);
-          }
-        })
-        .catch(() => {});
-    } catch {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const res = evt.target?.result as string;
-        if (res) {
-          onDraftImage(res);
-          onCommitImage(res);
-        }
-      };
-      reader.readAsDataURL(file);
+    } catch (compressErr) {
+      console.error("[upload] Image processing failed:", compressErr);
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -376,7 +371,9 @@ export function SingleRowBackgroundPanel({
               onChange={(e) => {
                 const val = e.target.value;
                 onDraftImage(val);
-                onCommitImage(val);
+                if (!val || !val.startsWith("data:") || isUsableImageUrl(val)) {
+                  onCommitImage(val);
+                }
               }}
               placeholder="https://... or choose file"
               className="w-48 sm:w-56 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-mono text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-400"

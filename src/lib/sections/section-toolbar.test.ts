@@ -13,6 +13,8 @@ import {
 } from "./html-dom";
 import { selectAll, selectOne } from "./html-select";
 import {
+  isUsableImageUrl,
+  sanitizeCssUrls,
   parseManagedStyles,
   serializeManagedStyles,
   setManagedProperty,
@@ -238,6 +240,30 @@ describe("section-managed-css — the toolbar's stylesheet", () => {
     );
     assert.equal(decls.e1?.desktop?.["background-image"], `url("data:image/gif;base64,AA==")`);
     assert.equal(decls.e1?.desktop?.color, "#fff");
+  });
+
+  it("preserves custom property data URIs and does not truncate at semicolon", () => {
+    const decls = parseManagedStyles(
+      `/* xite:controls */[data-xite-el="e1"][data-xite-el="e1"]{--x-bg-image:data:image/png;base64,iVBORw0KGgo;color:#fff !important}/* /xite:controls */`,
+    );
+    assert.equal(decls.e1?.desktop?.["--x-bg-image"], "data:image/png;base64,iVBORw0KGgo");
+    assert.equal(decls.e1?.desktop?.color, "#fff");
+  });
+
+  it("rejects incomplete or oversized data URIs", () => {
+    assert.equal(isUsableImageUrl("data:image/png"), false);
+    assert.equal(isUsableImageUrl("data:image/webp"), false);
+    assert.equal(isUsableImageUrl("data:image/png;base64,"), false);
+    assert.equal(isUsableImageUrl("data:image/png;base64,AA=="), true);
+    assert.equal(isUsableImageUrl("https://example.com/photo.jpg"), true);
+    assert.equal(isUsableImageUrl("/uploads/test.png"), true);
+    assert.equal(isUsableImageUrl("data:image/png;base64," + "A".repeat(1_600_000)), false);
+  });
+
+  it("sanitizes broken or oversized data URLs in CSS to none", () => {
+    assert.equal(sanitizeCssUrls('background-image:url("data:image/png");'), 'background-image:none;');
+    assert.equal(sanitizeCssUrls('background-image:url("data:image/webp");'), 'background-image:none;');
+    assert.equal(sanitizeCssUrls('background-image:url("https://test.com/a.jpg");'), 'background-image:url("https://test.com/a.jpg");');
   });
 
   it("keeps a section's code in the shape recomposeSectionCode produces", () => {

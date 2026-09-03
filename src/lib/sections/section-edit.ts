@@ -37,6 +37,7 @@ import {
 import {
   DEVICES,
   ELEMENT_KEY_ATTR,
+  isUsableImageUrl,
   joinSectionCode,
   parseDeclarations,
   parseManagedStyles,
@@ -211,14 +212,15 @@ function recomposeComposites(styles: ManagedStyles, key: string, tier: Tier): Ma
   const gradient = read("--x-gradient");
   if (gradient) layers.push(gradient);
   const image = read("--x-bg-image");
-  if (image) layers.push(`url("${image.replace(/"/g, '\\"')}")`);
+  const usableImage = image && isUsableImageUrl(image) ? image : null;
+  if (usableImage) layers.push(`url("${usableImage.replace(/"/g, '\\"')}")`);
 
   const hasLayers = layers.length > 0;
   next = setManagedProperty(next, key, device, "background-image", hasLayers ? layers.join(", ") : null);
   const customSize = read("--x-bg-size");
-  next = setManagedProperty(next, key, device, "background-size", customSize || (image ? "cover" : null));
-  next = setManagedProperty(next, key, device, "background-position", image ? "center" : null);
-  next = setManagedProperty(next, key, device, "background-repeat", image ? "no-repeat" : null);
+  next = setManagedProperty(next, key, device, "background-size", customSize || (usableImage ? "cover" : null));
+  next = setManagedProperty(next, key, device, "background-position", usableImage ? "center" : null);
+  next = setManagedProperty(next, key, device, "background-repeat", usableImage ? "no-repeat" : null);
   const blurValue = read("--x-bg-blur");
   next = setManagedProperty(next, key, device, "backdrop-filter", blurValue ? `blur(${blurValue})` : null);
 
@@ -413,12 +415,21 @@ function readOne(
       const prop = control.op.prop;
       if (key) {
         const managed = resolveManagedValue(styles, key, device, prop);
-        if (managed.value !== null) return { value: managed.value, source: "managed", from: managed.from };
+        if (managed.value !== null) {
+          if (prop === "--x-bg-image" && !isUsableImageUrl(managed.value)) {
+            return { value: "", source: "none", from: null };
+          }
+          return { value: managed.value, source: "managed", from: managed.from };
+        }
       }
       const authored = authoredValue(node, prop);
-      return authored !== null
-        ? { value: authored, source: "authored", from: null }
-        : { value: "", source: "none", from: null };
+      if (authored !== null) {
+        if (prop === "--x-bg-image" && !isUsableImageUrl(authored)) {
+          return { value: "", source: "none", from: null };
+        }
+        return { value: authored, source: "authored", from: null };
+      }
+      return { value: "", source: "none", from: null };
     }
 
     case "box": {

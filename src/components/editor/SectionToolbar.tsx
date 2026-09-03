@@ -80,7 +80,7 @@ import {
   type SectionPatch,
 } from "@/lib/sections/section-edit";
 import { buildSectionSchema, allControls, type Control, type ControlList } from "@/lib/sections/section-schema";
-import { DEVICES, type Device } from "@/lib/sections/section-managed-css";
+import { DEVICES, isUsableImageUrl, type Device } from "@/lib/sections/section-managed-css";
 import type { SectionCategory } from "@/lib/sections/section-capabilities";
 import type { SaveStatus } from "@/hooks/useEditorPages";
 import { BoundedDimensionControl } from "./BoundedDimensionControl";
@@ -300,9 +300,13 @@ export function SectionToolbar({
           if (control.id === "bg-color") {
             rootInner.style.backgroundColor = String(value);
           } else if (control.id === "bg-image") {
-            rootInner.style.backgroundImage = value ? `url("${value}")` : "";
-            rootInner.style.backgroundSize = "cover";
-            rootInner.style.backgroundPosition = "center";
+            if (isUsableImageUrl(value as string)) {
+              rootInner.style.backgroundImage = `url("${value}")`;
+              rootInner.style.backgroundSize = "cover";
+              rootInner.style.backgroundPosition = "center";
+            } else {
+              rootInner.style.backgroundImage = "";
+            }
           }
         }
       } catch {}

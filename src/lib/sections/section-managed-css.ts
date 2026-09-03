@@ -255,11 +255,46 @@ function findClosingBrace(text: string, open: number): number {
 }
 
 /**
+ * Checks whether an image URL is safe and valid to render or use in CSS background-image.
+ * Rejects broken/incomplete data URIs (e.g. "data:image/png" or "data:image/webp" with no payload)
+ * and data URIs exceeding Chromium's 1.5MB subresource URL limit (which causes net::ERR_INVALID_URL).
+ */
+export function isUsableImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const trimmed = String(url).trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith("data:")) {
+    const commaIndex = trimmed.indexOf(",");
+    if (commaIndex === -1) return false;
+    const payload = trimmed.slice(commaIndex + 1).trim();
+    if (!payload || payload.length === 0) return false;
+    // Chromium subresource limit: data URLs > 1.5MB fail with net::ERR_INVALID_URL
+    if (trimmed.length > 1_500_000) return false;
+  }
+  return true;
+}
+
+/**
+ * Sanitizes CSS text by removing broken data URLs like url("data:image/png")
+ * or oversized base64 URLs (>1.5MB) that cause Chromium net::ERR_INVALID_URL errors.
+ */
+export function sanitizeCssUrls(css: string): string {
+  if (!css || !css.includes("data:image/")) return css;
+  return css.replace(/url\(\s*(["']?)\s*(data:image\/[^"'\)]*)\s*\1\s*\)/gi, (match, _quote, url) => {
+    if (!isUsableImageUrl(url)) {
+      return "none";
+    }
+    return match;
+  });
+}
+
+/**
  * `prop: value; prop: value` into an object, with `!important` stripped.
  *
  * Splitting on `;` and `:` naively breaks on `url(data:image/png;base64,…)`
  * and on `background-image: linear-gradient(…)`, both of which the background
- * controls produce — so the split is depth-aware over brackets and quotes.
+ * controls produce — so the split is depth-aware over brackets and quotes,
+ * and preserves data URI semicolons like `;base64,`.
  */
 export function parseDeclarations(text: string): Record<string, string> {
   const out: Record<string, string> = {};
@@ -274,7 +309,13 @@ export function parseDeclarations(text: string): Record<string, string> {
     if (colon <= 0) return;
     const name = trimmed.slice(0, colon).trim().toLowerCase();
     const value = trimmed.slice(colon + 1).replace(/!\s*important\s*$/i, "").trim();
-    if (name && value) out[name] = value;
+    if (name && value) {
+      // Never allow broken data URLs like "data:image/png" or "data:image/webp" in --x-bg-image or background-image
+      if ((name === "--x-bg-image" || name === "background-image") && !isUsableImageUrl(value)) {
+        return;
+      }
+      out[name] = value;
+    }
   };
 
   for (let i = 0; i < text.length; i += 1) {
@@ -287,6 +328,15 @@ export function parseDeclarations(text: string): Record<string, string> {
     else if (ch === "(") depth += 1;
     else if (ch === ")") depth = Math.max(0, depth - 1);
     else if (ch === ";" && depth === 0) {
+      // Do not split on semicolon inside data: URIs (e.g. data:image/png;base64,...)
+      const after = text.slice(i);
+      if (
+        after.startsWith(";base64,") ||
+        after.startsWith(";charset=") ||
+        after.startsWith(";utf8,")
+      ) {
+        continue;
+      }
       push(text.slice(start, i));
       start = i + 1;
     }

@@ -10,6 +10,7 @@
  * Browser-only: it borrows the browser's own CSS parser.
  */
 import { viewportMediaToContainer } from "./section-runtime";
+import { sanitizeCssUrls } from "./sections/section-managed-css";
 
 /** Escapes a section id for use inside an attribute selector. */
 export function cssEscape(value: string): string {
@@ -82,22 +83,18 @@ export function rescopeSelector(selector: string, fence: string): string {
 /**
  * Prefixes every selector in `css` with the section's fence.
  *
- * `:where()` carries no specificity, which is the whole point: the fence decides
- * *what a rule can reach*, never *which rule wins*. `@scope` was the obvious tool
- * and is the wrong one — scope proximity ranks above order of appearance in the
- * cascade, so a scoped `.title { font-size: 40px }` starts beating Tailwind's
- * `.text-2xl`, which is the exact fight it loses inside the Admin's iframe.
+ * Prefix every rule in a stylesheet with `:where([data-xite-section="id"])`.
  *
- * The rewrite goes through a real stylesheet rather than a regex because `@media`,
- * nesting and `@keyframes` each need different handling and only a parser can tell
- * them apart — a keyframe step given a descendant selector silently kills the
- * animation.
+ * Scopes a section's stylesheet to its own element, so rules like `p { color: red }`
+ * cannot bleed into other sections on the page. Uses the native CSS parser to
+ * rewrite selector text rule by rule, preserving media queries and at-rules.
  */
 export function fenceCssToSection(css: string, sectionId: string): string {
+  const cleanCss = sanitizeCssUrls(css);
   const fence = `:where([data-xite-section="${cssEscape(sectionId)}"])`;
   try {
     const sheet = new CSSStyleSheet();
-    sheet.replaceSync(css);
+    sheet.replaceSync(cleanCss);
 
     const walk = (rules: CSSRuleList) => {
       Array.from(rules).forEach((rule) => {
