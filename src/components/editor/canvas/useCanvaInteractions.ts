@@ -87,6 +87,7 @@ export function useCanvaInteractions({
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [distanceBadges, setDistanceBadges] = useState<DistanceBadge[]>([]);
   const [dropIndicator, setDropIndicator] = useState<DropIndicatorInfo | null>(null);
+  const [dropZoneRect, setDropZoneRect] = useState<DOMRect | null>(null);
 
   const activeEditingElemRef = useRef<HTMLElement | null>(null);
   const activeEditingSectionIdxRef = useRef<number | null>(null);
@@ -519,6 +520,7 @@ export function useCanvaInteractions({
         draggedEl.style.zIndex = "999";
         dropTargetIndexRef.current = null;
         setDropIndicator(null);
+        setDropZoneRect(null);
         return;
       }
 
@@ -527,6 +529,9 @@ export function useCanvaInteractions({
       draggedEl.style.transform = `translate3d(${deltaX / scale}px, ${deltaY / scale}px, 0)`;
       draggedEl.style.opacity = "0.75";
       draggedEl.style.zIndex = "999";
+
+      // Highlight the container being dropped into
+      setDropZoneRect(dragTargetRef.current.parentContainer.getBoundingClientRect());
 
       // Calculate drop insertion index in container flow
       let insertIndex = sibs.length;
@@ -635,6 +640,7 @@ export function useCanvaInteractions({
       setSnapGuides([]);
       setDistanceBadges([]);
       setDropIndicator(null);
+      setDropZoneRect(null);
       setIsDragging(false);
 
       if (isOutOfFlow) {
@@ -738,6 +744,7 @@ export function useCanvaInteractions({
     snapGuides,
     distanceBadges,
     dropIndicator,
+    dropZoneRect,
     handleElementClick,
     handleElementHover,
     handleElementDoubleClick,

@@ -13,6 +13,7 @@ interface CanvaCanvasOverlayProps {
   snapGuides: SnapGuide[];
   distanceBadges: DistanceBadge[];
   dropIndicator: DropIndicatorInfo | null;
+  dropZoneRect?: DOMRect | null;
   onDragStart?: (e: React.MouseEvent<HTMLElement>, element: HTMLElement, sectionIndex: number) => void;
   onStartEdit?: (element: HTMLElement, sectionIndex: number) => void;
 }
@@ -25,6 +26,7 @@ export function CanvaCanvasOverlay({
   snapGuides,
   distanceBadges,
   dropIndicator,
+  dropZoneRect,
   onDragStart,
   onStartEdit,
 }: CanvaCanvasOverlayProps) {
@@ -189,7 +191,20 @@ export function CanvaCanvasOverlay({
         );
       })}
 
-      {/* 5. Drop Insertion Indicator (Flex / Grid flow) */}
+      {/* 5. Drop Target Zone (the container currently being dropped into) */}
+      {isDragging && dropZoneRect && (
+        <div
+          className="absolute border-2 border-dashed border-blue-500 bg-blue-500/10 rounded-lg pointer-events-none transition-all duration-75"
+          style={{
+            left: `${dropZoneRect.left}px`,
+            top: `${dropZoneRect.top}px`,
+            width: `${dropZoneRect.width}px`,
+            height: `${dropZoneRect.height}px`,
+          }}
+        />
+      )}
+
+      {/* 6. Drop Insertion Indicator (Flex / Grid flow) */}
       {dropIndicator && (
         <div
           className="absolute bg-blue-600 pointer-events-none z-50 shadow-[0_0_8px_rgba(37,99,235,0.7)]"

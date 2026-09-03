@@ -245,7 +245,13 @@ export function SectionVisualEditor({
       {/* Isolated single-section canvas */}
       <main
         onClick={handleBackgroundClick}
-        className="flex-1 overflow-auto bg-slate-900/60 cursor-pointer"
+        className="flex-1 overflow-auto cursor-pointer"
+        style={{
+          backgroundColor: "#0f172a",
+          backgroundImage:
+            "radial-gradient(rgba(148, 163, 184, 0.45) 1.5px, transparent 1.5px)",
+          backgroundSize: "24px 24px",
+        }}
       >
         <ResponsiveCanvas
           viewport={viewport}
@@ -261,8 +267,21 @@ export function SectionVisualEditor({
             onDoubleClickCapture={handleCanvasDoubleClick}
             onMouseOver={handleCanvasMouseOver}
             onMouseLeave={handleCanvasMouseLeave}
-            className="relative w-full cursor-default"
+            className="xite-visual-editor-guides relative w-full cursor-default border border-dashed border-slate-600/60 rounded-xl"
           >
+            <span className="pointer-events-none absolute -top-6 left-0 z-10 rounded-md border border-slate-600/60 bg-slate-800 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-300 shadow-xs">
+              {section.title}
+            </span>
+            <style>{`
+              .xite-visual-editor-guides :where(button, a, img, svg, h1, h2, h3, h4, h5, h6, p, li, label, figcaption, [data-card], .card) {
+                box-shadow: 0 0 0 1px rgba(100, 116, 139, 0.4);
+                border-radius: 0.5rem;
+                transition: box-shadow 150ms ease;
+              }
+              .xite-visual-editor-guides :where(button, a, img, svg, h1, h2, h3, h4, h5, h6, p, li, label, figcaption, [data-card], .card):hover {
+                box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.9);
+              }
+            `}</style>
             <div
               dangerouslySetInnerHTML={{ __html: canvasHtml(section.code) }}
               style={{ display: "contents" }}
@@ -279,6 +298,7 @@ export function SectionVisualEditor({
         snapGuides={inPlaceEditor.snapGuides}
         distanceBadges={inPlaceEditor.distanceBadges}
         dropIndicator={inPlaceEditor.dropIndicator}
+        dropZoneRect={inPlaceEditor.dropZoneRect}
         onDragStart={inPlaceEditor.handlePointerDragStart}
         onStartEdit={(element, sectionIndex) => inPlaceEditor.handleElementDoubleClick(element, sectionIndex)}
       />
