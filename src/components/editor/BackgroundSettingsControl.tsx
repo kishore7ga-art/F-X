@@ -213,6 +213,8 @@ export function SingleRowBackgroundPanel({
           type="button"
           onClick={() => {
             setMode("color");
+            onDraftImage("");
+            onCommitImage("");
             if (safeVideo) onCommitVideo?.("");
           }}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
@@ -245,7 +247,8 @@ export function SingleRowBackgroundPanel({
           type="button"
           onClick={() => {
             setMode("video");
-            if (safeImage) onCommitImage("");
+            onDraftImage("");
+            onCommitImage("");
           }}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
             mode === "video"
@@ -275,6 +278,9 @@ export function SingleRowBackgroundPanel({
                     type="button"
                     title={p.name}
                     onClick={() => {
+                      onDraftImage("");
+                      onCommitImage("");
+                      if (safeVideo) onCommitVideo?.("");
                       onDraftColor(p.hex);
                       onCommitColor(p.hex);
                     }}
@@ -298,6 +304,9 @@ export function SingleRowBackgroundPanel({
                 type="color"
                 value={colorHex}
                 onChange={(e) => {
+                  onDraftImage("");
+                  onCommitImage("");
+                  if (safeVideo) onCommitVideo?.("");
                   onDraftColor(e.target.value);
                   onCommitColor(e.target.value);
                 }}
@@ -309,6 +318,9 @@ export function SingleRowBackgroundPanel({
               type="text"
               value={colorValue || "#ffffff"}
               onChange={(e) => {
+                onDraftImage("");
+                onCommitImage("");
+                if (safeVideo) onCommitVideo?.("");
                 onDraftColor(e.target.value);
                 onCommitColor(e.target.value);
               }}
@@ -322,7 +334,12 @@ export function SingleRowBackgroundPanel({
             <span className="text-[10.5px] font-bold text-slate-500">Designs</span>
             <select
               value={designValue || ""}
-              onChange={(e) => onCommitDesign(e.target.value)}
+              onChange={(e) => {
+                onDraftImage("");
+                onCommitImage("");
+                if (safeVideo) onCommitVideo?.("");
+                onCommitDesign(e.target.value);
+              }}
               className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-400 cursor-pointer"
             >
               {BACKGROUND_DESIGNS.map((d) => (

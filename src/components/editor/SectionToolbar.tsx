@@ -150,11 +150,47 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
 
   if (controlId === "bg-color") {
     const val = String(value || "");
-    root.style.setProperty("background-color", val, "important");
-    const innerBg = root.querySelector<HTMLElement>(".bg-layer, [class*='bg-'], [style*='background']");
-    if (innerBg && innerBg !== root && !innerBg.closest("button, a, .card, [class*='card']")) {
-      innerBg.style.setProperty("background-color", val, "important");
+
+    // 1. Remove background-image on root element
+    root.style.removeProperty("background-image");
+    root.style.backgroundImage = "none";
+
+    // 2. Hide any <img> element used as section background
+    const allImgs = Array.from(root.querySelectorAll<HTMLImageElement>("img"));
+    for (const img of allImgs) {
+      const cls = (img.className || "").toLowerCase();
+      const style = img.getAttribute("style") || "";
+      const parentStyle = img.parentElement?.getAttribute("style") || "";
+      const parentCls = (img.parentElement?.className || "").toLowerCase();
+      if (
+        cls.includes("object-cover") ||
+        cls.includes("w-full") ||
+        style.includes("cover") ||
+        parentStyle.includes("absolute") ||
+        parentCls.includes("absolute") ||
+        img.hasAttribute("data-xite-bg-img")
+      ) {
+        img.style.display = "none";
+        img.setAttribute("data-xite-bg-hidden", "true");
+      }
     }
+
+    // 3. Remove any background video container
+    root.querySelector(".xite-bg-video-container")?.remove();
+
+    // 4. Clear any inner background layers
+    const innerBgs = Array.from(root.querySelectorAll<HTMLElement>(
+      ".bg-layer, [class*='bg-'], [style*='background']"
+    ));
+    for (const innerBg of innerBgs) {
+      if (innerBg !== root && !innerBg.closest("button, a, .card, [class*='card']")) {
+        innerBg.style.backgroundImage = "none";
+        innerBg.style.setProperty("background-color", val, "important");
+      }
+    }
+
+    // 5. Apply background-color
+    root.style.setProperty("background-color", val, "important");
   } else if (controlId === "bg-image") {
     const val = String(value || "").trim();
     if (isUsableImageUrl(val)) {
@@ -164,7 +200,7 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
       root.style.setProperty("background-position", "center", "important");
       root.style.setProperty("background-repeat", "no-repeat", "important");
 
-      // Check for <img> element used as section background
+      // Check for <img> element used as section background and re-show it
       const allImgs = Array.from(root.querySelectorAll<HTMLImageElement>("img"));
       for (const img of allImgs) {
         const cls = (img.className || "").toLowerCase();
@@ -179,6 +215,8 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
           parentCls.includes("absolute") ||
           img.hasAttribute("data-xite-bg-img")
         ) {
+          img.style.display = "";
+          img.removeAttribute("data-xite-bg-hidden");
           img.src = val;
           break;
         }
@@ -195,6 +233,7 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
       }
     } else {
       root.style.removeProperty("background-image");
+      root.style.backgroundImage = "none";
     }
   } else if (controlId === "bg-video") {
     const val = String(value || "").trim();
@@ -599,9 +638,25 @@ export function SectionToolbar({
             <SingleRowBackgroundPanel
               colorValue={activeBackgroundControls.color ? displayValue(activeBackgroundControls.color) : ""}
               onDraftColor={(val) => {
+                if (activeBackgroundControls.image) {
+                  const imgKey = controlValueKey(activeBackgroundControls.image);
+                  setDrafts((curr) => ({ ...curr, [imgKey]: "" }));
+                }
+                if (activeBackgroundControls.video) {
+                  const vidKey = controlValueKey(activeBackgroundControls.video);
+                  setDrafts((curr) => ({ ...curr, [vidKey]: "" }));
+                }
                 if (activeBackgroundControls.color) commitDebounced(activeBackgroundControls.color, val);
               }}
               onCommitColor={(val) => {
+                if (activeBackgroundControls.image) {
+                  const imgKey = controlValueKey(activeBackgroundControls.image);
+                  setDrafts((curr) => ({ ...curr, [imgKey]: "" }));
+                }
+                if (activeBackgroundControls.video) {
+                  const vidKey = controlValueKey(activeBackgroundControls.video);
+                  setDrafts((curr) => ({ ...curr, [vidKey]: "" }));
+                }
                 if (activeBackgroundControls.color) commit(activeBackgroundControls.color, val);
               }}
               designValue={activeBackgroundControls.gradient ? displayValue(activeBackgroundControls.gradient) : ""}

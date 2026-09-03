@@ -612,9 +612,29 @@ function writeStyles(
   if (props["background-color"] !== undefined) {
     const bgColor = props["background-color"]?.trim() || "";
     if (bgColor) {
+      // 1. Remove background-image and video from ManagedStyles so image won't overlay the color
+      keys.forEach((key) => {
+        styles = setManagedProperty(styles, key, tier, "--x-bg-image", null);
+        styles = setManagedProperty(styles, key, tier, "--x-bg-video", null);
+      });
+
+      // 2. Remove video container
+      updatedBody = updatedBody.replace(/<div\s+class=["']xite-bg-video-container["'][\s\S]*?<\/div>/gi, "");
+
+      // 3. Remove any background <img> elements
+      updatedBody = updatedBody.replace(/<img[^>]*?(?:(?:absolute|inset-0)[^>]*?(?:object-cover|w-full)|(?:object-cover)[^>]*?(?:absolute|inset-0)|data-xite-bg-img)[^>]*?>/gi, "");
+
+      // 4. In root element's style, clear any background-image and apply background-color
       updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i, (match, pre, quote, styleContent) => {
-        let sc = styleContent;
-        if (/background-color\s*:\s*[^;]+/i.test(sc)) {
+        let sc = styleContent
+          .replace(/background-image\s*:\s*[^;]+;?/gi, "")
+          .replace(/background-size\s*:\s*[^;]+;?/gi, "")
+          .replace(/background-position\s*:\s*[^;]+;?/gi, "")
+          .replace(/background-repeat\s*:\s*[^;]+;?/gi, "");
+
+        if (/background\s*:\s*url\([^)]+\)[^;]*;?/i.test(sc)) {
+          sc = sc.replace(/background\s*:\s*url\([^)]+\)[^;]*;?/gi, `background: ${bgColor};`);
+        } else if (/background-color\s*:\s*[^;]+/i.test(sc)) {
           sc = sc.replace(/background-color\s*:\s*[^;]+/gi, `background-color: ${bgColor}`);
         } else if (/background\s*:\s*#[0-9a-f]{3,8}/i.test(sc)) {
           sc = sc.replace(/background\s*:\s*#[0-9a-f]{3,8}/gi, `background: ${bgColor}`);
@@ -623,6 +643,9 @@ function writeStyles(
         }
         return `${pre}${sc}${quote}`;
       });
+
+      // 5. In any inner containers, remove background-image
+      updatedBody = updatedBody.replace(/(style=(["'])[\s\S]*?)background(?:-image)?\s*:\s*url\([^)]+\)[^;]*;?([\s\S]*?\2)/gi, `$1$3`);
     }
   }
 

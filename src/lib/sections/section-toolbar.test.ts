@@ -531,6 +531,20 @@ describe("background image & color markup sync", () => {
     assert.ok(patch.code.includes("background-color:#ef4444 !important"));
     assert.ok(patch.code.includes("background-color: #ef4444"));
   });
+
+  it("removes background image from markup and managed CSS when background color is chosen", () => {
+    const heroWithImage = `<section style="background: url('https://api.webxite.org/uploads/car.jpg') center/cover; color:#fff;"><img class="absolute inset-0 w-full h-full object-cover" src="https://api.webxite.org/uploads/car.jpg" /><h1>Hero</h1></section>`;
+    const s = { ...section(heroWithImage, "hero"), category: "hero" as const };
+    const schema = buildSectionSchema(s);
+    const bgColorControl = schema.groups.find((g) => g.id === "background")?.controls.find((c) => c.id === "bg-color")!;
+
+    const patch = applyControl(s, bgColorControl, "desktop", "#3b82f6");
+    assert.ok(patch?.code);
+    assert.ok(!patch.code.includes("https://api.webxite.org/uploads/car.jpg"));
+    assert.ok(!patch.code.includes("<img"));
+    assert.ok(patch.code.includes("background-color:#3b82f6 !important"));
+    assert.ok(patch.code.includes("#3b82f6"));
+  });
 });
 
 
