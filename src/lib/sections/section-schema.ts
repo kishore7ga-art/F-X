@@ -361,7 +361,7 @@ export function buildSectionSchema(section: {
     return created;
   };
 
-  /* — 1. Layout (Minimal: only element gap spacing slider with 'Auto' toggle) — */
+  /* — 1. Layout (gap, plus horizontal/vertical alignment of that same track) — */
   const layout = group("layout");
   const mainTrack = probe.tracks.find((track) => !insideList(track.path));
   const gapTarget = mainTrack ? at(mainTrack.path) : rootTarget;
@@ -372,6 +372,12 @@ export function buildSectionSchema(section: {
       max: 80,
       step: 4,
       hint: "Spacing between elements in this section",
+    }),
+    selectControl("layout-justify", "Horizontal alignment", gapTarget, "justify-content", JUSTIFY_OPTIONS, {
+      hint: "How elements line up along the row",
+    }),
+    selectControl("layout-align", "Vertical alignment", gapTarget, "align-items", ALIGN_ITEMS_OPTIONS, {
+      hint: "How elements line up across the row",
     }),
   );
 

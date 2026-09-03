@@ -276,7 +276,15 @@ export function SectionVisualEditor({
             onMouseLeave={handleCanvasMouseLeave}
             className="xite-visual-editor-guides relative w-full cursor-default border border-dashed border-slate-600/60 rounded-xl"
           >
-            <span className="pointer-events-none absolute -top-6 left-0 z-10 rounded-md border border-slate-600/60 bg-slate-800 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-300 shadow-xs">
+            {/*
+              Inset, not `-top-6` above the box: a negative offset put the
+              badge outside this element's own bounding box, which is what
+              made the section's "boundary" visually spill past its
+              container — the border stayed put but the label attached to it
+              did not. Keeping every part of the boundary UI inside its own
+              box is what makes "the boundary" mean something.
+            */}
+            <span className="pointer-events-none absolute left-2 top-2 z-10 rounded-md border border-slate-600/60 bg-slate-800 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-300 shadow-xs">
               {section.title}
             </span>
             <style>{`
