@@ -17,6 +17,7 @@ import {
 } from "@/lib/site-sections";
 import { tokenizeSectionHtml } from "@/lib/editor-themes";
 import { resolveCategory } from "@/lib/sections/categories";
+import { isHeaderOverlaid } from "@/lib/sections/section-edit";
 
 
 /**
@@ -384,28 +385,29 @@ export function PreviewSiteViewer({
   }
 
   const body = sections.map((sec, idx) => {
-      // The navbar, by what it actually is. `idx === 0` was one of the
-      // tests, so on a site with no navbar the first section — whatever it
-      // happened to be — was given the sticky header's z-index.
       const isHeader = resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
-      void idx;
+      const isOverlaid = isHeader && isHeaderOverlaid(sec);
+      const isFollowsOverlaidHeader = idx === 1 && sections[0] && isHeaderOverlaid(sections[0]);
       return (
         <div
           key={sec.id}
           data-xite-section={sec.id}
           style={{
-            // A header that sticks has to sit above what follows it; the rest
-            // stack in source order. No clipping — the Admin's iframe does not
-            // clip either, and `overflow: hidden` here cut off every shadow,
-            // dropdown and sticky element a section had.
-            //
-            // The rest carried a descending z-index, which stacked every
-            // section above the one after it — the reverse of how HTML paints,
-            // so an overlapping decoration rendered over its neighbour instead
-            // of under it. Natural order is both correct and what the Admin
-            // shows.
-            ...(isHeader ? { zIndex: 40 } : null),
-            position: "relative",
+            ...(isOverlaid ? {
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              width: "100%",
+              zIndex: 50,
+              backgroundColor: "transparent",
+            } : isHeader ? {
+              zIndex: 40,
+              position: "relative",
+            } : {
+              position: "relative",
+              ...(isFollowsOverlaidHeader ? { paddingTop: "85px" } : null),
+            }),
           }}
           className="w-full relative transition-all group section-wrapper-container"
           dangerouslySetInnerHTML={{ __html: tokenizeSectionHtml(sectionCanvasHtml(sec.code)) }}

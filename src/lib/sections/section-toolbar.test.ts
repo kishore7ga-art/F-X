@@ -33,6 +33,8 @@ import {
   readControlValue,
   resetSectionStyling,
   withAlpha,
+  isHeaderOverlaid,
+  toggleHeaderOverlay,
   type EditableSection,
 } from "./section-edit";
 
@@ -475,3 +477,21 @@ describe("withAlpha", () => {
     assert.equal(withAlpha("var(--brand)", 0.5), "var(--brand)");
   });
 });
+
+describe("header overlay — header floats transparently over hero", () => {
+  it("toggles header overlay on and off", () => {
+    const navbar = section(NAVBAR, "navbar");
+    assert.equal(isHeaderOverlaid(navbar), false);
+
+    const overlaid = toggleHeaderOverlay(navbar, true);
+    assert.equal(isHeaderOverlaid(overlaid), true);
+    assert.ok(overlaid.code.includes("position:absolute"));
+    assert.ok(overlaid.code.includes("z-index:50"));
+    assert.ok(overlaid.code.includes("--x-header-overlay:hero"));
+
+    const detached = toggleHeaderOverlay(overlaid, false);
+    assert.equal(isHeaderOverlaid(detached), false);
+    assert.ok(!detached.code.includes("--x-header-overlay:hero"));
+  });
+});
+

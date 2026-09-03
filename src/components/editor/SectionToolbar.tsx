@@ -107,6 +107,8 @@ type Props = {
   onDeleteSection?: () => void;
   saveStatus?: SaveStatus;
   saveError?: string | null;
+  isOverlaid?: boolean;
+  onToggleOverlay?: () => void;
 };
 
 const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
@@ -156,6 +158,8 @@ export function SectionToolbar({
   onDeleteSection,
   saveStatus = "idle",
   saveError = null,
+  isOverlaid = false,
+  onToggleOverlay,
 }: Props) {
   const editable: EditableSection = useMemo(
     () => ({ title: section.title, code: section.code, category: section.category }),
@@ -455,6 +459,22 @@ export function SectionToolbar({
               className="rounded-lg p-1.5 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
             >
               <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          {/* Overlay on Hero toggle button for Navbar/Header sections */}
+          {(section.category === "navbar" || position.index === 0) && onToggleOverlay && (
+            <button
+              type="button"
+              onClick={onToggleOverlay}
+              title={isOverlaid ? "Detach header from hero" : "Overlay header on hero"}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition shadow-xs ${
+                isOverlaid
+                  ? "bg-cyan-600 text-white hover:bg-cyan-500 shadow-cyan-700/20"
+                  : "bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200"
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              <span>{isOverlaid ? "Overlaid on Hero" : "Overlay on Hero"}</span>
             </button>
           )}
           <span

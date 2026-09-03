@@ -72,7 +72,9 @@ import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
 import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css";
-import type { SectionPatch } from "@/lib/sections/section-edit";
+import { isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
+import { resolveCategory } from "@/lib/sections/categories";
+import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -1856,52 +1858,84 @@ export function EditorStudio({
             /* Pure Section Rendering for Current Page */
             <div className="w-full" ref={canvasRootRef}>
               {sections.map((sec, idx) => {
-                const isHeader = sec.category === "navbar";
+                const isHeader = sec.category === "navbar" || resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
+                const isOverlaid = isHeader && isHeaderOverlaid(sec);
+                const isFollowsOverlaidHeader = idx === 1 && sections[0] && isHeaderOverlaid(sections[0]);
                 return (
-                  <div
-                    key={sec.id}
-                    onClickCapture={(e) => {
-                      setActiveSectionIndex(idx);
-                      inPlaceEditor.handleElementClick(e.target as HTMLElement, idx, e);
-                      const btnTarget = (e.target as HTMLElement).closest("a, button");
-                      if (btnTarget) {
-                        openCustomToolbar(idx);
-                      }
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onDoubleClickCapture={(e) => {
-                      inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
-                    }}
-                    onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
-                    data-xite-section={sec.id}
-                    style={{
-                      ...(isHeader ? { zIndex: 40 } : null),
-                      position: "relative",
-                    }}
-                    className="w-full relative transition-all group section-wrapper-container cursor-default"
-                  >
+                  <React.Fragment key={sec.id}>
                     <div
-                      dangerouslySetInnerHTML={{ __html: canvasHtml(sec.code) }}
-                      style={{ display: "contents" }}
-                    />
+                      onClickCapture={(e) => {
+                        setActiveSectionIndex(idx);
+                        inPlaceEditor.handleElementClick(e.target as HTMLElement, idx, e);
+                        const btnTarget = (e.target as HTMLElement).closest("a, button");
+                        if (btnTarget) {
+                          openCustomToolbar(idx);
+                        }
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onDoubleClickCapture={(e) => {
+                        inPlaceEditor.handleElementDoubleClick(e.target as HTMLElement, idx, e);
+                      }}
+                      onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
+                      data-xite-section={sec.id}
+                      style={{
+                        ...(isOverlaid ? {
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          width: "100%",
+                          zIndex: 50,
+                          pointerEvents: "auto",
+                          backgroundColor: "transparent",
+                        } : isHeader ? {
+                          zIndex: 40,
+                          position: "relative",
+                        } : {
+                          position: "relative",
+                          ...(isFollowsOverlaidHeader ? { paddingTop: "85px" } : null),
+                        }),
+                      }}
+                      className="w-full relative transition-all group section-wrapper-container cursor-default"
+                    >
+                      <div
+                        dangerouslySetInnerHTML={{ __html: canvasHtml(sec.code) }}
+                        style={{ display: "contents" }}
+                      />
 
-                    {/* This section occupies space and shows nothing */}
-                    {emptySectionIds.has(sec.id) && (
-                      <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-6">
-                        <div className="pointer-events-auto max-w-md rounded-xl border border-amber-400/40 bg-amber-950/85 px-4 py-3 text-center shadow-lg backdrop-blur-sm">
-                          <p className="text-[11px] font-black tracking-tight text-amber-200">
-                            &ldquo;{sec.title}&rdquo; is rendering empty
-                          </p>
-                          <p className="mt-1 text-[10px] font-medium leading-relaxed text-amber-100/70">
-                            It takes up space but shows nothing. Usually its content is built by a
-                            script. Try Swap to another layout, or delete it.
-                          </p>
+                      {/* This section occupies space and shows nothing */}
+                      {emptySectionIds.has(sec.id) && (
+                        <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-6">
+                          <div className="pointer-events-auto max-w-md rounded-xl border border-amber-400/40 bg-amber-950/85 px-4 py-3 text-center shadow-lg backdrop-blur-sm">
+                            <p className="text-[11px] font-black tracking-tight text-amber-200">
+                              &ldquo;{sec.title}&rdquo; is rendering empty
+                            </p>
+                            <p className="mt-1 text-[10px] font-medium leading-relaxed text-amber-100/70">
+                              It takes up space but shows nothing. Usually its content is built by a
+                              script. Try Swap to another layout, or delete it.
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      )}
+                    </div>
+
+                    {/* Interactive Header Overlay Drop Zone between Header and Hero */}
+                    {idx === 0 && sections.length > 1 && (isHeader || sections[0].category === "navbar") && (
+                      <HeaderOverlayDropZone
+                        isOverlaid={isHeaderOverlaid(sec)}
+                        onToggleOverlay={(enable) => {
+                          const updated = toggleHeaderOverlay(sec, enable);
+                          setSectionsWithHistory((prev) =>
+                            prev.map((s, i) => (i === 0 ? updated : s)),
+                          );
+                        }}
+                        headerTitle={sec.title || "Header"}
+                        heroTitle={sections[1]?.title || "Hero"}
+                      />
                     )}
-                  </div>
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -2187,6 +2221,16 @@ export function EditorStudio({
             onDeleteSection={handleDeleteSection}
             saveStatus={editor.saveStatus}
             saveError={editor.saveError}
+            isOverlaid={isHeaderOverlaid(customToolbarSection)}
+            onToggleOverlay={() => {
+              const secIdx = customToolbarState.sectionIndex;
+              if (secIdx === null || !sections[secIdx]) return;
+              const target = sections[secIdx];
+              const updated = toggleHeaderOverlay(target);
+              setSectionsWithHistory((prev) =>
+                prev.map((s, i) => (i === secIdx ? updated : s)),
+              );
+            }}
           />
         ) : (
           <EditorToolbar

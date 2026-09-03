@@ -178,6 +178,7 @@ const BACKGROUND_VARS = [
   "--x-bg-size",
   "--x-bg-blur",
   "--x-bg-video",
+  "--x-header-overlay",
 ] as const;
 const SHADOW_VARS = [
   "--x-shadow-x", "--x-shadow-y", "--x-shadow-blur", "--x-shadow-spread",
@@ -237,6 +238,24 @@ function recomposeComposites(styles: ManagedStyles, key: string, tier: Tier): Ma
       "box-shadow",
       `${px(read("--x-shadow-x"), "0px")} ${px(read("--x-shadow-y"), "10px")} ${px(read("--x-shadow-blur"), "25px")} ${px(read("--x-shadow-spread"), "0px")} ${color}`,
     );
+  }
+
+  /* Header overlay on hero positioning */
+  const headerOverlay = read("--x-header-overlay");
+  if (headerOverlay === "hero") {
+    next = setManagedProperty(next, key, device, "position", "absolute");
+    next = setManagedProperty(next, key, device, "top", "0px");
+    next = setManagedProperty(next, key, device, "left", "0px");
+    next = setManagedProperty(next, key, device, "right", "0px");
+    next = setManagedProperty(next, key, device, "width", "100%");
+    next = setManagedProperty(next, key, device, "z-index", "50");
+  } else if (headerOverlay === "none") {
+    next = setManagedProperty(next, key, device, "position", null);
+    next = setManagedProperty(next, key, device, "top", null);
+    next = setManagedProperty(next, key, device, "left", null);
+    next = setManagedProperty(next, key, device, "right", null);
+    next = setManagedProperty(next, key, device, "width", null);
+    next = setManagedProperty(next, key, device, "z-index", null);
   }
 
   return next;
@@ -815,3 +834,66 @@ export function hexFromValue(value: string, fallback = "#000000"): string {
   }
   return fallback;
 }
+
+/**
+ * Checks whether a section is configured to overlay the hero section below it.
+ */
+export function isHeaderOverlaid(section: { code?: string; title?: string } | null | undefined): boolean {
+  if (!section || !section.code) return false;
+  return (
+    section.code.includes("--x-header-overlay:hero") ||
+    section.code.includes("--x-header-overlay: hero")
+  );
+}
+
+/**
+ * Toggles or sets the header overlay mode on a header/navbar section.
+ * When enabled, the header is positioned transparently on top of the hero section below it.
+ */
+export function toggleHeaderOverlay<T extends EditableSection>(
+  section: T,
+  enable?: boolean,
+): T {
+  const current = isHeaderOverlaid(section);
+  const nextState = enable !== undefined ? enable : !current;
+  if (nextState === current) return section;
+
+  const parts = splitSectionCode(section.code);
+  const rootTarget: ElementPath = [0];
+  const { body, keys } = ensureKeys(parts.bodyHtml, [rootTarget]);
+  let styles = parseManagedStyles(parts.headCss);
+  const rootKey = keys[0] || Object.keys(styles)[0] || "e1";
+
+  if (nextState) {
+    styles = setManagedProperty(styles, rootKey, "desktop", "--x-header-overlay", "hero");
+    styles = setManagedProperty(styles, rootKey, "desktop", "position", "absolute");
+    styles = setManagedProperty(styles, rootKey, "desktop", "top", "0px");
+    styles = setManagedProperty(styles, rootKey, "desktop", "left", "0px");
+    styles = setManagedProperty(styles, rootKey, "desktop", "right", "0px");
+    styles = setManagedProperty(styles, rootKey, "desktop", "width", "100%");
+    styles = setManagedProperty(styles, rootKey, "desktop", "z-index", "50");
+  } else {
+    const targetKeys = new Set([rootKey, ...Object.keys(styles)]);
+    targetKeys.forEach((k) => {
+      styles = setManagedProperty(styles, k, "desktop", "--x-header-overlay", null);
+      styles = setManagedProperty(styles, k, "desktop", "position", null);
+      styles = setManagedProperty(styles, k, "desktop", "top", null);
+      styles = setManagedProperty(styles, k, "desktop", "left", null);
+      styles = setManagedProperty(styles, k, "desktop", "right", null);
+      styles = setManagedProperty(styles, k, "desktop", "width", null);
+      styles = setManagedProperty(styles, k, "desktop", "z-index", null);
+    });
+  }
+
+  const nextCode = joinSectionCode({
+    ...parts,
+    headCss: writeManagedRegion(parts.headCss, styles),
+    bodyHtml: body,
+  });
+
+  return {
+    ...section,
+    code: nextCode,
+  };
+}
+
