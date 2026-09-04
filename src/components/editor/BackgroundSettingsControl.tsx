@@ -70,12 +70,21 @@ const BACKGROUND_DESIGNS = [
   { label: "Midnight Slate", value: "linear-gradient(135deg, #0f172a 0%, #334155 100%)" },
 ];
 
-const IMAGE_SHADOW_PRESETS = [
+const SECTION_SHADOW_PRESETS = [
   { label: "None", value: "" },
   { label: "Soft", value: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" },
   { label: "Medium", value: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)" },
   { label: "Deep", value: "0 25px 50px -12px rgba(0, 0, 0, 0.35)" },
+  { label: "Strong", value: "0 35px 60px -15px rgba(0, 0, 0, 0.5)" },
 ];
+
+function isShadowPresetActive(currentValue: string, presetValue: string): boolean {
+  const normCurrent = (currentValue || "").replace(/,\s*/g, ",").replace(/\s+/g, " ").trim().toLowerCase();
+  const normPreset = (presetValue || "").replace(/,\s*/g, ",").replace(/\s+/g, " ").trim().toLowerCase();
+  if (!normCurrent && !normPreset) return true;
+  if (!normCurrent || !normPreset) return false;
+  return normCurrent === normPreset;
+}
 
 const DENSITY_PRESETS = [
   { label: "Cover", value: "cover" },
@@ -354,6 +363,30 @@ export function SingleRowBackgroundPanel({
               ))}
             </select>
           </div>
+
+          {/* Shadow Preset Pills */}
+          <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
+            <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Shadow</span>
+            <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
+              {SECTION_SHADOW_PRESETS.map((p) => {
+                const active = isShadowPresetActive(shadowValue, p.value);
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => onCommitShadow(p.value)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                      active
+                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </>
       )}
 
@@ -417,18 +450,18 @@ export function SingleRowBackgroundPanel({
             )}
           </div>
 
-          {/* Image Shadow */}
+          {/* Shadow */}
           <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-            <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Image shadow</span>
+            <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Shadow</span>
             <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
-              {IMAGE_SHADOW_PRESETS.map((p) => {
-                const active = (shadowValue || "") === p.value;
+              {SECTION_SHADOW_PRESETS.map((p) => {
+                const active = isShadowPresetActive(shadowValue, p.value);
                 return (
                   <button
                     key={p.label}
                     type="button"
                     onClick={() => onCommitShadow(p.value)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
                       active
                         ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
                         : "text-slate-500 hover:text-slate-800"
@@ -549,6 +582,30 @@ export function SingleRowBackgroundPanel({
             <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-700">
               Muted
             </span>
+          </div>
+
+          {/* Shadow */}
+          <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
+            <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Shadow</span>
+            <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
+              {SECTION_SHADOW_PRESETS.map((p) => {
+                const active = isShadowPresetActive(shadowValue, p.value);
+                return (
+                  <button
+                    key={p.label}
+                    type="button"
+                    onClick={() => onCommitShadow(p.value)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
+                      active
+                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </>
       )}

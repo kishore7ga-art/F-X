@@ -230,10 +230,12 @@ const GRADIENT_OPTIONS: readonly ControlOption[] = [
   { value: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)", label: "Amber to red" },
 ];
 
-const BUTTON_SHADOW_OPTIONS: readonly ControlOption[] = [
+const SECTION_SHADOW_OPTIONS: readonly ControlOption[] = [
   { value: "", label: "None" },
-  { value: "0 4px 14px -2px rgba(0, 0, 0, 0.12)", label: "Soft" },
-  { value: "0 10px 25px -4px rgba(0, 0, 0, 0.28)", label: "Strong" },
+  { value: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)", label: "Soft" },
+  { value: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)", label: "Medium" },
+  { value: "0 25px 50px -12px rgba(0, 0, 0, 0.35)", label: "Deep" },
+  { value: "0 35px 60px -15px rgba(0, 0, 0, 0.5)", label: "Strong" },
 ];
 
 const BUTTON_SIZE_OPTIONS: readonly ControlOption[] = [
@@ -368,7 +370,7 @@ export function buildSectionSchema(section: {
       placeholder: "https://…",
     },
     selectControl("bg-gradient", "Designs", rootTarget, "--x-gradient", GRADIENT_OPTIONS),
-    styleControl("bg-shadow", "Image shadow", rootTarget, "box-shadow"),
+    selectControl("bg-shadow", "Shadow", rootTarget, "box-shadow", SECTION_SHADOW_OPTIONS),
     styleControl("bg-density", "Image density", rootTarget, "--x-bg-size"),
     styleControl("bg-blur", "Image blur", rootTarget, "--x-bg-blur"),
     styleControl("bg-video", "Background video", rootTarget, "--x-bg-video"),
@@ -418,23 +420,7 @@ export function buildSectionSchema(section: {
     });
   }
 
-  /* — 3. Shadow (X, Y, blur, spread, and shadow color adjustments) —————— */
-  group("shadow").controls.push(
-    lengthControl("shadow-x", "Offset X", rootTarget, "--x-shadow-x", { min: -200, max: 200 }),
-    lengthControl("shadow-y", "Offset Y", rootTarget, "--x-shadow-y", { min: -200, max: 200 }),
-    lengthControl("shadow-blur", "Blur", rootTarget, "--x-shadow-blur", { max: 200 }),
-    lengthControl("shadow-spread", "Spread", rootTarget, "--x-shadow-spread", { min: -100, max: 100 }),
-    colorControl("shadow-color", "Shadow colour", rootTarget, "--x-shadow-color"),
-    styleControl("shadow-opacity", "Shadow opacity", rootTarget, "--x-shadow-opacity", {
-      kind: "number",
-      unit: "",
-      min: 0,
-      max: 1,
-      step: 0.05,
-    }),
-  );
-
-  /* — 4. Animation (Entrance and hover animation effects) —————————————— */
+  /* — 3. Animation (Entrance and hover animation effects) —————————————— */
   group("animation").controls.push(
     selectControl("anim-preset", "Entrance effect", rootTarget, "animation", [
       { value: "", label: "None" },

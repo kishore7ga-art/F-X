@@ -333,13 +333,13 @@ describe("section-probe — controls come from the markup, not from a table", ()
 /* ── The schema ─────────────────────────────────────────────────────────── */
 
 describe("section-schema — a different toolbar per section", () => {
-  it("gives a section the retained background, buttons, shadow, animation, and section controls", () => {
+  it("gives a section the retained background, buttons, animation, and section controls", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
     assert.ok(schema.capabilities.includes("background"));
     assert.ok(schema.capabilities.includes("buttons"));
-    assert.ok(schema.capabilities.includes("shadow"));
     assert.ok(schema.capabilities.includes("animation"));
     assert.ok(schema.capabilities.includes("section"));
+    assert.ok(!schema.capabilities.includes("shadow" as any));
     assert.equal(schema.categoryLabel, "Hero");
   });
 
@@ -439,16 +439,13 @@ describe("section-edit — every control edits the section for real", () => {
     assert.equal(readControlValue(current, control("bg-image"), "desktop").value, "https://x/y.jpg");
   });
 
-  it("composes a shadow from its six inputs", () => {
-    let current = section(applyControl(section(HERO), control("shadow-y"), "desktop", "18px")!.code!);
-    current = section(applyControl(current, control("shadow-blur"), "desktop", "40px")!.code!);
-    current = section(applyControl(current, control("shadow-color"), "desktop", "#0f172a")!.code!);
-    current = section(applyControl(current, control("shadow-opacity"), "desktop", "0.25")!.code!);
-    assert.ok(current.code.includes("box-shadow:0px 18px 40px 0px rgba(15, 23, 42, 0.25)"));
+  it("applies a shadow preset from the background controls", () => {
+    const patch = applyControl(section(HERO), control("bg-shadow"), "desktop", "0 10px 25px -5px rgba(0, 0, 0, 0.1)")!;
+    assert.ok(patch.code!.includes("box-shadow:0 10px 25px -5px rgba(0, 0, 0, 0.1)"));
   });
 
   it("resets its own styling and leaves the author's markup exactly as it was", () => {
-    let current = section(applyControl(section(HERO), control("shadow-blur"), "desktop", "32px")!.code!);
+    let current = section(applyControl(section(HERO), control("bg-shadow"), "desktop", "0 10px 25px -5px rgba(0, 0, 0, 0.1)")!.code!);
     current = section(applyControl(current, control("bg-color"), "mobile", "#000000")!.code!);
     assert.ok(hasManagedStyling(current.code));
 

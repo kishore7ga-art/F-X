@@ -540,6 +540,11 @@ function writeStyles(
   keys.forEach((key) => {
     Object.entries(props).forEach(([prop, value]) => {
       styles = setManagedProperty(styles, key, tier, prop, value);
+      if (prop === "box-shadow") {
+        SHADOW_VARS.forEach((sv) => {
+          styles = setManagedProperty(styles, key, tier, sv, null);
+        });
+      }
     });
     if (Object.keys(props).some((prop) => COMPOSITE_VARS.includes(prop))) {
       styles = recomposeComposites(styles, key, tier);
@@ -656,6 +661,18 @@ function writeStyles(
       // 5. In any inner containers, remove background-image
       updatedBody = updatedBody.replace(/(style=(["'])[\s\S]*?)background(?:-image)?\s*:\s*url\([^)]+\)[^;]*;?([\s\S]*?\2)/gi, `$1$3`);
     }
+  }
+
+  // Handle box-shadow in markup
+  if (props["box-shadow"] !== undefined) {
+    const shadowVal = props["box-shadow"]?.trim() || "";
+    updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i, (match, pre, quote, styleContent) => {
+      let sc = styleContent.replace(/box-shadow\s*:\s*[^;]+;?/gi, "").trim();
+      if (shadowVal) {
+        sc = sc.replace(/;?\s*$/, `; box-shadow: ${shadowVal};`);
+      }
+      return `${pre}${sc}${quote}`;
+    });
   }
 
   return joinSectionCode({

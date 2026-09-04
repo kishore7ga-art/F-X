@@ -265,11 +265,21 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
         vid.play().catch(() => {});
       }
     }
-  } else if (controlId === "bg-image-shadow") {
-    root.style.setProperty("box-shadow", String(value || "none"), "important");
-  } else if (controlId === "bg-image-density") {
+  } else if (controlId === "bg-shadow" || controlId === "bg-image-shadow" || controlId === "shadow" || controlId === "box-shadow") {
+    const val = String(value || "").trim();
+    const canvasBox = secEl.querySelector(".section-canvas-box") as HTMLElement | null;
+    if (val && val !== "none") {
+      root.style.setProperty("box-shadow", val, "important");
+      secEl.style.setProperty("box-shadow", val, "important");
+      if (canvasBox) canvasBox.style.setProperty("box-shadow", val, "important");
+    } else {
+      root.style.removeProperty("box-shadow");
+      secEl.style.removeProperty("box-shadow");
+      if (canvasBox) canvasBox.style.removeProperty("box-shadow");
+    }
+  } else if (controlId === "bg-image-density" || controlId === "bg-density") {
     root.style.setProperty("background-size", String(value || "cover"), "important");
-  } else if (controlId === "bg-image-blur") {
+  } else if (controlId === "bg-image-blur" || controlId === "bg-blur") {
     root.style.setProperty("filter", value && value !== "0px" ? `blur(${value})` : "none", "important");
   }
 }
