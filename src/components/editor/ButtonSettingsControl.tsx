@@ -7,24 +7,23 @@ export interface SingleRowButtonPanelProps {
   buttonCount: number;
   activeButtonIndex: number;
   onSelectButtonIndex: (index: number) => void;
-  // Button Box Shape / Corner Radius
-  radiusValue: string;
-  onCommitRadius: (value: string) => void;
-  // Border Stroke Width
-  borderValue: string;
-  onCommitBorder: (value: string) => void;
-  // Button Size
-  sizeValue?: string;
-  onCommitSize?: (value: string) => void;
-  // Background Color
+  // Button Background Color
   bgValue: string;
   onDraftBg: (value: string) => void;
   onCommitBg: (value: string) => void;
-  // Text Color
+  // Button Box Shape / Corner Radius
+  radiusValue: string;
+  onCommitRadius: (value: string) => void;
+  // Button Size (Box Sizing)
+  sizeValue?: string;
+  onCommitSize?: (value: string) => void;
+  // Button Text Color
   textColorValue: string;
   onDraftTextColor: (value: string) => void;
   onCommitTextColor: (value: string) => void;
-  // Backward compatibility optional shadow props
+  // Backward compatibility optional props
+  borderValue?: string;
+  onCommitBorder?: (value: string) => void;
   shadowValue?: string;
   onCommitShadow?: (value: string) => void;
 }
@@ -39,15 +38,13 @@ export function SingleRowButtonPanel({
   buttonCount,
   activeButtonIndex,
   onSelectButtonIndex,
-  radiusValue,
-  onCommitRadius,
-  borderValue,
-  onCommitBorder,
-  sizeValue,
-  onCommitSize,
   bgValue,
   onDraftBg,
   onCommitBg,
+  radiusValue,
+  onCommitRadius,
+  sizeValue,
+  onCommitSize,
   textColorValue,
   onDraftTextColor,
   onCommitTextColor,
@@ -61,14 +58,14 @@ export function SingleRowButtonPanel({
   const textHex = hexFromValue(String(textColorValue ?? ""), "#ffffff");
 
   return (
-    <div className="flex items-center gap-4 sm:gap-5 overflow-x-auto py-1 px-1 flex-nowrap w-full">
-      {/* 1. Button Selector: How many buttons exist & select 1 to customise */}
-      <div className="flex items-center gap-1 shrink-0 bg-slate-100 p-0.5 rounded-full border border-slate-200">
-        <span className="text-[10px] font-mono font-bold text-slate-400 px-2 select-none">
-          {buttonCount} {buttonCount === 1 ? "button" : "buttons"}
-        </span>
-        {buttonCount > 0 &&
-          Array.from({ length: buttonCount }).map((_, i) => {
+    <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto py-1 px-1 flex-nowrap w-full">
+      {/* Button Selector: Only shown if more than 1 button exists */}
+      {buttonCount > 1 && (
+        <div className="flex items-center gap-1 shrink-0 bg-slate-100 p-0.5 rounded-full border border-slate-200">
+          <span className="text-[10px] font-mono font-bold text-slate-400 px-2 select-none">
+            {buttonCount} buttons
+          </span>
+          {Array.from({ length: buttonCount }).map((_, i) => {
             const active = i === activeButtonIndex;
             const label = i === 0 ? "Primary" : i === 1 ? "Secondary" : `Btn ${i + 1}`;
             return (
@@ -76,7 +73,7 @@ export function SingleRowButtonPanel({
                 key={i}
                 type="button"
                 onClick={() => onSelectButtonIndex(i)}
-                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-150 ${
+                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-150 cursor-pointer ${
                   active
                     ? "bg-slate-900 text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
@@ -86,11 +83,27 @@ export function SingleRowButtonPanel({
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* 1. Button Color */}
+      <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Button color">
+        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Button color</span>
+        <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
+          <input
+            type="color"
+            value={bgHex}
+            onChange={(e) => onDraftBg(e.target.value)}
+            onBlur={(e) => onCommitBg(e.target.value)}
+            className="absolute -inset-2 w-10 h-10 cursor-pointer opacity-0"
+          />
+          <div className="w-full h-full" style={{ backgroundColor: bgValue || "#2563eb" }} />
+        </div>
       </div>
 
-      {/* 2. Button Box (Corner Radius): 0px to 40px with Auto toggle */}
-      <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Box radius</span>
+      {/* 2. Button Radius (0px to 40px with Auto toggle) */}
+      <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Button radius">
+        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Button radius</span>
         <input
           type="range"
           min={0}
@@ -108,7 +121,7 @@ export function SingleRowButtonPanel({
         <button
           type="button"
           onClick={() => onCommitRadius("")}
-          className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold transition border ${
+          className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold transition border cursor-pointer ${
             isAutoRadius
               ? "bg-slate-900 text-white border-slate-900 shadow-xs"
               : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
@@ -118,37 +131,9 @@ export function SingleRowButtonPanel({
         </button>
       </div>
 
-      {/* 3. Border Stroke: 0px to 3px */}
-      <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Border</span>
-        <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
-          {["0px", "1px", "2px", "3px"].map((widthStr) => {
-            const rawBorder = String(borderValue || "0px");
-            const borderStr = rawBorder.replace(/\s/g, "");
-            const active =
-              borderStr === widthStr ||
-              (widthStr === "0px" && (!rawBorder || rawBorder === "0" || rawBorder === "none"));
-            return (
-              <button
-                key={widthStr}
-                type="button"
-                onClick={() => onCommitBorder(widthStr === "0px" ? "" : widthStr)}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold transition ${
-                  active
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {widthStr}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. Button Size: Small | Medium | Large */}
-      <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Size</span>
+      {/* 3. Box Sizing (Button Size: Small | Medium | Large) */}
+      <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Box sizing">
+        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Box sizing</span>
         <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
           {BUTTON_SIZES.map((size) => {
             const active = (sizeValue || "").replace(/\s+/g, " ") === size.value;
@@ -157,7 +142,7 @@ export function SingleRowButtonPanel({
                 key={size.label}
                 type="button"
                 onClick={() => onCommitSize?.(size.value)}
-                className={`px-2.5 py-0.5 rounded text-[10px] font-bold transition ${
+                className={`px-2.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
                   active
                     ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
                     : "text-slate-500 hover:text-slate-800"
@@ -170,43 +155,25 @@ export function SingleRowButtonPanel({
         </div>
       </div>
 
-      {/* 5. Button Colour & Text Colour */}
-      <div className="flex items-center gap-3 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-        {/* Background Swatch */}
-        <div className="flex items-center gap-1.5" title="Button Background Colour">
-          <span className="text-[10.5px] font-bold text-slate-500">Colour</span>
-          <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
-            <input
-              type="color"
-              value={bgHex}
-              onChange={(e) => onDraftBg(e.target.value)}
-              onBlur={(e) => onCommitBg(e.target.value)}
-              className="absolute -inset-2 w-10 h-10 cursor-pointer opacity-0"
-            />
-            <div className="w-full h-full" style={{ backgroundColor: bgValue || "#2563eb" }} />
-          </div>
-        </div>
-
-        {/* Text Colour Swatch */}
-        <div className="flex items-center gap-1.5" title="Button Text Colour">
-          <span className="text-[10.5px] font-bold text-slate-500">Text</span>
-          <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
-            <input
-              type="color"
-              value={textHex}
-              onChange={(e) => onDraftTextColor(e.target.value)}
-              onBlur={(e) => onCommitTextColor(e.target.value)}
-              className="absolute -inset-2 w-10 h-10 cursor-pointer opacity-0"
-            />
-            <div
-              className="w-full h-full flex items-center justify-center font-black text-[10px] rounded-[5px]"
-              style={{
-                backgroundColor: textColorValue || "#ffffff",
-                color: textColorValue === "#ffffff" ? "#0f172a" : "#ffffff",
-              }}
-            >
-              A
-            </div>
+      {/* 4. Button Text Color */}
+      <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Button text colour">
+        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Button text colour</span>
+        <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
+          <input
+            type="color"
+            value={textHex}
+            onChange={(e) => onDraftTextColor(e.target.value)}
+            onBlur={(e) => onCommitTextColor(e.target.value)}
+            className="absolute -inset-2 w-10 h-10 cursor-pointer opacity-0"
+          />
+          <div
+            className="w-full h-full flex items-center justify-center font-black text-[10px] rounded-[5px]"
+            style={{
+              backgroundColor: textColorValue || "#ffffff",
+              color: textColorValue === "#ffffff" ? "#0f172a" : "#ffffff",
+            }}
+          >
+            A
           </div>
         </div>
       </div>

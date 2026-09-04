@@ -361,12 +361,10 @@ export function SectionToolbar({
     const safeIdx = Math.min(activeButtonIndex, buttonCount - 1);
     const prefix = `btn-${safeIdx}`;
     return {
-      radius: buttonsGroup.controls.find((c) => c.id === `${prefix}-radius`),
-      border: buttonsGroup.controls.find((c) => c.id === `${prefix}-border`),
-      size: buttonsGroup.controls.find((c) => c.id === `${prefix}-size`),
       bg: buttonsGroup.controls.find((c) => c.id === `${prefix}-bg`),
+      radius: buttonsGroup.controls.find((c) => c.id === `${prefix}-radius`),
+      size: buttonsGroup.controls.find((c) => c.id === `${prefix}-size`),
       textColor: buttonsGroup.controls.find((c) => c.id === `${prefix}-color`),
-      shadow: buttonsGroup.controls.find((c) => c.id === `${prefix}-shadow`),
     };
   }, [buttonsGroup, buttonCount, activeButtonIndex]);
 
@@ -777,24 +775,20 @@ export function SectionToolbar({
               buttonCount={buttonCount}
               activeButtonIndex={activeButtonIndex}
               onSelectButtonIndex={setActiveButtonIndex}
-              radiusValue={activeButtonControls.radius ? displayValue(activeButtonControls.radius) : ""}
-              onCommitRadius={(val) => {
-                if (activeButtonControls.radius) commit(activeButtonControls.radius, val);
-              }}
-              borderValue={activeButtonControls.border ? displayValue(activeButtonControls.border) : ""}
-              onCommitBorder={(val) => {
-                if (activeButtonControls.border) commit(activeButtonControls.border, val);
-              }}
-              sizeValue={activeButtonControls.size ? displayValue(activeButtonControls.size) : ""}
-              onCommitSize={(val) => {
-                if (activeButtonControls.size) commit(activeButtonControls.size, val);
-              }}
               bgValue={activeButtonControls.bg ? displayValue(activeButtonControls.bg) : ""}
               onDraftBg={(val) => {
                 if (activeButtonControls.bg) commitDebounced(activeButtonControls.bg, val);
               }}
               onCommitBg={(val) => {
                 if (activeButtonControls.bg) commit(activeButtonControls.bg, val);
+              }}
+              radiusValue={activeButtonControls.radius ? displayValue(activeButtonControls.radius) : ""}
+              onCommitRadius={(val) => {
+                if (activeButtonControls.radius) commit(activeButtonControls.radius, val);
+              }}
+              sizeValue={activeButtonControls.size ? displayValue(activeButtonControls.size) : ""}
+              onCommitSize={(val) => {
+                if (activeButtonControls.size) commit(activeButtonControls.size, val);
               }}
               textColorValue={activeButtonControls.textColor ? displayValue(activeButtonControls.textColor) : ""}
               onDraftTextColor={(val) => {

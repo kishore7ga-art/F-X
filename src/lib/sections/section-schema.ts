@@ -382,7 +382,7 @@ export function buildSectionSchema(section: {
     }),
   );
 
-  /* — Buttons (4 Core Minimal Controls: Shape, Shadow, Colors, Border) — */
+  /* — Buttons (Core Controls: Color, Radius, Box Sizing, Text Colour) — */
   const buttons = probe.actions.filter((btn) => !insideList(btn.path));
   if (buttons.length > 0) {
     const buttonsGrp = group("buttons");
@@ -391,9 +391,14 @@ export function buildSectionSchema(section: {
       const prefix = `btn-${index}`;
       const name = index === 0 ? "Primary Button" : index === 1 ? "Secondary Button" : `Button ${index + 1}`;
 
-      // 1. Shape / Corner Radius: 0px to 40px
+      // 1. Button Color
       buttonsGrp.controls.push(
-        lengthControl(`${prefix}-radius`, `${name} Shape`, target, "border-radius", {
+        colorControl(`${prefix}-bg`, `${name} Button color`, target, "background-color"),
+      );
+
+      // 2. Button Radius: 0px to 40px
+      buttonsGrp.controls.push(
+        lengthControl(`${prefix}-radius`, `${name} Button radius`, target, "border-radius", {
           min: 0,
           max: 40,
           step: 1,
@@ -401,30 +406,14 @@ export function buildSectionSchema(section: {
         }),
       );
 
-      // 2. Shadow: None | Soft | Strong
+      // 3. Box Sizing (Button Size: Small | Medium | Large)
       buttonsGrp.controls.push(
-        selectControl(`${prefix}-shadow`, `${name} Shadow`, target, "box-shadow", BUTTON_SHADOW_OPTIONS),
+        selectControl(`${prefix}-size`, `${name} Box sizing`, target, "padding", BUTTON_SIZE_OPTIONS),
       );
 
-      // 3. Colors: Background & Text
+      // 4. Button Text Colour
       buttonsGrp.controls.push(
-        colorControl(`${prefix}-bg`, `${name} Background`, target, "background-color"),
-        colorControl(`${prefix}-color`, `${name} Text colour`, target, "color"),
-      );
-
-      // 4. Border Stroke: 0px to 3px
-      buttonsGrp.controls.push(
-        lengthControl(`${prefix}-border`, `${name} Border stroke`, target, "border-width", {
-          min: 0,
-          max: 3,
-          step: 1,
-          hint: "Border stroke (0px to 3px)",
-        }),
-      );
-
-      // 5. Button Size: Small | Medium | Large
-      buttonsGrp.controls.push(
-        selectControl(`${prefix}-size`, `${name} Size`, target, "padding", BUTTON_SIZE_OPTIONS),
+        colorControl(`${prefix}-color`, `${name} Button text colour`, target, "color"),
       );
     });
   }
