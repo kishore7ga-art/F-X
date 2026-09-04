@@ -382,5 +382,17 @@ export const listPaymentMethods = () =>
     "/api/v1/billing/payment-methods",
   );
 
+export const attachPaymentMethod = (data: {
+  providerRef: string;
+  brand?: string;
+  last4?: string;
+  expMonth?: number;
+  expYear?: number;
+}) =>
+  api<PaymentMethod>("/api/v1/billing/payment-methods", {
+    method: "POST",
+    body: data,
+  });
+
 export const detachPaymentMethod = (id: string) =>
   api<void>(`/api/v1/billing/payment-methods/${encodeURIComponent(id)}`, { method: "DELETE" });

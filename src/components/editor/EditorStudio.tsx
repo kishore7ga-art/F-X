@@ -289,6 +289,18 @@ export function EditorStudio({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>("domain");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("settings") === "true" || params.has("tab")) {
+        setIsSettingsOpen(true);
+        if (params.get("tab")) {
+          setSettingsTab(params.get("tab")!);
+        }
+      }
+    }
+  }, []);
   /**
    * Every page's sections, keyed by page, with its own load and save lifecycle.
    *
@@ -2343,7 +2355,7 @@ export function EditorStudio({
           <EditorToolbar
             subdomain={subdomain}
             activePageSlug={editor.activePage.slug}
-            onOpenSettings={() => setIsSettingsOpen(!isSettingsOpen)}
+            onOpenSettings={() => setIsSettingsOpen((prev) => !prev)}
             isSettingsOpen={isSettingsOpen}
             onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
             viewport={viewport}
