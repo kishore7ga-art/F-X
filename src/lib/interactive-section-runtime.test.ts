@@ -103,7 +103,7 @@ class MockElement {
   }
 }
 
-describe("handleInteractiveSectionClick — unit test suite", () => {
+describe("handleInteractiveSectionClick — full suite", () => {
   test("toggles desktop mega menu on click and closes on second click", () => {
     const header = new MockElement("header", "mesa-header");
     const navContainer = new MockElement("div", "mesa-nav-container");
@@ -217,5 +217,68 @@ describe("handleInteractiveSectionClick — unit test suite", () => {
     // Second click closes
     handleInteractiveSectionClick(clickEvent);
     assert.equal(faqItem.classList.contains("open"), false);
+  });
+
+  test("toggles video lightbox modal on reel card click", () => {
+    const section = new MockElement("section", "gallery-section");
+    const reelCard = new MockElement("div", "reel-card");
+    reelCard.setAttribute("data-video", "https://example.com/reel.mp4");
+    const modal = new MockElement("div", "video-modal", "videoModal");
+    const closeBtn = new MockElement("button", "close-modal-btn", "closeModalBtn");
+
+    modal.appendChild(closeBtn);
+    section.appendChild(reelCard);
+    section.appendChild(modal);
+
+    const clickEvent = {
+      target: reelCard,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as any;
+
+    const handled = handleInteractiveSectionClick(clickEvent);
+    assert.equal(handled, true);
+    assert.equal(modal.classList.contains("active"), true);
+
+    // Close button click
+    const closeEvent = {
+      target: closeBtn,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as any;
+    const handledClose = handleInteractiveSectionClick(closeEvent);
+    assert.equal(handledClose, true);
+    assert.equal(modal.classList.contains("active"), false);
+  });
+
+  test("toggles FAQ chat drawer on trigger click", () => {
+    const section = new MockElement("section", "faq-section");
+    const chatBtn = new MockElement("button", "chat-trigger-btn", "faqChatBtn");
+    const chatDrawer = new MockElement("div", "chat-drawer", "chatDrawer");
+    const chatClose = new MockElement("button", "chat-close-btn", "chatCloseBtn");
+
+    chatDrawer.appendChild(chatClose);
+    section.appendChild(chatBtn);
+    section.appendChild(chatDrawer);
+
+    const openEvent = {
+      target: chatBtn,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as any;
+
+    const handled = handleInteractiveSectionClick(openEvent);
+    assert.equal(handled, true);
+    assert.equal(chatDrawer.classList.contains("active"), true);
+
+    const closeEvent = {
+      target: chatClose,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as any;
+
+    const handledClose = handleInteractiveSectionClick(closeEvent);
+    assert.equal(handledClose, true);
+    assert.equal(chatDrawer.classList.contains("active"), false);
   });
 });

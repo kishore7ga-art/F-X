@@ -18,7 +18,7 @@ import {
 import { tokenizeSectionHtml } from "@/lib/editor-themes";
 import { resolveCategory } from "@/lib/sections/categories";
 import { isHeaderOverlaid } from "@/lib/sections/section-edit";
-import { handleInteractiveSectionClick } from "@/lib/interactive-section-runtime";
+import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from "@/lib/interactive-section-runtime";
 
 
 /**
@@ -182,7 +182,11 @@ export function PreviewSiteViewer({
       if (handled) return;
     };
     document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
+    const cleanupListeners = attachInteractiveSectionListeners();
+    return () => {
+      document.removeEventListener("click", onClick);
+      cleanupListeners();
+    };
   }, []);
 
   // ─── Links between the site's own pages ─────────────────────────────────────

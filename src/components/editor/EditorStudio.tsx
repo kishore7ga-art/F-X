@@ -75,7 +75,7 @@ import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css";
 import { isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
 import { resolveCategory } from "@/lib/sections/categories";
-import { handleInteractiveSectionClick } from "@/lib/interactive-section-runtime";
+import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from "@/lib/interactive-section-runtime";
 import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
@@ -851,6 +851,11 @@ export function EditorStudio({
     // The canvas ends where its sections end. See `sectionRuntimeCss`.
     fillViewport: false,
   });
+
+  // ─── Continuous Section Interactive Listeners (Track dragging, chat submission, etc.) ───
+  useEffect(() => {
+    return attachInteractiveSectionListeners();
+  }, []);
 
   // ─── Section Script Execution ───────────────────────────────────────────────
   // Browsers ignore <script> tags inserted via dangerouslySetInnerHTML.
