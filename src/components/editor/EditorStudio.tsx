@@ -75,6 +75,7 @@ import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css";
 import { isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
 import { resolveCategory } from "@/lib/sections/categories";
+import { handleInteractiveSectionClick } from "@/lib/interactive-section-runtime";
 import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
@@ -1157,13 +1158,13 @@ export function EditorStudio({
           }
 
           const extractedCode = cleanCanvasWrapperFromCode(clone.innerHTML);
-          if (extractedCode) return { ...sec, code: extractedCode };
+          if (extractedCode) return { ...sec, code: recomposeSectionCode(sec.code, extractedCode) };
         }
 
         // Direct string replacement fallback if container element not found
         if (idx === sectionIndex && originalUrl && finalImageUrl && newCode.includes(originalUrl)) {
           newCode = newCode.replaceAll(originalUrl, finalImageUrl);
-          return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
+          return { ...sec, code: recomposeSectionCode(sec.code, cleanCanvasWrapperFromCode(newCode)) };
         }
 
         return sec;
@@ -1944,6 +1945,15 @@ export function EditorStudio({
                           return;
                         }
 
+                        // Allow interactive navbar dropdowns, mega-menus, drawers, accordions, and tabs to operate
+                        if (!inPlaceEditor.isEditingText) {
+                          const handled = handleInteractiveSectionClick(e);
+                          if (handled) {
+                            setActiveSectionIndex(idx);
+                            return;
+                          }
+                        }
+
                         // Allow testing menu bar links and buttons without hijacking with the toolbar
                         const link = target.closest("a");
                         if (link && !inPlaceEditor.isEditingText) {
@@ -2004,14 +2014,17 @@ export function EditorStudio({
                           left: 0,
                           right: 0,
                           width: "100%",
-                          zIndex: 50,
+                          zIndex: 100,
                           pointerEvents: "auto",
                           backgroundColor: "transparent",
+                          overflow: "visible",
                         } : isHeader ? {
-                          zIndex: 40,
+                          zIndex: 90,
                           position: "relative",
+                          overflow: "visible",
                         } : {
                           position: "relative",
+                          zIndex: 10,
                           ...(isFollowsOverlaidHeader ? { paddingTop: "85px" } : null),
                         }),
                       }}

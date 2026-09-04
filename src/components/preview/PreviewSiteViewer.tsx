@@ -18,6 +18,7 @@ import {
 import { tokenizeSectionHtml } from "@/lib/editor-themes";
 import { resolveCategory } from "@/lib/sections/categories";
 import { isHeaderOverlaid } from "@/lib/sections/section-edit";
+import { handleInteractiveSectionClick } from "@/lib/interactive-section-runtime";
 
 
 /**
@@ -172,17 +173,13 @@ export function PreviewSiteViewer({
     };
   }, [sections]);
 
-  // ─── Mobile navigation ──────────────────────────────────────────────────────
+  // ─── Interactive Navbar Menus, Drawers & Mobile navigation ────────────────
   // Delegated from the document so it survives the markup being replaced, and so a
   // re-render cannot leave a second listener behind on the same button.
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const button = target?.closest?.(".hamburger-toggle-btn");
-      if (!button) return;
-      event.stopPropagation();
-      const menu = button.closest("header")?.querySelector(".mobile-drawer-menu");
-      menu?.classList.toggle("active");
+      const handled = handleInteractiveSectionClick(event);
+      if (handled) return;
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
@@ -399,13 +396,16 @@ export function PreviewSiteViewer({
               left: 0,
               right: 0,
               width: "100%",
-              zIndex: 50,
+              zIndex: 100,
               backgroundColor: "transparent",
+              overflow: "visible",
             } : isHeader ? {
-              zIndex: 40,
+              zIndex: 90,
               position: "relative",
+              overflow: "visible",
             } : {
               position: "relative",
+              zIndex: 10,
               ...(isFollowsOverlaidHeader ? { paddingTop: "85px" } : null),
             }),
           }}
