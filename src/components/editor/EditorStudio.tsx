@@ -436,34 +436,6 @@ export function EditorStudio({
     [canvasScale],
   );
 
-  const handlePlaceAssetFromDrawer = useCallback(
-    (asset: { url: string; name: string; width: number; height: number }) => {
-      if (sections.length === 0) return;
-      const targetSec =
-        activeSectionIndex !== null && sections[activeSectionIndex]
-          ? sections[activeSectionIndex]
-          : sections[0];
-      if (!targetSec) return;
-
-      const newPinned: PinnedSectionImage = {
-        id: `pinned-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        sectionId: targetSec.id,
-        url: asset.url,
-        name: asset.name || "Section Asset",
-        x: 80,
-        y: 80,
-        width: asset.width || 220,
-        height: asset.height || 220,
-        scale: 1,
-        isFloating: false,
-      };
-
-      setPinnedImages((prev) => [...prev, newPinned]);
-      setSwapNotice(`Placed "${asset.name}" on ${targetSec.title}`);
-    },
-    [activeSectionIndex, sections],
-  );
-
   /**
    * The section library — every template a tenant may use, grouped by category.
    *
@@ -2465,7 +2437,6 @@ export function EditorStudio({
         activeFontId={fontId}
         customThemeTokens={customThemeTokens}
         onCustomThemeChange={handleCustomThemeChange}
-        onPlaceAssetOnCanvas={handlePlaceAssetFromDrawer}
         pages={editor.pages.map((page) => ({ slug: page.slug, title: page.title }))}
         activePageSlug={editor.activePage.slug}
       />
