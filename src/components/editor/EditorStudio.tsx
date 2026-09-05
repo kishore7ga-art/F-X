@@ -2536,6 +2536,24 @@ export function EditorStudio({
                 prev.map((s, i) => (i === secIdx ? updated : s)),
               );
             }}
+            onPlaceAsset={(asset) => {
+              const targetSec = customToolbarSection;
+              if (!targetSec) return;
+              const newPinned: PinnedSectionImage = {
+                id: `pinned-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                sectionId: targetSec.id,
+                url: asset.url,
+                name: asset.name || "Section Asset",
+                x: 80,
+                y: 80,
+                width: asset.width || 220,
+                height: asset.height || 220,
+                scale: 1,
+                isFloating: false,
+              };
+              setPinnedImages((prev) => [...prev, newPinned]);
+              setSwapNotice(`Placed "${asset.name}" on ${targetSec.title}`);
+            }}
           />
         ) : (
           <EditorToolbar
