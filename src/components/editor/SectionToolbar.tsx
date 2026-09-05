@@ -61,13 +61,11 @@ import {
   ArrowUp,
   ArrowDown,
   Undo2,
-  Sparkles,
   Upload,
   Move,
 } from "lucide-react";
 import {
   DEFAULT_IMAGE_ASSETS,
-  removeImageBackground,
   type ImageAssetItem,
 } from "@/lib/image-background-remover";
 
@@ -327,8 +325,6 @@ export function SectionToolbar({
     return DEFAULT_IMAGE_ASSETS;
   });
 
-  const [processingAssetId, setProcessingAssetId] = useState<string | null>(null);
-
   const handleToolbarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -362,27 +358,6 @@ export function SectionToolbar({
       });
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleToolbarRemoveBg = async (asset: ImageAssetItem) => {
-    setProcessingAssetId(asset.id);
-    try {
-      const transparentUrl = await removeImageBackground(asset.url, {
-        tolerance: 40,
-        featherRadius: 16,
-      });
-      setToolbarAssets((prev) => {
-        const next = prev.map((a) =>
-          a.id === asset.id ? { ...a, url: transparentUrl, hasTransparentBg: true } : a,
-        );
-        try {
-          localStorage.setItem("xite_toolbar_image_assets", JSON.stringify(next));
-        } catch {}
-        return next;
-      });
-    } finally {
-      setProcessingAssetId(null);
-    }
   };
 
   const handleDeleteToolbarAsset = (assetId: string) => {
@@ -929,8 +904,6 @@ export function SectionToolbar({
 
               {/* 2. Image Asset Cards (Appended to the right) */}
               {toolbarAssets.map((asset) => {
-                const isProcessing = processingAssetId === asset.id;
-
                 return (
                   <div
                     key={asset.id}
@@ -965,7 +938,7 @@ export function SectionToolbar({
                       )}
 
                       {/* Hover Actions Overlay */}
-                      <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1 px-1">
+                      <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 px-1">
                         {onPlaceAsset && (
                           <button
                             type="button"
@@ -979,23 +952,11 @@ export function SectionToolbar({
                               });
                             }}
                             title="Place in this section"
-                            className="px-1.5 py-0.5 bg-white text-slate-900 text-[9.5px] font-black rounded-md hover:bg-indigo-50 shadow-xs cursor-pointer"
+                            className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-md shadow-xs cursor-pointer"
                           >
                             + Add
                           </button>
                         )}
-                        <button
-                          type="button"
-                          disabled={isProcessing}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToolbarRemoveBg(asset);
-                          }}
-                          title="Remove Background"
-                          className="p-1 bg-violet-600 text-white rounded-md hover:bg-violet-500 disabled:opacity-50 cursor-pointer"
-                        >
-                          <Sparkles className="w-2.5 h-2.5" />
-                        </button>
                         {asset.category === "custom" && (
                           <button
                             type="button"
