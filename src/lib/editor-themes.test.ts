@@ -49,9 +49,9 @@ describe("the editor themes", () => {
     assert.equal(fontById("comic").id, EDITOR_FONTS[0]!.id);
   });
 
-  it("offers exactly 12 Google Fonts with unique ids and valid stacks", () => {
-    assert.equal(EDITOR_FONTS.length, 12);
-    assert.equal(new Set(EDITOR_FONTS.map((f) => f.id)).size, 12);
+  it("offers exactly 3 Google Fonts with unique ids and valid stacks", () => {
+    assert.equal(EDITOR_FONTS.length, 3);
+    assert.equal(new Set(EDITOR_FONTS.map((f) => f.id)).size, 3);
     for (const font of EDITOR_FONTS) {
       assert.ok(font.name.trim(), `font ${font.id} has empty name`);
       assert.ok(font.stack.includes(font.name), `font ${font.id} stack does not include ${font.name}`);

@@ -61,13 +61,7 @@ import {
   ArrowUp,
   ArrowDown,
   Undo2,
-  Upload,
-  Move,
 } from "lucide-react";
-import {
-  DEFAULT_IMAGE_ASSETS,
-  type ImageAssetItem,
-} from "@/lib/image-background-remover";
 
 import {
   applyControl,
@@ -115,7 +109,6 @@ type Props = {
   saveError?: string | null;
   isOverlaid?: boolean;
   onToggleOverlay?: () => void;
-  onPlaceAsset?: (asset: { url: string; name: string; width: number; height: number }) => void;
 };
 
 const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
@@ -309,67 +302,7 @@ export function SectionToolbar({
   saveError = null,
   isOverlaid = false,
   onToggleOverlay,
-  onPlaceAsset,
 }: Props) {
-  // Toolbar Image Assets State
-  const [toolbarAssets, setToolbarAssets] = useState<ImageAssetItem[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("xite_toolbar_image_assets");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch {}
-    }
-    return DEFAULT_IMAGE_ASSETS;
-  });
-
-  const handleToolbarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      if (!dataUrl) return;
-
-      const newAsset: ImageAssetItem = {
-        id: `tb-asset-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        name: file.name.replace(/\.[^/.]+$/, "") || "Uploaded Image",
-        category: "custom",
-        url: dataUrl,
-        width: 220,
-        height: 220,
-        hasTransparentBg: false,
-      };
-
-      setToolbarAssets((prev) => {
-        const next = [...prev, newAsset];
-        try {
-          localStorage.setItem("xite_toolbar_image_assets", JSON.stringify(next));
-        } catch {}
-        return next;
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDeleteToolbarAsset = (assetId: string) => {
-    setToolbarAssets((prev) => {
-      const next = prev.filter((a) => a.id !== assetId);
-      try {
-        localStorage.setItem("xite_toolbar_image_assets", JSON.stringify(next));
-      } catch {}
-      return next;
-    });
-  };
-
   const editable: EditableSection = useMemo(
     () => ({ title: section.title, code: section.code, category: section.category }),
     [section.title, section.code, section.category],
@@ -877,149 +810,37 @@ export function SectionToolbar({
             />
           </div>
         ) : activeGroup ? (
-          activeGroup.id === "section" ? (
-            /* ── Toolbar Image Assets Horizontal Strip ────────────────── */
-            <div className="flex flex-row items-center gap-2.5 overflow-x-auto py-1 px-1 w-full no-scrollbar select-none">
-              {/* 1. Upload Card (Leftmost) */}
-              <label
-                className="group relative flex flex-col items-center justify-center shrink-0 w-[96px] h-[82px] rounded-2xl border-2 border-dashed border-indigo-400/80 bg-gradient-to-b from-indigo-50/80 to-white hover:from-indigo-100 hover:to-indigo-50 hover:border-indigo-600 transition-all cursor-pointer shadow-xs hover:shadow-md"
-                title="Click to upload an image from device"
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleToolbarUpload}
-                  className="hidden"
-                />
-                <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform mb-1">
-                  <Upload className="w-3.5 h-3.5" />
-                </div>
-                <span className="text-[10.5px] font-black text-slate-800 tracking-tight leading-tight">
-                  + Upload
-                </span>
-                <span className="text-[8.5px] font-bold text-indigo-600">
-                  Image File
-                </span>
-              </label>
+          <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 [grid-template-columns:repeat(auto-fill,minmax(190px,1fr))]">
+            {activeGroup.controls.map((control) => (
+              <ControlRow
+                key={controlValueKey(control)}
+                control={control}
+                reading={valueOf(control)}
+                draft={displayValue(control)}
+                device={device}
+                onDraft={(value) => commitDebounced(control, value)}
+                onCommit={(value) => commit(control, value)}
+              />
+            ))}
 
-              {/* 2. Image Asset Cards (Appended to the right) */}
-              {toolbarAssets.map((asset) => {
-                return (
-                  <div
-                    key={asset.id}
-                    draggable={true}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("application/xite-asset", JSON.stringify(asset));
-                      e.dataTransfer.effectAllowed = "copy";
-                    }}
-                    className="group relative flex flex-col items-center shrink-0 w-[96px] h-[82px] rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-500 hover:shadow-md transition-all p-1 cursor-grab active:cursor-grabbing overflow-hidden"
-                    title={`Drag into ${section.title || "section"} or click + Add`}
-                  >
-                    {/* Thumbnail Image Container with Checkerboard for Transparency */}
-                    <div
-                      className="w-full flex-1 rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center relative"
-                      style={{
-                        backgroundImage: "radial-gradient(#cbd5e1 1px, transparent 1px)",
-                        backgroundSize: "6px 6px",
-                      }}
-                    >
-                      <img
-                        src={asset.url}
-                        alt={asset.name}
-                        draggable={false}
-                        className="max-h-full max-w-full object-contain pointer-events-none transition-transform group-hover:scale-105"
-                      />
-
-                      {/* Transparent Tag */}
-                      {asset.hasTransparentBg && (
-                        <span className="absolute top-1 left-1 bg-emerald-600/90 text-white text-[7.5px] font-black px-1 rounded-full pointer-events-none">
-                          PNG
-                        </span>
-                      )}
-
-                      {/* Hover Actions Overlay */}
-                      <div className="absolute inset-0 bg-slate-900/85 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 px-1">
-                        {onPlaceAsset && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onPlaceAsset({
-                                url: asset.url,
-                                name: asset.name,
-                                width: asset.width || 220,
-                                height: asset.height || 220,
-                              });
-                            }}
-                            title="Place in this section"
-                            className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black rounded-md shadow-xs cursor-pointer"
-                          >
-                            + Add
-                          </button>
-                        )}
-                        {asset.category === "custom" && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteToolbarAsset(asset.id);
-                            }}
-                            title="Delete"
-                            className="p-1 text-slate-300 hover:text-rose-400 hover:bg-rose-500/20 rounded-md cursor-pointer"
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Asset Name Label & Drag Hint */}
-                    <div className="w-full flex items-center justify-between px-0.5 pt-0.5">
-                      <span className="text-[9.5px] font-bold text-slate-700 truncate max-w-[58px]" title={asset.name}>
-                        {asset.name}
-                      </span>
-                      <span className="text-[8px] font-extrabold text-indigo-600 flex items-center gap-0.5">
-                        <Move className="w-2 h-2" />
-                        Drag
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 [grid-template-columns:repeat(auto-fill,minmax(190px,1fr))]">
-              {activeGroup.controls.map((control) => (
-                <ControlRow
-                  key={controlValueKey(control)}
-                  control={control}
-                  reading={valueOf(control)}
-                  draft={displayValue(control)}
+            {activeGroup.lists.map((list) => (
+              <div key={list.id} className="col-span-full">
+                <ListBlock
+                  list={list}
+                  expanded={openLists.has(list.id)}
+                  onToggle={() => toggle(openLists, setOpenLists)(list.id)}
+                  openItems={openItems}
+                  onToggleItem={toggle(openItems, setOpenItems)}
                   device={device}
-                  onDraft={(value) => commitDebounced(control, value)}
-                  onCommit={(value) => commit(control, value)}
+                  valueOf={valueOf}
+                  displayValue={displayValue}
+                  onDraft={commitDebounced}
+                  onCommit={commit}
+                  onAction={(index, action) => runListAction(list, index, action)}
                 />
-              ))}
-
-              {activeGroup.lists.map((list) => (
-                <div key={list.id} className="col-span-full">
-                  <ListBlock
-                    list={list}
-                    expanded={openLists.has(list.id)}
-                    onToggle={() => toggle(openLists, setOpenLists)(list.id)}
-                    openItems={openItems}
-                    onToggleItem={toggle(openItems, setOpenItems)}
-                    device={device}
-                    valueOf={valueOf}
-                    displayValue={displayValue}
-                    onDraft={commitDebounced}
-                    onCommit={commit}
-                    onAction={(index, action) => runListAction(list, index, action)}
-                  />
-                </div>
-              ))}
-            </div>
-          )
+              </div>
+            ))}
+          </div>
         ) : null}
       </div>
 

@@ -82,8 +82,6 @@ import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
-import { SectionImageLayer } from "./SectionImageLayer";
-import type { PinnedSectionImage } from "@/lib/image-background-remover";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
 const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
@@ -357,84 +355,6 @@ export function EditorStudio({
     [editor],
   );
 
-  // Pinned Section Image Assets State
-  const [pinnedImages, setPinnedImages] = useState<PinnedSectionImage[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem(`xite_pinned_images_${subdomain}`);
-        if (saved) return JSON.parse(saved);
-      } catch {}
-    }
-    return [];
-  });
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(`xite_pinned_images_${subdomain}`, JSON.stringify(pinnedImages));
-      } catch {}
-    }
-  }, [pinnedImages, subdomain]);
-
-  const handleUpdatePinnedImage = useCallback((imageId: string, patch: Partial<PinnedSectionImage>) => {
-    setPinnedImages((prev) => prev.map((img) => (img.id === imageId ? { ...img, ...patch } : img)));
-  }, []);
-
-  const handleDeletePinnedImage = useCallback((imageId: string) => {
-    setPinnedImages((prev) => prev.filter((img) => img.id !== imageId));
-  }, []);
-
-  const handleMovePinnedImageToSection = useCallback(
-    (imageId: string, targetSectionId: string, newX: number, newY: number) => {
-      setPinnedImages((prev) =>
-        prev.map((img) =>
-          img.id === imageId
-            ? { ...img, sectionId: targetSectionId, x: newX, y: newY }
-            : img,
-        ),
-      );
-    },
-    [],
-  );
-
-  const handleCanvasAssetDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>, targetSectionId: string, sectionTitle: string) => {
-      const assetData = e.dataTransfer.getData("application/xite-asset");
-      if (!assetData) return;
-      e.preventDefault();
-      e.stopPropagation();
-
-      try {
-        const asset = JSON.parse(assetData);
-        const rect = e.currentTarget.getBoundingClientRect();
-        const scale = canvasScale || 1;
-        const width = asset.width || 220;
-        const height = asset.height || 220;
-
-        const dropX = Math.max(10, Math.round((e.clientX - rect.left) / scale - width * 0.5));
-        const dropY = Math.max(10, Math.round((e.clientY - rect.top) / scale - height * 0.5));
-
-        const newPinned: PinnedSectionImage = {
-          id: `pinned-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          sectionId: targetSectionId,
-          url: asset.url,
-          name: asset.name || "Section Asset",
-          x: dropX,
-          y: dropY,
-          width,
-          height,
-          scale: 1,
-          isFloating: false,
-        };
-
-        setPinnedImages((prev) => [...prev, newPinned]);
-        setSwapNotice(`Placed "${asset.name}" on ${sectionTitle}`);
-      } catch (err) {
-        console.error("[editor] could not drop asset:", err);
-      }
-    },
-    [canvasScale],
-  );
 
   /**
    * The section library — every template a tenant may use, grouped by category.
@@ -2131,13 +2051,6 @@ export function EditorStudio({
                         inPlaceEditor.handleElementDoubleClick(target, idx, e);
                       }}
                       onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
-                      onDragOver={(e) => {
-                        if (e.dataTransfer.types.includes("application/xite-asset")) {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = "copy";
-                        }
-                      }}
-                      onDrop={(e) => handleCanvasAssetDrop(e, sec.id, sec.title)}
                       data-xite-section={sec.id}
                       style={{
                         ...(isOverlaid ? {
@@ -2167,16 +2080,6 @@ export function EditorStudio({
                         sectionId={sec.id}
                         isEditing={inPlaceEditor.isEditingSection(sec.id)}
                         canvasHtml={canvasHtml}
-                      />
-
-                      {/* Placed Freeform & Fixed Section Image Assets */}
-                      <SectionImageLayer
-                        sectionId={sec.id}
-                        images={pinnedImages}
-                        canvasScale={canvasScale}
-                        onUpdateImage={handleUpdatePinnedImage}
-                        onDeleteImage={handleDeletePinnedImage}
-                        onMoveToSection={handleMovePinnedImageToSection}
                       />
 
                       {/* This section occupies space and shows nothing */}
@@ -2506,24 +2409,6 @@ export function EditorStudio({
               setSectionsWithHistory((prev) =>
                 prev.map((s, i) => (i === secIdx ? updated : s)),
               );
-            }}
-            onPlaceAsset={(asset) => {
-              const targetSec = customToolbarSection;
-              if (!targetSec) return;
-              const newPinned: PinnedSectionImage = {
-                id: `pinned-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                sectionId: targetSec.id,
-                url: asset.url,
-                name: asset.name || "Section Asset",
-                x: 80,
-                y: 80,
-                width: asset.width || 220,
-                height: asset.height || 220,
-                scale: 1,
-                isFloating: false,
-              };
-              setPinnedImages((prev) => [...prev, newPinned]);
-              setSwapNotice(`Placed "${asset.name}" on ${targetSec.title}`);
             }}
           />
         ) : (

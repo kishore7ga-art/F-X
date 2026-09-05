@@ -1061,7 +1061,7 @@ export function DrawerPanel({
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }}>
                 <span style={{ fontSize: "11px", fontWeight: 900, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                  Google Fonts (12 Styles)
+                  Google Fonts ({EDITOR_FONTS.length} Styles)
                 </span>
                 <span style={{ fontSize: "10px", fontWeight: 800, color: "#94a3b8" }}>
                   {activeFontId ? "1 Selected" : "Default"}

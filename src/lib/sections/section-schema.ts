@@ -439,28 +439,7 @@ export function buildSectionSchema(section: {
     ]),
   );
 
-  /* — 5. Section (Preset variations, ID, and section-level options) ————— */
-  group("section").controls.push(
-    {
-      id: "section-title",
-      label: "Section name",
-      kind: "text",
-      target: { kind: "record" },
-      op: { kind: "title" },
-      responsive: false,
-      hint: "What this section is called in the editor. Not published.",
-    },
-    {
-      id: "section-id",
-      label: "Section ID / Anchor",
-      kind: "text",
-      target: rootTarget,
-      op: { kind: "attr", name: "id" },
-      responsive: false,
-      placeholder: "e.g. hero-section",
-      hint: "HTML anchor ID for in-page jump links.",
-    },
-  );
+
 
   /* — Assemble ——————————————————————————————————————————————— */
 

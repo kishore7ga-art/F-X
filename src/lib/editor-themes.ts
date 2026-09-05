@@ -48,19 +48,7 @@ export type EditorThemeId =
   | "midnight-purple"
   | "custom";
 
-export type EditorFontId =
-  | "inter"
-  | "outfit"
-  | "serif"
-  | "plus-jakarta"
-  | "montserrat"
-  | "lora"
-  | "open-sans"
-  | "raleway"
-  | "space-grotesk"
-  | "cinzel"
-  | "dm-sans"
-  | "fira-code";
+export type EditorFontId = "inter" | "outfit" | "serif";
 
 export type EditorThemeTokens = {
   /** Page background, and the background of full-bleed bands. */
@@ -267,78 +255,6 @@ export const EDITOR_FONTS: readonly EditorFont[] = [
     stack: "'Playfair Display', Georgia, 'Times New Roman', serif",
     families: ["Playfair Display"],
     weights: "400..900",
-  },
-  {
-    id: "plus-jakarta",
-    name: "Plus Jakarta Sans",
-    description: "Trendy modern geometric sans. Clean, punchy and premium.",
-    stack: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
-    families: ["Plus Jakarta Sans"],
-    weights: "200..800",
-  },
-  {
-    id: "montserrat",
-    name: "Montserrat",
-    description: "Geometric urban grotesque. Excellent for bold modern headers.",
-    stack: "'Montserrat', system-ui, -apple-system, sans-serif",
-    families: ["Montserrat"],
-    weights: "100..900",
-  },
-  {
-    id: "lora",
-    name: "Lora",
-    description: "Contemporary serif with brushed curves. Warm and literary.",
-    stack: "'Lora', Georgia, 'Times New Roman', serif",
-    families: ["Lora"],
-    weights: "400..700",
-  },
-  {
-    id: "open-sans",
-    name: "Open Sans",
-    description: "Neutral, friendly humanist sans-serif with wide aperture.",
-    stack: "'Open Sans', system-ui, -apple-system, sans-serif",
-    families: ["Open Sans"],
-    weights: "300..800",
-  },
-  {
-    id: "raleway",
-    name: "Raleway",
-    description: "Elegant sans-serif with distinctive high-contrast letterforms.",
-    stack: "'Raleway', system-ui, -apple-system, sans-serif",
-    families: ["Raleway"],
-    weights: "100..900",
-  },
-  {
-    id: "space-grotesk",
-    name: "Space Grotesk",
-    description: "Futuristic tech sans-serif with distinctive monospace roots.",
-    stack: "'Space Grotesk', system-ui, -apple-system, sans-serif",
-    families: ["Space Grotesk"],
-    weights: "300..700",
-  },
-  {
-    id: "cinzel",
-    name: "Cinzel",
-    description: "Classical Roman proportions with a majestic, formal aura.",
-    stack: "'Cinzel', Georgia, 'Times New Roman', serif",
-    families: ["Cinzel"],
-    weights: "400..900",
-  },
-  {
-    id: "dm-sans",
-    name: "DM Sans",
-    description: "Clean, geometric and low-contrast sans for sharp modern UI.",
-    stack: "'DM Sans', system-ui, -apple-system, sans-serif",
-    families: ["DM Sans"],
-    weights: "100..1000",
-  },
-  {
-    id: "fira-code",
-    name: "Fira Code",
-    description: "Monospaced font with programming ligatures and high precision.",
-    stack: "'Fira Code', 'Courier New', monospace",
-    families: ["Fira Code"],
-    weights: "300..700",
   },
 ] as const;
 

@@ -34,8 +34,7 @@ import type { SectionCategoryId, UNCATEGORISED } from "./categories";
 export type CapabilityId =
   | "background"
   | "buttons"
-  | "animation"
-  | "section";
+  | "animation";
 
 export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
 
@@ -46,30 +45,29 @@ export const DEFAULT_ORDER: readonly CapabilityId[] = [
   "background",
   "buttons",
   "animation",
-  "section",
 ];
 
 export const CATEGORY_ORDER: Partial<Record<SectionCategory, readonly CapabilityId[]>> = {
-  navbar: ["buttons", "background", "animation", "section"],
-  hero: ["buttons", "background", "animation", "section"],
-  cta: ["buttons", "background", "animation", "section"],
-  about: ["buttons", "background", "animation", "section"],
-  vision: ["buttons", "background", "animation", "section"],
-  courses: ["buttons", "background", "animation", "section"],
-  departments: ["buttons", "background", "animation", "section"],
-  facilities: ["buttons", "background", "animation", "section"],
-  research: ["buttons", "background", "animation", "section"],
-  admissions: ["buttons", "background", "animation", "section"],
-  placements: ["buttons", "background", "animation", "section"],
-  highlights: ["buttons", "background", "animation", "section"],
-  achievements: ["buttons", "background", "animation", "section"],
-  news: ["buttons", "background", "animation", "section"],
-  events: ["buttons", "background", "animation", "section"],
-  gallery: ["buttons", "background", "animation", "section"],
-  testimonials: ["buttons", "background", "animation", "section"],
-  contact: ["buttons", "background", "animation", "section"],
-  map: ["buttons", "background", "animation", "section"],
-  footer: ["buttons", "background", "animation", "section"],
+  navbar: ["buttons", "background", "animation"],
+  hero: ["buttons", "background", "animation"],
+  cta: ["buttons", "background", "animation"],
+  about: ["buttons", "background", "animation"],
+  vision: ["buttons", "background", "animation"],
+  courses: ["buttons", "background", "animation"],
+  departments: ["buttons", "background", "animation"],
+  facilities: ["buttons", "background", "animation"],
+  research: ["buttons", "background", "animation"],
+  admissions: ["buttons", "background", "animation"],
+  placements: ["buttons", "background", "animation"],
+  highlights: ["buttons", "background", "animation"],
+  achievements: ["buttons", "background", "animation"],
+  news: ["buttons", "background", "animation"],
+  events: ["buttons", "background", "animation"],
+  gallery: ["buttons", "background", "animation"],
+  testimonials: ["buttons", "background", "animation"],
+  contact: ["buttons", "background", "animation"],
+  map: ["buttons", "background", "animation"],
+  footer: ["buttons", "background", "animation"],
 };
 
 /** The groups, in the order this category wants them. */
@@ -159,5 +157,4 @@ export const GROUP_LABEL: Record<CapabilityId, string> = {
   background: "Background",
   buttons: "Buttons",
   animation: "Animation",
-  section: "Image Assets",
 };

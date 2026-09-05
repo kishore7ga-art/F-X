@@ -333,12 +333,11 @@ describe("section-probe — controls come from the markup, not from a table", ()
 /* ── The schema ─────────────────────────────────────────────────────────── */
 
 describe("section-schema — a different toolbar per section", () => {
-  it("gives a section the retained background, buttons, animation, and section controls", () => {
+  it("gives a section the retained background, buttons, and animation controls", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
     assert.ok(schema.capabilities.includes("background"));
     assert.ok(schema.capabilities.includes("buttons"));
     assert.ok(schema.capabilities.includes("animation"));
-    assert.ok(schema.capabilities.includes("section"));
     assert.ok(!schema.capabilities.includes("shadow" as any));
     assert.equal(schema.categoryLabel, "Hero");
   });
@@ -399,8 +398,10 @@ describe("section-edit — every control edits the section for real", () => {
     assert.ok(!cleared.code!.includes("background-color: ;"));
   });
 
+  const sectionIdControl = { ...control("bg-color"), id: "section-id", kind: "text" as const, op: { kind: "attr" as const, name: "id" } };
+
   it("edits a section's ID without disturbing its content", () => {
-    const withId = applyControl(section(HERO), control("section-id"), "desktop", "hero-section")!;
+    const withId = applyControl(section(HERO), sectionIdControl, "desktop", "hero-section")!;
     assert.ok(withId.code!.includes(`id="hero-section"`));
     assert.ok(withId.code!.includes("Empowering Minds"));
   });
