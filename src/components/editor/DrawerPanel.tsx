@@ -1070,11 +1070,6 @@ export function DrawerPanel({
 
               {EDITOR_FONTS.map((font) => {
                 const isSelected = activeFontId === font.id;
-                const category = font.stack.includes("monospace")
-                  ? "Monospace"
-                  : font.stack.includes("serif") && !font.stack.includes("sans-serif")
-                  ? "Serif"
-                  : "Sans-Serif";
 
                 return (
                   <button
@@ -1083,51 +1078,48 @@ export function DrawerPanel({
                     onClick={() => handleSelectFont(font.id, font.name)}
                     aria-pressed={isSelected}
                     style={{
-                      padding: "14px",
-                      borderRadius: "16px",
+                      padding: "11px 14px",
+                      borderRadius: "12px",
                       backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
                       border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                      boxShadow: isSelected ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
                       cursor: "pointer",
                       display: "flex",
-                      flexDirection: "column",
-                      gap: "6px",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
                       textAlign: "left",
                       width: "100%",
                       transition: "all 0.15s ease",
                     }}
                   >
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", fontFamily: font.stack }}>
-                          {font.name}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: "9px",
-                            fontWeight: 800,
-                            padding: "1px 6px",
-                            borderRadius: "4px",
-                            backgroundColor: isSelected ? "#0f172a" : "#f1f5f9",
-                            color: isSelected ? "#ffffff" : "#64748b",
-                          }}
-                        >
-                          {category}
-                        </span>
-                      </div>
-                      {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a", flexShrink: 0 }} />}
+                    <div style={{ display: "flex", alignItems: "baseline", gap: "10px" }}>
+                      <span
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: 800,
+                          color: "#0f172a",
+                          fontFamily: font.stack,
+                          letterSpacing: "0.01em",
+                        }}
+                      >
+                        {font.name}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 700,
+                          color: isSelected ? "#475569" : "#94a3b8",
+                          fontFamily: font.stack,
+                        }}
+                      >
+                        Aa
+                      </span>
                     </div>
-                    <span style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.3 }}>{font.description}</span>
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        color: isSelected ? "#0f172a" : "#94a3b8",
-                        fontFamily: font.stack,
-                        marginTop: "2px",
-                        letterSpacing: "0.02em",
-                      }}
-                    >
-                      The quick brown fox jumps over the lazy dog
-                    </div>
+
+                    {isSelected && (
+                      <Check style={{ width: "16px", height: "16px", color: "#0f172a", flexShrink: 0 }} />
+                    )}
                   </button>
                 );
               })}
