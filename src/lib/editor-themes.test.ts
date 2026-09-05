@@ -12,12 +12,25 @@ import {
   themeStylesheet,
   tokenizeCss,
   tokenizeSectionHtml,
+  generateHarmonicPalette,
+  customThemeCss,
 } from "@/lib/editor-themes";
 
-describe("the four themes", () => {
-  it("is exactly four, with unique ids", () => {
-    assert.equal(EDITOR_THEMES.length, 4);
-    assert.equal(new Set(EDITOR_THEMES.map((t) => t.id)).size, 4);
+describe("the editor themes", () => {
+  it("includes default dual-themes and platform themes with unique ids", () => {
+    assert.equal(EDITOR_THEMES.length, 6);
+    assert.equal(new Set(EDITOR_THEMES.map((t) => t.id)).size, 6);
+    assert.ok(EDITOR_THEMES.some((t) => t.id === "black-and-white"));
+    assert.ok(EDITOR_THEMES.some((t) => t.id === "white-and-black"));
+  });
+
+  it("generates mathematical harmonic palettes with all required tokens", () => {
+    const palette = generateHarmonicPalette("#3b82f6", "complementary", true);
+    assert.ok(palette.surface.startsWith("#"));
+    assert.ok(palette.accent.startsWith("#"));
+    assert.ok(palette.text.startsWith("#"));
+    const css = customThemeCss(".xite-site-canvas", palette);
+    assert.ok(css.includes('--xite-accent: ' + palette.accent));
   });
 
   it("defines every token in every theme, so no var() ever falls through", () => {
@@ -34,6 +47,16 @@ describe("the four themes", () => {
     assert.equal(themeById(null).id, DEFAULT_THEME_ID);
     assert.equal(themeById("cyber-neon").id, DEFAULT_THEME_ID);
     assert.equal(fontById("comic").id, EDITOR_FONTS[0]!.id);
+  });
+
+  it("offers exactly 12 Google Fonts with unique ids and valid stacks", () => {
+    assert.equal(EDITOR_FONTS.length, 12);
+    assert.equal(new Set(EDITOR_FONTS.map((f) => f.id)).size, 12);
+    for (const font of EDITOR_FONTS) {
+      assert.ok(font.name.trim(), `font ${font.id} has empty name`);
+      assert.ok(font.stack.includes(font.name), `font ${font.id} stack does not include ${font.name}`);
+      assert.ok(font.weights.trim(), `font ${font.id} has empty weights`);
+    }
   });
 });
 

@@ -39,8 +39,51 @@
  *     understands `#rgb`, `#rrggbb` in any case, and `rgb()`/`rgba()`.
  */
 
-export type EditorThemeId = "academic-blue" | "emerald-gold" | "crimson-slate" | "midnight-purple";
-export type EditorFontId = "inter" | "outfit" | "serif";
+export type EditorThemeId =
+  | "black-and-white"
+  | "white-and-black"
+  | "academic-blue"
+  | "emerald-gold"
+  | "crimson-slate"
+  | "midnight-purple"
+  | "custom";
+
+export type EditorFontId =
+  | "inter"
+  | "outfit"
+  | "serif"
+  | "plus-jakarta"
+  | "montserrat"
+  | "lora"
+  | "open-sans"
+  | "raleway"
+  | "space-grotesk"
+  | "cinzel"
+  | "dm-sans"
+  | "fira-code";
+
+export type EditorThemeTokens = {
+  /** Page background, and the background of full-bleed bands. */
+  surface: string;
+  /** Cards, panels and anything raised off the surface. */
+  surfaceRaised: string;
+  /** Navbar background. Usually the darkest value in the theme. */
+  header: string;
+  /** Footer background. */
+  footer: string;
+  /** Buttons, links, active states — the colour the brand is recognised by. */
+  accent: string;
+  /** Accent text on a dark surface: the same hue, lightened to stay legible. */
+  accentSoft: string;
+  /** Text on the accent colour. */
+  onAccent: string;
+  /** Body text. */
+  text: string;
+  /** Secondary text, captions, metadata. */
+  textMuted: string;
+  /** Hairlines and dividers. */
+  border: string;
+};
 
 export type EditorTheme = {
   id: EditorThemeId;
@@ -48,40 +91,60 @@ export type EditorTheme = {
   description: string;
   /** The two colours the picker shows as a swatch. */
   swatch: { base: string; accent: string };
-  tokens: {
-    /** Page background, and the background of full-bleed bands. */
-    surface: string;
-    /** Cards, panels and anything raised off the surface. */
-    surfaceRaised: string;
-    /** Navbar background. Usually the darkest value in the theme. */
-    header: string;
-    /** Footer background. */
-    footer: string;
-    /** Buttons, links, active states — the colour the brand is recognised by. */
-    accent: string;
-    /** Accent text on a dark surface: the same hue, lightened to stay legible. */
-    accentSoft: string;
-    /** Text on the accent colour. */
-    onAccent: string;
-    /** Body text. */
-    text: string;
-    /** Secondary text, captions, metadata. */
-    textMuted: string;
-    /** Hairlines and dividers. */
-    border: string;
-  };
+  tokens: EditorThemeTokens;
 };
 
 /**
- * The four.
- *
- * Chosen from the ten that were hardcoded in `PALETTES_MAP` and the five the
- * picker actually offered — the four that appeared in both lists, so no tenant
- * loses a theme they could have selected. `light-minimal` is deliberately not
- * here: its surface is white, and every section in the library is authored
- * against a dark background, so selecting it produced white text on white.
+ * Default dual-preset themes:
+ * 1. Black & White (Obsidian Dark)
+ * 2. White & Black (Crisp Clean Light)
+ */
+export const DEFAULT_DUAL_THEMES: readonly EditorTheme[] = [
+  {
+    id: "black-and-white",
+    name: "Black & White",
+    description: "Sleek obsidian black base with crisp pure white accents and high contrast.",
+    swatch: { base: "#000000", accent: "#ffffff" },
+    tokens: {
+      surface: "#000000",
+      surfaceRaised: "#141416",
+      header: "#000000",
+      footer: "#000000",
+      accent: "#ffffff",
+      accentSoft: "#e4e4e7",
+      onAccent: "#000000",
+      text: "#ffffff",
+      textMuted: "#a1a1aa",
+      border: "rgba(255, 255, 255, 0.16)",
+    },
+  },
+  {
+    id: "white-and-black",
+    name: "White & Black",
+    description: "Crisp modern white background with deep black typography and contrast.",
+    swatch: { base: "#ffffff", accent: "#000000" },
+    tokens: {
+      surface: "#ffffff",
+      surfaceRaised: "#f4f4f5",
+      header: "#ffffff",
+      footer: "#f8fafc",
+      accent: "#000000",
+      accentSoft: "#27272a",
+      onAccent: "#ffffff",
+      text: "#000000",
+      textMuted: "#71717a",
+      border: "rgba(0, 0, 0, 0.12)",
+    },
+  },
+] as const;
+
+/**
+ * All themes supported by the engine.
+ * The default two (Black & White, White & Black) lead the list,
+ * followed by the 4 platform themes for full backwards compatibility.
  */
 export const EDITOR_THEMES: readonly EditorTheme[] = [
+  ...DEFAULT_DUAL_THEMES,
   {
     id: "academic-blue",
     name: "Academic Navy",
@@ -156,7 +219,7 @@ export const EDITOR_THEMES: readonly EditorTheme[] = [
   },
 ] as const;
 
-export const EDITOR_THEME_IDS = EDITOR_THEMES.map((t) => t.id);
+export const EDITOR_THEME_IDS = [...EDITOR_THEMES.map((t) => t.id), "custom"] as const;
 export const DEFAULT_THEME_ID: EditorThemeId = "academic-blue";
 
 export type EditorFont = {
@@ -187,7 +250,6 @@ export const EDITOR_FONTS: readonly EditorFont[] = [
     description: "Clean modern sans-serif. High readability at small sizes.",
     stack: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
     families: ["Inter"],
-    // Variable, 100 to 900. One file covers the whole range.
     weights: "100..900",
   },
   {
@@ -204,9 +266,79 @@ export const EDITOR_FONTS: readonly EditorFont[] = [
     description: "Classic academic serif. Formal, high contrast.",
     stack: "'Playfair Display', Georgia, 'Times New Roman', serif",
     families: ["Playfair Display"],
-    // Playfair Display has no weight below 400, and asking for one is a 400
-    // from Google Fonts rather than a clamp.
     weights: "400..900",
+  },
+  {
+    id: "plus-jakarta",
+    name: "Plus Jakarta Sans",
+    description: "Trendy modern geometric sans. Clean, punchy and premium.",
+    stack: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+    families: ["Plus Jakarta Sans"],
+    weights: "200..800",
+  },
+  {
+    id: "montserrat",
+    name: "Montserrat",
+    description: "Geometric urban grotesque. Excellent for bold modern headers.",
+    stack: "'Montserrat', system-ui, -apple-system, sans-serif",
+    families: ["Montserrat"],
+    weights: "100..900",
+  },
+  {
+    id: "lora",
+    name: "Lora",
+    description: "Contemporary serif with brushed curves. Warm and literary.",
+    stack: "'Lora', Georgia, 'Times New Roman', serif",
+    families: ["Lora"],
+    weights: "400..700",
+  },
+  {
+    id: "open-sans",
+    name: "Open Sans",
+    description: "Neutral, friendly humanist sans-serif with wide aperture.",
+    stack: "'Open Sans', system-ui, -apple-system, sans-serif",
+    families: ["Open Sans"],
+    weights: "300..800",
+  },
+  {
+    id: "raleway",
+    name: "Raleway",
+    description: "Elegant sans-serif with distinctive high-contrast letterforms.",
+    stack: "'Raleway', system-ui, -apple-system, sans-serif",
+    families: ["Raleway"],
+    weights: "100..900",
+  },
+  {
+    id: "space-grotesk",
+    name: "Space Grotesk",
+    description: "Futuristic tech sans-serif with distinctive monospace roots.",
+    stack: "'Space Grotesk', system-ui, -apple-system, sans-serif",
+    families: ["Space Grotesk"],
+    weights: "300..700",
+  },
+  {
+    id: "cinzel",
+    name: "Cinzel",
+    description: "Classical Roman proportions with a majestic, formal aura.",
+    stack: "'Cinzel', Georgia, 'Times New Roman', serif",
+    families: ["Cinzel"],
+    weights: "400..900",
+  },
+  {
+    id: "dm-sans",
+    name: "DM Sans",
+    description: "Clean, geometric and low-contrast sans for sharp modern UI.",
+    stack: "'DM Sans', system-ui, -apple-system, sans-serif",
+    families: ["DM Sans"],
+    weights: "100..1000",
+  },
+  {
+    id: "fira-code",
+    name: "Fira Code",
+    description: "Monospaced font with programming ligatures and high precision.",
+    stack: "'Fira Code', 'Courier New', monospace",
+    families: ["Fira Code"],
+    weights: "300..700",
   },
 ] as const;
 
@@ -214,7 +346,7 @@ export const EDITOR_FONT_IDS = EDITOR_FONTS.map((f) => f.id);
 export const DEFAULT_FONT_ID: EditorFontId = "inter";
 
 export function themeById(id: string | null | undefined): EditorTheme {
-  return EDITOR_THEMES.find((t) => t.id === id) ?? EDITOR_THEMES[0]!;
+  return EDITOR_THEMES.find((t) => t.id === id) ?? EDITOR_THEMES.find((t) => t.id === DEFAULT_THEME_ID) ?? EDITOR_THEMES[0]!;
 }
 
 export function fontById(id: string | null | undefined): EditorFont {
@@ -580,4 +712,331 @@ export function themeFontsHref(): string {
   }
 
   return `https://fonts.googleapis.com/css2?${parts.join("&")}&display=swap`;
+}
+
+/**
+ * Emits CSS rules for a custom theme's tokens.
+ */
+export function customThemeCss(scope: string, tokens: EditorThemeTokens): string {
+  const declarations = Object.entries(tokens)
+    .map(([name, value]) => `  --xite-${kebab(name)}: ${value};`)
+    .join("\n");
+  return `${scope}[data-xite-theme="custom"], ${scope}[data-xite-theme^="custom-"] {\n${declarations}\n}`;
+}
+
+/* ── Color Palette Algorithms & Harmonies ────────────────────────────────── */
+
+export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  let clean = hex.replace("#", "").trim();
+  if (clean.length === 3) {
+    clean = clean.split("").map((c) => c + c).join("");
+  }
+  const num = parseInt(clean, 16);
+  if (isNaN(num)) return { r: 15, g: 23, b: 42 };
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  };
+}
+
+export function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100),
+  };
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  h = ((h % 360) + 360) % 360;
+  s = Math.max(0, Math.min(100, s)) / 100;
+  l = Math.max(0, Math.min(100, l)) / 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (0 <= h && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (60 <= h && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (120 <= h && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (180 <= h && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (240 <= h && h < 300) {
+    r = x; g = 0; b = c;
+  } else if (300 <= h && h < 360) {
+    r = c; g = 0; b = x;
+  }
+
+  const toHex = (n: number) => {
+    const val = Math.max(0, Math.min(255, Math.round((n + m) * 255)));
+    return val.toString(16).padStart(2, "0");
+  };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+export function getRelativeLuminance(hex: string): number {
+  const { r, g, b } = hexToRgb(hex);
+  const [rs, gs, bs] = [r, g, b].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+export type HarmonyMode = "complementary" | "analogous" | "triadic" | "monochromatic" | "split";
+
+/**
+ * Generates an accessible, mathematically harmonic palette using color science algorithms.
+ */
+export function generateHarmonicPalette(
+  seedHex: string,
+  mode: HarmonyMode = "complementary",
+  isDark: boolean = true
+): EditorThemeTokens {
+  const { r, g, b } = hexToRgb(seedHex);
+  const hsl = rgbToHsl(r, g, b);
+
+  let accentHue = hsl.h;
+  let secondaryHue = hsl.h;
+
+  switch (mode) {
+    case "complementary":
+      secondaryHue = (hsl.h + 180) % 360;
+      break;
+    case "analogous":
+      secondaryHue = (hsl.h + 35) % 360;
+      break;
+    case "triadic":
+      secondaryHue = (hsl.h + 120) % 360;
+      break;
+    case "monochromatic":
+      secondaryHue = hsl.h;
+      break;
+    case "split":
+      secondaryHue = (hsl.h + 150) % 360;
+      break;
+  }
+
+  const accentHex = hslToHex(accentHue, Math.max(75, hsl.s), isDark ? 56 : 48);
+  const accentSoftHex = hslToHex(accentHue, Math.max(70, hsl.s), isDark ? 74 : 32);
+  const onAccentHex = getRelativeLuminance(accentHex) > 0.4 ? "#09090b" : "#ffffff";
+
+  if (isDark) {
+    // Dark mode palette
+    const surfaceHex = hslToHex(secondaryHue, Math.min(25, hsl.s * 0.3), 6);
+    const surfaceRaisedHex = hslToHex(secondaryHue, Math.min(30, hsl.s * 0.4), 11);
+    const headerHex = hslToHex(secondaryHue, Math.min(20, hsl.s * 0.25), 4);
+    const footerHex = hslToHex(secondaryHue, Math.min(20, hsl.s * 0.25), 4);
+    const textHex = "#f8fafc";
+    const textMutedHex = hslToHex(secondaryHue, 15, 68);
+
+    return {
+      surface: surfaceHex,
+      surfaceRaised: surfaceRaisedHex,
+      header: headerHex,
+      footer: footerHex,
+      accent: accentHex,
+      accentSoft: accentSoftHex,
+      onAccent: onAccentHex,
+      text: textHex,
+      textMuted: textMutedHex,
+      border: "rgba(255, 255, 255, 0.14)",
+    };
+  } else {
+    // Light mode palette
+    const surfaceHex = "#ffffff";
+    const surfaceRaisedHex = hslToHex(secondaryHue, 18, 96);
+    const headerHex = "#ffffff";
+    const footerHex = hslToHex(secondaryHue, 15, 97);
+    const textHex = "#0f172a";
+    const textMutedHex = hslToHex(secondaryHue, 18, 42);
+
+    return {
+      surface: surfaceHex,
+      surfaceRaised: surfaceRaisedHex,
+      header: headerHex,
+      footer: footerHex,
+      accent: accentHex,
+      accentSoft: accentSoftHex,
+      onAccent: onAccentHex,
+      text: textHex,
+      textMuted: textMutedHex,
+      border: "rgba(0, 0, 0, 0.10)",
+    };
+  }
+}
+
+/**
+ * Curated algorithmic trending palettes ready for one-click application.
+ */
+export const TRENDING_ALGORITHMIC_PALETTES: readonly {
+  name: string;
+  category: string;
+  swatch: { base: string; accent: string };
+  tokens: EditorThemeTokens;
+}[] = [
+  {
+    name: "Cyberpunk Neon",
+    category: "High Contrast",
+    swatch: { base: "#090414", accent: "#a855f7" },
+    tokens: {
+      surface: "#090414",
+      surfaceRaised: "#160b29",
+      header: "#05020c",
+      footer: "#05020c",
+      accent: "#a855f7",
+      accentSoft: "#c084fc",
+      onAccent: "#ffffff",
+      text: "#faf5ff",
+      textMuted: "#b8a4cc",
+      border: "rgba(168, 85, 247, 0.25)",
+    },
+  },
+  {
+    name: "Ocean Deep",
+    category: "Complementary",
+    swatch: { base: "#041424", accent: "#0284c7" },
+    tokens: {
+      surface: "#041424",
+      surfaceRaised: "#0b2238",
+      header: "#020c17",
+      footer: "#020c17",
+      accent: "#0284c7",
+      accentSoft: "#38bdf8",
+      onAccent: "#ffffff",
+      text: "#f0f9ff",
+      textMuted: "#94b8d6",
+      border: "rgba(56, 189, 248, 0.22)",
+    },
+  },
+  {
+    name: "Sunset Amber",
+    category: "Warm Analogous",
+    swatch: { base: "#170c06", accent: "#f97316" },
+    tokens: {
+      surface: "#170c06",
+      surfaceRaised: "#26150b",
+      header: "#0e0603",
+      footer: "#0e0603",
+      accent: "#f97316",
+      accentSoft: "#fb923c",
+      onAccent: "#ffffff",
+      text: "#fff7ed",
+      textMuted: "#d4a78c",
+      border: "rgba(249, 115, 22, 0.22)",
+    },
+  },
+  {
+    name: "Forest & Sage",
+    category: "Natural Harmony",
+    swatch: { base: "#051811", accent: "#10b981" },
+    tokens: {
+      surface: "#051811",
+      surfaceRaised: "#0a291e",
+      header: "#030f0a",
+      footer: "#030f0a",
+      accent: "#10b981",
+      accentSoft: "#34d399",
+      onAccent: "#051811",
+      text: "#ecfdf5",
+      textMuted: "#86b9a3",
+      border: "rgba(16, 185, 129, 0.22)",
+    },
+  },
+  {
+    name: "Nordic Minimal",
+    category: "Clean Light",
+    swatch: { base: "#ffffff", accent: "#2563eb" },
+    tokens: {
+      surface: "#ffffff",
+      surfaceRaised: "#f1f5f9",
+      header: "#ffffff",
+      footer: "#f8fafc",
+      accent: "#2563eb",
+      accentSoft: "#60a5fa",
+      onAccent: "#ffffff",
+      text: "#0f172a",
+      textMuted: "#64748b",
+      border: "rgba(15, 23, 42, 0.12)",
+    },
+  },
+  {
+    name: "Crimson Velvet",
+    category: "Dramatic Monochrome",
+    swatch: { base: "#18040a", accent: "#f43f5e" },
+    tokens: {
+      surface: "#18040a",
+      surfaceRaised: "#290913",
+      header: "#0d0205",
+      footer: "#0d0205",
+      accent: "#f43f5e",
+      accentSoft: "#fb7185",
+      onAccent: "#ffffff",
+      text: "#fff1f2",
+      textMuted: "#cca0aa",
+      border: "rgba(244, 63, 94, 0.22)",
+    },
+  },
+] as const;
+
+/**
+ * Generates a completely randomized yet harmonious and readable palette.
+ */
+export function generateRandomHarmonicPalette(): { name: string; tokens: EditorThemeTokens } {
+  const randomHue = Math.floor(Math.random() * 360);
+  const modes: HarmonyMode[] = ["complementary", "analogous", "triadic", "split"];
+  const randomMode = modes[Math.floor(Math.random() * modes.length)]!;
+  const isDark = Math.random() > 0.3;
+
+  const names = [
+    "Aurora Borealis",
+    "Solar Flare",
+    "Nebula Dream",
+    "Midnight Echo",
+    "Emerald Horizon",
+    "Cosmic Velvet",
+    "Electric Prism",
+    "Zenith Dawn",
+  ];
+  const name = names[Math.floor(Math.random() * names.length)]!;
+  const seed = hslToHex(randomHue, 85, 52);
+
+  return {
+    name,
+    tokens: generateHarmonicPalette(seed, randomMode, isDark),
+  };
 }

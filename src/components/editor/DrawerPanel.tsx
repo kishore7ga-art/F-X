@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import { EDITOR_FONTS, EDITOR_THEMES } from "@/lib/editor-themes";
+import {
+  DEFAULT_DUAL_THEMES,
+  EDITOR_FONTS,
+  TRENDING_ALGORITHMIC_PALETTES,
+  generateHarmonicPalette,
+  generateRandomHarmonicPalette,
+  type EditorThemeTokens,
+  type HarmonyMode,
+} from "@/lib/editor-themes";
 import {
   X,
   Home,
@@ -21,7 +29,19 @@ import {
   Check,
   Trash2,
   FileText,
+  Sparkles,
+  Sliders,
+  RotateCcw,
+  Wand2,
+  Image as ImageIcon,
+  Upload,
+  Move,
 } from "lucide-react";
+import {
+  DEFAULT_IMAGE_ASSETS,
+  removeImageBackground,
+  type ImageAssetItem,
+} from "@/lib/image-background-remover";
 
 interface DrawerPanelProps {
   isOpen: boolean;
@@ -31,6 +51,7 @@ interface DrawerPanelProps {
   onPageCreate?: (pageName: string, pageSlug: string) => void;
   onPaletteSelect?: (paletteId: string) => void;
   onFontSelect?: (fontId: string) => void;
+  onPlaceAssetOnCanvas?: (asset: { url: string; name: string; width: number; height: number }) => void;
   /**
    * The theme and font currently applied.
    *
@@ -43,16 +64,13 @@ interface DrawerPanelProps {
   activeFontId?: string | null;
   /**
    * Deletes a page for real — from the database, not just from this list.
-   *
-   * Returns a promise so the drawer can report a failure rather than showing
-   * "deleted" over a page that is still published. Absent means the drawer
-   * cannot delete, which is the honest state for a caller that has not wired
-   * it up.
    */
   onPageDelete?: (pageSlug: string) => Promise<void>;
   /** The pages that exist, from the editor's own store. */
   pages?: { slug: string; title: string }[];
   activePageSlug?: string;
+  customThemeTokens?: EditorThemeTokens | null;
+  onCustomThemeChange?: (tokens: EditorThemeTokens) => void;
 }
 
 interface PageItem {
@@ -96,9 +114,132 @@ export function DrawerPanel({
   activeFontId = null,
   pages: livePages,
   activePageSlug,
+  customThemeTokens = null,
+  onCustomThemeChange,
+  onPlaceAssetOnCanvas,
 }: DrawerPanelProps) {
-  const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts" | "assets">("pages");
   const [pages, setPages] = useState<PageItem[]>(INITIAL_PAGES);
+
+  // Image Assets State
+  const [imageAssets, setImageAssets] = useState<ImageAssetItem[]>(DEFAULT_IMAGE_ASSETS);
+  const [customAssetUrl, setCustomAssetUrl] = useState("");
+  const [customAssetName, setCustomAssetName] = useState("");
+  const [bgTolerance, setBgTolerance] = useState(42);
+  const [processingAssetId, setProcessingAssetId] = useState<string | null>(null);
+
+  const handleAssetFileUpload = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      showNotification("Please select a valid image file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      if (!dataUrl) return;
+
+      const newAsset: ImageAssetItem = {
+        id: `custom-asset-${Date.now()}`,
+        name: file.name.replace(/\.[^/.]+$/, "") || "Uploaded Image",
+        category: "custom",
+        url: dataUrl,
+        width: 240,
+        height: 240,
+        hasTransparentBg: false,
+      };
+
+      setImageAssets((prev) => [newAsset, ...prev]);
+      showNotification(`Added asset: "${newAsset.name}"`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddCustomUrlAsset = () => {
+    if (!customAssetUrl.trim()) return;
+    const newAsset: ImageAssetItem = {
+      id: `custom-url-${Date.now()}`,
+      name: customAssetName.trim() || "Web Image Asset",
+      category: "custom",
+      url: customAssetUrl.trim(),
+      width: 260,
+      height: 200,
+      hasTransparentBg: false,
+    };
+    setImageAssets((prev) => [newAsset, ...prev]);
+    setCustomAssetUrl("");
+    setCustomAssetName("");
+    showNotification(`Added asset: "${newAsset.name}"`);
+  };
+
+  const handleRemoveBgForAsset = async (asset: ImageAssetItem) => {
+    setProcessingAssetId(asset.id);
+    try {
+      const transparentUrl = await removeImageBackground(asset.url, {
+        tolerance: bgTolerance,
+        featherRadius: 16,
+      });
+
+      setImageAssets((prev) =>
+        prev.map((a) => (a.id === asset.id ? { ...a, url: transparentUrl, hasTransparentBg: true } : a)),
+      );
+      showNotification(`✨ Background removed from "${asset.name}"!`);
+    } catch {
+      showNotification("Could not remove background.");
+    } finally {
+      setProcessingAssetId(null);
+    }
+  };
+
+  const handleDeleteAsset = (assetId: string) => {
+    setImageAssets((prev) => prev.filter((a) => a.id !== assetId));
+    showNotification("Asset deleted from library.");
+  };
+
+  const [customTokens, setCustomTokens] = useState<EditorThemeTokens>(() => {
+    return customThemeTokens ?? DEFAULT_DUAL_THEMES[0]!.tokens;
+  });
+
+  const [generatorSeed, setGeneratorSeed] = useState("#2563eb");
+  const [generatorHarmony, setGeneratorHarmony] = useState<HarmonyMode>("complementary");
+  const [generatorIsDark, setGeneratorIsDark] = useState(true);
+
+  useMemo(() => {
+    if (customThemeTokens) {
+      setCustomTokens(customThemeTokens);
+    }
+  }, [customThemeTokens]);
+
+  const handleUpdateCustomToken = (tokenKey: keyof EditorThemeTokens, newHex: string) => {
+    const updated = { ...customTokens, [tokenKey]: newHex };
+    setCustomTokens(updated);
+    onCustomThemeChange?.(updated);
+    onPaletteSelect?.("custom");
+  };
+
+  const handleGenerateHarmonic = () => {
+    const generated = generateHarmonicPalette(generatorSeed, generatorHarmony, generatorIsDark);
+    setCustomTokens(generated);
+    onCustomThemeChange?.(generated);
+    onPaletteSelect?.("custom");
+    showNotification(`Generated ${generatorHarmony} palette!`);
+  };
+
+  const handleRandomHarmonic = () => {
+    const random = generateRandomHarmonicPalette();
+    setCustomTokens(random.tokens);
+    setGeneratorSeed(random.tokens.accent);
+    onCustomThemeChange?.(random.tokens);
+    onPaletteSelect?.("custom");
+    showNotification(`Generated "${random.name}" palette!`);
+  };
+
+  const handleApplyTrending = (palette: (typeof TRENDING_ALGORITHMIC_PALETTES)[number]) => {
+    setCustomTokens(palette.tokens);
+    setGeneratorSeed(palette.tokens.accent);
+    onCustomThemeChange?.(palette.tokens);
+    onPaletteSelect?.("custom");
+    showNotification(`Applied "${palette.name}" palette!`);
+  };
 
   /**
    * The list shown: every page the college actually has, plus the suggested
@@ -325,7 +466,7 @@ export function DrawerPanel({
         >
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Pages, Colors & Fonts
+              Pages, Colors, Fonts & Image Assets
             </span>
             <button
               onClick={onClose}
@@ -360,12 +501,12 @@ export function DrawerPanel({
                 flex: 1,
                 height: "36px",
                 borderRadius: "12px",
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 800,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "6px",
+                gap: "5px",
                 border: "none",
                 cursor: "pointer",
                 backgroundColor: activeTab === "pages" ? "#ffffff" : "transparent",
@@ -373,7 +514,7 @@ export function DrawerPanel({
                 boxShadow: activeTab === "pages" ? "0 2px 4px rgba(0,0,0,0.06)" : "none",
               }}
             >
-              <Home style={{ width: "14px", height: "14px" }} />
+              <Home style={{ width: "13px", height: "13px" }} />
               <span>Pages</span>
             </button>
 
@@ -383,12 +524,12 @@ export function DrawerPanel({
                 flex: 1,
                 height: "36px",
                 borderRadius: "12px",
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 800,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "6px",
+                gap: "5px",
                 border: "none",
                 cursor: "pointer",
                 backgroundColor: activeTab === "colors" ? "#ffffff" : "transparent",
@@ -396,7 +537,7 @@ export function DrawerPanel({
                 boxShadow: activeTab === "colors" ? "0 2px 4px rgba(0,0,0,0.06)" : "none",
               }}
             >
-              <Palette style={{ width: "14px", height: "14px" }} />
+              <Palette style={{ width: "13px", height: "13px" }} />
               <span>Colors</span>
             </button>
 
@@ -406,12 +547,12 @@ export function DrawerPanel({
                 flex: 1,
                 height: "36px",
                 borderRadius: "12px",
-                fontSize: "12px",
+                fontSize: "11.5px",
                 fontWeight: 800,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "6px",
+                gap: "5px",
                 border: "none",
                 cursor: "pointer",
                 backgroundColor: activeTab === "fonts" ? "#ffffff" : "transparent",
@@ -419,8 +560,31 @@ export function DrawerPanel({
                 boxShadow: activeTab === "fonts" ? "0 2px 4px rgba(0,0,0,0.06)" : "none",
               }}
             >
-              <Type style={{ width: "14px", height: "14px" }} />
+              <Type style={{ width: "13px", height: "13px" }} />
               <span>Fonts</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("assets")}
+              style={{
+                flex: 1,
+                height: "36px",
+                borderRadius: "12px",
+                fontSize: "11.5px",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "5px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: activeTab === "assets" ? "#ffffff" : "transparent",
+                color: activeTab === "assets" ? "#0f172a" : "#64748b",
+                boxShadow: activeTab === "assets" ? "0 2px 4px rgba(0,0,0,0.06)" : "none",
+              }}
+            >
+              <ImageIcon style={{ width: "13px", height: "13px" }} />
+              <span>Assets</span>
             </button>
 
           </div>
@@ -507,50 +671,518 @@ export function DrawerPanel({
 
           {/* COLORS TAB */}
           {activeTab === "colors" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {EDITOR_THEMES.map((theme) => {
-                const isSelected = activePaletteId === theme.id;
-                return (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* SECTION 1: DEFAULT 2 THEMES */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                    Default Presets (இயல்புநிலை)
+                  </span>
+                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#94a3b8" }}>2 Themes</span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {DEFAULT_DUAL_THEMES.map((theme) => {
+                    const isSelected = activePaletteId === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => handleSelectPalette(theme.id, theme.name)}
+                        aria-pressed={isSelected}
+                        style={{
+                          padding: "12px 14px",
+                          borderRadius: "16px",
+                          backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
+                          border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                          cursor: "pointer",
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          textAlign: "left",
+                          width: "100%",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontSize: "13px", fontWeight: 900, color: "#0f172a" }}>{theme.name}</span>
+                            <span
+                              style={{
+                                fontSize: "9px",
+                                fontWeight: 800,
+                                padding: "2px 6px",
+                                borderRadius: "6px",
+                                backgroundColor: theme.id === "black-and-white" ? "#000000" : "#f1f5f9",
+                                color: theme.id === "black-and-white" ? "#ffffff" : "#0f172a",
+                                border: "1px solid #cbd5e1",
+                              }}
+                            >
+                              {theme.id === "black-and-white" ? "Dark Base" : "Light Base"}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.3 }}>{theme.description}</span>
+                          <div style={{ display: "flex", flexDirection: "row", gap: "6px", marginTop: "2px" }}>
+                            <span
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                borderRadius: "50%",
+                                backgroundColor: theme.swatch.base,
+                                border: "1px solid #cbd5e1",
+                              }}
+                            />
+                            <span
+                              style={{
+                                width: "16px",
+                                height: "16px",
+                                borderRadius: "50%",
+                                backgroundColor: theme.swatch.accent,
+                                border: "1px solid #cbd5e1",
+                              }}
+                            />
+                          </div>
+                        </div>
+                        {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a", flexShrink: 0 }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SECTION 2: CUSTOM COLOR ADJUSTERS */}
+              <div
+                style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "16px",
+                  padding: "14px",
+                  backgroundColor: "#ffffff",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Sliders style={{ width: "14px", height: "14px", color: "#0f172a" }} />
+                    <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>
+                      Customize Colors (வண்ண தேர்வு)
+                    </span>
+                  </div>
+                  {activePaletteId === "custom" && (
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 800,
+                        color: "#16a34a",
+                        backgroundColor: "#dcfce7",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      Active
+                    </span>
+                  )}
+                </div>
+
+                <p style={{ fontSize: "11px", color: "#64748b", margin: 0, lineHeight: 1.4 }}>
+                  Adjust individual colors using the color swatches or Hex input:
+                </p>
+
+                {/* Adjuster Rows */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {(
+                    [
+                      { key: "accent" as const, label: "Brand Accent", desc: "Buttons & active states" },
+                      { key: "accentSoft" as const, label: "Accent Soft", desc: "Hover & badge highlights" },
+                      { key: "surface" as const, label: "Page Background", desc: "Main canvas background" },
+                      { key: "surfaceRaised" as const, label: "Card / Panel", desc: "Cards & elevated blocks" },
+                      { key: "text" as const, label: "Main Text", desc: "Headlines & copy" },
+                      { key: "textMuted" as const, label: "Muted Text", desc: "Secondary text & captions" },
+                      { key: "header" as const, label: "Header & Nav", desc: "Top navigation bar" },
+                    ] as const
+                  ).map((item) => {
+                    const currentColor = customTokens[item.key] || "#000000";
+                    const hexValue = currentColor.startsWith("#") ? currentColor : "#000000";
+
+                    return (
+                      <div
+                        key={item.key}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "6px 8px",
+                          borderRadius: "10px",
+                          backgroundColor: "#f8fafc",
+                          border: "1px solid #f1f5f9",
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>{item.label}</span>
+                          <span style={{ fontSize: "10px", color: "#64748b" }}>{item.desc}</span>
+                        </div>
+
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          {/* Interactive Color Box */}
+                          <label
+                            style={{
+                              position: "relative",
+                              width: "30px",
+                              height: "30px",
+                              borderRadius: "8px",
+                              backgroundColor: currentColor,
+                              border: "1.5px solid #cbd5e1",
+                              cursor: "pointer",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                              display: "block",
+                              flexShrink: 0,
+                            }}
+                            title={`Click to pick ${item.label}`}
+                          >
+                            <input
+                              type="color"
+                              value={hexValue}
+                              onChange={(e) => handleUpdateCustomToken(item.key, e.target.value)}
+                              style={{
+                                opacity: 0,
+                                width: "100%",
+                                height: "100%",
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                cursor: "pointer",
+                              }}
+                            />
+                          </label>
+
+                          {/* Hex Input */}
+                          <input
+                            type="text"
+                            value={currentColor}
+                            onChange={(e) => handleUpdateCustomToken(item.key, e.target.value)}
+                            maxLength={9}
+                            style={{
+                              width: "72px",
+                              height: "28px",
+                              borderRadius: "6px",
+                              border: "1px solid #cbd5e1",
+                              padding: "0 4px",
+                              fontSize: "11px",
+                              fontFamily: "monospace",
+                              fontWeight: 700,
+                              color: "#0f172a",
+                              backgroundColor: "#ffffff",
+                              textAlign: "center",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Reset Base Buttons */}
+                <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
                   <button
-                    key={theme.id}
                     type="button"
-                    onClick={() => handleSelectPalette(theme.id, theme.name)}
-                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setCustomTokens(DEFAULT_DUAL_THEMES[0]!.tokens);
+                      onCustomThemeChange?.(DEFAULT_DUAL_THEMES[0]!.tokens);
+                      onPaletteSelect?.("custom");
+                      showNotification("Reset to Black & White base");
+                    }}
                     style={{
-                      padding: "14px",
-                      borderRadius: "16px",
-                      backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
-                      border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                      flex: 1,
+                      height: "30px",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                      backgroundColor: "#ffffff",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      color: "#475569",
                       cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      textAlign: "left",
-                      width: "100%",
-                      font: "inherit",
                     }}
                   >
-                    <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                      <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>{theme.name}</span>
-                      <span style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.4 }}>{theme.description}</span>
-                      <div style={{ display: "flex", flexDirection: "row", gap: "6px", marginTop: "2px" }}>
-                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: theme.swatch.base, border: "1px solid #cbd5e1" }} />
-                        <span style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: theme.swatch.accent, border: "1px solid #cbd5e1" }} />
-                      </div>
-                    </div>
-                    {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a", flexShrink: 0 }} />}
+                    Reset (Black)
                   </button>
-                );
-              })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomTokens(DEFAULT_DUAL_THEMES[1]!.tokens);
+                      onCustomThemeChange?.(DEFAULT_DUAL_THEMES[1]!.tokens);
+                      onPaletteSelect?.("custom");
+                      showNotification("Reset to White & Black base");
+                    }}
+                    style={{
+                      flex: 1,
+                      height: "30px",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                      backgroundColor: "#ffffff",
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      color: "#475569",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Reset (White)
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 3: ALGORITHMIC COLOR GENERATOR */}
+              <div
+                style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "16px",
+                  padding: "14px",
+                  backgroundColor: "#ffffff",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Sparkles style={{ width: "14px", height: "14px", color: "#6366f1" }} />
+                    <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>
+                      Harmonic Palette Algorithm
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRandomHarmonic}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      backgroundColor: "#eef2ff",
+                      color: "#4f46e5",
+                      border: "1px solid #c7d2fe",
+                      borderRadius: "8px",
+                      padding: "4px 8px",
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                    title="Generate Random Harmonious Palette"
+                  >
+                    <Wand2 style={{ width: "11px", height: "11px" }} />
+                    <span>Shuffle</span>
+                  </button>
+                </div>
+
+                <p style={{ fontSize: "11px", color: "#64748b", margin: 0, lineHeight: 1.4 }}>
+                  Color theory algorithms (HSL color wheel & WCAG contrast) mathematically calculate balanced harmonies.
+                </p>
+
+                {/* Seed Picker & Harmony Selection */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#334155" }}>Seed Base Color:</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <label
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "6px",
+                          backgroundColor: generatorSeed,
+                          border: "1px solid #cbd5e1",
+                          cursor: "pointer",
+                          display: "block",
+                          position: "relative",
+                        }}
+                      >
+                        <input
+                          type="color"
+                          value={generatorSeed}
+                          onChange={(e) => setGeneratorSeed(e.target.value)}
+                          style={{ opacity: 0, width: "100%", height: "100%", position: "absolute", cursor: "pointer" }}
+                        />
+                      </label>
+                      <span style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 700, color: "#475569" }}>
+                        {generatorSeed}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Harmony Mode Pills */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+                    {(
+                      [
+                        { id: "complementary", label: "Complementary" },
+                        { id: "analogous", label: "Analogous" },
+                        { id: "triadic", label: "Triadic" },
+                        { id: "monochromatic", label: "Monochrome" },
+                      ] as const
+                    ).map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setGeneratorHarmony(m.id)}
+                        style={{
+                          padding: "6px 4px",
+                          borderRadius: "8px",
+                          fontSize: "10px",
+                          fontWeight: 800,
+                          border: generatorHarmony === m.id ? "1.5px solid #4f46e5" : "1px solid #e2e8f0",
+                          backgroundColor: generatorHarmony === m.id ? "#eef2ff" : "#ffffff",
+                          color: generatorHarmony === m.id ? "#4f46e5" : "#64748b",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Dark/Light Mode Pill */}
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setGeneratorIsDark(true)}
+                      style={{
+                        flex: 1,
+                        padding: "5px",
+                        borderRadius: "8px",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        border: generatorIsDark ? "1.5px solid #0f172a" : "1px solid #e2e8f0",
+                        backgroundColor: generatorIsDark ? "#0f172a" : "#ffffff",
+                        color: generatorIsDark ? "#ffffff" : "#64748b",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Dark Surface
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGeneratorIsDark(false)}
+                      style={{
+                        flex: 1,
+                        padding: "5px",
+                        borderRadius: "8px",
+                        fontSize: "10px",
+                        fontWeight: 800,
+                        border: !generatorIsDark ? "1.5px solid #0f172a" : "1px solid #e2e8f0",
+                        backgroundColor: !generatorIsDark ? "#0f172a" : "#ffffff",
+                        color: !generatorIsDark ? "#ffffff" : "#64748b",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Light Surface
+                    </button>
+                  </div>
+
+                  {/* Generate Button */}
+                  <button
+                    type="button"
+                    onClick={handleGenerateHarmonic}
+                    style={{
+                      height: "36px",
+                      borderRadius: "10px",
+                      backgroundColor: "#4f46e5",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontWeight: 800,
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      boxShadow: "0 2px 4px rgba(79,70,229,0.25)",
+                    }}
+                  >
+                    <Sparkles style={{ width: "13px", height: "13px" }} />
+                    <span>Generate Harmonic Palette</span>
+                  </button>
+                </div>
+
+                {/* Trending Algorithmic Palettes */}
+                <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 800,
+                      color: "#94a3b8",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Online / Trending Palettes
+                  </span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+                    {TRENDING_ALGORITHMIC_PALETTES.map((p) => (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => handleApplyTrending(p)}
+                        style={{
+                          padding: "8px",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
+                          backgroundColor: "#f8fafc",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          gap: "4px",
+                          cursor: "pointer",
+                          textAlign: "left",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              borderRadius: "50%",
+                              backgroundColor: p.swatch.base,
+                              border: "1px solid #cbd5e1",
+                            }}
+                          />
+                          <span
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              borderRadius: "50%",
+                              backgroundColor: p.swatch.accent,
+                              border: "1px solid #cbd5e1",
+                            }}
+                          />
+                        </div>
+                        <span style={{ fontSize: "10px", fontWeight: 800, color: "#0f172a" }}>{p.name}</span>
+                        <span style={{ fontSize: "9px", color: "#64748b" }}>{p.category}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
           {/* FONTS TAB */}
           {activeTab === "fonts" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "2px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 900, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                  Google Fonts (12 Styles)
+                </span>
+                <span style={{ fontSize: "10px", fontWeight: 800, color: "#94a3b8" }}>
+                  {activeFontId ? "1 Selected" : "Default"}
+                </span>
+              </div>
+
               {EDITOR_FONTS.map((font) => {
                 const isSelected = activeFontId === font.id;
+                const category = font.stack.includes("monospace")
+                  ? "Monospace"
+                  : font.stack.includes("serif") && !font.stack.includes("sans-serif")
+                  ? "Serif"
+                  : "Sans-Serif";
+
                 return (
                   <button
                     key={font.id}
@@ -565,23 +1197,385 @@ export function DrawerPanel({
                       cursor: "pointer",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "4px",
+                      gap: "6px",
                       textAlign: "left",
                       width: "100%",
+                      transition: "all 0.15s ease",
                     }}
                   >
                     <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                      {/* Set in its own face, so the choice is legible as itself
-                          rather than as a name rendered in the app's font. */}
-                      <span style={{ fontSize: "15px", fontWeight: 900, color: "#0f172a", fontFamily: font.stack }}>
-                        {font.name}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ fontSize: "16px", fontWeight: 800, color: "#0f172a", fontFamily: font.stack }}>
+                          {font.name}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "9px",
+                            fontWeight: 800,
+                            padding: "1px 6px",
+                            borderRadius: "4px",
+                            backgroundColor: isSelected ? "#0f172a" : "#f1f5f9",
+                            color: isSelected ? "#ffffff" : "#64748b",
+                          }}
+                        >
+                          {category}
+                        </span>
+                      </div>
                       {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a", flexShrink: 0 }} />}
                     </div>
-                    <span style={{ fontSize: "11px", color: "#64748b" }}>{font.description}</span>
+                    <span style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.3 }}>{font.description}</span>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: isSelected ? "#0f172a" : "#94a3b8",
+                        fontFamily: font.stack,
+                        marginTop: "2px",
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      The quick brown fox jumps over the lazy dog
+                    </div>
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* ASSETS TAB */}
+          {activeTab === "assets" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Asset Intro & Drag Instructions */}
+              <div
+                style={{
+                  backgroundColor: "#0f172a",
+                  borderRadius: "16px",
+                  padding: "16px",
+                  color: "#ffffff",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  boxShadow: "0 4px 12px rgba(15,23,42,0.15)",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "8px",
+                      backgroundColor: "rgba(255,255,255,0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Move style={{ width: "15px", height: "15px", color: "#38bdf8" }} />
+                  </div>
+                  <span style={{ fontSize: "12px", fontWeight: 900, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                    Freeform Section Assets
+                  </span>
+                </div>
+                <p style={{ fontSize: "11px", color: "#94a3b8", lineHeight: 1.4, margin: 0 }}>
+                  Drag any image onto any section on the canvas. Move across sections with smooth scrolling, and position anywhere!
+                </p>
+              </div>
+
+              {/* Upload Image Section */}
+              <div
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "16px",
+                  padding: "14px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <span style={{ fontSize: "11px", fontWeight: 900, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Add Custom Image
+                </span>
+
+                {/* Device File Upload */}
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    height: "40px",
+                    backgroundColor: "#f8fafc",
+                    border: "1.5px dashed #cbd5e1",
+                    borderRadius: "12px",
+                    color: "#0f172a",
+                    fontSize: "12px",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <Upload style={{ width: "14px", height: "14px" }} />
+                  <span>Upload Image File from Device</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) handleAssetFileUpload(file);
+                    }}
+                  />
+                </label>
+
+                {/* URL Input */}
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <input
+                    type="text"
+                    placeholder="Or paste image URL..."
+                    value={customAssetUrl}
+                    onChange={(e) => setCustomAssetUrl(e.target.value)}
+                    style={{
+                      flex: 1,
+                      height: "36px",
+                      borderRadius: "10px",
+                      border: "1px solid #cbd5e1",
+                      padding: "0 10px",
+                      fontSize: "12px",
+                      outline: "none",
+                      backgroundColor: "#f8fafc",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomUrlAsset}
+                    disabled={!customAssetUrl.trim()}
+                    style={{
+                      height: "36px",
+                      padding: "0 12px",
+                      borderRadius: "10px",
+                      backgroundColor: "#0f172a",
+                      color: "#ffffff",
+                      fontSize: "12px",
+                      fontWeight: 800,
+                      border: "none",
+                      cursor: customAssetUrl.trim() ? "pointer" : "default",
+                      opacity: customAssetUrl.trim() ? 1 : 0.5,
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Background Removal Algorithm Controls */}
+              <div
+                style={{
+                  backgroundColor: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "16px",
+                  padding: "14px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Sparkles style={{ width: "14px", height: "14px", color: "#8b5cf6" }} />
+                    <span style={{ fontSize: "11px", fontWeight: 900, color: "#0f172a", textTransform: "uppercase" }}>
+                      Auto BG Removal Algorithm
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#64748b", fontFamily: "monospace" }}>
+                    Tolerance: {bgTolerance}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={15}
+                  max={80}
+                  value={bgTolerance}
+                  onChange={(e) => setBgTolerance(Number(e.target.value))}
+                  style={{ width: "100%", accentColor: "#8b5cf6", cursor: "pointer" }}
+                />
+                <p style={{ fontSize: "10px", color: "#64748b", margin: 0, lineHeight: 1.3 }}>
+                  Removes backgrounds client-side via boundary flood-fill with feathering to keep books and objects transparent.
+                </p>
+              </div>
+
+              {/* Asset Catalog Grid */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 900, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  Asset Library ({imageAssets.length}) &mdash; Drag onto Section
+                </span>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: "10px" }}>
+                  {imageAssets.map((asset) => {
+                    const isProcessing = processingAssetId === asset.id;
+
+                    return (
+                      <div
+                        key={asset.id}
+                        draggable={true}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("application/xite-asset", JSON.stringify(asset));
+                          e.dataTransfer.effectAllowed = "copy";
+                        }}
+                        style={{
+                          backgroundColor: "#ffffff",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "16px",
+                          padding: "12px",
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: "12px",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+                          cursor: "grab",
+                          position: "relative",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        {/* Thumbnail with checkerboard background */}
+                        <div
+                          style={{
+                            width: "72px",
+                            height: "72px",
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            backgroundColor: "#f1f5f9",
+                            backgroundImage: "radial-gradient(#cbd5e1 1px, transparent 1px)",
+                            backgroundSize: "8px 8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            border: "1px solid #e2e8f0",
+                          }}
+                        >
+                          <img
+                            src={asset.url}
+                            alt={asset.name}
+                            draggable={false}
+                            style={{
+                              maxWidth: "100%",
+                              maxHeight: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </div>
+
+                        {/* Info & Actions */}
+                        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "6px" }}>
+                            <span
+                              style={{
+                                fontSize: "12px",
+                                fontWeight: 800,
+                                color: "#0f172a",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                              title={asset.name}
+                            >
+                              {asset.name}
+                            </span>
+                            {asset.category === "custom" && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAsset(asset.id)}
+                                title="Delete Asset"
+                                style={{
+                                  border: "none",
+                                  backgroundColor: "transparent",
+                                  color: "#94a3b8",
+                                  cursor: "pointer",
+                                  padding: "2px",
+                                }}
+                              >
+                                <Trash2 style={{ width: "13px", height: "13px" }} />
+                              </button>
+                            )}
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <span
+                              style={{
+                                fontSize: "9px",
+                                fontWeight: 800,
+                                padding: "1px 6px",
+                                borderRadius: "4px",
+                                backgroundColor: asset.hasTransparentBg ? "#ecfdf5" : "#f1f5f9",
+                                color: asset.hasTransparentBg ? "#059669" : "#64748b",
+                                border: asset.hasTransparentBg ? "1px solid #a7f3d0" : "1px solid #e2e8f0",
+                              }}
+                            >
+                              {asset.hasTransparentBg ? "Transparent PNG" : "Original"}
+                            </span>
+                            <span style={{ fontSize: "10px", color: "#94a3b8" }}>
+                              Drag to canvas
+                            </span>
+                          </div>
+
+                          {/* Action Buttons: Remove BG & Place */}
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+                            <button
+                              type="button"
+                              disabled={isProcessing}
+                              onClick={() => handleRemoveBgForAsset(asset)}
+                              style={{
+                                padding: "4px 8px",
+                                borderRadius: "8px",
+                                border: "1px solid #ddd6fe",
+                                backgroundColor: isProcessing ? "#f5f3ff" : "#ffffff",
+                                color: "#7c3aed",
+                                fontSize: "10px",
+                                fontWeight: 800,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                cursor: isProcessing ? "wait" : "pointer",
+                              }}
+                              title="Run client-side smart background removal"
+                            >
+                              <Sparkles style={{ width: "11px", height: "11px" }} />
+                              <span>{isProcessing ? "Clipping..." : "Remove BG"}</span>
+                            </button>
+
+                            {onPlaceAssetOnCanvas && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onPlaceAssetOnCanvas({
+                                    url: asset.url,
+                                    name: asset.name,
+                                    width: asset.width,
+                                    height: asset.height,
+                                  })
+                                }
+                                style={{
+                                  padding: "4px 8px",
+                                  borderRadius: "8px",
+                                  border: "none",
+                                  backgroundColor: "#0f172a",
+                                  color: "#ffffff",
+                                  fontSize: "10px",
+                                  fontWeight: 800,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                + Place
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 

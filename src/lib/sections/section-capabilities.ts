@@ -159,5 +159,5 @@ export const GROUP_LABEL: Record<CapabilityId, string> = {
   background: "Background",
   buttons: "Buttons",
   animation: "Animation",
-  section: "Section",
+  section: "Image Assets",
 };

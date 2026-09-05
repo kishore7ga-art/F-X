@@ -61,6 +61,7 @@ import {
   ArrowUp,
   ArrowDown,
   Undo2,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -811,6 +812,16 @@ export function SectionToolbar({
           </div>
         ) : activeGroup ? (
           <div className="grid grid-cols-1 gap-x-4 gap-y-2.5 [grid-template-columns:repeat(auto-fill,minmax(190px,1fr))]">
+            {activeGroup.id === "section" && (
+              <div className="col-span-full p-2.5 bg-gradient-to-r from-cyan-50 to-indigo-50 border border-cyan-200/70 rounded-xl flex items-center justify-between gap-3 text-slate-800 mb-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-cyan-600 shrink-0" />
+                  <span className="text-[11px] font-bold">
+                    Drag and place books, logos, or transparent cutouts into this section from the <strong>Image Assets</strong> drawer tab!
+                  </span>
+                </div>
+              </div>
+            )}
             {activeGroup.controls.map((control) => (
               <ControlRow
                 key={controlValueKey(control)}

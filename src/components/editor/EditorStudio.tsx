@@ -61,9 +61,11 @@ import {
   detokenizeSectionHtml,
   themeFontsHref,
   themeStylesheet,
+  customThemeCss,
   tokenizeSectionHtml,
   type EditorFontId,
   type EditorThemeId,
+  type EditorThemeTokens,
 } from "@/lib/editor-themes";
 import { useViewport } from "@/hooks/useViewport";
 import { DEFAULT_WIDTH, nearestWidth, type DeviceMode } from "@/lib/viewport-presets";
@@ -80,6 +82,8 @@ import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
+import { SectionImageLayer } from "./SectionImageLayer";
+import type { PinnedSectionImage } from "@/lib/image-background-remover";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
 const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
@@ -353,6 +357,113 @@ export function EditorStudio({
     [editor],
   );
 
+  // Pinned Section Image Assets State
+  const [pinnedImages, setPinnedImages] = useState<PinnedSectionImage[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem(`xite_pinned_images_${subdomain}`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`xite_pinned_images_${subdomain}`, JSON.stringify(pinnedImages));
+      } catch {}
+    }
+  }, [pinnedImages, subdomain]);
+
+  const handleUpdatePinnedImage = useCallback((imageId: string, patch: Partial<PinnedSectionImage>) => {
+    setPinnedImages((prev) => prev.map((img) => (img.id === imageId ? { ...img, ...patch } : img)));
+  }, []);
+
+  const handleDeletePinnedImage = useCallback((imageId: string) => {
+    setPinnedImages((prev) => prev.filter((img) => img.id !== imageId));
+  }, []);
+
+  const handleMovePinnedImageToSection = useCallback(
+    (imageId: string, targetSectionId: string, newX: number, newY: number) => {
+      setPinnedImages((prev) =>
+        prev.map((img) =>
+          img.id === imageId
+            ? { ...img, sectionId: targetSectionId, x: newX, y: newY }
+            : img,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleCanvasAssetDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>, targetSectionId: string, sectionTitle: string) => {
+      const assetData = e.dataTransfer.getData("application/xite-asset");
+      if (!assetData) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      try {
+        const asset = JSON.parse(assetData);
+        const rect = e.currentTarget.getBoundingClientRect();
+        const scale = canvasScale || 1;
+        const width = asset.width || 220;
+        const height = asset.height || 220;
+
+        const dropX = Math.max(10, Math.round((e.clientX - rect.left) / scale - width * 0.5));
+        const dropY = Math.max(10, Math.round((e.clientY - rect.top) / scale - height * 0.5));
+
+        const newPinned: PinnedSectionImage = {
+          id: `pinned-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          sectionId: targetSectionId,
+          url: asset.url,
+          name: asset.name || "Section Asset",
+          x: dropX,
+          y: dropY,
+          width,
+          height,
+          scale: 1,
+          isFloating: false,
+        };
+
+        setPinnedImages((prev) => [...prev, newPinned]);
+        setSwapNotice(`Placed "${asset.name}" on ${sectionTitle}`);
+      } catch (err) {
+        console.error("[editor] could not drop asset:", err);
+      }
+    },
+    [canvasScale],
+  );
+
+  const handlePlaceAssetFromDrawer = useCallback(
+    (asset: { url: string; name: string; width: number; height: number }) => {
+      if (sections.length === 0) return;
+      const targetSec =
+        activeSectionIndex !== null && sections[activeSectionIndex]
+          ? sections[activeSectionIndex]
+          : sections[0];
+      if (!targetSec) return;
+
+      const newPinned: PinnedSectionImage = {
+        id: `pinned-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        sectionId: targetSec.id,
+        url: asset.url,
+        name: asset.name || "Section Asset",
+        x: 80,
+        y: 80,
+        width: asset.width || 220,
+        height: asset.height || 220,
+        scale: 1,
+        isFloating: false,
+      };
+
+      setPinnedImages((prev) => [...prev, newPinned]);
+      setSwapNotice(`Placed "${asset.name}" on ${targetSec.title}`);
+    },
+    [activeSectionIndex, sections],
+  );
+
   /**
    * The section library — every template a tenant may use, grouped by category.
    *
@@ -480,15 +591,17 @@ export function EditorStudio({
    */
   const canvasHtml = useCallback((code: string) => tokenizeSectionHtml(sectionCanvasHtml(sanitizeCssUrls(code))), []);
 
-  /** The three theme font families, loaded once for the whole editor. */
+  /** All Google Fonts families, loaded once for the whole editor. */
   useEffect(() => {
     const id = "xite-editor-theme-fonts";
-    if (document.getElementById(id)) return;
-    const link = document.createElement("link");
-    link.id = id;
-    link.rel = "stylesheet";
+    let link = document.getElementById(id) as HTMLLinkElement | null;
+    if (!link) {
+      link = document.createElement("link");
+      link.id = id;
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
+    }
     link.href = themeFontsHref();
-    document.head.appendChild(link);
   }, []);
 
   /**
@@ -765,6 +878,15 @@ export function EditorStudio({
    */
   const [themeId, setThemeId] = useState<EditorThemeId | null>(null);
   const [fontId, setFontId] = useState<EditorFontId | null>(null);
+  const [customThemeTokens, setCustomThemeTokens] = useState<EditorThemeTokens | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = localStorage.getItem("xite_custom_theme_tokens");
+      return saved ? (JSON.parse(saved) as EditorThemeTokens) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -780,7 +902,7 @@ export function EditorStudio({
   }, []);
 
   /**
-   * All four themes, as one stylesheet, injected once.
+   * All themes, as one stylesheet, injected once.
    *
    * Every theme's tokens are present at all times; the `data-xite-theme`
    * attribute selects between them. That is why switching costs an attribute
@@ -799,6 +921,21 @@ export function EditorStudio({
     style.textContent = themeStylesheet(EDITOR_CANVAS_SCOPE);
   }, []);
 
+  /**
+   * Injects dynamic custom theme CSS when custom theme tokens are adjusted.
+   */
+  useEffect(() => {
+    if (!customThemeTokens) return;
+    const id = "xite-editor-custom-theme-tokens";
+    let style = document.getElementById(id) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement("style");
+      style.id = id;
+      document.head.prepend(style);
+    }
+    style.textContent = customThemeCss(EDITOR_CANVAS_SCOPE, customThemeTokens);
+  }, [customThemeTokens]);
+
   const handlePaletteSelect = useCallback((next: string) => {
     setThemeId(next as EditorThemeId);
     // Fire-and-forget: the theme is already applied on screen, and a failed
@@ -806,6 +943,17 @@ export function EditorStudio({
     void saveTheme({ themeId: next }).catch((error) => {
       console.error("[editor] could not save the theme selection:", error);
     });
+  }, []);
+
+  const handleCustomThemeChange = useCallback((tokens: EditorThemeTokens) => {
+    setCustomThemeTokens(tokens);
+    setThemeId("custom");
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(tokens));
+      } catch {}
+    }
+    void saveTheme({ themeId: "custom" }).catch(() => {});
   }, []);
 
   const handleFontSelect = useCallback((next: string) => {
@@ -2011,6 +2159,13 @@ export function EditorStudio({
                         inPlaceEditor.handleElementDoubleClick(target, idx, e);
                       }}
                       onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}
+                      onDragOver={(e) => {
+                        if (e.dataTransfer.types.includes("application/xite-asset")) {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "copy";
+                        }
+                      }}
+                      onDrop={(e) => handleCanvasAssetDrop(e, sec.id, sec.title)}
                       data-xite-section={sec.id}
                       style={{
                         ...(isOverlaid ? {
@@ -2040,6 +2195,16 @@ export function EditorStudio({
                         sectionId={sec.id}
                         isEditing={inPlaceEditor.isEditingSection(sec.id)}
                         canvasHtml={canvasHtml}
+                      />
+
+                      {/* Placed Freeform & Fixed Section Image Assets */}
+                      <SectionImageLayer
+                        sectionId={sec.id}
+                        images={pinnedImages}
+                        canvasScale={canvasScale}
+                        onUpdateImage={handleUpdatePinnedImage}
+                        onDeleteImage={handleDeletePinnedImage}
+                        onMoveToSection={handleMovePinnedImageToSection}
                       />
 
                       {/* This section occupies space and shows nothing */}
@@ -2298,6 +2463,9 @@ export function EditorStudio({
         onFontSelect={handleFontSelect}
         activePaletteId={themeId}
         activeFontId={fontId}
+        customThemeTokens={customThemeTokens}
+        onCustomThemeChange={handleCustomThemeChange}
+        onPlaceAssetOnCanvas={handlePlaceAssetFromDrawer}
         pages={editor.pages.map((page) => ({ slug: page.slug, title: page.title }))}
         activePageSlug={editor.activePage.slug}
       />
