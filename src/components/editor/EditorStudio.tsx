@@ -568,16 +568,6 @@ export function EditorStudio({
     setShowAddSectionModal(false);
   };
 
-  // Right-Click Link / Button Navigation Popup State
-  const [linkPopup, setLinkPopup] = useState<{
-    x: number;
-    y: number;
-    sectionIndex: number;
-    targetElement: HTMLElement;
-    currentUrl: string;
-    isNewTab: boolean;
-  } | null>(null);
-
   /**
    * Report something, in the status line above the toolbar.
    */
@@ -602,6 +592,12 @@ export function EditorStudio({
       );
     },
     showToast: showToastNotification,
+    onStartTextEditing: (_element, sectionIndex) => {
+      openCustomToolbar(sectionIndex);
+    },
+    onSelectButton: (_element, sectionIndex) => {
+      openCustomToolbar(sectionIndex);
+    },
   });
 
   // Right-Click Image, Logo & Background Editor Modal State
@@ -1449,108 +1445,11 @@ export function EditorStudio({
       });
       return;
     }
-
-    // Find nearest clickable link or button
-    let linkElem: HTMLElement | null = target;
-    while (
-      linkElem &&
-      linkElem !== e.currentTarget &&
-      linkElem.tagName !== "A" &&
-      linkElem.tagName !== "BUTTON" &&
-      !linkElem.getAttribute("href") &&
-      !linkElem.getAttribute("data-href")
-    ) {
-      linkElem = linkElem.parentElement;
-    }
-
-    if (!linkElem || linkElem === e.currentTarget) {
-      if (target.tagName === "A" || target.tagName === "BUTTON" || target.getAttribute("href")) {
-        linkElem = target;
-      } else {
-        return;
-      }
-    }
-
-    // Intercept right-click context menu on buttons/links
-    e.preventDefault();
-    e.stopPropagation();
-
-    const currentHref = linkElem.getAttribute("href") || linkElem.getAttribute("data-href") || "#";
-    const targetAttr = linkElem.getAttribute("target");
-    const isNewTab = targetAttr === "_blank";
-
-    const mouseX = Math.min(e.clientX, window.innerWidth - 340);
-    const mouseY = Math.min(e.clientY, window.innerHeight - 300);
-
-    setLinkPopup({
-      x: Math.max(10, mouseX),
-      y: Math.max(10, mouseY),
-      sectionIndex,
-      targetElement: linkElem,
-      currentUrl: currentHref,
-      isNewTab: isNewTab,
-    });
   };
 
   const handleSaveLogo = (newText: string, newBgColor: string, newImageUrl: string) => {
     handleUpdateAndSaveImage({ logoText: newText, bgColor: newBgColor, imageUrl: newImageUrl });
     setImagePopup(null);
-  };
-
-  // Save updated URL & target attributes on button element
-  const handleSaveButtonUrl = (newUrl: string, openNewTab: boolean) => {
-    if (!linkPopup) return;
-
-    const { sectionIndex, targetElement } = linkPopup;
-
-    if (targetElement.tagName === "A" || targetElement.getAttribute("href") !== null) {
-      targetElement.setAttribute("href", newUrl);
-    } else {
-      targetElement.setAttribute("data-href", newUrl);
-      targetElement.setAttribute("onclick", `window.location.href='${newUrl}'`);
-    }
-
-    if (openNewTab) {
-      targetElement.setAttribute("target", "_blank");
-      targetElement.setAttribute("rel", "noopener noreferrer");
-    } else {
-      targetElement.removeAttribute("target");
-      targetElement.removeAttribute("rel");
-    }
-
-    // Extract section wrapper element to save updated HTML
-    const container = targetElement.closest('.section-wrapper-container') || targetElement.closest('.relative');
-    if (container) {
-      const clone = container.cloneNode(true) as HTMLElement;
-      const badges = clone.querySelectorAll('.pointer-events-none');
-      badges.forEach((b) => b.remove());
-
-      const editables = clone.querySelectorAll('[contenteditable]');
-      editables.forEach((el) => {
-        el.removeAttribute('contenteditable');
-        (el as HTMLElement).style.outline = '';
-        (el as HTMLElement).style.outlineOffset = '';
-        (el as HTMLElement).style.borderRadius = '';
-      });
-
-      const newBody = cleanCanvasWrapperFromCode(clone.innerHTML);
-      if (newBody) {
-        setSectionsWithHistory((prev) =>
-          prev.map((sec, i) =>
-            /* Head from the stored section, body from the canvas. The canvas
-               deliberately holds no `<style>` — `useSectionRuntime` lifted it
-               out and fenced it to this section — so writing what the DOM
-               returns as the whole section deletes that stylesheet. Every other
-               read-back on this page already goes through
-               `recomposeSectionCode`; these three did not, and each was one
-               "set this button's link" away from stripping a section's CSS. */
-            i === sectionIndex ? { ...sec, code: recomposeSectionCode(sec.code, newBody) } : sec,
-          ),
-        );
-      }
-    }
-
-    setLinkPopup(null);
   };
 
   /**
@@ -2401,6 +2300,10 @@ export function EditorStudio({
             saveStatus={editor.saveStatus}
             saveError={editor.saveError}
             isOverlaid={isHeaderOverlaid(customToolbarSection)}
+            textColorValue={inPlaceEditor.activeTextColor}
+            onApplyTextColor={inPlaceEditor.applyTextColor}
+            onApplyTextFormat={inPlaceEditor.applyTextFormat}
+            isEditingText={inPlaceEditor.isEditingText}
             onToggleOverlay={() => {
               const secIdx = customToolbarState.sectionIndex;
               if (secIdx === null || !sections[secIdx]) return;
@@ -2446,214 +2349,7 @@ export function EditorStudio({
         )
       )}
 
-      {/* Floating Right-Click Button URL Navigation Popup */}
-      {linkPopup && (
-        <div
-          onClick={() => setLinkPopup(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999999,
-            backgroundColor: "rgba(0, 0, 0, 0.85)",
-            backdropFilter: "blur(8px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-            boxSizing: "border-box",
-          }}
-          className="select-none cursor-pointer"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: "440px",
-              maxWidth: "92vw",
-              backgroundColor: "#000000",
-              border: "1px solid #27272a",
-              borderRadius: "24px",
-              padding: "24px 28px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.95)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-              boxSizing: "border-box",
-            }}
-            className="text-white text-xs cursor-default"
-          >
-            {/* Modal Header */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                borderBottom: "1px solid #27272a",
-                paddingBottom: "14px",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px" }}>
-                <span
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    backgroundColor: "#ffffff",
-                    boxShadow: "0 0 10px rgba(255, 255, 255, 0.8)",
-                  }}
-                />
-                <span style={{ fontSize: "16px", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.01em" }}>
-                  Button Navigation URL
-                </span>
-              </div>
-              <button
-                onClick={() => setLinkPopup(null)}
-                style={{
-                  backgroundColor: "transparent",
-                  border: "none",
-                  color: "#a1a1aa",
-                  fontSize: "14px",
-                  fontWeight: 900,
-                  cursor: "pointer",
-                  padding: "4px 8px",
-                  borderRadius: "8px",
-                }}
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Form Fields */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "12px", fontFamily: "monospace", fontWeight: 800, color: "#e4e4e7" }}>
-                  Target URL / Link Path
-                </label>
-                <input
-                  type="text"
-                  value={linkPopup.currentUrl}
-                  onChange={(e) => setLinkPopup({ ...linkPopup, currentUrl: e.target.value })}
-                  placeholder="e.g. https://greenfield.edu.in/apply or #contact"
-                  style={{
-                    width: "100%",
-                    height: "46px",
-                    backgroundColor: "#09090b",
-                    border: "1px solid #3f3f46",
-                    borderRadius: "14px",
-                    paddingLeft: "16px",
-                    paddingRight: "16px",
-                    fontSize: "13px",
-                    color: "#ffffff",
-                    fontFamily: "monospace",
-                    outline: "none",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-
-              {/* Quick Page Preset Links */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 900, color: "#a1a1aa", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  QUICK PAGE PRESETS
-                </label>
-                <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: "8px" }}>
-                  {["/home", "/about", "/academics", "/contact", "/placements"].map((slug) => (
-                    <button
-                      key={slug}
-                      onClick={() => setLinkPopup({ ...linkPopup, currentUrl: slug })}
-                      style={{
-                        fontSize: "12px",
-                        fontFamily: "monospace",
-                        fontWeight: 800,
-                        padding: "6px 14px",
-                        borderRadius: "10px",
-                        backgroundColor: linkPopup.currentUrl === slug ? "#ffffff" : "#18181b",
-                        color: linkPopup.currentUrl === slug ? "#000000" : "#a1a1aa",
-                        border: linkPopup.currentUrl === slug ? "1px solid #ffffff" : "1px solid #27272a",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {slug}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Open in New Tab Toggle */}
-              <label style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "10px", cursor: "pointer", paddingTop: "4px" }}>
-                <input
-                  type="checkbox"
-                  checked={linkPopup.isNewTab}
-                  onChange={(e) => setLinkPopup({ ...linkPopup, isNewTab: e.target.checked })}
-                  style={{ width: "16px", height: "16px", accentColor: "#ffffff", cursor: "pointer" }}
-                />
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#e4e4e7" }}>
-                  Open in New Tab (<code style={{ color: "#ffffff", fontFamily: "monospace" }}>target=&quot;_blank&quot;</code>)
-                </span>
-              </label>
-
-              {/* Action Buttons */}
-              <div
-                style={{
-                  paddingTop: "16px",
-                  borderTop: "1px solid #27272a",
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  gap: "12px",
-                  width: "100%",
-                  boxSizing: "border-box",
-                }}
-              >
-                <button
-                  onClick={() => setLinkPopup(null)}
-                  style={{
-                    height: "42px",
-                    paddingLeft: "18px",
-                    paddingRight: "18px",
-                    borderRadius: "12px",
-                    border: "none",
-                    backgroundColor: "transparent",
-                    color: "#a1a1aa",
-                    fontSize: "13px",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleSaveButtonUrl(linkPopup.currentUrl, linkPopup.isNewTab)}
-                  style={{
-                    height: "42px",
-                    paddingLeft: "22px",
-                    paddingRight: "22px",
-                    borderRadius: "12px",
-                    border: "none",
-                    backgroundColor: "#ffffff",
-                    color: "#000000",
-                    fontSize: "13px",
-                    fontWeight: 900,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                    boxShadow: "0 8px 16px -4px rgba(37,99,235,0.4)",
-                  }}
-                >
-                  <span>🔗 Save Button URL</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 🎨 Streamlined Auto Right-Click Context-Aware Customizer Modal (Sleek Black & White Theme) */}
       {imagePopup && (

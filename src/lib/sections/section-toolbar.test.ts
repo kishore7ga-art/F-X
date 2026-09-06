@@ -333,11 +333,12 @@ describe("section-probe — controls come from the markup, not from a table", ()
 /* ── The schema ─────────────────────────────────────────────────────────── */
 
 describe("section-schema — a different toolbar per section", () => {
-  it("gives a section the retained background, buttons, and animation controls", () => {
+  it("gives a section the retained background, animation, and text color controls", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
     assert.ok(schema.capabilities.includes("background"));
-    assert.ok(schema.capabilities.includes("buttons"));
     assert.ok(schema.capabilities.includes("animation"));
+    assert.ok(schema.capabilities.includes("textColor"));
+    assert.ok(!schema.capabilities.includes("buttons"));
     assert.ok(!schema.capabilities.includes("shadow" as any));
     assert.equal(schema.categoryLabel, "Hero");
   });
@@ -440,13 +441,13 @@ describe("section-edit — every control edits the section for real", () => {
     assert.equal(readControlValue(current, control("bg-image"), "desktop").value, "https://x/y.jpg");
   });
 
-  it("applies a shadow preset from the background controls", () => {
-    const patch = applyControl(section(HERO), control("bg-shadow"), "desktop", "0 10px 25px -5px rgba(0, 0, 0, 0.1)")!;
-    assert.ok(patch.code!.includes("box-shadow:0 10px 25px -5px rgba(0, 0, 0, 0.1)"));
+  it("applies a density preset from the background controls", () => {
+    const patch = applyControl(section(HERO), control("bg-density"), "desktop", "cover")!;
+    assert.ok(patch.code!.includes("--x-bg-size:cover"));
   });
 
   it("resets its own styling and leaves the author's markup exactly as it was", () => {
-    let current = section(applyControl(section(HERO), control("bg-shadow"), "desktop", "0 10px 25px -5px rgba(0, 0, 0, 0.1)")!.code!);
+    let current = section(applyControl(section(HERO), control("bg-density"), "desktop", "cover")!.code!);
     current = section(applyControl(current, control("bg-color"), "mobile", "#000000")!.code!);
     assert.ok(hasManagedStyling(current.code));
 

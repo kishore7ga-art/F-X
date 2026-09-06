@@ -86,6 +86,8 @@ import type { SaveStatus } from "@/hooks/useEditorPages";
 import { BoundedDimensionControl } from "./BoundedDimensionControl";
 import { SingleRowButtonPanel } from "./ButtonSettingsControl";
 import { SingleRowBackgroundPanel } from "./BackgroundSettingsControl";
+import { SingleRowTextColorPanel } from "./TextColorSettingsControl";
+import { recomposeSectionCode } from "@/lib/section-runtime";
 
 type Props = {
   section: { id: string; title: string; code: string; category: string };
@@ -109,6 +111,10 @@ type Props = {
   saveError?: string | null;
   isOverlaid?: boolean;
   onToggleOverlay?: () => void;
+  textColorValue?: string;
+  onApplyTextColor?: (color: string) => void;
+  onApplyTextFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
+  isEditingText?: boolean;
 };
 
 const DEVICE_META: Record<Device, { label: string; Icon: typeof Monitor }> = {
@@ -302,7 +308,19 @@ export function SectionToolbar({
   saveError = null,
   isOverlaid = false,
   onToggleOverlay,
+  textColorValue = "#ffffff",
+  onApplyTextColor,
+  onApplyTextFormat,
+  isEditingText = false,
 }: Props) {
+  const [currentTextColor, setCurrentTextColor] = useState<string>(textColorValue || "#ffffff");
+
+  useEffect(() => {
+    if (textColorValue) {
+      setCurrentTextColor(textColorValue);
+    }
+  }, [textColorValue]);
+
   const editable: EditableSection = useMemo(
     () => ({ title: section.title, code: section.code, category: section.category }),
     [section.title, section.code, section.category],
@@ -341,42 +359,147 @@ export function SectionToolbar({
   );
   const activeGroup = schema.groups.find((group) => group.id === activeGroupId) ?? schema.groups[0];
 
-  // If user selected a button on canvas, dynamically target it and open Buttons tab
+  // If user is editing text or selected a text element on canvas, switch to Text Color tab
   useEffect(() => {
-    if (!selectedCanvasElement || buttonCount === 0) return;
-    const btnNode = selectedCanvasElement.closest("a, button");
-    if (!btnNode) return;
-
-    const secEl = btnNode.closest("[data-xite-section]");
-    if (!secEl) return;
-    const allBtns = Array.from(secEl.querySelectorAll("a, button")).filter((el) => {
-      const cls = el.className || "";
-      return (
-        el.tagName === "BUTTON" ||
-        /btn|button|cta|apply|action/i.test(cls) ||
-        (el as HTMLElement).style.borderRadius ||
-        (el as HTMLElement).style.backgroundColor
-      );
-    });
-
-    const foundIdx = allBtns.indexOf(btnNode as any);
-    if (foundIdx >= 0 && foundIdx < buttonCount) {
-      setActiveButtonIndex(foundIdx);
-      setActiveGroupId("buttons");
+    if (isEditingText) {
+      setActiveGroupId("textColor");
+      return;
     }
-  }, [selectedCanvasElement, buttonCount]);
+    if (!selectedCanvasElement) return;
+    const tag = selectedCanvasElement.tagName.toUpperCase();
+    if (["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "BLOCKQUOTE"].includes(tag)) {
+      setActiveGroupId("textColor");
+    }
+  }, [isEditingText, selectedCanvasElement]);
 
-  const activeButtonControls = useMemo(() => {
-    if (!buttonsGroup || buttonCount === 0) return null;
-    const safeIdx = Math.min(activeButtonIndex, buttonCount - 1);
-    const prefix = `btn-${safeIdx}`;
-    return {
-      bg: buttonsGroup.controls.find((c) => c.id === `${prefix}-bg`),
-      radius: buttonsGroup.controls.find((c) => c.id === `${prefix}-radius`),
-      size: buttonsGroup.controls.find((c) => c.id === `${prefix}-size`),
-      textColor: buttonsGroup.controls.find((c) => c.id === `${prefix}-color`),
-    };
-  }, [buttonsGroup, buttonCount, activeButtonIndex]);
+  // Detect if user selected a button on canvas
+  const selectedButtonElement = useMemo(() => {
+    if (!selectedCanvasElement) return null;
+    return selectedCanvasElement.closest<HTMLElement>("a, button, [data-badge]");
+  }, [selectedCanvasElement]);
+
+  const [btnBg, setBtnBg] = useState<string>("#2563eb");
+  const [btnRadius, setBtnRadius] = useState<string>("");
+  const [btnTextColor, setBtnTextColor] = useState<string>("#ffffff");
+  const [btnUrl, setBtnUrl] = useState<string>("");
+  const [btnNewTab, setBtnNewTab] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!selectedButtonElement) return;
+    try {
+      const comp = window.getComputedStyle(selectedButtonElement);
+      const bg = selectedButtonElement.style.backgroundColor || comp.backgroundColor;
+      const rad = selectedButtonElement.style.borderRadius || comp.borderRadius;
+      const col = selectedButtonElement.style.color || comp.color;
+      const url = selectedButtonElement.getAttribute("href") || selectedButtonElement.getAttribute("data-href") || "";
+      const isBlank = selectedButtonElement.getAttribute("target") === "_blank";
+
+      setBtnBg(hexFromValue(bg, "#2563eb"));
+      setBtnRadius(rad || "");
+      setBtnTextColor(hexFromValue(col, "#ffffff"));
+      setBtnUrl(url);
+      setBtnNewTab(isBlank);
+      setActiveGroupId("buttons");
+    } catch {}
+  }, [selectedButtonElement]);
+
+  const commitButtonChanges = useCallback((updates: {
+    bg?: string;
+    radius?: string;
+    textColor?: string;
+    url?: string;
+    isNewTab?: boolean;
+  }) => {
+    if (!selectedButtonElement) return;
+
+    if (updates.bg !== undefined) {
+      selectedButtonElement.style.setProperty("background-color", updates.bg, "important");
+      setBtnBg(updates.bg);
+    }
+    if (updates.radius !== undefined) {
+      if (updates.radius) {
+        selectedButtonElement.style.setProperty("border-radius", updates.radius, "important");
+      } else {
+        selectedButtonElement.style.removeProperty("border-radius");
+      }
+      setBtnRadius(updates.radius);
+    }
+    if (updates.textColor !== undefined) {
+      selectedButtonElement.style.setProperty("color", updates.textColor, "important");
+      setBtnTextColor(updates.textColor);
+    }
+    if (updates.url !== undefined) {
+      const urlVal = updates.url.trim();
+      if (selectedButtonElement.tagName === "A" || selectedButtonElement.getAttribute("href") !== null) {
+        if (urlVal) {
+          selectedButtonElement.setAttribute("href", urlVal);
+        } else {
+          selectedButtonElement.removeAttribute("href");
+        }
+      } else {
+        if (urlVal) {
+          selectedButtonElement.setAttribute("data-href", urlVal);
+          selectedButtonElement.setAttribute("onclick", `window.location.href='${urlVal}'`);
+        } else {
+          selectedButtonElement.removeAttribute("data-href");
+          selectedButtonElement.removeAttribute("onclick");
+        }
+      }
+      setBtnUrl(urlVal);
+    }
+    if (updates.isNewTab !== undefined) {
+      if (updates.isNewTab) {
+        selectedButtonElement.setAttribute("target", "_blank");
+        selectedButtonElement.setAttribute("rel", "noopener noreferrer");
+      } else {
+        selectedButtonElement.removeAttribute("target");
+        selectedButtonElement.removeAttribute("rel");
+      }
+      setBtnNewTab(updates.isNewTab);
+    }
+
+    // Clone and recompose section code
+    const secContainer = (selectedButtonElement.closest("[data-xite-section]") ||
+      selectedButtonElement.closest(".section-wrapper-container") ||
+      document.querySelector(`[data-xite-section="${section.id}"]`)) as HTMLElement | null;
+
+    if (secContainer) {
+      const canvasBox = (secContainer.querySelector(".section-canvas-box") ||
+        secContainer.querySelector("header, section, footer, main") ||
+        secContainer) as HTMLElement;
+
+      const clone = canvasBox.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll(".pointer-events-none, .xite-editor-ui, [data-xite-indicator]").forEach((el) => el.remove());
+      clone.querySelectorAll("[contenteditable], .xite-text-editing, [data-xite-selected], [data-xite-hover]").forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        htmlEl.removeAttribute("contenteditable");
+        htmlEl.removeAttribute("data-xite-selected");
+        htmlEl.removeAttribute("data-xite-hover");
+        htmlEl.classList.remove("xite-text-editing");
+        htmlEl.style.outline = "";
+        htmlEl.style.outlineOffset = "";
+        htmlEl.style.boxShadow = "";
+      });
+
+      const cleanBody = clone.innerHTML;
+      if (cleanBody) {
+        const newCode = recomposeSectionCode(section.code, cleanBody);
+        onPatch({ code: newCode });
+      }
+    }
+  }, [selectedButtonElement, section.code, onPatch, section.id]);
+
+  const draftButtonBg = useCallback((bg: string) => {
+    if (!selectedButtonElement) return;
+    selectedButtonElement.style.setProperty("background-color", bg, "important");
+    setBtnBg(bg);
+  }, [selectedButtonElement]);
+
+  const draftButtonTextColor = useCallback((col: string) => {
+    if (!selectedButtonElement) return;
+    selectedButtonElement.style.setProperty("color", col, "important");
+    setBtnTextColor(col);
+  }, [selectedButtonElement]);
 
   const backgroundGroup = useMemo(
     () => schema.groups.find((g) => g.id === "background"),
@@ -550,16 +673,33 @@ export function SectionToolbar({
           </div>
 
           {/* Embedded Group Tabs in horizontal mode */}
-          {isHorizontal && schema.groups.length > 0 && (
+          {isHorizontal && (schema.groups.length > 0 || selectedButtonElement) && (
             <>
               <div className="h-4 w-px bg-slate-200 shrink-0 hidden md:block" />
               <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+                {selectedButtonElement && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveGroupId("buttons")}
+                    aria-pressed={activeGroupId === "buttons"}
+                    className={`shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
+                      activeGroupId === "buttons"
+                        ? "bg-slate-900 text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    Button
+                  </button>
+                )}
                 {schema.groups.map((group) => {
-                  const active = group.id === activeGroup?.id;
+                  const active = group.id === activeGroup?.id && activeGroupId !== "buttons";
                   return (
                     <button
                       key={group.id}
                       type="button"
+                      onMouseDown={(e) => {
+                        if (group.id === "textColor") e.preventDefault();
+                      }}
                       onClick={() => setActiveGroupId(group.id)}
                       aria-pressed={active}
                       className={`shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
@@ -690,10 +830,24 @@ export function SectionToolbar({
       </header>
 
       {/* ── Vertical Group tabs (only when docked to left or right sidebar) ── */}
-      {!isHorizontal && schema.groups.length > 0 && (
+      {!isHorizontal && (schema.groups.length > 0 || selectedButtonElement) && (
         <div className="flex shrink-0 items-center justify-center gap-1.5 overflow-x-auto border-b border-slate-100 px-3 py-1.5 bg-slate-50/60">
+          {selectedButtonElement && (
+            <button
+              type="button"
+              onClick={() => setActiveGroupId("buttons")}
+              aria-pressed={activeGroupId === "buttons"}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
+                activeGroupId === "buttons"
+                  ? "bg-slate-900 text-white shadow-sm ring-1 ring-slate-900"
+                  : "bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
+              }`}
+            >
+              Button
+            </button>
+          )}
           {schema.groups.map((group) => {
-            const active = group.id === activeGroup?.id;
+            const active = group.id === activeGroup?.id && activeGroupId !== "buttons";
             return (
               <button
                 key={group.id}
@@ -779,34 +933,33 @@ export function SectionToolbar({
               }}
             />
           </div>
-        ) : activeGroup?.id === "buttons" && activeButtonControls ? (
+        ) : activeGroupId === "buttons" ? (
           <div className="py-0.5">
             <SingleRowButtonPanel
-              buttonCount={buttonCount}
-              activeButtonIndex={activeButtonIndex}
-              onSelectButtonIndex={setActiveButtonIndex}
-              bgValue={activeButtonControls.bg ? displayValue(activeButtonControls.bg) : ""}
-              onDraftBg={(val) => {
-                if (activeButtonControls.bg) commitDebounced(activeButtonControls.bg, val);
+              bgValue={btnBg}
+              onDraftBg={draftButtonBg}
+              onCommitBg={(val) => commitButtonChanges({ bg: val })}
+              radiusValue={btnRadius}
+              onCommitRadius={(val) => commitButtonChanges({ radius: val })}
+              textColorValue={btnTextColor}
+              onDraftTextColor={draftButtonTextColor}
+              onCommitTextColor={(val) => commitButtonChanges({ textColor: val })}
+              urlValue={btnUrl}
+              onCommitUrl={(val) => commitButtonChanges({ url: val })}
+              isNewTab={btnNewTab}
+              onToggleNewTab={(val) => commitButtonChanges({ isNewTab: val })}
+            />
+          </div>
+        ) : activeGroup?.id === "textColor" ? (
+          <div className="py-0.5">
+            <SingleRowTextColorPanel
+              currentColor={currentTextColor}
+              onSelectColor={(hex) => {
+                setCurrentTextColor(hex);
+                onApplyTextColor?.(hex);
               }}
-              onCommitBg={(val) => {
-                if (activeButtonControls.bg) commit(activeButtonControls.bg, val);
-              }}
-              radiusValue={activeButtonControls.radius ? displayValue(activeButtonControls.radius) : ""}
-              onCommitRadius={(val) => {
-                if (activeButtonControls.radius) commit(activeButtonControls.radius, val);
-              }}
-              sizeValue={activeButtonControls.size ? displayValue(activeButtonControls.size) : ""}
-              onCommitSize={(val) => {
-                if (activeButtonControls.size) commit(activeButtonControls.size, val);
-              }}
-              textColorValue={activeButtonControls.textColor ? displayValue(activeButtonControls.textColor) : ""}
-              onDraftTextColor={(val) => {
-                if (activeButtonControls.textColor) commitDebounced(activeButtonControls.textColor, val);
-              }}
-              onCommitTextColor={(val) => {
-                if (activeButtonControls.textColor) commit(activeButtonControls.textColor, val);
-              }}
+              onFormat={onApplyTextFormat}
+              isEditingText={isEditingText}
             />
           </div>
         ) : activeGroup ? (

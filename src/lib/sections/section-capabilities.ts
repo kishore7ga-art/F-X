@@ -34,7 +34,8 @@ import type { SectionCategoryId, UNCATEGORISED } from "./categories";
 export type CapabilityId =
   | "background"
   | "buttons"
-  | "animation";
+  | "animation"
+  | "textColor";
 
 export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
 
@@ -43,31 +44,31 @@ export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
  */
 export const DEFAULT_ORDER: readonly CapabilityId[] = [
   "background",
-  "buttons",
   "animation",
+  "textColor",
 ];
 
 export const CATEGORY_ORDER: Partial<Record<SectionCategory, readonly CapabilityId[]>> = {
-  navbar: ["buttons", "background", "animation"],
-  hero: ["buttons", "background", "animation"],
-  cta: ["buttons", "background", "animation"],
-  about: ["buttons", "background", "animation"],
-  vision: ["buttons", "background", "animation"],
-  courses: ["buttons", "background", "animation"],
-  departments: ["buttons", "background", "animation"],
-  facilities: ["buttons", "background", "animation"],
-  research: ["buttons", "background", "animation"],
-  admissions: ["buttons", "background", "animation"],
-  placements: ["buttons", "background", "animation"],
-  highlights: ["buttons", "background", "animation"],
-  achievements: ["buttons", "background", "animation"],
-  news: ["buttons", "background", "animation"],
-  events: ["buttons", "background", "animation"],
-  gallery: ["buttons", "background", "animation"],
-  testimonials: ["buttons", "background", "animation"],
-  contact: ["buttons", "background", "animation"],
-  map: ["buttons", "background", "animation"],
-  footer: ["buttons", "background", "animation"],
+  navbar: ["background", "animation", "textColor"],
+  hero: ["background", "animation", "textColor"],
+  cta: ["background", "animation", "textColor"],
+  about: ["background", "animation", "textColor"],
+  vision: ["background", "animation", "textColor"],
+  courses: ["background", "animation", "textColor"],
+  departments: ["background", "animation", "textColor"],
+  facilities: ["background", "animation", "textColor"],
+  research: ["background", "animation", "textColor"],
+  admissions: ["background", "animation", "textColor"],
+  placements: ["background", "animation", "textColor"],
+  highlights: ["background", "animation", "textColor"],
+  achievements: ["background", "animation", "textColor"],
+  news: ["background", "animation", "textColor"],
+  events: ["background", "animation", "textColor"],
+  gallery: ["background", "animation", "textColor"],
+  testimonials: ["background", "animation", "textColor"],
+  contact: ["background", "animation", "textColor"],
+  map: ["background", "animation", "textColor"],
+  footer: ["background", "animation", "textColor"],
 };
 
 /** The groups, in the order this category wants them. */
@@ -157,4 +158,5 @@ export const GROUP_LABEL: Record<CapabilityId, string> = {
   background: "Background",
   buttons: "Buttons",
   animation: "Animation",
+  textColor: "Text Color",
 };

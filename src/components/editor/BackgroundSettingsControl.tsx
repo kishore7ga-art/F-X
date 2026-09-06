@@ -28,9 +28,9 @@ export interface SingleRowBackgroundPanelProps {
   onDraftImage: (value: string) => void;
   onCommitImage: (value: string) => void;
 
-  // Image Shadow
-  shadowValue: string;
-  onCommitShadow: (value: string) => void;
+  // Image Shadow (optional / deprecated)
+  shadowValue?: string;
+  onCommitShadow?: (value: string) => void;
 
   // Image Density
   densityValue: string;
@@ -46,20 +46,6 @@ export interface SingleRowBackgroundPanelProps {
   onCommitVideo?: (value: string) => void;
 }
 
-const QUICK_PALETTES = [
-  { name: "White", hex: "#ffffff" },
-  { name: "Charcoal Black", hex: "#18181b" },
-  { name: "Slate Gray", hex: "#52525b" },
-  { name: "Coral Red", hex: "#ef4444" },
-  { name: "Rose Pink", hex: "#ec4899" },
-  { name: "Vibrant Orange", hex: "#f97316" },
-  { name: "Warm Amber", hex: "#eab308" },
-  { name: "Emerald Green", hex: "#10b981" },
-  { name: "Sky Cyan", hex: "#06b6d4" },
-  { name: "Royal Blue", hex: "#2563eb" },
-  { name: "Electric Violet", hex: "#8b5cf6" },
-];
-
 const BACKGROUND_DESIGNS = [
   { label: "Solid / Clean", value: "" },
   { label: "Fade to Dark", value: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%)" },
@@ -69,22 +55,6 @@ const BACKGROUND_DESIGNS = [
   { label: "Soft Glow", value: "radial-gradient(ellipse at top, rgba(59,130,246,0.2) 0%, transparent 70%)" },
   { label: "Midnight Slate", value: "linear-gradient(135deg, #0f172a 0%, #334155 100%)" },
 ];
-
-const SECTION_SHADOW_PRESETS = [
-  { label: "None", value: "" },
-  { label: "Soft", value: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" },
-  { label: "Medium", value: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)" },
-  { label: "Deep", value: "0 25px 50px -12px rgba(0, 0, 0, 0.35)" },
-  { label: "Strong", value: "0 35px 60px -15px rgba(0, 0, 0, 0.5)" },
-];
-
-function isShadowPresetActive(currentValue: string, presetValue: string): boolean {
-  const normCurrent = (currentValue || "").replace(/,\s*/g, ",").replace(/\s+/g, " ").trim().toLowerCase();
-  const normPreset = (presetValue || "").replace(/,\s*/g, ",").replace(/\s+/g, " ").trim().toLowerCase();
-  if (!normCurrent && !normPreset) return true;
-  if (!normCurrent || !normPreset) return false;
-  return normCurrent === normPreset;
-}
 
 const DENSITY_PRESETS = [
   { label: "Cover", value: "cover" },
@@ -142,8 +112,6 @@ export function SingleRowBackgroundPanel({
   imageValue,
   onDraftImage,
   onCommitImage,
-  shadowValue,
-  onCommitShadow,
   densityValue,
   onCommitDensity,
   blurValue,
@@ -275,41 +243,6 @@ export function SingleRowBackgroundPanel({
       {/* ── 2. Background Colour Mode ────────────────────────────────────────── */}
       {mode === "color" && (
         <>
-          {/* Quick Palettes (Squircle modern swatches matching Image 3) */}
-          <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider select-none">
-              Palettes
-            </span>
-            <div className="flex items-center gap-1.5">
-              {QUICK_PALETTES.map((p) => {
-                const isSelected = colorHex.toLowerCase() === p.hex.toLowerCase();
-                const isWhite = p.hex.toLowerCase() === "#ffffff";
-                return (
-                  <button
-                    key={p.hex}
-                    type="button"
-                    title={p.name}
-                    onClick={() => {
-                      onDraftImage("");
-                      onCommitImage("");
-                      if (safeVideo) onCommitVideo?.("");
-                      onDraftColor(p.hex);
-                      onCommitColor(p.hex);
-                    }}
-                    className={`w-[22px] h-[22px] rounded-[6px] transition-all duration-150 cursor-pointer ${
-                      isWhite ? "border border-slate-300" : "border border-black/10"
-                    } ${
-                      isSelected
-                        ? "ring-2 ring-slate-900 ring-offset-1 scale-105 shadow-sm"
-                        : "hover:scale-105 opacity-90 hover:opacity-100"
-                    }`}
-                    style={{ backgroundColor: p.hex }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-
           {/* Native Colour Picker + Hex Input */}
           <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
             <span className="text-[10.5px] font-bold text-slate-500">The colour</span>
@@ -362,30 +295,6 @@ export function SingleRowBackgroundPanel({
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Shadow Preset Pills */}
-          <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-            <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Shadow</span>
-            <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
-              {SECTION_SHADOW_PRESETS.map((p) => {
-                const active = isShadowPresetActive(shadowValue, p.value);
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => onCommitShadow(p.value)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                      active
-                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </>
       )}
@@ -448,30 +357,6 @@ export function SingleRowBackgroundPanel({
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
-          </div>
-
-          {/* Shadow */}
-          <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-            <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Shadow</span>
-            <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
-              {SECTION_SHADOW_PRESETS.map((p) => {
-                const active = isShadowPresetActive(shadowValue, p.value);
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => onCommitShadow(p.value)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                      active
-                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {/* Image Density */}
@@ -584,29 +469,6 @@ export function SingleRowBackgroundPanel({
             </span>
           </div>
 
-          {/* Shadow */}
-          <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
-            <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Shadow</span>
-            <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
-              {SECTION_SHADOW_PRESETS.map((p) => {
-                const active = isShadowPresetActive(shadowValue, p.value);
-                return (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => onCommitShadow(p.value)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                      active
-                        ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </>
       )}
     </div>

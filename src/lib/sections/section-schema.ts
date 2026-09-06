@@ -230,14 +230,6 @@ const GRADIENT_OPTIONS: readonly ControlOption[] = [
   { value: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)", label: "Amber to red" },
 ];
 
-const SECTION_SHADOW_OPTIONS: readonly ControlOption[] = [
-  { value: "", label: "None" },
-  { value: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)", label: "Soft" },
-  { value: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2)", label: "Medium" },
-  { value: "0 25px 50px -12px rgba(0, 0, 0, 0.35)", label: "Deep" },
-  { value: "0 35px 60px -15px rgba(0, 0, 0, 0.5)", label: "Strong" },
-];
-
 const BUTTON_SIZE_OPTIONS: readonly ControlOption[] = [
   { value: "", label: "Default" },
   { value: "6px 14px", label: "Small" },
@@ -370,7 +362,6 @@ export function buildSectionSchema(section: {
       placeholder: "https://…",
     },
     selectControl("bg-gradient", "Designs", rootTarget, "--x-gradient", GRADIENT_OPTIONS),
-    selectControl("bg-shadow", "Shadow", rootTarget, "box-shadow", SECTION_SHADOW_OPTIONS),
     styleControl("bg-density", "Image density", rootTarget, "--x-bg-size"),
     styleControl("bg-blur", "Image blur", rootTarget, "--x-bg-blur"),
     styleControl("bg-video", "Background video", rootTarget, "--x-bg-video"),
@@ -439,7 +430,8 @@ export function buildSectionSchema(section: {
     ]),
   );
 
-
+  /* — 4. Text Color — */
+  group("textColor");
 
   /* — Assemble ——————————————————————————————————————————————— */
 
@@ -447,7 +439,7 @@ export function buildSectionSchema(section: {
   const ordered = groupOrderFor(category)
     .map((id) => groups.get(id))
     .filter((entry): entry is ControlGroup => Boolean(entry))
-    .filter((entry) => entry.controls.length > 0 || entry.lists.length > 0)
+    .filter((entry) => entry.id === "textColor" || entry.controls.length > 0 || entry.lists.length > 0)
     .map((entry) => ({ ...entry, open: open.has(entry.id) }));
 
   return {

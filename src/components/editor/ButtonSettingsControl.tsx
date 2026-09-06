@@ -1,53 +1,51 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { hexFromValue } from "@/lib/sections/section-edit";
+import { ExternalLink, Link2 } from "lucide-react";
 
 export interface SingleRowButtonPanelProps {
-  buttonCount: number;
-  activeButtonIndex: number;
-  onSelectButtonIndex: (index: number) => void;
-  // Button Background Color
+  // 1. Button Background Color
   bgValue: string;
   onDraftBg: (value: string) => void;
   onCommitBg: (value: string) => void;
-  // Button Box Shape / Corner Radius
+  // 2. Button Box Shape / Corner Radius
   radiusValue: string;
   onCommitRadius: (value: string) => void;
-  // Button Size (Box Sizing)
+  // 3. Button Text Color
+  textColorValue?: string;
+  onDraftTextColor?: (value: string) => void;
+  onCommitTextColor?: (value: string) => void;
+  // 4. Button Navigation
+  urlValue?: string;
+  onCommitUrl?: (url: string) => void;
+  isNewTab?: boolean;
+  onToggleNewTab?: (newTab: boolean) => void;
+  // Optional backward-compatibility props
+  buttonCount?: number;
+  activeButtonIndex?: number;
+  onSelectButtonIndex?: (index: number) => void;
   sizeValue?: string;
   onCommitSize?: (value: string) => void;
-  // Button Text Color
-  textColorValue: string;
-  onDraftTextColor: (value: string) => void;
-  onCommitTextColor: (value: string) => void;
-  // Backward compatibility optional props
   borderValue?: string;
   onCommitBorder?: (value: string) => void;
   shadowValue?: string;
   onCommitShadow?: (value: string) => void;
 }
 
-const BUTTON_SIZES = [
-  { label: "Small", value: "6px 14px" },
-  { label: "Medium", value: "10px 20px" },
-  { label: "Large", value: "14px 28px" },
-];
-
 export function SingleRowButtonPanel({
-  buttonCount,
-  activeButtonIndex,
-  onSelectButtonIndex,
   bgValue,
   onDraftBg,
   onCommitBg,
   radiusValue,
   onCommitRadius,
-  sizeValue,
-  onCommitSize,
   textColorValue,
   onDraftTextColor,
   onCommitTextColor,
+  urlValue,
+  onCommitUrl,
+  isNewTab,
+  onToggleNewTab,
 }: SingleRowButtonPanelProps) {
   // Parse numeric corner radius (0px to 40px)
   const safeRadius = String(radiusValue ?? "").trim();
@@ -57,35 +55,13 @@ export function SingleRowButtonPanel({
   const bgHex = hexFromValue(String(bgValue ?? ""), "#2563eb");
   const textHex = hexFromValue(String(textColorValue ?? ""), "#ffffff");
 
-  return (
-    <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto py-1 px-1 flex-nowrap w-full">
-      {/* Button Selector: Only shown if more than 1 button exists */}
-      {buttonCount > 1 && (
-        <div className="flex items-center gap-1 shrink-0 bg-slate-100 p-0.5 rounded-full border border-slate-200">
-          <span className="text-[10px] font-mono font-bold text-slate-400 px-2 select-none">
-            {buttonCount} buttons
-          </span>
-          {Array.from({ length: buttonCount }).map((_, i) => {
-            const active = i === activeButtonIndex;
-            const label = i === 0 ? "Primary" : i === 1 ? "Secondary" : `Btn ${i + 1}`;
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => onSelectButtonIndex(i)}
-                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all duration-150 cursor-pointer ${
-                  active
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-                }`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      )}
+  const [tempUrl, setTempUrl] = useState(urlValue ?? "");
+  useEffect(() => {
+    setTempUrl(urlValue ?? "");
+  }, [urlValue]);
 
+  return (
+    <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto py-1 px-1 flex-nowrap w-full">
       {/* 1. Button Color */}
       <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Button color">
         <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Button color</span>
@@ -99,6 +75,7 @@ export function SingleRowButtonPanel({
           />
           <div className="w-full h-full" style={{ backgroundColor: bgValue || "#2563eb" }} />
         </div>
+        <span className="text-[10px] font-mono font-semibold text-slate-500 uppercase">{bgHex}</span>
       </div>
 
       {/* 2. Button Radius (0px to 40px with Auto toggle) */}
@@ -131,51 +108,55 @@ export function SingleRowButtonPanel({
         </button>
       </div>
 
-      {/* 3. Box Sizing (Button Size: Small | Medium | Large) */}
-      <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Box sizing">
-        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Box sizing</span>
-        <div className="flex items-center gap-0.5 bg-slate-200/70 p-0.5 rounded-lg">
-          {BUTTON_SIZES.map((size) => {
-            const active = (sizeValue || "").replace(/\s+/g, " ") === size.value;
-            return (
-              <button
-                key={size.label}
-                type="button"
-                onClick={() => onCommitSize?.(size.value)}
-                className={`px-2.5 py-0.5 rounded text-[10px] font-bold transition cursor-pointer ${
-                  active
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/80"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {size.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. Button Text Color */}
+      {/* 3. Button Text Color */}
       <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Button text colour">
-        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Button text colour</span>
+        <span className="text-[10.5px] font-bold text-slate-500 whitespace-nowrap">Text colour</span>
         <div className="relative w-[22px] h-[22px] rounded-[6px] border border-slate-300 shadow-xs overflow-hidden cursor-pointer shrink-0">
           <input
             type="color"
             value={textHex}
-            onChange={(e) => onDraftTextColor(e.target.value)}
-            onBlur={(e) => onCommitTextColor(e.target.value)}
+            onChange={(e) => onDraftTextColor?.(e.target.value)}
+            onBlur={(e) => onCommitTextColor?.(e.target.value)}
             className="absolute -inset-2 w-10 h-10 cursor-pointer opacity-0"
           />
-          <div
-            className="w-full h-full flex items-center justify-center font-black text-[10px] rounded-[5px]"
-            style={{
-              backgroundColor: textColorValue || "#ffffff",
-              color: textColorValue === "#ffffff" ? "#0f172a" : "#ffffff",
-            }}
-          >
-            A
-          </div>
+          <div className="w-full h-full" style={{ backgroundColor: textColorValue || "#ffffff" }} />
         </div>
+        <span className="text-[10px] font-mono font-semibold text-slate-500 uppercase">{textHex}</span>
+      </div>
+
+      {/* 4. Button Navigation */}
+      <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60" title="Button navigation">
+        <div className="flex items-center gap-1 text-slate-500 shrink-0">
+          <Link2 className="w-3.5 h-3.5" />
+          <span className="text-[10.5px] font-bold whitespace-nowrap">Navigation</span>
+        </div>
+        <input
+          type="text"
+          value={tempUrl}
+          onChange={(e) => setTempUrl(e.target.value)}
+          onBlur={() => onCommitUrl?.(tempUrl)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onCommitUrl?.(tempUrl);
+              e.currentTarget.blur();
+            }
+          }}
+          placeholder="https://… or /page or #section"
+          className="h-6 w-36 sm:w-44 px-2 text-[11px] font-mono bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-400 text-slate-800 placeholder:text-slate-400"
+        />
+        <label
+          className="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer select-none shrink-0"
+          title="Open in new tab"
+        >
+          <input
+            type="checkbox"
+            checked={Boolean(isNewTab)}
+            onChange={(e) => onToggleNewTab?.(e.target.checked)}
+            className="w-3.5 h-3.5 rounded border-slate-300 accent-slate-900 cursor-pointer"
+          />
+          <ExternalLink className="w-3 h-3 text-slate-400" />
+          <span className="hidden sm:inline">New tab</span>
+        </label>
       </div>
     </div>
   );
