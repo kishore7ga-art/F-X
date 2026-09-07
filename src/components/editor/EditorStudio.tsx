@@ -1448,13 +1448,24 @@ export function EditorStudio({
      */
     // 🔘 Button Right-Click Detection: Only open the dedicated Button Toolbar when right-clicking any button
     const btnElem = (
-      target.closest("button, [role='button'], .btn, [class*='btn'], [class*='button'], [class*='give'], [class*='apply'], [class*='cta']") ||
-      (target.closest("a") && (
-        target.closest("a")!.classList.value.toLowerCase().includes("btn") ||
-        target.closest("a")!.classList.value.toLowerCase().includes("button") ||
-        window.getComputedStyle(target.closest("a")!).backgroundColor !== "rgba(0, 0, 0, 0)" ||
-        window.getComputedStyle(target.closest("a")!).borderRadius !== "0px"
-      ) ? target.closest("a") : null)
+      target.closest("button, [role='button'], input[type='button'], input[type='submit'], .btn, [class*='btn'], [class*='button'], [class*='give'], [class*='apply'], [class*='cta']") ||
+      (() => {
+        const anchor = target.closest("a");
+        if (!anchor) return null;
+        const cls = anchor.className ? String(anchor.className).toLowerCase() : "";
+        if (cls.includes("btn") || cls.includes("button") || cls.includes("cta") || cls.includes("give") || cls.includes("apply")) {
+          return anchor;
+        }
+        const style = window.getComputedStyle(anchor);
+        const bg = style.backgroundColor;
+        const isColored = bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)" && bg !== "rgba(0,0,0,0)";
+        const hasBorder = style.borderWidth && style.borderWidth !== "0px" && style.borderStyle !== "none";
+        const hasRadius = style.borderRadius && style.borderRadius !== "0px";
+        if (isColored || (hasBorder && hasRadius)) {
+          return anchor;
+        }
+        return null;
+      })()
     ) as HTMLElement | null;
 
     if (btnElem) {
@@ -2397,7 +2408,18 @@ export function EditorStudio({
         When SectionToolbar is open, EditorToolbar is completely unmounted, ensuring zero overlap.
       */}
       {!isSettingsOpen && !isDrawerOpen && (
-        isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
+        buttonPopup ? (
+          /* 🔘 Dedicated Right-Click Button Styling Toolbar (replaces dock toolbar when editing button) */
+          <ButtonToolbar
+            radius={buttonPopup.radius}
+            bgColor={buttonPopup.bgColor}
+            textColor={buttonPopup.textColor}
+            onChangeRadius={(radius) => handleUpdateButtonStyles({ radius })}
+            onChangeBgColor={(bgColor) => handleUpdateButtonStyles({ bgColor })}
+            onChangeTextColor={(textColor) => handleUpdateButtonStyles({ textColor })}
+            onClose={() => setButtonPopup(null)}
+          />
+        ) : isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
           <SectionToolbar
             key={customToolbarSection.id}
             section={customToolbarSection}
@@ -2475,19 +2497,6 @@ export function EditorStudio({
             onDockPositionChange={setDockPosition}
           />
         )
-      )}
-
-      {/* 🔘 Dedicated Right-Click Button Styling Toolbar */}
-      {buttonPopup && (
-        <ButtonToolbar
-          radius={buttonPopup.radius}
-          bgColor={buttonPopup.bgColor}
-          textColor={buttonPopup.textColor}
-          onChangeRadius={(radius) => handleUpdateButtonStyles({ radius })}
-          onChangeBgColor={(bgColor) => handleUpdateButtonStyles({ bgColor })}
-          onChangeTextColor={(textColor) => handleUpdateButtonStyles({ textColor })}
-          onClose={() => setButtonPopup(null)}
-        />
       )}
 
 

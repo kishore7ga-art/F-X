@@ -54,7 +54,7 @@ export function ButtonToolbar({
     <div
       role="toolbar"
       aria-label="Button editing toolbar"
-      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-2xl transition-all max-w-[95vw] overflow-x-auto no-scrollbar"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 sm:gap-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-2xl transition-all max-w-[95vw] overflow-x-auto no-scrollbar"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Title & Badge */}
