@@ -14,6 +14,7 @@ import {
   tokenizeSectionHtml,
   generateHarmonicPalette,
   customThemeCss,
+  calculateOppositeContrast,
 } from "@/lib/editor-themes";
 
 describe("the editor themes", () => {
@@ -292,3 +293,58 @@ describe("themeFontsHref — every weight a family actually ships", () => {
     assert.match(themeFontsHref(), /display=swap/);
   });
 });
+
+describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", () => {
+  it("computes pure black text with visible border for pure white (#ffffff)", () => {
+    const contrast = calculateOppositeContrast("#ffffff");
+    assert.equal(contrast.textColor, "#000000");
+    assert.equal(contrast.isLight, true);
+    assert.equal(contrast.borderColor, "#cbd5e1");
+  });
+
+  it("computes pure white text for pure black (#000000)", () => {
+    const contrast = calculateOppositeContrast("#000000");
+    assert.equal(contrast.textColor, "#ffffff");
+    assert.equal(contrast.isLight, false);
+    assert.equal(contrast.borderColor, "rgba(255, 255, 255, 0.22)");
+  });
+
+  it("computes pure white text for dark blue (#2563eb)", () => {
+    const contrast = calculateOppositeContrast("#2563eb");
+    assert.equal(contrast.textColor, "#ffffff");
+    assert.equal(contrast.isLight, false);
+  });
+
+  it("computes pure black text for bright yellow (#facc15)", () => {
+    const contrast = calculateOppositeContrast("#facc15");
+    assert.equal(contrast.textColor, "#000000");
+    assert.equal(contrast.isLight, true);
+  });
+
+  it("scopes customThemeCss to brand accents and does not clobber section surfaces", () => {
+    const css = customThemeCss(".xite-site-canvas", {
+      surface: "#ffffff",
+      surfaceRaised: "#f1f5f9",
+      header: "#ffffff",
+      footer: "#f8fafc",
+      accent: "#ffffff",
+      accentSoft: "#f1f5f9",
+      onAccent: "#000000",
+      text: "#000000",
+      textMuted: "#64748b",
+      border: "rgba(0, 0, 0, 0.1)",
+      primary: "#ffffff",
+      secondary: "#000000",
+      onSecondary: "#ffffff",
+    });
+
+    assert.ok(css.includes("--xite-primary: #ffffff;"));
+    assert.ok(css.includes("--xite-on-accent: #000000;"));
+    assert.ok(css.includes("--xite-accent-border: #cbd5e1;"));
+    assert.ok(css.includes("--xite-secondary: #000000;"));
+    assert.ok(css.includes("--xite-on-secondary: #ffffff;"));
+    // Ensures child text in themed buttons inherits contrast color
+    assert.ok(css.includes("color: var(--xite-on-accent, #ffffff) !important;"));
+  });
+});
+

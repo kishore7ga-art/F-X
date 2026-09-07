@@ -6,6 +6,7 @@ import {
   DEFAULT_DUAL_THEMES,
   EDITOR_FONTS,
   hexToRgb,
+  calculateOppositeContrast,
   type EditorThemeTokens,
 } from "@/lib/editor-themes";
 import {
@@ -136,52 +137,45 @@ export function DrawerPanel({
   const currentSecondaryColor = customTokens.secondary || "#2563eb";
 
   const handleApplyColor = (target: "primary" | "secondary", newHex: string) => {
-    const rgb = hexToRgb(newHex);
-    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-    const onColor = luminance > 0.6 ? "#000000" : "#ffffff";
-    const softHex = newHex.startsWith("#") && newHex.length === 7 ? `${newHex}26` : "rgba(37,99,235,0.15)";
+    const nextPrimary = target === "primary" ? newHex : currentPrimaryColor;
+    const nextSecondary = target === "secondary" ? newHex : currentSecondaryColor;
 
-    let updated: EditorThemeTokens;
-    if (target === "primary") {
-      updated = {
-        ...customTokens,
-        primary: newHex,
-        accent: newHex,
-        accentSoft: softHex,
-        onAccent: onColor,
-      };
-    } else {
-      updated = {
-        ...customTokens,
-        secondary: newHex,
-        onSecondary: onColor,
-      };
-    }
+    const primContrast = calculateOppositeContrast(nextPrimary);
+    const secContrast = calculateOppositeContrast(nextSecondary);
+
+    const updated: EditorThemeTokens = {
+      ...customTokens,
+      primary: nextPrimary,
+      accent: nextPrimary,
+      accentSoft: primContrast.softBackground,
+      onAccent: primContrast.textColor,
+      accentBorder: primContrast.borderColor,
+      secondary: nextSecondary,
+      onSecondary: secContrast.textColor,
+      secondaryBorder: secContrast.borderColor,
+    };
     setCustomTokens(updated);
     onCustomThemeChange?.(updated);
     onPaletteSelect?.("custom");
   };
 
   const handleSwapColors = () => {
-    const newPrimary = currentSecondaryColor;
-    const newSecondary = currentPrimaryColor;
-    const rgb = hexToRgb(newPrimary);
-    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-    const onColor = luminance > 0.6 ? "#000000" : "#ffffff";
-    const softHex = newPrimary.startsWith("#") && newPrimary.length === 7 ? `${newPrimary}26` : "rgba(37,99,235,0.15)";
+    const nextPrimary = currentSecondaryColor;
+    const nextSecondary = currentPrimaryColor;
 
-    const secRgb = hexToRgb(newSecondary);
-    const secLuminance = (0.299 * secRgb.r + 0.587 * secRgb.g + 0.114 * secRgb.b) / 255;
-    const secOnColor = secLuminance > 0.6 ? "#000000" : "#ffffff";
+    const primContrast = calculateOppositeContrast(nextPrimary);
+    const secContrast = calculateOppositeContrast(nextSecondary);
 
     const updated: EditorThemeTokens = {
       ...customTokens,
-      primary: newPrimary,
-      accent: newPrimary,
-      accentSoft: softHex,
-      onAccent: onColor,
-      secondary: newSecondary,
-      onSecondary: secOnColor,
+      primary: nextPrimary,
+      accent: nextPrimary,
+      accentSoft: primContrast.softBackground,
+      onAccent: primContrast.textColor,
+      accentBorder: primContrast.borderColor,
+      secondary: nextSecondary,
+      onSecondary: secContrast.textColor,
+      secondaryBorder: secContrast.borderColor,
     };
     setCustomTokens(updated);
     onCustomThemeChange?.(updated);
@@ -940,7 +934,7 @@ export function DrawerPanel({
                               style={{
                                 width: "11px",
                                 height: "11px",
-                                color: swatch.hex.toLowerCase() === "#ffffff" ? "#000000" : "#ffffff",
+                                color: calculateOppositeContrast(swatch.hex).textColor,
                                 strokeWidth: 3,
                               }}
                             />

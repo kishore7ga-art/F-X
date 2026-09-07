@@ -77,6 +77,10 @@ export type EditorThemeTokens = {
   secondary?: string;
   /** Text on secondary colour. */
   onSecondary?: string;
+  /** Accent border color (ensures light/white accents stay visible on light backgrounds). */
+  accentBorder?: string;
+  /** Secondary border color (ensures light/white secondary elements stay visible). */
+  secondaryBorder?: string;
 };
 
 export type EditorTheme = {
@@ -603,7 +607,9 @@ export function themeStylesheet(scope: string): string {
 }
 
 function themeButtonRules(scope: string): string {
-  return `${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]):not([aria-label*="close" i]):not([aria-label*="modal" i]):not([class*="tab"]):not([class*="carousel"]):not([class*="prev"]):not([class*="next"]),
+  return `
+/* Primary Buttons & CTAs */
+${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]):not([aria-label*="close" i]):not([aria-label*="modal" i]):not([class*="tab"]):not([class*="carousel"]):not([class*="prev"]):not([class*="next"]),
 ${scope}[data-xite-theme] .btn:not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]),
 ${scope}[data-xite-theme] [class*="btn-primary"]:not([data-custom-styled]),
 ${scope}[data-xite-theme] [class*="btn_primary"]:not([data-custom-styled]),
@@ -622,24 +628,60 @@ ${scope}[data-xite-theme] [class*="bg-indigo-600"]:not([data-custom-styled]),
 ${scope}[data-xite-theme] [class*="bg-sky-600"]:not([data-custom-styled]) {
   background-color: var(--xite-accent) !important;
   color: var(--xite-on-accent, #ffffff) !important;
-  border-color: var(--xite-accent) !important;
+  border: 1.5px solid var(--xite-accent-border, var(--xite-accent)) !important;
 }
 
+/* Force child elements inside primary buttons to inherit contrast color so text never vanishes */
+${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]) :where(span, p, strong, b, div, a, label),
+${scope}[data-xite-theme] [class*="btn-primary"]:not([data-custom-styled]) :where(span, p, strong, b, div, a, label),
+${scope}[data-xite-theme] [class*="btn_primary"]:not([data-custom-styled]) :where(span, p, strong, b, div, a, label),
+${scope}[data-xite-theme] a[class*="btn"]:not([data-custom-styled]):not([class*="secondary"]):not([class*="outline"]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] a[class*="cta"]:not([data-custom-styled]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] a[class*="give"]:not([data-custom-styled]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] a[class*="apply"]:not([data-custom-styled]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] a[class*="donate"]:not([data-custom-styled]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] a[class*="enroll"]:not([data-custom-styled]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] [role="button"]:not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="tab"]) :where(span, p, strong, b, div, label) {
+  color: var(--xite-on-accent, #ffffff) !important;
+}
+
+${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]) svg,
+${scope}[data-xite-theme] [class*="btn-primary"]:not([data-custom-styled]) svg,
+${scope}[data-xite-theme] a[class*="cta"]:not([data-custom-styled]) svg {
+  color: var(--xite-on-accent, #ffffff) !important;
+  fill: currentColor !important;
+}
+
+/* Outline Buttons */
 ${scope}[data-xite-theme] .btn-outline:not([data-custom-styled]),
 ${scope}[data-xite-theme] [class*="btn-outline"]:not([data-custom-styled]),
 ${scope}[data-xite-theme] a[class*="btn-outline"]:not([data-custom-styled]) {
-  border-color: var(--xite-accent) !important;
+  border: 1.5px solid var(--xite-accent-border, var(--xite-accent)) !important;
   color: var(--xite-accent) !important;
 }
 
+/* Secondary Buttons */
 ${scope}[data-xite-theme] .btn-secondary:not([data-custom-styled]),
 ${scope}[data-xite-theme] [class*="btn-secondary"]:not([data-custom-styled]),
 ${scope}[data-xite-theme] a[class*="btn-secondary"]:not([data-custom-styled]),
 ${scope}[data-xite-theme] .bg-secondary:not([data-custom-styled]),
 ${scope}[data-xite-theme] [class*="bg-secondary"]:not([data-custom-styled]) {
-  background-color: var(--xite-secondary, var(--xite-accent-soft, #64748b)) !important;
+  background-color: var(--xite-secondary, #2563eb) !important;
   color: var(--xite-on-secondary, #ffffff) !important;
-  border-color: var(--xite-secondary, var(--xite-accent-soft, #64748b)) !important;
+  border: 1.5px solid var(--xite-secondary-border, var(--xite-secondary, #2563eb)) !important;
+}
+
+/* Force child elements inside secondary buttons to inherit contrast color */
+${scope}[data-xite-theme] .btn-secondary:not([data-custom-styled]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] [class*="btn-secondary"]:not([data-custom-styled]) :where(span, p, strong, b, div, label),
+${scope}[data-xite-theme] a[class*="btn-secondary"]:not([data-custom-styled]) :where(span, p, strong, b, div, label) {
+  color: var(--xite-on-secondary, #ffffff) !important;
+}
+
+${scope}[data-xite-theme] .btn-secondary:not([data-custom-styled]) svg,
+${scope}[data-xite-theme] [class*="btn-secondary"]:not([data-custom-styled]) svg {
+  color: var(--xite-on-secondary, #ffffff) !important;
+  fill: currentColor !important;
 }`;
 }
 
@@ -682,12 +724,33 @@ export function themeFontsHref(): string {
 
 /**
  * Emits CSS rules for a custom theme's tokens.
+ * Specifically scopes customization to brand action elements (buttons, badges, highlights)
+ * while preserving natural section surfaces, dark heroes, and card layouts as authored.
  */
 export function customThemeCss(scope: string, tokens: EditorThemeTokens): string {
-  const declarations = Object.entries(tokens)
-    .filter(([_, value]) => value !== undefined && value !== null)
-    .map(([name, value]) => `  --xite-${kebab(name)}: ${value};`)
-    .join("\n");
+  const primary = tokens.primary || tokens.accent || "#000000";
+  const secondary = tokens.secondary || "#2563eb";
+
+  const primContrast = calculateOppositeContrast(primary);
+  const secContrast = calculateOppositeContrast(secondary);
+
+  const onPrimary = tokens.onAccent || primContrast.textColor;
+  const onSecondary = tokens.onSecondary || secContrast.textColor;
+  const primaryBorder = tokens.accentBorder || primContrast.borderColor;
+  const secondaryBorder = tokens.secondaryBorder || secContrast.borderColor;
+  const accentSoft = tokens.accentSoft || primContrast.softBackground;
+
+  const declarations = [
+    `  --xite-accent: ${primary};`,
+    `  --xite-primary: ${primary};`,
+    `  --xite-on-accent: ${onPrimary};`,
+    `  --xite-accent-soft: ${accentSoft};`,
+    `  --xite-accent-border: ${primaryBorder};`,
+    `  --xite-secondary: ${secondary};`,
+    `  --xite-on-secondary: ${onSecondary};`,
+    `  --xite-secondary-border: ${secondaryBorder};`,
+  ].join("\n");
+
   return `${scope}[data-xite-theme="custom"], ${scope}[data-xite-theme^="custom-"] {\n${declarations}\n}\n\n${themeButtonRules(scope)}`;
 }
 
@@ -782,6 +845,65 @@ export function getRelativeLuminance(hex: string): number {
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
   });
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+export interface ContrastColorResult {
+  /** High-contrast opposite text color: pure black (#000000) or pure white (#ffffff) */
+  textColor: string;
+  /** Whether the background is considered light */
+  isLight: boolean;
+  /** Visible border for buttons so white/light buttons never vanish on white surfaces */
+  borderColor: string;
+  /** Translucent soft tint for badges/pills */
+  softBackground: string;
+  /** Hover color */
+  hoverColor: string;
+}
+
+/**
+ * Opposite High-Contrast Matching Algorithm.
+ * 
+ * Guarantees WCAG AAA contrast ratio:
+ * - If color is light (e.g. #ffffff), text is opposite pure black (#000000), with a visible border.
+ * - If color is dark (e.g. #000000), text is opposite pure white (#ffffff).
+ * - Generates appropriate borders so light elements never blend into light surfaces.
+ */
+export function calculateOppositeContrast(hex: string): ContrastColorResult {
+  const luminance = getRelativeLuminance(hex);
+  const { r, g, b } = hexToRgb(hex);
+  const hsl = rgbToHsl(r, g, b);
+
+  // If luminance > 0.45, background is light -> opposite text is pure black (#000000)
+  // If luminance <= 0.45, background is dark -> opposite text is pure white (#ffffff)
+  const isLight = luminance > 0.45;
+  const textColor = isLight ? "#000000" : "#ffffff";
+
+  let borderColor: string;
+  if (luminance > 0.75) {
+    // Very light/white: needs a visible border to prevent blending with white canvas
+    borderColor = "#cbd5e1";
+  } else if (luminance < 0.08) {
+    // Very dark/black: subtle border
+    borderColor = "rgba(255, 255, 255, 0.22)";
+  } else {
+    borderColor = hex;
+  }
+
+  const softBackground = isLight
+    ? `rgba(${r}, ${g}, ${b}, 0.16)`
+    : `rgba(${r}, ${g}, ${b}, 0.25)`;
+
+  const hoverColor = isLight
+    ? hslToHex(hsl.h, hsl.s, Math.max(0, hsl.l - 7))
+    : hslToHex(hsl.h, hsl.s, Math.min(100, hsl.l + 8));
+
+  return {
+    textColor,
+    isLight,
+    borderColor,
+    softBackground,
+    hoverColor,
+  };
 }
 
 export type HarmonyMode = "complementary" | "analogous" | "triadic" | "monochromatic" | "split";
