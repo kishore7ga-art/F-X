@@ -71,6 +71,12 @@ export type EditorThemeTokens = {
   textMuted: string;
   /** Hairlines and dividers. */
   border: string;
+  /** Primary brand colour (maps to main accent/buttons). */
+  primary?: string;
+  /** Secondary brand colour (maps to secondary elements/highlights). */
+  secondary?: string;
+  /** Text on secondary colour. */
+  onSecondary?: string;
 };
 
 export type EditorTheme = {
@@ -624,6 +630,16 @@ ${scope}[data-xite-theme] [class*="btn-outline"]:not([data-custom-styled]),
 ${scope}[data-xite-theme] a[class*="btn-outline"]:not([data-custom-styled]) {
   border-color: var(--xite-accent) !important;
   color: var(--xite-accent) !important;
+}
+
+${scope}[data-xite-theme] .btn-secondary:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="btn-secondary"]:not([data-custom-styled]),
+${scope}[data-xite-theme] a[class*="btn-secondary"]:not([data-custom-styled]),
+${scope}[data-xite-theme] .bg-secondary:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="bg-secondary"]:not([data-custom-styled]) {
+  background-color: var(--xite-secondary, var(--xite-accent-soft, #64748b)) !important;
+  color: var(--xite-on-secondary, #ffffff) !important;
+  border-color: var(--xite-secondary, var(--xite-accent-soft, #64748b)) !important;
 }`;
 }
 
@@ -669,6 +685,7 @@ export function themeFontsHref(): string {
  */
 export function customThemeCss(scope: string, tokens: EditorThemeTokens): string {
   const declarations = Object.entries(tokens)
+    .filter(([_, value]) => value !== undefined && value !== null)
     .map(([name, value]) => `  --xite-${kebab(name)}: ${value};`)
     .join("\n");
   return `${scope}[data-xite-theme="custom"], ${scope}[data-xite-theme^="custom-"] {\n${declarations}\n}\n\n${themeButtonRules(scope)}`;
