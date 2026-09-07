@@ -575,6 +575,11 @@ export function EditorStudio({
     setSwapNotice(message || null);
   }, []);
 
+  /**
+   * Where the floating dock currently is ("top" when editing text so the toolbar appears up top).
+   */
+  const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
+
   // Canva-Like Interactive Canvas Engine directly on top of the live preview DOM
   const inPlaceEditor = useCanvaInteractions({
     sections,
@@ -593,6 +598,7 @@ export function EditorStudio({
     },
     showToast: showToastNotification,
     onStartTextEditing: (_element, sectionIndex) => {
+      setDockPosition("top");
       openCustomToolbar(sectionIndex);
     },
     onSelectButton: (_element, sectionIndex) => {
@@ -1044,12 +1050,44 @@ export function EditorStudio({
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      // Close SectionToolbar and restore normal toolbar when left-clicking outside SectionToolbar
-      if (customToolbarState.isOpen) {
-        const isInsideSectionToolbar = target.closest('[role="dialog"]') !== null;
-        if (!isInsideSectionToolbar) {
-          closeCustomToolbar();
+      if (customToolbarState.isOpen || inPlaceEditor.isEditingText) {
+        const isInsideSectionToolbar =
+          target.closest('[role="dialog"]') !== null ||
+          target.closest('.section-toolbar') !== null ||
+          target.closest('[data-xite-toolbar]') !== null;
+
+        if (isInsideSectionToolbar) {
+          return;
         }
+
+        // When currently editing text:
+        if (inPlaceEditor.isEditingText) {
+          // If clicking inside the text element being edited: KEEP TOOLBAR OPEN
+          if (inPlaceEditor.isEditingTarget(target)) {
+            return;
+          }
+
+          // If clicking inside the active section: KEEP TOOLBAR OPEN
+          const activeSecId =
+            customToolbarState.sectionIndex !== null && sections[customToolbarState.sectionIndex]
+              ? sections[customToolbarState.sectionIndex].id
+              : activeSectionIndex !== null && sections[activeSectionIndex]
+              ? sections[activeSectionIndex].id
+              : null;
+
+          if (activeSecId && target.closest(`[data-xite-section="${activeSecId}"]`)) {
+            return;
+          }
+
+          // Clicked outside the section / moved to another section:
+          // finish text editing and restore default toolbar
+          inPlaceEditor.finishInlineTextEditing(false);
+          closeCustomToolbar();
+          return;
+        }
+
+        // If not editing text, regular click outside closes custom toolbar
+        closeCustomToolbar();
       }
     };
 
@@ -1057,7 +1095,14 @@ export function EditorStudio({
     return () => {
       document.removeEventListener("mousedown", handleDocumentMouseDown);
     };
-  }, [customToolbarState.isOpen, closeCustomToolbar]);
+  }, [
+    customToolbarState.isOpen,
+    customToolbarState.sectionIndex,
+    activeSectionIndex,
+    sections,
+    closeCustomToolbar,
+    inPlaceEditor,
+  ]);
 
   // Smoothly scroll canvas viewport to top Navbar header section
   const handleJumpToNavbarLogo = () => {
@@ -1702,27 +1747,12 @@ export function EditorStudio({
 
   const activeSection = activeSectionIndex !== null ? sections[activeSectionIndex] ?? null : null;
 
-  /**
-   * Where the floating dock currently is, so the section panel does not sit
-   * under it.
-   *
-   * The dock can be dragged to any of the four edges and the panel occupies the
-   * right one, so on two of those four they would overlap — the right dock over
-   * the panel's scrollbar, the top dock over its header. The dock still owns
-   * its own position; this is only a copy for laying out beside it.
-   */
-  const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
-
-  /**
-   * Gate for the temporary `ToolbarTestHarness` debug HUD — on by default in
-   * non-production builds, and reachable in any environment via `?toolbarDebug=1`
-   * so it can be checked on a preview/staging deploy without a rebuild.
-   */
-  const [toolbarDebugEnabled] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    if (process.env.NODE_ENV !== "production") return true;
-    return new URLSearchParams(window.location.search).has("toolbarDebug");
-  });
+  const resolvedToolbarSectionIndex =
+    customToolbarState.sectionIndex !== null ? customToolbarState.sectionIndex : activeSectionIndex;
+  const isSectionPanelOpen =
+    (customToolbarState.isOpen || inPlaceEditor.isEditingText) && resolvedToolbarSectionIndex !== null;
+  const customToolbarSection =
+    resolvedToolbarSectionIndex !== null ? sections[resolvedToolbarSectionIndex] ?? null : null;
 
   /**
    * One observer over every section, rather than one per section: sections
@@ -1732,9 +1762,6 @@ export function EditorStudio({
    */
   const canvasRootRef = useRef<HTMLDivElement | null>(null);
   useMediaCleanupOnReplace(canvasRootRef);
-
-  const isSectionPanelOpen = customToolbarState.isOpen && customToolbarState.sectionIndex !== null;
-  const customToolbarSection = customToolbarState.sectionIndex !== null ? sections[customToolbarState.sectionIndex] ?? null : null;
 
   /** Deselecting section and closing custom edit toolbar. */
   const clearSelection = useCallback(() => {
@@ -2280,18 +2307,23 @@ export function EditorStudio({
         When SectionToolbar is open, EditorToolbar is completely unmounted, ensuring zero overlap.
       */}
       {!isSettingsOpen && !isDrawerOpen && (
-        isSectionPanelOpen && customToolbarSection && customToolbarState.sectionIndex !== null ? (
+        isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
           <SectionToolbar
             key={customToolbarSection.id}
             section={customToolbarSection}
-            position={{ index: customToolbarState.sectionIndex, total: sections.length }}
+            position={{ index: resolvedToolbarSectionIndex, total: sections.length }}
             device={sectionDevice}
             dockPosition={dockPosition}
             selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
             onDeviceChange={handleSectionDeviceChange}
             onPatch={handleSectionPatch}
             /* Back button / Deselect: returns to normal dock */
-            onClose={closeCustomToolbar}
+            onClose={() => {
+              if (inPlaceEditor.isEditingText) {
+                inPlaceEditor.finishInlineTextEditing(false);
+              }
+              closeCustomToolbar();
+            }}
             onUndo={handleUndo}
             onRedo={handleRedo}
             canUndo={editor.canUndo}
@@ -2303,9 +2335,15 @@ export function EditorStudio({
             textColorValue={inPlaceEditor.activeTextColor}
             onApplyTextColor={inPlaceEditor.applyTextColor}
             onApplyTextFormat={inPlaceEditor.applyTextFormat}
+            fontFamilyValue={inPlaceEditor.activeFontFamily}
+            onApplyFontFamily={inPlaceEditor.applyFontFamily}
+            fontSizeValue={inPlaceEditor.activeFontSize}
+            onApplyFontSize={inPlaceEditor.applyFontSize}
+            textAlignValue={inPlaceEditor.activeTextAlign}
+            onApplyTextAlign={inPlaceEditor.applyTextAlign}
             isEditingText={inPlaceEditor.isEditingText}
             onToggleOverlay={() => {
-              const secIdx = customToolbarState.sectionIndex;
+              const secIdx = resolvedToolbarSectionIndex;
               if (secIdx === null || !sections[secIdx]) return;
               const target = sections[secIdx];
               const updated = toggleHeaderOverlay(target);

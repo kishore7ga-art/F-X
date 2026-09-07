@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useId } from "react";
 import {
@@ -7,6 +7,10 @@ import {
   Underline,
   RotateCcw,
   Sparkles,
+  Type,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from "lucide-react";
 import { hexFromValue } from "@/lib/sections/section-edit";
 
@@ -15,6 +19,12 @@ export interface SingleRowTextColorPanelProps {
   onSelectColor: (hex: string) => void;
   onFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
   isEditingText?: boolean;
+  currentFont?: string;
+  onSelectFont?: (font: string) => void;
+  currentFontSize?: string;
+  onSelectFontSize?: (size: string) => void;
+  currentAlign?: string;
+  onSelectAlign?: (align: "left" | "center" | "right" | "justify") => void;
 }
 
 const TEXT_PALETTES = [
@@ -32,11 +42,44 @@ const TEXT_PALETTES = [
   { name: "Gold", hex: "#f59e0b" },
 ];
 
+export const FONT_FAMILY_OPTIONS = [
+  { label: "Default Font", value: "" },
+  { label: "Inter", value: "'Inter', sans-serif" },
+  { label: "Outfit", value: "'Outfit', sans-serif" },
+  { label: "Plus Jakarta", value: "'Plus Jakarta Sans', sans-serif" },
+  { label: "Playfair", value: "'Playfair Display', serif" },
+  { label: "Georgia", value: "Georgia, serif" },
+  { label: "Monospace", value: "ui-monospace, monospace" },
+];
+
+export const FONT_SIZE_OPTIONS = [
+  { label: "Auto Size", value: "" },
+  { label: "12px", value: "12px" },
+  { label: "14px", value: "14px" },
+  { label: "16px", value: "16px" },
+  { label: "18px", value: "18px" },
+  { label: "20px", value: "20px" },
+  { label: "24px", value: "24px" },
+  { label: "28px", value: "28px" },
+  { label: "32px", value: "32px" },
+  { label: "40px", value: "40px" },
+  { label: "48px", value: "48px" },
+  { label: "56px", value: "56px" },
+  { label: "64px", value: "64px" },
+  { label: "72px", value: "72px" },
+];
+
 export function SingleRowTextColorPanel({
   currentColor,
   onSelectColor,
   onFormat,
   isEditingText = false,
+  currentFont = "",
+  onSelectFont,
+  currentFontSize = "",
+  onSelectFontSize,
+  currentAlign = "left",
+  onSelectAlign,
 }: SingleRowTextColorPanelProps) {
   const [hexDraft, setHexDraft] = useState<string>(currentColor || "#ffffff");
   const colorPickerId = useId();
@@ -165,6 +208,91 @@ export function SingleRowTextColorPanel({
           >
             <RotateCcw className="w-3 h-3" />
             <span>Reset</span>
+          </button>
+        </div>
+      )}
+
+      {/* 4. Font Family Selector */}
+      {onSelectFont && (
+        <div className="flex items-center gap-1 shrink-0 bg-slate-50/80 px-2 py-1 rounded-xl border border-slate-200/60">
+          <Type className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <select
+            value={currentFont}
+            onMouseDown={(e) => e.stopPropagation()}
+            onChange={(e) => onSelectFont(e.target.value)}
+            className="text-[11px] font-bold text-slate-700 bg-transparent border-none outline-none cursor-pointer pr-1 py-0.5"
+            title="Font family"
+          >
+            {FONT_FAMILY_OPTIONS.map((f) => (
+              <option key={f.value} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* 5. Font Size Selector */}
+      {onSelectFontSize && (
+        <div className="flex items-center gap-1 shrink-0 bg-slate-50/80 px-2 py-1 rounded-xl border border-slate-200/60">
+          <span className="text-[10.5px] font-bold text-slate-400">Size</span>
+          <select
+            value={currentFontSize}
+            onMouseDown={(e) => e.stopPropagation()}
+            onChange={(e) => onSelectFontSize(e.target.value)}
+            className="text-[11px] font-bold text-slate-700 bg-transparent border-none outline-none cursor-pointer pr-1 py-0.5"
+            title="Font size"
+          >
+            {FONT_SIZE_OPTIONS.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* 6. Text Alignment Controls */}
+      {onSelectAlign && (
+        <div className="flex items-center gap-0.5 shrink-0 bg-slate-50/80 px-1.5 py-1 rounded-xl border border-slate-200/60">
+          <button
+            type="button"
+            title="Align Left"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onSelectAlign("left")}
+            className={`p-1 rounded transition cursor-pointer ${
+              currentAlign === "left"
+                ? "bg-slate-200/90 text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+            }`}
+          >
+            <AlignLeft className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            title="Align Center"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onSelectAlign("center")}
+            className={`p-1 rounded transition cursor-pointer ${
+              currentAlign === "center"
+                ? "bg-slate-200/90 text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+            }`}
+          >
+            <AlignCenter className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            title="Align Right"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onSelectAlign("right")}
+            className={`p-1 rounded transition cursor-pointer ${
+              currentAlign === "right"
+                ? "bg-slate-200/90 text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+            }`}
+          >
+            <AlignRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}

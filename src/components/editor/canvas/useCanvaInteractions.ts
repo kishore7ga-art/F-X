@@ -210,6 +210,9 @@ export function useCanvaInteractions({
   const [isEditingText, setIsEditingText] = useState(false);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeTextColor, setActiveTextColor] = useState<string>("#ffffff");
+  const [activeFontFamily, setActiveFontFamily] = useState<string>("");
+  const [activeFontSize, setActiveFontSize] = useState<string>("");
+  const [activeTextAlign, setActiveTextAlign] = useState<string>("left");
   const [isDragging, setIsDragging] = useState(false);
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [distanceBadges, setDistanceBadges] = useState<DistanceBadge[]>([]);
@@ -376,7 +379,9 @@ export function useCanvaInteractions({
           activeEditingElemRef.current.contains(target) ||
           target.closest('[role="dialog"]') ||
           target.closest('.section-toolbar') ||
-          target.closest('[data-xite-toolbar]'))
+          target.closest('[data-xite-toolbar]') ||
+          target.closest('select') ||
+          target.closest('input'))
       ) {
         return;
       }
@@ -389,7 +394,7 @@ export function useCanvaInteractions({
     };
   }, [finishInlineTextEditing]);
 
-  // Track selection and detect current text color at cursor / highlight in real-time
+  // Track selection and detect current text color and styles at cursor / highlight in real-time
   useEffect(() => {
     const handleSelectionChange = () => {
       const sel = window.getSelection();
@@ -406,10 +411,19 @@ export function useCanvaInteractions({
           node = node.parentElement;
         }
         if (node && node instanceof HTMLElement) {
-          const compColor = window.getComputedStyle(node).color;
-          const hex = colorToHex(compColor);
+          const comp = window.getComputedStyle(node);
+          const hex = colorToHex(comp.color);
           if (hex && hex.startsWith("#")) {
             setActiveTextColor(hex);
+          }
+          if (comp.fontFamily) {
+            setActiveFontFamily(comp.fontFamily);
+          }
+          if (comp.fontSize) {
+            setActiveFontSize(comp.fontSize);
+          }
+          if (comp.textAlign) {
+            setActiveTextAlign(comp.textAlign as any);
           }
         }
       }
@@ -521,12 +535,21 @@ export function useCanvaInteractions({
       });
     };
 
-    // Detect initial color of the element
+    // Detect initial color and font styles of the element
     try {
-      const compColor = window.getComputedStyle(element).color;
-      const hex = colorToHex(compColor);
+      const comp = window.getComputedStyle(element);
+      const hex = colorToHex(comp.color);
       if (hex && hex.startsWith("#")) {
         setActiveTextColor(hex);
+      }
+      if (comp.fontFamily) {
+        setActiveFontFamily(comp.fontFamily);
+      }
+      if (comp.fontSize) {
+        setActiveFontSize(comp.fontSize);
+      }
+      if (comp.textAlign) {
+        setActiveTextAlign(comp.textAlign as any);
       }
     } catch {}
 
@@ -543,7 +566,10 @@ export function useCanvaInteractions({
             (element.contains(active) ||
               active.closest('[role="dialog"]') ||
               active.closest('.section-toolbar') ||
-              active.closest('[data-xite-toolbar]'))
+              active.closest('[data-xite-toolbar]') ||
+              active.tagName === "SELECT" ||
+              active.tagName === "INPUT" ||
+              active.tagName === "BUTTON")
           ) {
             return;
           }
@@ -993,6 +1019,40 @@ export function useCanvaInteractions({
   }, [isEditingText, onUpdateSectionCode, showToast, refreshSelectionRect]);
 
   /**
+   * Syncs the actively edited element back to the section's HTML in real time
+   */
+  const syncCurrentElementCode = useCallback(() => {
+    const el = activeEditingElemRef.current;
+    const secIdx = activeEditingSectionIdxRef.current;
+    const storedSecContainer = activeEditingSecContainerRef.current;
+    const secId = activeEditingSectionIdRef.current;
+
+    if (!el || secIdx === null) return;
+
+    let secContainer = storedSecContainer && storedSecContainer.isConnected ? storedSecContainer : null;
+    if (!secContainer && secId && typeof document !== "undefined") {
+      secContainer = document.querySelector(`[data-xite-section="${secId}"]`) as HTMLElement | null;
+    }
+    if (!secContainer && el.isConnected) {
+      secContainer = el.closest("[data-xite-section]") as HTMLElement | null;
+    }
+
+    const sectionId = secId || secContainer?.getAttribute("data-xite-section");
+    const resolvedIdx = sectionId ? sections.findIndex((s) => s.id === sectionId) : -1;
+    const targetIdx = resolvedIdx !== -1 ? resolvedIdx : secIdx;
+
+    if (secContainer && targetIdx >= 0 && targetIdx < sections.length) {
+      const canvasBox = (secContainer.querySelector(".section-canvas-box") ||
+        secContainer.querySelector("header, section, footer, main") ||
+        secContainer) as HTMLElement;
+      const cleanHtml = sanitizeCleanDom(canvasBox);
+      if (cleanHtml) {
+        onUpdateSectionCode(targetIdx, cleanHtml);
+      }
+    }
+  }, [sections, onUpdateSectionCode]);
+
+  /**
    * Applies inline text color to currently selected text or sets typing color for next input
    */
   const applyTextColor = useCallback((hex: string) => {
@@ -1011,31 +1071,29 @@ export function useCanvaInteractions({
     el.focus();
 
     const sel = window.getSelection();
-    if (!sel) return;
+    let hasRangeSelection = false;
 
-    // Restore saved range if needed
-    if (savedRangeRef.current && (!sel.rangeCount || !el.contains(sel.getRangeAt(0).commonAncestorContainer))) {
-      sel.removeAllRanges();
-      sel.addRange(savedRangeRef.current);
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer) && !range.collapsed && range.toString().trim().length > 0) {
+        hasRangeSelection = true;
+      }
     }
 
-    // If still no range inside el, select all text contents
-    if (!sel.rangeCount || !el.contains(sel.getRangeAt(0).commonAncestorContainer)) {
-      const r = document.createRange();
-      r.selectNodeContents(el);
-      sel.removeAllRanges();
-      sel.addRange(r);
+    if (!hasRangeSelection && savedRangeRef.current && !savedRangeRef.current.collapsed && savedRangeRef.current.toString().trim().length > 0) {
+      if (sel && el.contains(savedRangeRef.current.commonAncestorContainer)) {
+        sel.removeAllRanges();
+        sel.addRange(savedRangeRef.current);
+        hasRangeSelection = true;
+      }
     }
 
-    const range = sel.getRangeAt(0);
-
-    try {
-      document.execCommand("styleWithCSS", false, "true");
-    } catch {}
-
-    if (!range.collapsed) {
-      // 1. Text is highlighted: apply color to selection
-      document.execCommand("foreColor", false, hex);
+    if (hasRangeSelection && sel && sel.rangeCount > 0) {
+      // 1. Text is highlighted: apply color to specific selection
+      try {
+        document.execCommand("styleWithCSS", false, "true");
+        document.execCommand("foreColor", false, hex);
+      } catch {}
       el.querySelectorAll("font[color]").forEach((font) => {
         const span = document.createElement("span");
         span.style.color = font.getAttribute("color") || hex;
@@ -1043,41 +1101,134 @@ export function useCanvaInteractions({
         font.replaceWith(span);
       });
     } else {
-      // 2. Caret is collapsed: set typing color for subsequent typing
-      document.execCommand("foreColor", false, hex);
-
-      // Create an anchored span with zero-width space for seamless caret positioning
-      let parentSpan: HTMLElement | null = null;
-      let node: Node | null = range.startContainer;
-      while (node && node !== el) {
-        if (node instanceof HTMLElement && node.tagName === "SPAN") {
-          parentSpan = node;
-          break;
-        }
-        node = node.parentNode;
-      }
-
-      if (parentSpan && parentSpan.childNodes.length === 1 && (parentSpan.textContent === "" || parentSpan.textContent === "\u200B")) {
-        parentSpan.style.color = hex;
-      } else {
-        const span = document.createElement("span");
-        span.style.color = hex;
-        span.setAttribute("data-xite-typing-span", "true");
-        const zwsp = document.createTextNode("\u200B");
-        span.appendChild(zwsp);
-        range.insertNode(span);
-
-        const newRange = document.createRange();
-        newRange.setStart(zwsp, 1);
-        newRange.setEnd(zwsp, 1);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-        savedRangeRef.current = newRange.cloneRange();
-      }
+      // 2. Entire text element: apply color to the whole element immediately
+      el.style.color = hex;
+      el.querySelectorAll<HTMLElement>("span, font, b, i, strong, em, h1, h2, h3, h4, h5, h6, p").forEach((child) => {
+        child.style.color = hex;
+        if (child.hasAttribute("color")) child.removeAttribute("color");
+      });
     }
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
-  }, [selectedElement, activateTextEditing]);
+    syncCurrentElementCode();
+  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+
+  /**
+   * Applies font family to the selected text range or entire active text element
+   */
+  const applyFontFamily = useCallback((fontFamily: string) => {
+    setActiveFontFamily(fontFamily);
+
+    let el = activeEditingElemRef.current;
+    if (!el && selectedElement?.element) {
+      const textTarget = findTextEditableElement(selectedElement.element);
+      if (textTarget) {
+        activateTextEditing(textTarget, selectedElement.sectionIndex);
+        el = textTarget;
+      }
+    }
+    if (!el) return;
+
+    el.focus();
+
+    const sel = window.getSelection();
+    let hasRangeSelection = false;
+
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer) && !range.collapsed && range.toString().trim().length > 0) {
+        hasRangeSelection = true;
+      }
+    }
+
+    if (hasRangeSelection && sel && sel.rangeCount > 0) {
+      try {
+        document.execCommand("styleWithCSS", false, "true");
+        document.execCommand("fontName", false, fontFamily);
+      } catch {}
+      el.querySelectorAll("font[face]").forEach((font) => {
+        const span = document.createElement("span");
+        span.style.fontFamily = font.getAttribute("face") || fontFamily;
+        span.innerHTML = font.innerHTML;
+        font.replaceWith(span);
+      });
+    } else {
+      el.style.fontFamily = fontFamily;
+      el.querySelectorAll<HTMLElement>("span, font, b, i, strong, em, h1, h2, h3, h4, h5, h6, p").forEach((child) => {
+        child.style.fontFamily = fontFamily;
+      });
+    }
+
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    syncCurrentElementCode();
+  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+
+  /**
+   * Applies font size to the selected text range or entire active text element
+   */
+  const applyFontSize = useCallback((fontSize: string) => {
+    setActiveFontSize(fontSize);
+
+    let el = activeEditingElemRef.current;
+    if (!el && selectedElement?.element) {
+      const textTarget = findTextEditableElement(selectedElement.element);
+      if (textTarget) {
+        activateTextEditing(textTarget, selectedElement.sectionIndex);
+        el = textTarget;
+      }
+    }
+    if (!el) return;
+
+    el.focus();
+
+    const sel = window.getSelection();
+    let hasRangeSelection = false;
+
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer) && !range.collapsed && range.toString().trim().length > 0) {
+        hasRangeSelection = true;
+      }
+    }
+
+    if (hasRangeSelection && sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      const span = document.createElement("span");
+      span.style.fontSize = fontSize;
+      try {
+        const contents = range.extractContents();
+        span.appendChild(contents);
+        range.insertNode(span);
+        sel.selectAllChildren(span);
+      } catch {}
+    } else {
+      el.style.fontSize = fontSize;
+    }
+
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    syncCurrentElementCode();
+  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+
+  /**
+   * Applies text alignment (left, center, right, justify) to the active text block
+   */
+  const applyTextAlign = useCallback((align: "left" | "center" | "right" | "justify") => {
+    setActiveTextAlign(align);
+
+    let el = activeEditingElemRef.current;
+    if (!el && selectedElement?.element) {
+      const textTarget = findTextEditableElement(selectedElement.element);
+      if (textTarget) {
+        activateTextEditing(textTarget, selectedElement.sectionIndex);
+        el = textTarget;
+      }
+    }
+    if (!el) return;
+
+    el.style.textAlign = align;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    syncCurrentElementCode();
+  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
 
   /**
    * Applies rich text formatting commands (bold, italic, underline, removeFormat)
@@ -1086,11 +1237,48 @@ export function useCanvaInteractions({
     const el = activeEditingElemRef.current;
     if (!el) return;
     el.focus();
-    try {
-      document.execCommand(command, false);
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-    } catch {}
-  }, []);
+
+    const sel = window.getSelection();
+    let hasRangeSelection = false;
+
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer) && !range.collapsed && range.toString().trim().length > 0) {
+        hasRangeSelection = true;
+      }
+    }
+
+    if (hasRangeSelection) {
+      try {
+        document.execCommand(command, false);
+      } catch {}
+    } else {
+      if (command === "bold") {
+        const currentWeight = window.getComputedStyle(el).fontWeight;
+        const isBold = currentWeight === "bold" || parseInt(currentWeight, 10) >= 700;
+        el.style.fontWeight = isBold ? "normal" : "bold";
+      } else if (command === "italic") {
+        const currentStyle = window.getComputedStyle(el).fontStyle;
+        el.style.fontStyle = currentStyle === "italic" ? "normal" : "italic";
+      } else if (command === "underline") {
+        const currentDec = window.getComputedStyle(el).textDecoration;
+        el.style.textDecoration = currentDec.includes("underline") ? "none" : "underline";
+      } else if (command === "removeFormat") {
+        el.style.fontWeight = "";
+        el.style.fontStyle = "";
+        el.style.textDecoration = "";
+        el.style.color = "";
+        el.style.fontFamily = "";
+        el.style.fontSize = "";
+        el.style.textAlign = "";
+        try {
+          document.execCommand("removeFormat", false);
+        } catch {}
+      }
+    }
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    syncCurrentElementCode();
+  }, [syncCurrentElementCode]);
 
   return {
     selectedElement,
@@ -1098,6 +1286,12 @@ export function useCanvaInteractions({
     isEditingText,
     activeTextColor,
     applyTextColor,
+    activeFontFamily,
+    applyFontFamily,
+    activeFontSize,
+    applyFontSize,
+    activeTextAlign,
+    applyTextAlign,
     applyTextFormat,
     activeEditingElement: activeEditingElemRef.current,
     isDragging,

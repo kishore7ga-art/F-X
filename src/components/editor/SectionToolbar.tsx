@@ -114,6 +114,12 @@ type Props = {
   textColorValue?: string;
   onApplyTextColor?: (color: string) => void;
   onApplyTextFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
+  fontFamilyValue?: string;
+  onApplyFontFamily?: (font: string) => void;
+  fontSizeValue?: string;
+  onApplyFontSize?: (size: string) => void;
+  textAlignValue?: string;
+  onApplyTextAlign?: (align: "left" | "center" | "right" | "justify") => void;
   isEditingText?: boolean;
 };
 
@@ -311,6 +317,12 @@ export function SectionToolbar({
   textColorValue = "#ffffff",
   onApplyTextColor,
   onApplyTextFormat,
+  fontFamilyValue,
+  onApplyFontFamily,
+  fontSizeValue,
+  onApplyFontSize,
+  textAlignValue,
+  onApplyTextAlign,
   isEditingText = false,
 }: Props) {
   const [currentTextColor, setCurrentTextColor] = useState<string>(textColorValue || "#ffffff");
@@ -960,6 +972,12 @@ export function SectionToolbar({
               }}
               onFormat={onApplyTextFormat}
               isEditingText={isEditingText}
+              currentFont={fontFamilyValue}
+              onSelectFont={onApplyFontFamily}
+              currentFontSize={fontSizeValue}
+              onSelectFontSize={onApplyFontSize}
+              currentAlign={textAlignValue}
+              onSelectAlign={onApplyTextAlign}
             />
           </div>
         ) : activeGroup ? (
