@@ -78,7 +78,6 @@ import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css
 import { isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
 import { resolveCategory } from "@/lib/sections/categories";
 import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from "@/lib/interactive-section-runtime";
-import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -2028,20 +2027,7 @@ export function EditorStudio({
                       )}
                     </div>
 
-                    {/* Interactive Header Overlay Drop Zone between Header and Hero */}
-                    {idx === 0 && sections.length > 1 && (isHeader || sections[0].category === "navbar") && (
-                      <HeaderOverlayDropZone
-                        isOverlaid={isHeaderOverlaid(sec)}
-                        onToggleOverlay={(enable) => {
-                          const updated = toggleHeaderOverlay(sec, enable);
-                          setSectionsWithHistory((prev) =>
-                            prev.map((s, i) => (i === 0 ? updated : s)),
-                          );
-                        }}
-                        headerTitle={sec.title || "Header"}
-                        heroTitle={sections[1]?.title || "Hero"}
-                      />
-                    )}
+
                   </React.Fragment>
                 );
               })}

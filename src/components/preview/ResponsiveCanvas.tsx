@@ -150,10 +150,10 @@ export function ResponsiveCanvas({
        * margins do not: they resolve to zero once the child is wider than the
        * space, and the child simply scrolls.
        */
-      className={`w-full overflow-x-auto ${paneClassName}`}
+      className={`w-full overflow-x-hidden ${paneClassName}`}
     >
       <div
-        className={chromeClassName}
+        className={`overflow-hidden ${chromeClassName}`}
         style={{
           // The scaled footprint. This is what the page lays out around; the
           // canvas itself is out of flow inside it.
@@ -175,7 +175,7 @@ export function ResponsiveCanvas({
             // The real viewport width. Never clamped — this is the whole point.
             width: viewport.width,
             transformOrigin: "top left",
-            transform: transformed ? `scale(${scale})` : undefined,
+            transform: transformed ? `scale(${scale})` : "translateZ(0)",
           }}
         >
           <div

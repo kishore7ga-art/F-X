@@ -164,7 +164,7 @@ export function handleInteractiveSectionClick(event: MouseEvent | React.MouseEve
 
   // 2. Mobile Navigation Drawers (Open & Close)
   const drawerOpenTrigger = target.closest<HTMLElement>(
-    "#openDrawerBtn, #muMenuBtn, #tetrToggleBtn, #nsMobileToggle, #niatToggleBtn, #scMenuBtn, #litBurgerBtn, .hamburger-btn, .hamburger-toggle-btn, .wx-mobile-menu-toggle, [data-xite-drawer-toggle]"
+    "#openDrawerBtn, #muMenuBtn, #tetrToggleBtn, #nsMobileToggle, #niatToggleBtn, #scMenuBtn, #litBurgerBtn, #pennBurger, .penn-burger, .hamburger-btn, .hamburger-toggle-btn, .wx-mobile-menu-toggle, .nav-toggle, .mobile-toggle, .mobile-menu-btn, .mobile-nav-toggle, .burger, .hamburger, button.penn-burger, [data-xite-drawer-toggle], button[aria-label*='navigation' i], button[aria-label*='menu' i]"
   );
   if (drawerOpenTrigger) {
     event.preventDefault();
@@ -176,7 +176,7 @@ export function handleInteractiveSectionClick(event: MouseEvent | React.MouseEve
       null;
     const drawer =
       section?.querySelector<HTMLElement>(
-        "#mobileDrawer, #muMobileDrawer, #tetrMobileDrawer, #nsMobileDrawer, #niatMobileDrawer, #scMobileDrawer, #litMobileDrawer, .mobile-drawer, .mobile-drawer-menu"
+        "#mobileDrawer, #muMobileDrawer, #tetrMobileDrawer, #nsMobileDrawer, #niatMobileDrawer, #scMobileDrawer, #litMobileDrawer, #pennNavMenu, .penn-nav-wrap, .mobile-drawer, .mobile-drawer-menu, .mobile-nav, .mobile-menu, .nav-wrap, [id*='mobile-menu'], [id*='mobile-nav']"
       ) ||
       doc?.getElementById("mobileDrawer") ||
       doc?.getElementById("muMobileDrawer") ||
@@ -184,7 +184,8 @@ export function handleInteractiveSectionClick(event: MouseEvent | React.MouseEve
       doc?.getElementById("nsMobileDrawer") ||
       doc?.getElementById("niatMobileDrawer") ||
       doc?.getElementById("scMobileDrawer") ||
-      doc?.getElementById("litMobileDrawer");
+      doc?.getElementById("litMobileDrawer") ||
+      doc?.getElementById("pennNavMenu");
 
     if (drawer) {
       drawer.classList.toggle("active");
@@ -194,7 +195,7 @@ export function handleInteractiveSectionClick(event: MouseEvent | React.MouseEve
   }
 
   const drawerCloseTrigger = target.closest<HTMLElement>(
-    "#closeDrawerBtn, #muCloseBtn, #tetrCloseBtn, #nsDrawerClose, #niatCloseBtn, #scCloseBtn, #litCloseBtn, .drawer-close-btn, .mobile-drawer-close"
+    "#closeDrawerBtn, #muCloseBtn, #tetrCloseBtn, #nsDrawerClose, #niatCloseBtn, #scCloseBtn, #litCloseBtn, .drawer-close-btn, .mobile-drawer-close, .close-drawer"
   );
   if (drawerCloseTrigger) {
     event.preventDefault();
@@ -206,7 +207,7 @@ export function handleInteractiveSectionClick(event: MouseEvent | React.MouseEve
       null;
     const drawer =
       section?.querySelector<HTMLElement>(
-        "#mobileDrawer, #muMobileDrawer, #tetrMobileDrawer, #nsMobileDrawer, #niatMobileDrawer, #scMobileDrawer, #litMobileDrawer, .mobile-drawer, .mobile-drawer-menu"
+        "#mobileDrawer, #muMobileDrawer, #tetrMobileDrawer, #nsMobileDrawer, #niatMobileDrawer, #scMobileDrawer, #litMobileDrawer, #pennNavMenu, .penn-nav-wrap, .mobile-drawer, .mobile-drawer-menu, .mobile-nav, .mobile-menu, .nav-wrap, [id*='mobile-menu'], [id*='mobile-nav']"
       ) ||
       doc?.getElementById("mobileDrawer") ||
       doc?.getElementById("muMobileDrawer") ||
@@ -214,7 +215,8 @@ export function handleInteractiveSectionClick(event: MouseEvent | React.MouseEve
       doc?.getElementById("nsMobileDrawer") ||
       doc?.getElementById("niatMobileDrawer") ||
       doc?.getElementById("scMobileDrawer") ||
-      doc?.getElementById("litMobileDrawer");
+      doc?.getElementById("litMobileDrawer") ||
+      doc?.getElementById("pennNavMenu");
 
     if (drawer) {
       drawer.classList.remove("active", "open");

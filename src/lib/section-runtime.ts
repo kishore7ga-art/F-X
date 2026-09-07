@@ -823,7 +823,7 @@ export function viewportMediaToContainer(css: string): string {
 
     const clauses = withoutType.split(/\s+and\s+/i).map((clause) => clause.trim());
     const isWidthClause = (clause: string) =>
-      /^\(\s*(?:min-|max-)?width\s*:\s*[^)]+\)$/i.test(clause);
+      /^\(\s*(?:(?:min-|max-)?width\s*:|width\s*[<>=])\s*[^)]+\)$/i.test(clause);
 
     if (!clauses.every(isWidthClause)) return full;
 

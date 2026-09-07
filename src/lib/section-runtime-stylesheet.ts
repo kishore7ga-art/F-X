@@ -18,6 +18,7 @@ import {
   remapDocumentSelectors,
   sectionResponsiveCss,
   sectionRuntimeCss,
+  viewportMediaToContainer,
   viewportUnitsToContainer,
 } from "./section-runtime";
 
@@ -85,7 +86,9 @@ export function buildSectionRuntimeStylesheet({
        */
       parts.push(
         fenceCssToSection(
-          viewportUnitsToContainer(tokenizeCss(remapDocumentSelectors(headCss, SECTION_BOX_SELECTOR))),
+          viewportMediaToContainer(
+            viewportUnitsToContainer(tokenizeCss(remapDocumentSelectors(headCss, SECTION_BOX_SELECTOR))),
+          ),
           sec.id,
         ),
       );

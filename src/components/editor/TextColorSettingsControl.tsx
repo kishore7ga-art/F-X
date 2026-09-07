@@ -8,9 +8,6 @@ import {
   RotateCcw,
   Sparkles,
   Type,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
 } from "lucide-react";
 import { hexFromValue } from "@/lib/sections/section-edit";
 
@@ -27,22 +24,7 @@ export interface SingleRowTextColorPanelProps {
   onSelectAlign?: (align: "left" | "center" | "right" | "justify") => void;
 }
 
-const TEXT_PALETTES = [
-  { name: "White", hex: "#ffffff" },
-  { name: "Charcoal Black", hex: "#18181b" },
-  { name: "Slate Gray", hex: "#64748b" },
-  { name: "Coral Red", hex: "#ef4444" },
-  { name: "Rose Pink", hex: "#ec4899" },
-  { name: "Vibrant Orange", hex: "#f97316" },
-  { name: "Warm Amber", hex: "#eab308" },
-  { name: "Emerald Green", hex: "#10b981" },
-  { name: "Sky Cyan", hex: "#06b6d4" },
-  { name: "Royal Blue", hex: "#2563eb" },
-  { name: "Electric Violet", hex: "#8b5cf6" },
-  { name: "Gold", hex: "#f59e0b" },
-];
-
-export const FONT_FAMILY_OPTIONS = [
+const FONT_FAMILY_OPTIONS = [
   { label: "Default Font", value: "" },
   { label: "Inter", value: "'Inter', sans-serif" },
   { label: "Outfit", value: "'Outfit', sans-serif" },
@@ -78,8 +60,8 @@ export function SingleRowTextColorPanel({
   onSelectFont,
   currentFontSize = "",
   onSelectFontSize,
-  currentAlign = "left",
-  onSelectAlign,
+  currentAlign: _currentAlign = "left",
+  onSelectAlign: _onSelectAlign,
 }: SingleRowTextColorPanelProps) {
   const [hexDraft, setHexDraft] = useState<string>(currentColor || "#ffffff");
   const colorPickerId = useId();
@@ -99,39 +81,6 @@ export function SingleRowTextColorPanel({
 
   return (
     <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto py-1 px-1 flex-nowrap w-full no-scrollbar">
-      {/* 1. Quick Palette Swatches */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
-          Palettes
-        </span>
-        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/60">
-          {TEXT_PALETTES.map((p) => {
-            const isWhite = p.hex.toLowerCase() === "#ffffff";
-            const isSelected = activeHex === p.hex.toLowerCase();
-            return (
-              <button
-                key={p.hex}
-                type="button"
-                title={p.name}
-                onMouseDown={(e) => {
-                  // Crucial: prevent loss of focus / selection in contenteditable
-                  e.preventDefault();
-                }}
-                onClick={() => handleApply(p.hex)}
-                className={`w-4 h-4 rounded-[4px] transition-all cursor-pointer ${
-                  isWhite ? "border border-slate-300" : "border border-black/10"
-                } ${
-                  isSelected
-                    ? "ring-2 ring-slate-900 ring-offset-1 scale-110 shadow-sm"
-                    : "hover:scale-105 opacity-90 hover:opacity-100"
-                }`}
-                style={{ backgroundColor: p.hex }}
-              />
-            );
-          })}
-        </div>
-      </div>
-
       {/* 2. Current Color Picker + Hex Input */}
       <div className="flex items-center gap-2 shrink-0 bg-slate-50/80 px-2.5 py-1 rounded-xl border border-slate-200/60">
         <span className="text-[10.5px] font-bold text-slate-500">The colour</span>
@@ -249,51 +198,6 @@ export function SingleRowTextColorPanel({
               </option>
             ))}
           </select>
-        </div>
-      )}
-
-      {/* 6. Text Alignment Controls */}
-      {onSelectAlign && (
-        <div className="flex items-center gap-0.5 shrink-0 bg-slate-50/80 px-1.5 py-1 rounded-xl border border-slate-200/60">
-          <button
-            type="button"
-            title="Align Left"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => onSelectAlign("left")}
-            className={`p-1 rounded transition cursor-pointer ${
-              currentAlign === "left"
-                ? "bg-slate-200/90 text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            <AlignLeft className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            title="Align Center"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => onSelectAlign("center")}
-            className={`p-1 rounded transition cursor-pointer ${
-              currentAlign === "center"
-                ? "bg-slate-200/90 text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            <AlignCenter className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            title="Align Right"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => onSelectAlign("right")}
-            className={`p-1 rounded transition cursor-pointer ${
-              currentAlign === "right"
-                ? "bg-slate-200/90 text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-            }`}
-          >
-            <AlignRight className="w-3.5 h-3.5" />
-          </button>
         </div>
       )}
 
