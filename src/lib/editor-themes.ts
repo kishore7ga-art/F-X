@@ -89,24 +89,6 @@ export type EditorTheme = {
  */
 export const DEFAULT_DUAL_THEMES: readonly EditorTheme[] = [
   {
-    id: "black-and-white",
-    name: "Black & White",
-    description: "Sleek obsidian black base with crisp pure white accents and high contrast.",
-    swatch: { base: "#000000", accent: "#ffffff" },
-    tokens: {
-      surface: "#000000",
-      surfaceRaised: "#141416",
-      header: "#000000",
-      footer: "#000000",
-      accent: "#ffffff",
-      accentSoft: "#e4e4e7",
-      onAccent: "#000000",
-      text: "#ffffff",
-      textMuted: "#a1a1aa",
-      border: "rgba(255, 255, 255, 0.16)",
-    },
-  },
-  {
     id: "white-and-black",
     name: "White & Black",
     description: "Crisp modern white background with deep black typography and contrast.",
@@ -122,6 +104,24 @@ export const DEFAULT_DUAL_THEMES: readonly EditorTheme[] = [
       text: "#000000",
       textMuted: "#71717a",
       border: "rgba(0, 0, 0, 0.12)",
+    },
+  },
+  {
+    id: "black-and-white",
+    name: "Black & White",
+    description: "Sleek obsidian black base with crisp pure white accents and high contrast.",
+    swatch: { base: "#000000", accent: "#ffffff" },
+    tokens: {
+      surface: "#000000",
+      surfaceRaised: "#141416",
+      header: "#000000",
+      footer: "#000000",
+      accent: "#ffffff",
+      accentSoft: "#e4e4e7",
+      onAccent: "#000000",
+      text: "#ffffff",
+      textMuted: "#a1a1aa",
+      border: "rgba(255, 255, 255, 0.16)",
     },
   },
 ] as const;

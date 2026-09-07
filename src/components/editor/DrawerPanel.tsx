@@ -554,96 +554,79 @@ export function DrawerPanel({
 
           {/* COLORS TAB */}
           {activeTab === "colors" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {/* SECTION 1: DEFAULT 2 THEMES */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* SECTION 1: WHITE & BLACK / BLACK & WHITE PRESETS */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "11px", fontWeight: 900, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                    Default Presets (இயல்புநிலை)
-                  </span>
-                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#94a3b8" }}>2 Themes</span>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {DEFAULT_DUAL_THEMES.map((theme) => {
-                    const isSelected = activePaletteId === theme.id;
-                    return (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => handleSelectPalette(theme.id, theme.name)}
-                        aria-pressed={isSelected}
-                        style={{
-                          padding: "12px 14px",
-                          borderRadius: "16px",
-                          backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
-                          border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
-                          cursor: "pointer",
-                          display: "flex",
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          textAlign: "left",
-                          width: "100%",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ fontSize: "13px", fontWeight: 900, color: "#0f172a" }}>{theme.name}</span>
-                            <span
-                              style={{
-                                fontSize: "9px",
-                                fontWeight: 800,
-                                padding: "2px 6px",
-                                borderRadius: "6px",
-                                backgroundColor: theme.id === "black-and-white" ? "#000000" : "#f1f5f9",
-                                color: theme.id === "black-and-white" ? "#ffffff" : "#0f172a",
-                                border: "1px solid #cbd5e1",
-                              }}
-                            >
-                              {theme.id === "black-and-white" ? "Dark Base" : "Light Base"}
-                            </span>
-                          </div>
-                          <span style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.3 }}>{theme.description}</span>
-                          <div style={{ display: "flex", flexDirection: "row", gap: "6px", marginTop: "2px" }}>
-                            <span
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                borderRadius: "50%",
-                                backgroundColor: theme.swatch.base,
-                                border: "1px solid #cbd5e1",
-                              }}
-                            />
-                            <span
-                              style={{
-                                width: "16px",
-                                height: "16px",
-                                borderRadius: "50%",
-                                backgroundColor: theme.swatch.accent,
-                                border: "1px solid #cbd5e1",
-                              }}
-                            />
-                          </div>
+                {DEFAULT_DUAL_THEMES.map((theme) => {
+                  const isSelected = activePaletteId === theme.id;
+                  return (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      onClick={() => handleSelectPalette(theme.id, theme.name)}
+                      aria-pressed={isSelected}
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: "12px",
+                        backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
+                        border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        textAlign: "left",
+                        width: "100%",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: theme.swatch.base,
+                              border: theme.swatch.base === "#ffffff" ? "1px solid #cbd5e1" : "1px solid #000000",
+                              display: "inline-block",
+                            }}
+                          />
+                          <span
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: theme.swatch.accent,
+                              border: theme.swatch.accent === "#ffffff" ? "1px solid #cbd5e1" : "1px solid #000000",
+                              display: "inline-block",
+                            }}
+                          />
                         </div>
-                        {isSelected && <Check style={{ width: "18px", height: "18px", color: "#0f172a", flexShrink: 0 }} />}
-                      </button>
-                    );
-                  })}
-                </div>
+                        <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
+                          {theme.name}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <div style={{ width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Check style={{ width: "12px", height: "12px", color: "#ffffff", strokeWidth: 3 }} />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* SECTION 2: SINGLE COLOR PALETTE CUSTOMIZATION */}
               <div
                 style={{
                   border: "1px solid #e2e8f0",
-                  borderRadius: "16px",
-                  padding: "14px",
+                  borderRadius: "14px",
+                  padding: "12px",
                   backgroundColor: "#ffffff",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "12px",
+                  gap: "10px",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -669,33 +652,29 @@ export function DrawerPanel({
                   )}
                 </div>
 
-                <p style={{ fontSize: "11px", color: "#64748b", margin: 0, lineHeight: 1.4 }}>
-                  Pick your brand accent color using the color box or the circle swatches:
-                </p>
-
                 {/* The Box & Hex Input */}
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    padding: "8px 10px",
-                    borderRadius: "12px",
+                    padding: "6px 8px",
+                    borderRadius: "10px",
                     backgroundColor: "#f8fafc",
                     border: "1px solid #e2e8f0",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     {/* The Box */}
                     <label
                       style={{
                         position: "relative",
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "10px",
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "8px",
                         backgroundColor: currentAccentColor,
                         border: "2px solid #ffffff",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
+                        boxShadow: "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
                         cursor: "pointer",
                         display: "block",
                         flexShrink: 0,
@@ -718,14 +697,9 @@ export function DrawerPanel({
                       />
                     </label>
 
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>
-                        Brand Accent
-                      </span>
-                      <span style={{ fontSize: "10px", color: "#64748b" }}>
-                        Buttons, links & highlights
-                      </span>
-                    </div>
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>
+                      Brand Accent
+                    </span>
                   </div>
 
                   {/* Hex Input */}
@@ -736,11 +710,11 @@ export function DrawerPanel({
                     maxLength={9}
                     style={{
                       width: "80px",
-                      height: "30px",
-                      borderRadius: "8px",
+                      height: "28px",
+                      borderRadius: "6px",
                       border: "1px solid #cbd5e1",
                       padding: "0 6px",
-                      fontSize: "11.5px",
+                      fontSize: "11px",
                       fontFamily: "monospace",
                       fontWeight: 700,
                       color: "#0f172a",
@@ -751,58 +725,53 @@ export function DrawerPanel({
                 </div>
 
                 {/* The Circle Shape Color Palette */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Palette Swatches
-                  </span>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      flexWrap: "wrap",
-                      padding: "4px 0",
-                    }}
-                  >
-                    {CURATED_ACCENT_SWATCHES.map((swatch) => {
-                      const isSelected = currentAccentColor.toLowerCase() === swatch.hex.toLowerCase();
-                      return (
-                        <button
-                          key={swatch.hex}
-                          type="button"
-                          onClick={() => handleApplyAccentColor(swatch.hex)}
-                          title={swatch.name}
-                          style={{
-                            width: "28px",
-                            height: "28px",
-                            borderRadius: "50%",
-                            backgroundColor: swatch.hex,
-                            border: isSelected ? "3px solid #0f172a" : "2px solid #ffffff",
-                            boxShadow: isSelected
-                              ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
-                              : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
-                            cursor: "pointer",
-                            transform: isSelected ? "scale(1.12)" : "scale(1)",
-                            transition: "all 0.15s ease",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {isSelected && (
-                            <Check
-                              style={{
-                                width: "13px",
-                                height: "13px",
-                                color: swatch.hex.toLowerCase() === "#ffffff" ? "#000000" : "#ffffff",
-                                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.6))",
-                              }}
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                    paddingTop: "2px",
+                  }}
+                >
+                  {CURATED_ACCENT_SWATCHES.map((swatch) => {
+                    const isSelected = currentAccentColor.toLowerCase() === swatch.hex.toLowerCase();
+                    return (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        onClick={() => handleApplyAccentColor(swatch.hex)}
+                        title={swatch.name}
+                        style={{
+                          width: "26px",
+                          height: "26px",
+                          borderRadius: "50%",
+                          backgroundColor: swatch.hex,
+                          border: isSelected ? "2.5px solid #0f172a" : "2px solid #ffffff",
+                          boxShadow: isSelected
+                            ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
+                            : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
+                          cursor: "pointer",
+                          transform: isSelected ? "scale(1.1)" : "scale(1)",
+                          transition: "all 0.15s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {isSelected && (
+                          <Check
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              color: swatch.hex.toLowerCase() === "#ffffff" ? "#000000" : "#ffffff",
+                              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.6))",
+                            }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
