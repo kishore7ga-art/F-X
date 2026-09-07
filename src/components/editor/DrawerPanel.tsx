@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   DEFAULT_DUAL_THEMES,
   EDITOR_FONTS,
+  hexToRgb,
   type EditorThemeTokens,
 } from "@/lib/editor-themes";
 import {
@@ -132,10 +133,14 @@ export function DrawerPanel({
 
   const handleApplyAccentColor = (newHex: string) => {
     const softHex = newHex.startsWith("#") && newHex.length === 7 ? `${newHex}26` : "rgba(37,99,235,0.15)";
+    const rgb = hexToRgb(newHex);
+    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    const onAccent = luminance > 0.6 ? "#000000" : "#ffffff";
     const updated: EditorThemeTokens = {
       ...customTokens,
       accent: newHex,
       accentSoft: softHex,
+      onAccent,
     };
     setCustomTokens(updated);
     onCustomThemeChange?.(updated);

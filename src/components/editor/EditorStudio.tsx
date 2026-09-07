@@ -657,9 +657,10 @@ export function EditorStudio({
         };
 
         // Apply live style to DOM element immediately
-        if (newProps.radius !== undefined) prev.targetElement.style.borderRadius = newProps.radius;
-        if (newProps.bgColor !== undefined) prev.targetElement.style.backgroundColor = newProps.bgColor;
-        if (newProps.textColor !== undefined) prev.targetElement.style.color = newProps.textColor;
+        prev.targetElement.setAttribute("data-custom-styled", "true");
+        if (newProps.radius !== undefined) prev.targetElement.style.setProperty("border-radius", newProps.radius, "important");
+        if (newProps.bgColor !== undefined) prev.targetElement.style.setProperty("background-color", newProps.bgColor, "important");
+        if (newProps.textColor !== undefined) prev.targetElement.style.setProperty("color", newProps.textColor, "important");
 
         // Sync section HTML
         const targetSec = sections[prev.sectionIndex];

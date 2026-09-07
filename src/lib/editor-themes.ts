@@ -590,7 +590,41 @@ export function themeStylesheet(scope: string): string {
     `${scope}[data-xite-font] :where(*):not(i):not(svg):not([class*="icon"]) { font-family: var(--xite-font) !important; }`,
   );
 
+  // Apply theme accent color to buttons, CTAs, and action links across all sections and pages
+  blocks.push(themeButtonRules(scope));
+
   return blocks.join("\n\n");
+}
+
+function themeButtonRules(scope: string): string {
+  return `${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]):not([aria-label*="close" i]):not([aria-label*="modal" i]):not([class*="tab"]):not([class*="carousel"]):not([class*="prev"]):not([class*="next"]),
+${scope}[data-xite-theme] .btn:not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]),
+${scope}[data-xite-theme] [class*="btn-primary"]:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="btn_primary"]:not([data-custom-styled]),
+${scope}[data-xite-theme] a[class*="btn"]:not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]),
+${scope}[data-xite-theme] a[class*="button"]:not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]),
+${scope}[data-xite-theme] a[class*="cta"]:not([data-custom-styled]),
+${scope}[data-xite-theme] a[class*="give"]:not([data-custom-styled]),
+${scope}[data-xite-theme] a[class*="apply"]:not([data-custom-styled]),
+${scope}[data-xite-theme] a[class*="donate"]:not([data-custom-styled]),
+${scope}[data-xite-theme] a[class*="enroll"]:not([data-custom-styled]),
+${scope}[data-xite-theme] [role="button"]:not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="tab"]),
+${scope}[data-xite-theme] .bg-primary:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="bg-primary"]:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="bg-blue-600"]:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="bg-indigo-600"]:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="bg-sky-600"]:not([data-custom-styled]) {
+  background-color: var(--xite-accent) !important;
+  color: var(--xite-on-accent, #ffffff) !important;
+  border-color: var(--xite-accent) !important;
+}
+
+${scope}[data-xite-theme] .btn-outline:not([data-custom-styled]),
+${scope}[data-xite-theme] [class*="btn-outline"]:not([data-custom-styled]),
+${scope}[data-xite-theme] a[class*="btn-outline"]:not([data-custom-styled]) {
+  border-color: var(--xite-accent) !important;
+  color: var(--xite-accent) !important;
+}`;
 }
 
 /**
@@ -637,7 +671,7 @@ export function customThemeCss(scope: string, tokens: EditorThemeTokens): string
   const declarations = Object.entries(tokens)
     .map(([name, value]) => `  --xite-${kebab(name)}: ${value};`)
     .join("\n");
-  return `${scope}[data-xite-theme="custom"], ${scope}[data-xite-theme^="custom-"] {\n${declarations}\n}`;
+  return `${scope}[data-xite-theme="custom"], ${scope}[data-xite-theme^="custom-"] {\n${declarations}\n}\n\n${themeButtonRules(scope)}`;
 }
 
 /* ── Color Palette Algorithms & Harmonies ────────────────────────────────── */
