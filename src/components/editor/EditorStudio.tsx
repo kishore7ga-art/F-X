@@ -601,6 +601,9 @@ export function EditorStudio({
       setDockPosition("top");
       openCustomToolbar(sectionIndex);
     },
+    onFinishTextEditing: () => {
+      setDockPosition("bottom");
+    },
     onSelectButton: (_element, sectionIndex) => {
       openCustomToolbar(sectionIndex);
     },
@@ -672,6 +675,7 @@ export function EditorStudio({
   }, []);
 
   const closeCustomToolbar = useCallback(() => {
+    setDockPosition("bottom");
     setCustomToolbarState({
       isOpen: false,
       sectionIndex: null,

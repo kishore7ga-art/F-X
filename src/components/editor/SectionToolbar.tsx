@@ -371,18 +371,15 @@ export function SectionToolbar({
   );
   const activeGroup = schema.groups.find((group) => group.id === activeGroupId) ?? schema.groups[0];
 
-  // If user is editing text or selected a text element on canvas, switch to Text Color tab
+  // If user is editing text, switch to Text Color tab; when editing finishes, revert to the section's default tab
   useEffect(() => {
     if (isEditingText) {
       setActiveGroupId("textColor");
-      return;
+    } else if (activeGroupId === "textColor") {
+      const defaultGroup = schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id;
+      setActiveGroupId(defaultGroup);
     }
-    if (!selectedCanvasElement) return;
-    const tag = selectedCanvasElement.tagName.toUpperCase();
-    if (["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "BLOCKQUOTE"].includes(tag)) {
-      setActiveGroupId("textColor");
-    }
-  }, [isEditingText, selectedCanvasElement]);
+  }, [isEditingText, schema]);
 
   // Detect if user selected a button on canvas
   const selectedButtonElement = useMemo(() => {
