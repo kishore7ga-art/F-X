@@ -577,7 +577,7 @@ export function EditorStudio({
   }, []);
 
   /**
-   * Where the floating dock currently is ("top" when editing text so the toolbar appears up top).
+   * Where the floating dock currently is (default "bottom").
    */
   const [dockPosition, setDockPosition] = useState<"bottom" | "top" | "left" | "right">("bottom");
 
@@ -599,12 +599,9 @@ export function EditorStudio({
     },
     showToast: showToastNotification,
     onStartTextEditing: (_element, sectionIndex) => {
-      setDockPosition("top");
       openCustomToolbar(sectionIndex);
     },
-    onFinishTextEditing: () => {
-      setDockPosition("bottom");
-    },
+    onFinishTextEditing: () => {},
     onSelectButton: (_element, sectionIndex) => {
       openCustomToolbar(sectionIndex);
     },
