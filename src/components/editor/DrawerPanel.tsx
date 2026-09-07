@@ -131,51 +131,17 @@ export function DrawerPanel({
     }
   }, [customThemeTokens]);
 
-  const [activeColorTarget, setActiveColorTarget] = useState<"primary" | "secondary">("primary");
+  const currentAccentColor = customTokens.primary || customTokens.accent || "#000000";
 
-  const currentPrimaryColor = customTokens.primary || customTokens.accent || "#000000";
-  const currentSecondaryColor = customTokens.secondary || "#2563eb";
-
-  const handleApplyColor = (target: "primary" | "secondary", newHex: string) => {
-    const nextPrimary = target === "primary" ? newHex : currentPrimaryColor;
-    const nextSecondary = target === "secondary" ? newHex : currentSecondaryColor;
-
-    const primContrast = calculateOppositeContrast(nextPrimary);
-    const secContrast = calculateOppositeContrast(nextSecondary);
-
+  const handleApplyAccentColor = (newHex: string) => {
+    const contrast = calculateOppositeContrast(newHex);
     const updated: EditorThemeTokens = {
       ...customTokens,
-      primary: nextPrimary,
-      accent: nextPrimary,
-      accentSoft: primContrast.softBackground,
-      onAccent: primContrast.textColor,
-      accentBorder: primContrast.borderColor,
-      secondary: nextSecondary,
-      onSecondary: secContrast.textColor,
-      secondaryBorder: secContrast.borderColor,
-    };
-    setCustomTokens(updated);
-    onCustomThemeChange?.(updated);
-    onPaletteSelect?.("custom");
-  };
-
-  const handleSwapColors = () => {
-    const nextPrimary = currentSecondaryColor;
-    const nextSecondary = currentPrimaryColor;
-
-    const primContrast = calculateOppositeContrast(nextPrimary);
-    const secContrast = calculateOppositeContrast(nextSecondary);
-
-    const updated: EditorThemeTokens = {
-      ...customTokens,
-      primary: nextPrimary,
-      accent: nextPrimary,
-      accentSoft: primContrast.softBackground,
-      onAccent: primContrast.textColor,
-      accentBorder: primContrast.borderColor,
-      secondary: nextSecondary,
-      onSecondary: secContrast.textColor,
-      secondaryBorder: secContrast.borderColor,
+      primary: newHex,
+      accent: newHex,
+      accentSoft: contrast.softBackground,
+      onAccent: contrast.textColor,
+      accentBorder: contrast.borderColor,
     };
     setCustomTokens(updated);
     onCustomThemeChange?.(updated);
@@ -592,357 +558,225 @@ export function DrawerPanel({
             </div>
           )}
 
-          {/* COLORS TAB - SINGLE UNIFIED COLOR PLATE */}
+          {/* COLORS TAB */}
           {activeTab === "colors" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* SECTION 1: WHITE & BLACK / BLACK & WHITE PRESETS */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {DEFAULT_DUAL_THEMES.map((theme) => {
+                  const isSelected = activePaletteId === theme.id;
+                  return (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      onClick={() => handleSelectPalette(theme.id, theme.name)}
+                      aria-pressed={isSelected}
+                      style={{
+                        padding: "10px 14px",
+                        borderRadius: "12px",
+                        backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
+                        border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        textAlign: "left",
+                        width: "100%",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: theme.swatch.base,
+                              border: theme.swatch.base === "#ffffff" ? "1px solid #cbd5e1" : "1px solid #000000",
+                              display: "inline-block",
+                            }}
+                          />
+                          <span
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: theme.swatch.accent,
+                              border: theme.swatch.accent === "#ffffff" ? "1px solid #cbd5e1" : "1px solid #000000",
+                              display: "inline-block",
+                            }}
+                          />
+                        </div>
+                        <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
+                          {theme.name}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <div style={{ width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Check style={{ width: "12px", height: "12px", color: "#ffffff", strokeWidth: 3 }} />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* SECTION 2: CUSTOMIZE ACCENT COLOR */}
               <div
                 style={{
                   border: "1px solid #e2e8f0",
                   borderRadius: "14px",
-                  padding: "14px",
+                  padding: "12px",
                   backgroundColor: "#ffffff",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "12px",
+                  gap: "10px",
                 }}
               >
-                {/* Plate Header */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                    <Palette style={{ width: "16px", height: "16px", color: "#0f172a" }} />
-                    <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
-                      Color Palette
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Palette style={{ width: "14px", height: "14px", color: "#0f172a" }} />
+                    <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>
+                      Customize Accent Color
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleSwapColors}
-                    title="Swap Primary and Secondary colors"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      color: "#475569",
-                      backgroundColor: "#f1f5f9",
-                      border: "1px solid #cbd5e1",
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <ArrowLeftRight style={{ width: "12px", height: "12px" }} />
-                    <span>Swap</span>
-                  </button>
+                  {activePaletteId === "custom" && (
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        fontWeight: 800,
+                        color: "#16a34a",
+                        backgroundColor: "#dcfce7",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      Active
+                    </span>
+                  )}
                 </div>
 
-                {/* The Two Colors on the Plate: Click either color to customize */}
+                {/* The Box & Hex Input */}
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "8px",
-                  }}
-                >
-                  {/* Primary Color Button */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveColorTarget("primary")}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "10px 6px",
-                      borderRadius: "10px",
-                      border: activeColorTarget === "primary" ? "2px solid #2563eb" : "1.5px solid #e2e8f0",
-                      backgroundColor: activeColorTarget === "primary" ? "#eff6ff" : "#f8fafc",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      boxShadow: activeColorTarget === "primary" ? "0 2px 6px rgba(37,99,235,0.15)" : "none",
-                      outline: "none",
-                    }}
-                  >
-                    <div style={{ position: "relative" }}>
-                      <span
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "50%",
-                          backgroundColor: currentPrimaryColor,
-                          border: currentPrimaryColor.toLowerCase() === "#ffffff" ? "2px solid #cbd5e1" : "2px solid #ffffff",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
-                          display: "block",
-                        }}
-                      />
-                      {activeColorTarget === "primary" && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            bottom: "-2px",
-                            right: "-2px",
-                            width: "14px",
-                            height: "14px",
-                            borderRadius: "50%",
-                            backgroundColor: "#2563eb",
-                            color: "#ffffff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                          }}
-                        >
-                          <Check style={{ width: "9px", height: "9px", strokeWidth: 3 }} />
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          color: activeColorTarget === "primary" ? "#1e40af" : "#0f172a",
-                        }}
-                      >
-                        Primary
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "10px",
-                          fontFamily: "monospace",
-                          fontWeight: 700,
-                          color: "#64748b",
-                          marginTop: "1px",
-                        }}
-                      >
-                        {currentPrimaryColor}
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Secondary Color Button */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveColorTarget("secondary")}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "10px 6px",
-                      borderRadius: "10px",
-                      border: activeColorTarget === "secondary" ? "2px solid #2563eb" : "1.5px solid #e2e8f0",
-                      backgroundColor: activeColorTarget === "secondary" ? "#eff6ff" : "#f8fafc",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease",
-                      boxShadow: activeColorTarget === "secondary" ? "0 2px 6px rgba(37,99,235,0.15)" : "none",
-                      outline: "none",
-                    }}
-                  >
-                    <div style={{ position: "relative" }}>
-                      <span
-                        style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "50%",
-                          backgroundColor: currentSecondaryColor,
-                          border: currentSecondaryColor.toLowerCase() === "#ffffff" ? "2px solid #cbd5e1" : "2px solid #ffffff",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
-                          display: "block",
-                        }}
-                      />
-                      {activeColorTarget === "secondary" && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            bottom: "-2px",
-                            right: "-2px",
-                            width: "14px",
-                            height: "14px",
-                            borderRadius: "50%",
-                            backgroundColor: "#2563eb",
-                            color: "#ffffff",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                          }}
-                        >
-                          <Check style={{ width: "9px", height: "9px", strokeWidth: 3 }} />
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          color: activeColorTarget === "secondary" ? "#1e40af" : "#0f172a",
-                        }}
-                      >
-                        Secondary
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "10px",
-                          fontFamily: "monospace",
-                          fontWeight: 700,
-                          color: "#64748b",
-                          marginTop: "1px",
-                        }}
-                      >
-                        {currentSecondaryColor}
-                      </div>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Customization Controls for the Clicked Color */}
-                <div
-                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 8px",
+                    borderRadius: "10px",
                     backgroundColor: "#f8fafc",
                     border: "1px solid #e2e8f0",
-                    borderRadius: "10px",
-                    padding: "10px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <span
-                        style={{
-                          width: "8px",
-                          height: "8px",
-                          borderRadius: "50%",
-                          backgroundColor: activeColorTarget === "primary" ? currentPrimaryColor : currentSecondaryColor,
-                          display: "inline-block",
-                          border: "1px solid rgba(0,0,0,0.2)",
-                        }}
-                      />
-                      <span style={{ fontSize: "11px", fontWeight: 800, color: "#0f172a" }}>
-                        Edit {activeColorTarget === "primary" ? "Primary" : "Secondary"}
-                      </span>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      {/* Native Color Picker Trigger */}
-                      <label
-                        style={{
-                          position: "relative",
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          backgroundColor: activeColorTarget === "primary" ? currentPrimaryColor : currentSecondaryColor,
-                          border: "1px solid #cbd5e1",
-                          cursor: "pointer",
-                          display: "inline-block",
-                          overflow: "hidden",
-                          boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                        }}
-                        title="Click to open color picker"
-                      >
-                        <input
-                          type="color"
-                          value={
-                            (activeColorTarget === "primary" ? currentPrimaryColor : currentSecondaryColor).startsWith("#")
-                              ? (activeColorTarget === "primary" ? currentPrimaryColor : currentSecondaryColor)
-                              : "#2563eb"
-                          }
-                          onChange={(e) => handleApplyColor(activeColorTarget, e.target.value)}
-                          style={{
-                            opacity: 0,
-                            width: "100%",
-                            height: "100%",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            cursor: "pointer",
-                          }}
-                        />
-                      </label>
-
-                      {/* Hex text input */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    {/* The Box */}
+                    <label
+                      style={{
+                        position: "relative",
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "8px",
+                        backgroundColor: currentAccentColor,
+                        border: currentAccentColor.toLowerCase() === "#ffffff" ? "2px solid #cbd5e1" : "2px solid #ffffff",
+                        boxShadow: "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
+                        cursor: "pointer",
+                        display: "block",
+                        flexShrink: 0,
+                      }}
+                      title="Click to pick any custom color"
+                    >
                       <input
-                        type="text"
-                        value={activeColorTarget === "primary" ? currentPrimaryColor : currentSecondaryColor}
-                        onChange={(e) => handleApplyColor(activeColorTarget, e.target.value)}
-                        maxLength={9}
+                        type="color"
+                        value={currentAccentColor.startsWith("#") ? currentAccentColor : "#2563eb"}
+                        onChange={(e) => handleApplyAccentColor(e.target.value)}
                         style={{
-                          width: "72px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          border: "1px solid #cbd5e1",
-                          padding: "0 4px",
-                          fontSize: "11px",
-                          fontFamily: "monospace",
-                          fontWeight: 700,
-                          color: "#0f172a",
-                          backgroundColor: "#ffffff",
-                          textAlign: "center",
+                          opacity: 0,
+                          width: "100%",
+                          height: "100%",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          cursor: "pointer",
                         }}
                       />
-                    </div>
+                    </label>
+
+                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>
+                      Brand Accent
+                    </span>
                   </div>
 
-                  {/* Circular Swatches Palette (Grid 6x2) */}
-                  <div
+                  {/* Hex Input */}
+                  <input
+                    type="text"
+                    value={currentAccentColor}
+                    onChange={(e) => handleApplyAccentColor(e.target.value)}
+                    maxLength={9}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(6, 1fr)",
-                      gap: "6px",
-                      paddingTop: "2px",
+                      width: "80px",
+                      height: "28px",
+                      borderRadius: "6px",
+                      border: "1px solid #cbd5e1",
+                      padding: "0 6px",
+                      fontSize: "11px",
+                      fontFamily: "monospace",
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      backgroundColor: "#ffffff",
+                      textAlign: "center",
                     }}
-                  >
-                    {CURATED_ACCENT_SWATCHES.map((swatch) => {
-                      const activeColor = activeColorTarget === "primary" ? currentPrimaryColor : currentSecondaryColor;
-                      const isSelected = activeColor.toLowerCase() === swatch.hex.toLowerCase();
-                      return (
-                        <button
-                          key={swatch.hex}
-                          type="button"
-                          onClick={() => handleApplyColor(activeColorTarget, swatch.hex)}
-                          title={`${swatch.name} (${swatch.hex})`}
-                          style={{
-                            width: "100%",
-                            aspectRatio: "1/1",
-                            borderRadius: "50%",
-                            backgroundColor: swatch.hex,
-                            border: isSelected
-                              ? "2.5px solid #0f172a"
-                              : swatch.hex.toLowerCase() === "#ffffff"
-                              ? "1px solid #cbd5e1"
-                              : "2px solid #ffffff",
-                            boxShadow: isSelected
-                              ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
-                              : "0 1px 3px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
-                            cursor: "pointer",
-                            transform: isSelected ? "scale(1.1)" : "scale(1)",
-                            transition: "all 0.15s ease",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: 0,
-                          }}
-                        >
-                          {isSelected && (
-                            <Check
-                              style={{
-                                width: "11px",
-                                height: "11px",
-                                color: calculateOppositeContrast(swatch.hex).textColor,
-                                strokeWidth: 3,
-                              }}
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  />
+                </div>
+
+                {/* The Circle Shape Color Palette Swatches */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {CURATED_ACCENT_SWATCHES.map((swatch) => {
+                    const isSelected = currentAccentColor.toLowerCase() === swatch.hex.toLowerCase();
+                    return (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        onClick={() => handleApplyAccentColor(swatch.hex)}
+                        title={swatch.name}
+                        style={{
+                          width: "26px",
+                          height: "26px",
+                          borderRadius: "50%",
+                          backgroundColor: swatch.hex,
+                          border: isSelected ? "2.5px solid #0f172a" : swatch.hex.toLowerCase() === "#ffffff" ? "1px solid #cbd5e1" : "2px solid #ffffff",
+                          boxShadow: isSelected
+                            ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
+                            : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
+                          cursor: "pointer",
+                          transform: isSelected ? "scale(1.1)" : "scale(1)",
+                          transition: "all 0.15s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {isSelected && (
+                          <Check
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              color: calculateOppositeContrast(swatch.hex).textColor,
+                              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.6))",
+                            }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
