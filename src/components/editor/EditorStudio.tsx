@@ -81,6 +81,8 @@ import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
+import { ButtonToolbar } from "./ButtonToolbar";
+import { colorToHex, sanitizeCleanDom } from "./canvas/useCanvaInteractions";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
 const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
@@ -634,6 +636,58 @@ export function EditorStudio({
     locationName: string;
   } | null>(null);
 
+  // Right-Click Button Styling Toolbar State
+  const [buttonPopup, setButtonPopup] = useState<{
+    sectionIndex: number;
+    targetElement: HTMLElement;
+    radius: string;
+    bgColor: string;
+    textColor: string;
+  } | null>(null);
+
+  const handleUpdateButtonStyles = useCallback(
+    (newProps: { radius?: string; bgColor?: string; textColor?: string }) => {
+      setButtonPopup((prev) => {
+        if (!prev) return null;
+        const updated = {
+          ...prev,
+          ...(newProps.radius !== undefined ? { radius: newProps.radius } : null),
+          ...(newProps.bgColor !== undefined ? { bgColor: newProps.bgColor } : null),
+          ...(newProps.textColor !== undefined ? { textColor: newProps.textColor } : null),
+        };
+
+        // Apply live style to DOM element immediately
+        if (newProps.radius !== undefined) prev.targetElement.style.borderRadius = newProps.radius;
+        if (newProps.bgColor !== undefined) prev.targetElement.style.backgroundColor = newProps.bgColor;
+        if (newProps.textColor !== undefined) prev.targetElement.style.color = newProps.textColor;
+
+        // Sync section HTML
+        const targetSec = sections[prev.sectionIndex];
+        if (targetSec) {
+          const secContainer = document.querySelector(`[data-xite-section="${targetSec.id}"]`) as HTMLElement | null;
+          if (secContainer) {
+            const canvasBox = (secContainer.querySelector(".section-canvas-box") ||
+              secContainer.querySelector("header, section, footer, main") ||
+              secContainer) as HTMLElement;
+            const cleanHtml = sanitizeCleanDom(canvasBox);
+            if (cleanHtml) {
+              setSectionsWithHistory((current) =>
+                current.map((s, i) =>
+                  i === prev.sectionIndex
+                    ? { ...s, code: recomposeSectionCode(s.code, cleanHtml) }
+                    : s,
+                ),
+              );
+            }
+          }
+        }
+
+        return updated;
+      });
+    },
+    [sections, setSectionsWithHistory],
+  );
+
   // Backward compatibility alias for legacy logoPopup state access
   const logoPopup = imagePopup;
   const setLogoPopup = (val: any) => {
@@ -1053,6 +1107,15 @@ export function EditorStudio({
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
+      if (buttonPopup) {
+        const isInsideButtonToolbar =
+          target.closest('[aria-label="Button editing toolbar"]') !== null ||
+          target.closest('button, a, [role="button"]') === buttonPopup.targetElement;
+        if (!isInsideButtonToolbar) {
+          setButtonPopup(null);
+        }
+      }
+
       if (customToolbarState.isOpen || inPlaceEditor.isEditingText) {
         const isInsideSectionToolbar =
           target.closest('[role="dialog"]') !== null ||
@@ -1099,6 +1162,7 @@ export function EditorStudio({
       document.removeEventListener("mousedown", handleDocumentMouseDown);
     };
   }, [
+    buttonPopup,
     customToolbarState.isOpen,
     customToolbarState.sectionIndex,
     activeSectionIndex,
@@ -1382,8 +1446,40 @@ export function EditorStudio({
      * 2. Select and highlight the target section.
      * 3. Display the custom multi-option edit toolbar anchored/docked for this section.
      */
-    e.preventDefault();
-    e.stopPropagation();
+    // 🔘 Button Right-Click Detection: Only open the dedicated Button Toolbar when right-clicking any button
+    const btnElem = (
+      target.closest("button, [role='button'], .btn, [class*='btn'], [class*='button'], [class*='give'], [class*='apply'], [class*='cta']") ||
+      (target.closest("a") && (
+        target.closest("a")!.classList.value.toLowerCase().includes("btn") ||
+        target.closest("a")!.classList.value.toLowerCase().includes("button") ||
+        window.getComputedStyle(target.closest("a")!).backgroundColor !== "rgba(0, 0, 0, 0)" ||
+        window.getComputedStyle(target.closest("a")!).borderRadius !== "0px"
+      ) ? target.closest("a") : null)
+    ) as HTMLElement | null;
+
+    if (btnElem) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const comp = window.getComputedStyle(btnElem);
+      const bg = comp.backgroundColor || "#2563eb";
+      const fg = comp.color || "#ffffff";
+      const rad = comp.borderRadius || "8px";
+
+      setActiveSectionIndex(sectionIndex);
+      closeCustomToolbar();
+      setImagePopup(null);
+      setMapPopup(null);
+
+      setButtonPopup({
+        sectionIndex,
+        targetElement: btnElem,
+        radius: rad,
+        bgColor: colorToHex(bg),
+        textColor: colorToHex(fg),
+      });
+      return;
+    }
 
     // Select and highlight this specific section
     setActiveSectionIndex(sectionIndex);
@@ -1823,10 +1919,14 @@ export function EditorStudio({
     [customToolbarState.sectionIndex, activeSectionIndex, setSectionsWithHistory],
   );
 
-  /** Escape dismisses active inline text edit, custom edit toolbar, or clears selection. */
+  /** Escape dismisses active inline text edit, button toolbar, custom edit toolbar, or clears selection. */
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (buttonPopup) {
+        setButtonPopup(null);
+        return;
+      }
       if (inPlaceEditor.isEditingText) {
         event.preventDefault();
         event.stopPropagation();
@@ -1852,7 +1952,7 @@ export function EditorStudio({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [customToolbarState.isOpen, activeSectionIndex, closeCustomToolbar, clearSelection, inPlaceEditor.isEditingText, inPlaceEditor.finishInlineTextEditing]);
+  }, [buttonPopup, customToolbarState.isOpen, activeSectionIndex, closeCustomToolbar, clearSelection, inPlaceEditor.isEditingText, inPlaceEditor.finishInlineTextEditing]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-y-auto">
@@ -2375,6 +2475,19 @@ export function EditorStudio({
             onDockPositionChange={setDockPosition}
           />
         )
+      )}
+
+      {/* 🔘 Dedicated Right-Click Button Styling Toolbar */}
+      {buttonPopup && (
+        <ButtonToolbar
+          radius={buttonPopup.radius}
+          bgColor={buttonPopup.bgColor}
+          textColor={buttonPopup.textColor}
+          onChangeRadius={(radius) => handleUpdateButtonStyles({ radius })}
+          onChangeBgColor={(bgColor) => handleUpdateButtonStyles({ bgColor })}
+          onChangeTextColor={(textColor) => handleUpdateButtonStyles({ textColor })}
+          onClose={() => setButtonPopup(null)}
+        />
       )}
 
 

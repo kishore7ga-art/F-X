@@ -5,11 +5,7 @@ import { useMemo, useState } from "react";
 import {
   DEFAULT_DUAL_THEMES,
   EDITOR_FONTS,
-  TRENDING_ALGORITHMIC_PALETTES,
-  generateHarmonicPalette,
-  generateRandomHarmonicPalette,
   type EditorThemeTokens,
-  type HarmonyMode,
 } from "@/lib/editor-themes";
 import {
   X,
@@ -29,11 +25,22 @@ import {
   Check,
   Trash2,
   FileText,
-  Sparkles,
-  Sliders,
-  RotateCcw,
-  Wand2,
 } from "lucide-react";
+
+const CURATED_ACCENT_SWATCHES = [
+  { name: "Emerald Green", hex: "#10b981" },
+  { name: "Royal Blue", hex: "#2563eb" },
+  { name: "Electric Indigo", hex: "#6366f1" },
+  { name: "Vibrant Violet", hex: "#8b5cf6" },
+  { name: "Coral Red", hex: "#ef4444" },
+  { name: "Sunset Orange", hex: "#f97316" },
+  { name: "Golden Amber", hex: "#f59e0b" },
+  { name: "Sky Cyan", hex: "#06b6d4" },
+  { name: "Rose Pink", hex: "#f43f5e" },
+  { name: "Deep Teal", hex: "#0d9488" },
+  { name: "Classic Gold", hex: "#d97706" },
+  { name: "Pure White", hex: "#ffffff" },
+];
 
 interface DrawerPanelProps {
   isOpen: boolean;
@@ -115,46 +122,24 @@ export function DrawerPanel({
     return customThemeTokens ?? DEFAULT_DUAL_THEMES[0]!.tokens;
   });
 
-  const [generatorSeed, setGeneratorSeed] = useState("#2563eb");
-  const [generatorHarmony, setGeneratorHarmony] = useState<HarmonyMode>("complementary");
-  const [generatorIsDark, setGeneratorIsDark] = useState(true);
-
   useMemo(() => {
     if (customThemeTokens) {
       setCustomTokens(customThemeTokens);
     }
   }, [customThemeTokens]);
 
-  const handleUpdateCustomToken = (tokenKey: keyof EditorThemeTokens, newHex: string) => {
-    const updated = { ...customTokens, [tokenKey]: newHex };
+  const currentAccentColor = customTokens.accent || "#2563eb";
+
+  const handleApplyAccentColor = (newHex: string) => {
+    const softHex = newHex.startsWith("#") && newHex.length === 7 ? `${newHex}26` : "rgba(37,99,235,0.15)";
+    const updated: EditorThemeTokens = {
+      ...customTokens,
+      accent: newHex,
+      accentSoft: softHex,
+    };
     setCustomTokens(updated);
     onCustomThemeChange?.(updated);
     onPaletteSelect?.("custom");
-  };
-
-  const handleGenerateHarmonic = () => {
-    const generated = generateHarmonicPalette(generatorSeed, generatorHarmony, generatorIsDark);
-    setCustomTokens(generated);
-    onCustomThemeChange?.(generated);
-    onPaletteSelect?.("custom");
-    showNotification(`Generated ${generatorHarmony} palette!`);
-  };
-
-  const handleRandomHarmonic = () => {
-    const random = generateRandomHarmonicPalette();
-    setCustomTokens(random.tokens);
-    setGeneratorSeed(random.tokens.accent);
-    onCustomThemeChange?.(random.tokens);
-    onPaletteSelect?.("custom");
-    showNotification(`Generated "${random.name}" palette!`);
-  };
-
-  const handleApplyTrending = (palette: (typeof TRENDING_ALGORITHMIC_PALETTES)[number]) => {
-    setCustomTokens(palette.tokens);
-    setGeneratorSeed(palette.tokens.accent);
-    onCustomThemeChange?.(palette.tokens);
-    onPaletteSelect?.("custom");
-    showNotification(`Applied "${palette.name}" palette!`);
   };
 
   /**
@@ -301,6 +286,11 @@ export function DrawerPanel({
    */
   const handleSelectPalette = (paletteId: string, paletteName: string) => {
     onPaletteSelect?.(paletteId);
+    const selectedTheme = DEFAULT_DUAL_THEMES.find((t) => t.id === paletteId);
+    if (selectedTheme) {
+      setCustomTokens(selectedTheme.tokens);
+      onCustomThemeChange?.(selectedTheme.tokens);
+    }
     showNotification(`Applied theme: ${paletteName}`);
   };
 
@@ -644,7 +634,7 @@ export function DrawerPanel({
                 </div>
               </div>
 
-              {/* SECTION 2: CUSTOM COLOR ADJUSTERS */}
+              {/* SECTION 2: SINGLE COLOR PALETTE CUSTOMIZATION */}
               <div
                 style={{
                   border: "1px solid #e2e8f0",
@@ -658,9 +648,9 @@ export function DrawerPanel({
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Sliders style={{ width: "14px", height: "14px", color: "#0f172a" }} />
+                    <Palette style={{ width: "14px", height: "14px", color: "#0f172a" }} />
                     <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>
-                      Customize Colors (வண்ண தேர்வு)
+                      Customize Accent Color
                     </span>
                   </div>
                   {activePaletteId === "custom" && (
@@ -680,376 +670,138 @@ export function DrawerPanel({
                 </div>
 
                 <p style={{ fontSize: "11px", color: "#64748b", margin: 0, lineHeight: 1.4 }}>
-                  Adjust individual colors using the color swatches or Hex input:
+                  Pick your brand accent color using the color box or the circle swatches:
                 </p>
 
-                {/* Adjuster Rows */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {(
-                    [
-                      { key: "accent" as const, label: "Brand Accent", desc: "Buttons & active states" },
-                      { key: "accentSoft" as const, label: "Accent Soft", desc: "Hover & badge highlights" },
-                      { key: "surface" as const, label: "Page Background", desc: "Main canvas background" },
-                      { key: "surfaceRaised" as const, label: "Card / Panel", desc: "Cards & elevated blocks" },
-                      { key: "text" as const, label: "Main Text", desc: "Headlines & copy" },
-                      { key: "textMuted" as const, label: "Muted Text", desc: "Secondary text & captions" },
-                      { key: "header" as const, label: "Header & Nav", desc: "Top navigation bar" },
-                    ] as const
-                  ).map((item) => {
-                    const currentColor = customTokens[item.key] || "#000000";
-                    const hexValue = currentColor.startsWith("#") ? currentColor : "#000000";
-
-                    return (
-                      <div
-                        key={item.key}
+                {/* The Box & Hex Input */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 10px",
+                    borderRadius: "12px",
+                    backgroundColor: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {/* The Box */}
+                    <label
+                      style={{
+                        position: "relative",
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "10px",
+                        backgroundColor: currentAccentColor,
+                        border: "2px solid #ffffff",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
+                        cursor: "pointer",
+                        display: "block",
+                        flexShrink: 0,
+                      }}
+                      title="Click to pick any custom color"
+                    >
+                      <input
+                        type="color"
+                        value={currentAccentColor.startsWith("#") ? currentAccentColor : "#2563eb"}
+                        onChange={(e) => handleApplyAccentColor(e.target.value)}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "6px 8px",
-                          borderRadius: "10px",
-                          backgroundColor: "#f8fafc",
-                          border: "1px solid #f1f5f9",
-                        }}
-                      >
-                        <div style={{ display: "flex", flexDirection: "column" }}>
-                          <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>{item.label}</span>
-                          <span style={{ fontSize: "10px", color: "#64748b" }}>{item.desc}</span>
-                        </div>
-
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          {/* Interactive Color Box */}
-                          <label
-                            style={{
-                              position: "relative",
-                              width: "30px",
-                              height: "30px",
-                              borderRadius: "8px",
-                              backgroundColor: currentColor,
-                              border: "1.5px solid #cbd5e1",
-                              cursor: "pointer",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
-                              display: "block",
-                              flexShrink: 0,
-                            }}
-                            title={`Click to pick ${item.label}`}
-                          >
-                            <input
-                              type="color"
-                              value={hexValue}
-                              onChange={(e) => handleUpdateCustomToken(item.key, e.target.value)}
-                              style={{
-                                opacity: 0,
-                                width: "100%",
-                                height: "100%",
-                                position: "absolute",
-                                top: 0,
-                                left: 0,
-                                cursor: "pointer",
-                              }}
-                            />
-                          </label>
-
-                          {/* Hex Input */}
-                          <input
-                            type="text"
-                            value={currentColor}
-                            onChange={(e) => handleUpdateCustomToken(item.key, e.target.value)}
-                            maxLength={9}
-                            style={{
-                              width: "72px",
-                              height: "28px",
-                              borderRadius: "6px",
-                              border: "1px solid #cbd5e1",
-                              padding: "0 4px",
-                              fontSize: "11px",
-                              fontFamily: "monospace",
-                              fontWeight: 700,
-                              color: "#0f172a",
-                              backgroundColor: "#ffffff",
-                              textAlign: "center",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Reset Base Buttons */}
-                <div style={{ display: "flex", gap: "6px", marginTop: "2px" }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCustomTokens(DEFAULT_DUAL_THEMES[0]!.tokens);
-                      onCustomThemeChange?.(DEFAULT_DUAL_THEMES[0]!.tokens);
-                      onPaletteSelect?.("custom");
-                      showNotification("Reset to Black & White base");
-                    }}
-                    style={{
-                      flex: 1,
-                      height: "30px",
-                      borderRadius: "8px",
-                      border: "1px solid #e2e8f0",
-                      backgroundColor: "#ffffff",
-                      fontSize: "11px",
-                      fontWeight: 800,
-                      color: "#475569",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Reset (Black)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCustomTokens(DEFAULT_DUAL_THEMES[1]!.tokens);
-                      onCustomThemeChange?.(DEFAULT_DUAL_THEMES[1]!.tokens);
-                      onPaletteSelect?.("custom");
-                      showNotification("Reset to White & Black base");
-                    }}
-                    style={{
-                      flex: 1,
-                      height: "30px",
-                      borderRadius: "8px",
-                      border: "1px solid #e2e8f0",
-                      backgroundColor: "#ffffff",
-                      fontSize: "11px",
-                      fontWeight: 800,
-                      color: "#475569",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Reset (White)
-                  </button>
-                </div>
-              </div>
-
-              {/* SECTION 3: ALGORITHMIC COLOR GENERATOR */}
-              <div
-                style={{
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "16px",
-                  padding: "14px",
-                  backgroundColor: "#ffffff",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Sparkles style={{ width: "14px", height: "14px", color: "#6366f1" }} />
-                    <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>
-                      Harmonic Palette Algorithm
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRandomHarmonic}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      backgroundColor: "#eef2ff",
-                      color: "#4f46e5",
-                      border: "1px solid #c7d2fe",
-                      borderRadius: "8px",
-                      padding: "4px 8px",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      cursor: "pointer",
-                    }}
-                    title="Generate Random Harmonious Palette"
-                  >
-                    <Wand2 style={{ width: "11px", height: "11px" }} />
-                    <span>Shuffle</span>
-                  </button>
-                </div>
-
-                <p style={{ fontSize: "11px", color: "#64748b", margin: 0, lineHeight: 1.4 }}>
-                  Color theory algorithms (HSL color wheel & WCAG contrast) mathematically calculate balanced harmonies.
-                </p>
-
-                {/* Seed Picker & Harmony Selection */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 800, color: "#334155" }}>Seed Base Color:</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <label
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          borderRadius: "6px",
-                          backgroundColor: generatorSeed,
-                          border: "1px solid #cbd5e1",
+                          opacity: 0,
+                          width: "100%",
+                          height: "100%",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
                           cursor: "pointer",
-                          display: "block",
-                          position: "relative",
                         }}
-                      >
-                        <input
-                          type="color"
-                          value={generatorSeed}
-                          onChange={(e) => setGeneratorSeed(e.target.value)}
-                          style={{ opacity: 0, width: "100%", height: "100%", position: "absolute", cursor: "pointer" }}
-                        />
-                      </label>
-                      <span style={{ fontSize: "11px", fontFamily: "monospace", fontWeight: 700, color: "#475569" }}>
-                        {generatorSeed}
+                      />
+                    </label>
+
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>
+                        Brand Accent
+                      </span>
+                      <span style={{ fontSize: "10px", color: "#64748b" }}>
+                        Buttons, links & highlights
                       </span>
                     </div>
                   </div>
 
-                  {/* Harmony Mode Pills */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
-                    {(
-                      [
-                        { id: "complementary", label: "Complementary" },
-                        { id: "analogous", label: "Analogous" },
-                        { id: "triadic", label: "Triadic" },
-                        { id: "monochromatic", label: "Monochrome" },
-                      ] as const
-                    ).map((m) => (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => setGeneratorHarmony(m.id)}
-                        style={{
-                          padding: "6px 4px",
-                          borderRadius: "8px",
-                          fontSize: "10px",
-                          fontWeight: 800,
-                          border: generatorHarmony === m.id ? "1.5px solid #4f46e5" : "1px solid #e2e8f0",
-                          backgroundColor: generatorHarmony === m.id ? "#eef2ff" : "#ffffff",
-                          color: generatorHarmony === m.id ? "#4f46e5" : "#64748b",
-                          cursor: "pointer",
-                        }}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Dark/Light Mode Pill */}
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button
-                      type="button"
-                      onClick={() => setGeneratorIsDark(true)}
-                      style={{
-                        flex: 1,
-                        padding: "5px",
-                        borderRadius: "8px",
-                        fontSize: "10px",
-                        fontWeight: 800,
-                        border: generatorIsDark ? "1.5px solid #0f172a" : "1px solid #e2e8f0",
-                        backgroundColor: generatorIsDark ? "#0f172a" : "#ffffff",
-                        color: generatorIsDark ? "#ffffff" : "#64748b",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Dark Surface
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGeneratorIsDark(false)}
-                      style={{
-                        flex: 1,
-                        padding: "5px",
-                        borderRadius: "8px",
-                        fontSize: "10px",
-                        fontWeight: 800,
-                        border: !generatorIsDark ? "1.5px solid #0f172a" : "1px solid #e2e8f0",
-                        backgroundColor: !generatorIsDark ? "#0f172a" : "#ffffff",
-                        color: !generatorIsDark ? "#ffffff" : "#64748b",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Light Surface
-                    </button>
-                  </div>
-
-                  {/* Generate Button */}
-                  <button
-                    type="button"
-                    onClick={handleGenerateHarmonic}
+                  {/* Hex Input */}
+                  <input
+                    type="text"
+                    value={currentAccentColor}
+                    onChange={(e) => handleApplyAccentColor(e.target.value)}
+                    maxLength={9}
                     style={{
-                      height: "36px",
-                      borderRadius: "10px",
-                      backgroundColor: "#4f46e5",
-                      color: "#ffffff",
-                      fontSize: "12px",
-                      fontWeight: 800,
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px",
-                      boxShadow: "0 2px 4px rgba(79,70,229,0.25)",
+                      width: "80px",
+                      height: "30px",
+                      borderRadius: "8px",
+                      border: "1px solid #cbd5e1",
+                      padding: "0 6px",
+                      fontSize: "11.5px",
+                      fontFamily: "monospace",
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      backgroundColor: "#ffffff",
+                      textAlign: "center",
                     }}
-                  >
-                    <Sparkles style={{ width: "13px", height: "13px" }} />
-                    <span>Generate Harmonic Palette</span>
-                  </button>
+                  />
                 </div>
 
-                {/* Trending Algorithmic Palettes */}
-                <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <span
+                {/* The Circle Shape Color Palette */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    Palette Swatches
+                  </span>
+                  <div
                     style={{
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      color: "#94a3b8",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      padding: "4px 0",
                     }}
                   >
-                    Online / Trending Palettes
-                  </span>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-                    {TRENDING_ALGORITHMIC_PALETTES.map((p) => (
-                      <button
-                        key={p.name}
-                        type="button"
-                        onClick={() => handleApplyTrending(p)}
-                        style={{
-                          padding: "8px",
-                          borderRadius: "10px",
-                          border: "1px solid #e2e8f0",
-                          backgroundColor: "#f8fafc",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
-                          gap: "4px",
-                          cursor: "pointer",
-                          textAlign: "left",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span
-                            style={{
-                              width: "12px",
-                              height: "12px",
-                              borderRadius: "50%",
-                              backgroundColor: p.swatch.base,
-                              border: "1px solid #cbd5e1",
-                            }}
-                          />
-                          <span
-                            style={{
-                              width: "12px",
-                              height: "12px",
-                              borderRadius: "50%",
-                              backgroundColor: p.swatch.accent,
-                              border: "1px solid #cbd5e1",
-                            }}
-                          />
-                        </div>
-                        <span style={{ fontSize: "10px", fontWeight: 800, color: "#0f172a" }}>{p.name}</span>
-                        <span style={{ fontSize: "9px", color: "#64748b" }}>{p.category}</span>
-                      </button>
-                    ))}
+                    {CURATED_ACCENT_SWATCHES.map((swatch) => {
+                      const isSelected = currentAccentColor.toLowerCase() === swatch.hex.toLowerCase();
+                      return (
+                        <button
+                          key={swatch.hex}
+                          type="button"
+                          onClick={() => handleApplyAccentColor(swatch.hex)}
+                          title={swatch.name}
+                          style={{
+                            width: "28px",
+                            height: "28px",
+                            borderRadius: "50%",
+                            backgroundColor: swatch.hex,
+                            border: isSelected ? "3px solid #0f172a" : "2px solid #ffffff",
+                            boxShadow: isSelected
+                              ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
+                              : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
+                            cursor: "pointer",
+                            transform: isSelected ? "scale(1.12)" : "scale(1)",
+                            transition: "all 0.15s ease",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {isSelected && (
+                            <Check
+                              style={{
+                                width: "13px",
+                                height: "13px",
+                                color: swatch.hex.toLowerCase() === "#ffffff" ? "#000000" : "#ffffff",
+                                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.6))",
+                              }}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

@@ -149,7 +149,7 @@ export function colorToHex(color: string): string {
 /**
  * Strips editor-added attributes, temporary styles, and helper nodes from a cloned HTML tree
  */
-function sanitizeCleanDom(node: HTMLElement): string {
+export function sanitizeCleanDom(node: HTMLElement): string {
   const clone = node.cloneNode(true) as HTMLElement;
 
   // Remove editor badges, guides, insertion indicators
