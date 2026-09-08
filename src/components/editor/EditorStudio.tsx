@@ -76,6 +76,7 @@ import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css";
 import { isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
+import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { resolveCategory } from "@/lib/sections/categories";
 import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from "@/lib/interactive-section-runtime";
 import { DrawerPanel } from "./DrawerPanel";
@@ -2136,7 +2137,22 @@ export function EditorStudio({
                       )}
                     </div>
 
-
+                    {/* Canvas Overlay Toggle Widget between Header and Hero */}
+                    {idx === 0 && sections.length > 1 && isHeader && (
+                      <HeaderOverlayDropZone
+                        isOverlaid={isOverlaid}
+                        onToggleOverlay={(enable) => {
+                          const target = sections[0];
+                          if (!target) return;
+                          const updated = toggleHeaderOverlay(target, enable);
+                          setSectionsWithHistory((prev) =>
+                            prev.map((s, i) => (i === 0 ? updated : s)),
+                          );
+                        }}
+                        headerTitle={sec.title || "Header"}
+                        heroTitle={sections[1]?.title || "Hero"}
+                      />
+                    )}
                   </React.Fragment>
                 );
               })}
