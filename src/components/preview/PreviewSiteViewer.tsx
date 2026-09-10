@@ -414,7 +414,7 @@ export function PreviewSiteViewer({
             }),
           }}
           className="w-full relative transition-all group section-wrapper-container"
-          dangerouslySetInnerHTML={{ __html: tokenizeSectionHtml(sectionCanvasHtml(sec.code)) }}
+          dangerouslySetInnerHTML={{ __html: tokenizeSectionHtml(sectionCanvasHtml(sec.code, sec.id)) }}
         />
       );
     });

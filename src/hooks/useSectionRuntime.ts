@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { findSectionTailwindStyle, placeBeforeTailwind } from "@/lib/section-css-fence";
 import { buildSectionRuntimeStylesheet } from "@/lib/section-runtime-stylesheet";
-import { viewportMediaToContainer } from "@/lib/section-runtime";
+import { SECTION_RUNTIME_IMAGE_FALLBACK_SCRIPT, viewportMediaToContainer } from "@/lib/section-runtime";
 import type { SectionItem } from "@/lib/site-sections";
 
 /**
@@ -22,6 +22,20 @@ import type { SectionItem } from "@/lib/site-sections";
  * can ask for the editor's real CSS without rendering the editor.
  */
 const RUNTIME_STYLE_ID = "xite-section-runtime";
+const IMAGE_FALLBACK_ID = "xite-section-image-fallback";
+
+/**
+ * The broken-image marker, installed once per document. The same script the
+ * Admin's iframe carries inline, so a missing asset degrades identically on
+ * every surface: a placeholder box the size the frame gave it, not a collapse.
+ */
+function installImageFallback(): void {
+  if (document.getElementById(IMAGE_FALLBACK_ID)) return;
+  const script = document.createElement("script");
+  script.id = IMAGE_FALLBACK_ID;
+  script.textContent = SECTION_RUNTIME_IMAGE_FALLBACK_SCRIPT;
+  document.head.appendChild(script);
+}
 
 export function useSectionRuntime({
   sections,
@@ -50,6 +64,7 @@ export function useSectionRuntime({
 }) {
   useEffect(() => {
     const head = document.head;
+    installImageFallback();
 
     // Older builds injected one <style> per section. Clear them, or a page that
     // was server-rendered by an older deploy keeps them alongside the new sheet.

@@ -1,0 +1,61 @@
+<style>
+  .blob-about { padding: 64px 24px; background: #fdf8f1; font-family: 'Inter', sans-serif; }
+  .blob-about .blob-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .blob-frame { position: relative; width: 100%; max-width: 460px; aspect-ratio: 513 / 435; }
+  .blob-frame .outline { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .blob-frame .photo { position: absolute; inset: 4%; clip-path: url(#blob-clip); }
+  .blob-frame .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .blob-reveal { animation: blob-in 0s linear both; }
+  @keyframes blob-in { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: none; } }
+  @media (max-width: 900px) { .blob-about .blob-grid { grid-template-columns: 1fr; } }
+</style>
+<section class="blob-about">
+  <div class="blob-grid">
+    <div>
+      <p class="text-orange-600 font-bold tracking-widest text-xs uppercase">About Greenfield</p>
+      <h2 class="text-4xl font-black mt-3 text-slate-900">A campus that grows with you</h2>
+      <p class="mt-4 text-slate-600 leading-relaxed">Founded in 1962, Greenfield University blends a liberal arts core with hands-on research across 40 departments.</p>
+    </div>
+
+    <!-- 1. CSS clip-path on the wrapper, referencing an inline SVG clipPath -->
+    <div class="blob-frame blob-reveal">
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <clipPath id="blob-clip" clipPathUnits="objectBoundingBox">
+            <path d="M0.42,0.03 C0.62,-0.02 0.85,0.08 0.94,0.3 C1.02,0.5 0.96,0.75 0.78,0.88 C0.6,1 0.32,0.98 0.16,0.86 C0.02,0.74 -0.02,0.52 0.04,0.32 C0.1,0.14 0.24,0.07 0.42,0.03 Z"/>
+          </clipPath>
+        </defs>
+      </svg>
+      <div class="photo">
+        <img src="/uploads/campus-quad.jpg" alt="Students on the quad" loading="lazy">
+      </div>
+      <svg class="outline" viewBox="0 0 513 435" fill="none" aria-hidden="true">
+        <path d="M215 14C318-10 436 34 482 130C524 217 494 326 400 383C310 435 166 428 82 376C10 331-10 226 22 139C53 62 124 33 215 14Z" stroke="#e07a10" stroke-width="4"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 2. The same frame as a pure SVG: <image> clipped inside the SVG, and the
+       same clip id used again — the collision case. -->
+  <div class="blob-grid" style="margin-top:48px">
+    <div class="blob-frame">
+      <svg viewBox="0 0 513 435" class="w-full h-full" aria-hidden="true">
+        <defs>
+          <clipPath id="blob-clip-2">
+            <path d="M215 14C318-10 436 34 482 130C524 217 494 326 400 383C310 435 166 428 82 376C10 331-10 226 22 139C53 62 124 33 215 14Z"/>
+          </clipPath>
+        </defs>
+        <image href="/uploads/lab.jpg" width="513" height="435" preserveAspectRatio="xMidYMid slice" clip-path="url(#blob-clip-2)"/>
+        <path d="M215 14C318-10 436 34 482 130C524 217 494 326 400 383C310 435 166 428 82 376C10 331-10 226 22 139C53 62 124 33 215 14Z" stroke="#e07a10" stroke-width="4" fill="none"/>
+      </svg>
+    </div>
+    <div class="blob-frame">
+      <div class="photo">
+        <img src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect width='800' height='600' fill='%233b82f6'/%3E%3C/svg%3E" alt="Library" class="w-full h-full object-cover">
+      </div>
+      <svg class="outline" viewBox="0 0 513 435" fill="none" aria-hidden="true">
+        <path d="M215 14C318-10 436 34 482 130C524 217 494 326 400 383C310 435 166 428 82 376C10 331-10 226 22 139C53 62 124 33 215 14Z" stroke="#e07a10" stroke-width="4"/>
+      </svg>
+    </div>
+  </div>
+</section>

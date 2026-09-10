@@ -219,15 +219,16 @@ interface SectionContentProps {
   code: string;
   sectionId: string;
   isEditing: boolean;
-  canvasHtml: (code: string) => string;
+  canvasHtml: (code: string, sectionId: string) => string;
 }
 
 const SectionContent = React.memo(function SectionContent({
   code,
+  sectionId,
   isEditing,
   canvasHtml,
 }: SectionContentProps) {
-  const html = useMemo(() => canvasHtml(code), [code, canvasHtml]);
+  const html = useMemo(() => canvasHtml(code, sectionId), [code, sectionId, canvasHtml]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -485,7 +486,10 @@ export function EditorStudio({
    * blocks are gone from this markup by design, and the runtime hook tokenises
    * them where it fences them.
    */
-  const canvasHtml = useCallback((code: string) => tokenizeSectionHtml(sectionCanvasHtml(sanitizeCssUrls(code))), []);
+  const canvasHtml = useCallback(
+    (code: string, sectionId: string) => tokenizeSectionHtml(sectionCanvasHtml(sanitizeCssUrls(code), sectionId)),
+    [],
+  );
 
   /** All Google Fonts families, loaded once for the whole editor. */
   useEffect(() => {

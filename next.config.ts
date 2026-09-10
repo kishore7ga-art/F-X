@@ -39,6 +39,18 @@ const nextConfig: NextConfig = {
         source: "/admin/:path*",
         destination: `${backendUrl}/api/v1/admin/:path*`,
       },
+      {
+        /**
+         * Uploaded images. `POST /api/uploads` answers with `/uploads/<file>`, a
+         * path the backend serves — and a section stores it as authored. On a
+         * published site that path was resolved against *this* origin, which
+         * had no such route: every uploaded image was a 404 with a perfectly
+         * reasonable-looking URL, on the site and in the editor, while the
+         * Admin's preview (external URLs only) looked fine.
+         */
+        source: "/uploads/:path*",
+        destination: `${backendUrl}/uploads/:path*`,
+      },
     ];
   },
   async headers() {

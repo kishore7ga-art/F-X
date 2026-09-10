@@ -123,7 +123,7 @@ async function main() {
   for (const width of WIDTHS) {
     const context = await browser.newContext({ viewport: { width, height: 900 } });
 
-    for (const fixture of FIXTURES) {
+    for (const fixture of FIXTURES.filter((f) => !process.env.PARITY_ONLY || f.name === process.env.PARITY_ONLY)) {
       /* ── The Admin: one section, its own document, nothing else in scope. ── */
       const adminPage = await context.newPage();
       await adminPage.setContent(buildSectionPreviewDocument(fixture.code), { waitUntil: "load" });

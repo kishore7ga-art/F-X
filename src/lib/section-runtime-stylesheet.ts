@@ -13,8 +13,11 @@
 import { fenceCssToSection } from "./section-css-fence";
 import { tokenizeCss } from "./editor-themes";
 import {
+  collectSectionRefs,
   extractCssImports,
   extractStylesAndBody,
+  scopeSectionRefs,
+  sectionRefSuffix,
   remapDocumentSelectors,
   sectionResponsiveCss,
   sectionRuntimeCss,
@@ -84,10 +87,13 @@ export function buildSectionRuntimeStylesheet({
        * This is the only copy of that CSS in the document — `sectionCanvasHtml`
        * has already taken the `<style>` block out of the markup.
        */
+      // SVG ids and keyframe names suffixed with the section's id, matching
+      // what `sectionCanvasHtml` did to the markup — see `scopeSectionRefs`.
+      const scoped = scopeSectionRefs(headCss, collectSectionRefs(sec.code || ""), sectionRefSuffix(sec.id));
       parts.push(
         fenceCssToSection(
           viewportMediaToContainer(
-            viewportUnitsToContainer(tokenizeCss(remapDocumentSelectors(headCss, SECTION_BOX_SELECTOR))),
+            viewportUnitsToContainer(tokenizeCss(remapDocumentSelectors(scoped, SECTION_BOX_SELECTOR))),
           ),
           sec.id,
         ),

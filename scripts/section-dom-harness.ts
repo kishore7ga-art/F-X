@@ -144,7 +144,7 @@ export function install({ sections, canvasWidth, scope, surface }: InstallOption
     wrapper.setAttribute("data-xite-section", id);
     wrapper.className = "w-full relative transition-all group section-wrapper-container";
     wrapper.style.position = "relative";
-    const markup = XITE.tokenizeSectionHtml(XITE.sectionCanvasHtml(code));
+    const markup = XITE.tokenizeSectionHtml(XITE.sectionCanvasHtml(code, id));
     if (surface === "editor") {
       const inner = document.createElement("div");
       inner.style.display = "contents";
@@ -172,6 +172,15 @@ export function install({ sections, canvasWidth, scope, surface }: InstallOption
   style.textContent = css;
   document.head.appendChild(style);
   XITE.placeBeforeTailwind(style);
+
+  // What `useSectionRuntime` installs once per document: the same script the
+  // Admin's iframe carries inline, so a missing asset degrades identically.
+  if (!document.getElementById("xite-section-image-fallback")) {
+    const script = document.createElement("script");
+    script.id = "xite-section-image-fallback";
+    script.textContent = XITE.SECTION_RUNTIME_IMAGE_FALLBACK_SCRIPT;
+    document.head.appendChild(script);
+  }
 }
 
 /**
