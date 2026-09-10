@@ -1784,6 +1784,19 @@ export function EditorStudio({
 
   const activeSection = activeSectionIndex !== null ? sections[activeSectionIndex] ?? null : null;
 
+  /** The first section, when it is a header — the only section that can overlay the hero. */
+  const headerSection = useMemo(() => {
+    const first = sections[0];
+    if (!first) return null;
+    const isHeader = first.category === "navbar" || resolveCategory({ title: first.title, code: first.code }) === "navbar";
+    return isHeader ? first : null;
+  }, [sections]);
+  const headerSectionId = headerSection?.id ?? null;
+  const resolveHeaderWrapper = useCallback(
+    () => (headerSectionId ? document.querySelector<HTMLElement>(`[data-xite-section="${headerSectionId}"]`) : null),
+    [headerSectionId],
+  );
+
   const resolvedToolbarSectionIndex =
     customToolbarState.sectionIndex !== null ? customToolbarState.sectionIndex : activeSectionIndex;
   const isSectionPanelOpen =
@@ -1897,6 +1910,21 @@ export function EditorStudio({
 
 
       {/* Main Studio Canvas Workspace */}
+      {/* The header's overlay toggle, outside the canvas frame so it covers nothing in it. */}
+      {sections.length > 1 && headerSection && (
+        <HeaderOverlayDropZone
+          isOverlaid={isHeaderOverlaid(headerSection)}
+          onToggleOverlay={(enable) => {
+            const updated = toggleHeaderOverlay(headerSection, enable);
+            setSectionsWithHistory((prev) => prev.map((s, i) => (i === 0 ? updated : s)));
+          }}
+          resolveHeader={resolveHeaderWrapper}
+          revision={`${headerSection.id}|${sections.length}|${viewport.width}|${canvasScale}|${dockPosition}`}
+          headerTitle={headerSection.title || "Header"}
+          heroTitle={sections[1]?.title || "Hero"}
+        />
+      )}
+
       <SelectionHighlight
         type={elementSelection.selection.type}
         resolveElement={elementSelection.resolveSelectedElement}
@@ -2065,23 +2093,6 @@ export function EditorStudio({
                         isEditing={inPlaceEditor.isEditingSection(sec.id)}
                         canvasHtml={canvasHtml}
                       />
-
-                      {/* Overlay toggle, pinned to the header's top-right corner */}
-                      {idx === 0 && sections.length > 1 && isHeader && (
-                        <HeaderOverlayDropZone
-                          isOverlaid={isOverlaid}
-                          onToggleOverlay={(enable) => {
-                            const target = sections[0];
-                            if (!target) return;
-                            const updated = toggleHeaderOverlay(target, enable);
-                            setSectionsWithHistory((prev) =>
-                              prev.map((s, i) => (i === 0 ? updated : s)),
-                            );
-                          }}
-                          headerTitle={sec.title || "Header"}
-                          heroTitle={sections[1]?.title || "Hero"}
-                        />
-                      )}
 
                       {/* This section occupies space and shows nothing */}
                       {emptySectionIds.has(sec.id) && (
