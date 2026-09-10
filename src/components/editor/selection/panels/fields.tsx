@@ -198,6 +198,51 @@ export function PxField({
   );
 }
 
+/**
+ * A slider for any unit — line height (unitless), letter spacing (em),
+ * opacity — the same shape as `PxField` with the unit and step supplied.
+ */
+export function RangeField({
+  label,
+  value,
+  min,
+  max,
+  step,
+  unit = "",
+  fallback,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  min: number;
+  max: number;
+  step: number;
+  /** Appended to the number on the way out; stripped on the way in. */
+  unit?: string;
+  /** Slider position when the element has no value of its own yet. */
+  fallback: number;
+  onChange: (value: string) => void;
+}) {
+  const parsed = parseFloat(value);
+  const numeric = Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+  const format = (n: number) => `${Number(n.toFixed(3))}${unit}`;
+  return (
+    <Field label={label}>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={numeric}
+        onChange={(e) => onChange(format(Number(e.target.value)))}
+        className="w-20 accent-slate-900 cursor-pointer"
+        aria-label={label}
+      />
+      <TextField value={value || format(fallback)} onCommit={onChange} width="w-[64px]" mono />
+    </Field>
+  );
+}
+
 export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (next: boolean) => void }) {
   return (
     <button

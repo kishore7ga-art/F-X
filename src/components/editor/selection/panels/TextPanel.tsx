@@ -4,7 +4,7 @@ import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from "lucide-react";
 
 import type { TextAlign, TextProps } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { ColorField, Divider, Field, PxField, SelectField, TextField } from "./fields";
+import { ColorField, Divider, PxField, RangeField, SelectField } from "./fields";
 
 const WEIGHTS = [
   { value: "300", label: "Light" },
@@ -56,13 +56,8 @@ export function TextPanel({ tab, props, onChange }: PanelProps<TextProps>) {
   // spacing
   return (
     <>
-      <Field label="Line height">
-        <TextField value={props.lineHeight} placeholder="1.5" onCommit={(lineHeight) => onChange({ lineHeight })} width="w-[64px]" mono />
-      </Field>
-      <Field label="Letter spacing">
-        <TextField value={props.letterSpacing} placeholder="0.02em" onCommit={(letterSpacing) => onChange({ letterSpacing })} width="w-[72px]" mono />
-      </Field>
-      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Double-click the text on the canvas to edit its words</span>
+      <RangeField label="Line height" value={props.lineHeight} min={0.8} max={3} step={0.05} fallback={1.5} onChange={(lineHeight) => onChange({ lineHeight })} />
+      <RangeField label="Letter spacing" value={props.letterSpacing} min={-0.1} max={0.5} step={0.01} unit="em" fallback={0} onChange={(letterSpacing) => onChange({ letterSpacing })} />
     </>
   );
 }
