@@ -78,7 +78,7 @@ import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css
 import { isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
 import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { resolveCategory } from "@/lib/sections/categories";
-import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from "@/lib/interactive-section-runtime";
+import { handleInteractiveSectionClick, attachInteractiveSectionListeners, resetInteractiveState } from "@/lib/interactive-section-runtime";
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
@@ -234,6 +234,9 @@ const SectionContent = React.memo(function SectionContent({
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
+    // A section stored with a menu open (by a build that read the open state
+    // back) is shown closed; the author opens it again with a click.
+    resetInteractiveState(el);
     const playVideos = () => {
       const videos = el.querySelectorAll<HTMLVideoElement>("video");
       videos.forEach((v) => {
@@ -1236,6 +1239,7 @@ export function EditorStudio({
           // Remove editor badges or outline artifacts
           const badges = clone.querySelectorAll(".pointer-events-none");
           badges.forEach((b) => b.remove());
+          resetInteractiveState(clone);
 
           const editables = clone.querySelectorAll("[contenteditable]");
           editables.forEach((el) => {

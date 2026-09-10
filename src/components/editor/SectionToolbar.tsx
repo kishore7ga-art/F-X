@@ -84,6 +84,7 @@ import { SingleRowButtonPanel } from "./ButtonSettingsControl";
 import { SingleRowBackgroundPanel } from "./BackgroundSettingsControl";
 import { SingleRowTextColorPanel } from "./TextColorSettingsControl";
 import { recomposeSectionCode } from "@/lib/section-runtime";
+import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 
 type Props = {
   section: { id: string; title: string; code: string; category: string };
@@ -464,6 +465,7 @@ export function SectionToolbar({
 
       const clone = canvasBox.cloneNode(true) as HTMLElement;
       clone.querySelectorAll(".pointer-events-none, .xite-editor-ui, [data-xite-indicator]").forEach((el) => el.remove());
+      resetInteractiveState(clone);
       clone.querySelectorAll("[contenteditable], .xite-text-editing, [data-xite-selected], [data-xite-hover]").forEach((el) => {
         const htmlEl = el as HTMLElement;
         htmlEl.removeAttribute("contenteditable");

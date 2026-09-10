@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { SnapGuide, DistanceBadge } from "@/stores/useVisualCanvasStore";
 import { recomposeSectionCode } from "@/lib/section-runtime";
+import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 
 export interface SelectedElementInfo {
   tag: string;
@@ -156,6 +157,9 @@ export function sanitizeCleanDom(node: HTMLElement): string {
   clone.querySelectorAll(".pointer-events-none, .xite-editor-ui, [data-xite-indicator]").forEach((el) => {
     el.remove();
   });
+
+  // A menu opened to look at is not a menu the author wants stored open.
+  resetInteractiveState(clone);
 
   // Clean temporary typing spans and strip zero-width spaces
   clone.querySelectorAll<HTMLElement>("span[data-xite-typing-span]").forEach((s) => {

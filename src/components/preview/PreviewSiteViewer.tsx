@@ -6,6 +6,7 @@ import { Edit3 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
 import { sectionCanvasHtml } from "@/lib/section-runtime";
+import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 import { useViewport } from "@/hooks/useViewport";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { ViewportControl } from "@/components/editor/ViewportControl";
@@ -127,6 +128,12 @@ export function PreviewSiteViewer({
     scope: CANVAS_SCOPE,
     simulatedWidth: isLive ? null : `${viewport.width}px`,
   });
+
+  // A section stored with a menu open — by an editor build that read the
+  // open state back — renders closed. Visitors open menus by clicking them.
+  useEffect(() => {
+    resetInteractiveState(document.querySelector(CANVAS_SCOPE));
+  }, [sections]);
 
   // ─── Section scripts ────────────────────────────────────────────────────────
   // A browser will not run a <script> that arrives through innerHTML, so each

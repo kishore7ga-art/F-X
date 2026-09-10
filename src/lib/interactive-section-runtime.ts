@@ -18,6 +18,66 @@ function getTargetDoc(target?: EventTarget | HTMLElement | null): Document | nul
   return null;
 }
 
+/**
+ * The open state this runtime writes, and nothing else.
+ *
+ * ── Why it has to be undone ────────────────────────────────────────────────
+ *
+ * Opening a mega-menu on the canvas adds `open` / `active` to the nav item
+ * and its panel and sets `display: block` on the wrapper — on the live DOM,
+ * which is exactly what the editor reads a section back out of on its next
+ * edit. So a menu somebody opened to check, and then edited a heading under,
+ * was stored open: permanently open on the canvas, and on the published site,
+ * with no way to close it that survived a reload.
+ *
+ * Each entry mirrors one `classList.add` / `style.display` above. Tabs and
+ * accordions are deliberately absent: a template legitimately starts with its
+ * first tab or FAQ open, and this cannot tell an author's choice from a click.
+ * Overlays — menus, drawers, modals, chat, toasts — have no legitimate
+ * stored-open state, which is what makes them safe to reset.
+ */
+const OPEN_STATE: ReadonlyArray<{ selector: string; classes: string[] }> = [
+  { selector: ".nav-item, .has-drop, .has-dropdown, .dropdown, .wx-dropdown, [data-panel], [data-menu]", classes: ["open", "active-open"] },
+  { selector: ".mega-menu, .niat-panel, .dropdown-panel, .dropdown-menu, .sub-menu, .wx-dropdown-menu, .sc-mega-wrapper, .sc-dropdown-menu", classes: ["active", "open"] },
+  { selector: "#litMegaContainer", classes: ["open"] },
+  { selector: "#litDropWrap", classes: ["active-open"] },
+  {
+    selector:
+      "#mobileDrawer, #muMobileDrawer, #tetrMobileDrawer, #nsMobileDrawer, #niatMobileDrawer, #scMobileDrawer, #litMobileDrawer, #pennNavMenu, .penn-nav-wrap, .mobile-drawer, .mobile-drawer-menu, .mobile-nav, .mobile-menu, .nav-wrap, [id*='mobile-menu'], [id*='mobile-nav']",
+    classes: ["active", "open"],
+  },
+  { selector: "#videoModal, .video-modal", classes: ["active", "open"] },
+  { selector: "#chatDrawer, .chat-drawer", classes: ["active"] },
+  { selector: ".toast, [data-toast]", classes: ["active", "show"] },
+];
+
+/** Wrappers this runtime shows with an inline `display`, which must not be stored. */
+const OPEN_DISPLAY_SELECTOR = "#niatDropdownWrapper, .dropdown-wrapper";
+
+/**
+ * Closes everything the runtime opened, in `root`.
+ *
+ * Called on a *clone* before a section is read back into its stored code, and
+ * on the canvas after a section is (re)rendered — so a section that was
+ * stored open by an older build is shown closed too.
+ */
+export function resetInteractiveState(root: ParentNode | null | undefined): void {
+  if (!root) return;
+  for (const { selector, classes } of OPEN_STATE) {
+    root.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+      // `.dropdown.active` on a nav *link* can be the current-page marker; only
+      // an item that is also `open` is state this runtime wrote.
+      if (selector.startsWith(".nav-item") && !el.classList.contains("open") && !el.classList.contains("active-open")) return;
+      el.classList.remove(...classes);
+      if (el.getAttribute("class") === "") el.removeAttribute("class");
+    });
+  }
+  root.querySelectorAll<HTMLElement>(OPEN_DISPLAY_SELECTOR).forEach((el) => {
+    if (el.style.display === "block") el.style.removeProperty("display");
+    if (!el.getAttribute("style")) el.removeAttribute("style");
+  });
+}
+
 export function handleInteractiveSectionClick(event: MouseEvent | React.MouseEvent): boolean {
   const target = event.target as HTMLElement | null;
   if (!target) return false;
