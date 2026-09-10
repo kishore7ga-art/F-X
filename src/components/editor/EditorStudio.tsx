@@ -82,7 +82,9 @@ import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from
 import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
-import { ButtonToolbar } from "./ButtonToolbar";
+import { useSelectionController } from "./selection/useSelectionController";
+import { ElementToolbar } from "./selection/ElementToolbar";
+import { SelectionHighlight } from "./selection/SelectionHighlight";
 import { colorToHex, sanitizeCleanDom } from "./canvas/useCanvaInteractions";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
@@ -634,59 +636,6 @@ export function EditorStudio({
     locationName: string;
   } | null>(null);
 
-  // Right-Click Button Styling Toolbar State
-  const [buttonPopup, setButtonPopup] = useState<{
-    sectionIndex: number;
-    targetElement: HTMLElement;
-    radius: string;
-    bgColor: string;
-    textColor: string;
-  } | null>(null);
-
-  const handleUpdateButtonStyles = useCallback(
-    (newProps: { radius?: string; bgColor?: string; textColor?: string }) => {
-      setButtonPopup((prev) => {
-        if (!prev) return null;
-        const updated = {
-          ...prev,
-          ...(newProps.radius !== undefined ? { radius: newProps.radius } : null),
-          ...(newProps.bgColor !== undefined ? { bgColor: newProps.bgColor } : null),
-          ...(newProps.textColor !== undefined ? { textColor: newProps.textColor } : null),
-        };
-
-        // Apply live style to DOM element immediately
-        prev.targetElement.setAttribute("data-custom-styled", "true");
-        if (newProps.radius !== undefined) prev.targetElement.style.setProperty("border-radius", newProps.radius, "important");
-        if (newProps.bgColor !== undefined) prev.targetElement.style.setProperty("background-color", newProps.bgColor, "important");
-        if (newProps.textColor !== undefined) prev.targetElement.style.setProperty("color", newProps.textColor, "important");
-
-        // Sync section HTML
-        const targetSec = sections[prev.sectionIndex];
-        if (targetSec) {
-          const secContainer = document.querySelector(`[data-xite-section="${targetSec.id}"]`) as HTMLElement | null;
-          if (secContainer) {
-            const canvasBox = (secContainer.querySelector(".section-canvas-box") ||
-              secContainer.querySelector("header, section, footer, main") ||
-              secContainer) as HTMLElement;
-            const cleanHtml = sanitizeCleanDom(canvasBox);
-            if (cleanHtml) {
-              setSectionsWithHistory((current) =>
-                current.map((s, i) =>
-                  i === prev.sectionIndex
-                    ? { ...s, code: recomposeSectionCode(s.code, cleanHtml) }
-                    : s,
-                ),
-              );
-            }
-          }
-        }
-
-        return updated;
-      });
-    },
-    [sections, setSectionsWithHistory],
-  );
-
   // Backward compatibility alias for legacy logoPopup state access
   const logoPopup = imagePopup;
   const setLogoPopup = (val: any) => {
@@ -781,6 +730,30 @@ export function EditorStudio({
 
     return clean.trim();
   }, []);
+
+  /**
+   * Right-click selection of a card, button, image or text inside a section.
+   *
+   * The section-level right-click (its own toolbar) predates this and stays
+   * in `handleSectionContextMenu`; the controller is asked first and takes the
+   * event only when the click lands on something smaller than the section.
+   * Its writes go through `setSectionsWithHistory` like every other edit, so
+   * an element edit is one undo step and lands in the page's save queue.
+   */
+  const elementSelection = useSelectionController({
+    sections,
+    cleanHtml: cleanCanvasWrapperFromCode,
+    onWriteSection: (sectionId, code) => {
+      setSectionsWithHistory((prev) => prev.map((s) => (s.id === sectionId ? { ...s, code } : s)));
+    },
+    onElementSelected: (sectionIndex) => {
+      if (inPlaceEditor.isEditingText) inPlaceEditor.finishInlineTextEditing(false);
+      setActiveSectionIndex(sectionIndex);
+      closeCustomToolbar();
+      setImagePopup(null);
+      setMapPopup(null);
+    },
+  });
 
   /* ── Themes ──────────────────────────────────────────────────────────────
    *
@@ -1106,15 +1079,6 @@ export function EditorStudio({
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      if (buttonPopup) {
-        const isInsideButtonToolbar =
-          target.closest('[aria-label="Button editing toolbar"]') !== null ||
-          target.closest('button, a, [role="button"]') === buttonPopup.targetElement;
-        if (!isInsideButtonToolbar) {
-          setButtonPopup(null);
-        }
-      }
-
       if (customToolbarState.isOpen || inPlaceEditor.isEditingText) {
         const isInsideSectionToolbar =
           target.closest('[role="dialog"]') !== null ||
@@ -1161,7 +1125,6 @@ export function EditorStudio({
       document.removeEventListener("mousedown", handleDocumentMouseDown);
     };
   }, [
-    buttonPopup,
     customToolbarState.isOpen,
     customToolbarState.sectionIndex,
     activeSectionIndex,
@@ -1445,49 +1408,14 @@ export function EditorStudio({
      * 2. Select and highlight the target section.
      * 3. Display the custom multi-option edit toolbar anchored/docked for this section.
      */
-    // 🔘 Button Right-Click Detection: Only open the dedicated Button Toolbar when right-clicking any button
-    const btnElem = (
-      target.closest("button, [role='button'], input[type='button'], input[type='submit'], .btn, [class*='btn'], [class*='button'], [class*='give'], [class*='apply'], [class*='cta']") ||
-      (() => {
-        const anchor = target.closest("a");
-        if (!anchor) return null;
-        const cls = anchor.className ? String(anchor.className).toLowerCase() : "";
-        if (cls.includes("btn") || cls.includes("button") || cls.includes("cta") || cls.includes("give") || cls.includes("apply")) {
-          return anchor;
-        }
-        const style = window.getComputedStyle(anchor);
-        const bg = style.backgroundColor;
-        const isColored = bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)" && bg !== "rgba(0,0,0,0)";
-        const hasBorder = style.borderWidth && style.borderWidth !== "0px" && style.borderStyle !== "none";
-        const hasRadius = style.borderRadius && style.borderRadius !== "0px";
-        if (isColored || (hasBorder && hasRadius)) {
-          return anchor;
-        }
-        return null;
-      })()
-    ) as HTMLElement | null;
-
-    if (btnElem) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const comp = window.getComputedStyle(btnElem);
-      const bg = comp.backgroundColor || "#2563eb";
-      const fg = comp.color || "#ffffff";
-      const rad = comp.borderRadius || "8px";
-
-      setActiveSectionIndex(sectionIndex);
-      closeCustomToolbar();
-      setImagePopup(null);
-      setMapPopup(null);
-
-      setButtonPopup({
-        sectionIndex,
-        targetElement: btnElem,
-        radius: rad,
-        bgColor: colorToHex(bg),
-        textColor: colorToHex(fg),
-      });
+    /**
+     * Anything smaller than the section — a card, button, image or text — is
+     * the element controller's. Two legacy modals keep their targets: the logo
+     * (it can apply one picture to every logo on the page) and the map iframe.
+     */
+    const isLogoTarget = target.closest('[data-logo="true"], [class*="logo"]') !== null;
+    const isMapElement = target.tagName === "IFRAME" || target.closest("iframe") !== null;
+    if (!isLogoTarget && !isMapElement && elementSelection.handleContextMenu(e, sectionIndex)) {
       return;
     }
 
@@ -1933,10 +1861,6 @@ export function EditorStudio({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (buttonPopup) {
-        setButtonPopup(null);
-        return;
-      }
       if (inPlaceEditor.isEditingText) {
         event.preventDefault();
         event.stopPropagation();
@@ -1962,7 +1886,7 @@ export function EditorStudio({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [buttonPopup, customToolbarState.isOpen, activeSectionIndex, closeCustomToolbar, clearSelection, inPlaceEditor.isEditingText, inPlaceEditor.finishInlineTextEditing]);
+  }, [customToolbarState.isOpen, activeSectionIndex, closeCustomToolbar, clearSelection, inPlaceEditor.isEditingText, inPlaceEditor.finishInlineTextEditing]);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans relative overflow-y-auto">
@@ -1970,11 +1894,25 @@ export function EditorStudio({
 
 
       {/* Main Studio Canvas Workspace */}
+      <SelectionHighlight
+        type={elementSelection.selection.type}
+        resolveElement={elementSelection.resolveSelectedElement}
+        revision={`${elementSelection.selection.selectedId ?? ""}|${
+          sections.find((s) => s.id === elementSelection.selection.sectionId)?.code ?? ""
+        }`}
+      />
+
       <main
         onClick={() => {
           if (inPlaceEditor.isEditingText) {
             inPlaceEditor.finishInlineTextEditing(false);
           }
+          clearSelection();
+        }}
+        onContextMenu={(e) => {
+          // Empty canvas: nothing to configure, so a right-click there deselects.
+          if ((e.target as HTMLElement).closest("[data-xite-section]")) return;
+          elementSelection.clearSelection();
           clearSelection();
         }}
         className={`flex-1 w-full flex flex-col items-stretch justify-start cursor-default min-h-screen bg-slate-100/90 px-4 sm:px-8 ${
@@ -2427,16 +2365,26 @@ export function EditorStudio({
         When SectionToolbar is open, EditorToolbar is completely unmounted, ensuring zero overlap.
       */}
       {!isSettingsOpen && !isDrawerOpen && (
-        buttonPopup ? (
-          /* 🔘 Dedicated Right-Click Button Styling Toolbar (replaces dock toolbar when editing button) */
-          <ButtonToolbar
-            radius={buttonPopup.radius}
-            bgColor={buttonPopup.bgColor}
-            textColor={buttonPopup.textColor}
-            onChangeRadius={(radius) => handleUpdateButtonStyles({ radius })}
-            onChangeBgColor={(bgColor) => handleUpdateButtonStyles({ bgColor })}
-            onChangeTextColor={(textColor) => handleUpdateButtonStyles({ textColor })}
-            onClose={() => setButtonPopup(null)}
+        elementSelection.selection.selectedId ? (
+          /* A card, button, image or text inside a section: its own toolbar, same dock. */
+          <ElementToolbar
+            key={elementSelection.selection.selectedId}
+            selection={elementSelection.selection}
+            sectionTitle={
+              sections.find((s) => s.id === elementSelection.selection.sectionId)?.title ?? "Section"
+            }
+            device={sectionDevice}
+            dockPosition={dockPosition}
+            onDeviceChange={handleSectionDeviceChange}
+            onChange={elementSelection.updateElementProps}
+            onClose={elementSelection.clearSelection}
+            onDelete={elementSelection.deleteElement}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={editor.canUndo}
+            canRedo={editor.canRedo}
+            saveStatus={editor.saveStatus}
+            saveError={editor.saveError}
           />
         ) : isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
           <SectionToolbar
