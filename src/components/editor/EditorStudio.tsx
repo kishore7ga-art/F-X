@@ -2024,6 +2024,10 @@ export function EditorStudio({
                     <div
                       onClickCapture={(e) => {
                         const target = e.target as HTMLElement;
+                        // Editor chrome mounted inside the wrapper (the overlay toggle) is not content.
+                        if (target.closest("[data-xite-canvas-chrome]")) {
+                          return;
+                        }
                         if (inPlaceEditor.isEditingTarget(target)) {
                           // User is editing text inside this element: allow native caret/selection movements
                           return;
@@ -2084,7 +2088,7 @@ export function EditorStudio({
                       }}
                       onDoubleClickCapture={(e) => {
                         const target = e.target as HTMLElement;
-                        if (inPlaceEditor.isEditingTarget(target)) {
+                        if (target.closest("[data-xite-canvas-chrome]") || inPlaceEditor.isEditingTarget(target)) {
                           return;
                         }
                         inPlaceEditor.handleElementDoubleClick(target, idx, e);
@@ -2121,6 +2125,23 @@ export function EditorStudio({
                         canvasHtml={canvasHtml}
                       />
 
+                      {/* Overlay toggle, pinned to the header's top-right corner */}
+                      {idx === 0 && sections.length > 1 && isHeader && (
+                        <HeaderOverlayDropZone
+                          isOverlaid={isOverlaid}
+                          onToggleOverlay={(enable) => {
+                            const target = sections[0];
+                            if (!target) return;
+                            const updated = toggleHeaderOverlay(target, enable);
+                            setSectionsWithHistory((prev) =>
+                              prev.map((s, i) => (i === 0 ? updated : s)),
+                            );
+                          }}
+                          headerTitle={sec.title || "Header"}
+                          heroTitle={sections[1]?.title || "Hero"}
+                        />
+                      )}
+
                       {/* This section occupies space and shows nothing */}
                       {emptySectionIds.has(sec.id) && (
                         <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center p-6">
@@ -2137,22 +2158,6 @@ export function EditorStudio({
                       )}
                     </div>
 
-                    {/* Canvas Overlay Toggle Widget between Header and Hero */}
-                    {idx === 0 && sections.length > 1 && isHeader && (
-                      <HeaderOverlayDropZone
-                        isOverlaid={isOverlaid}
-                        onToggleOverlay={(enable) => {
-                          const target = sections[0];
-                          if (!target) return;
-                          const updated = toggleHeaderOverlay(target, enable);
-                          setSectionsWithHistory((prev) =>
-                            prev.map((s, i) => (i === 0 ? updated : s)),
-                          );
-                        }}
-                        headerTitle={sec.title || "Header"}
-                        heroTitle={sections[1]?.title || "Hero"}
-                      />
-                    )}
                   </React.Fragment>
                 );
               })}
