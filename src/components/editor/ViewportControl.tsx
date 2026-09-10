@@ -31,8 +31,8 @@ import {
  * are not on switches to it — at the width you last looked at there, or the
  * tier's default the first time. Clicking the tier you *are* on steps to the
  * next width, and past the last one wraps to the first. The button shows the
- * width and where it sits in the ladder (4/10), so the next click is never a
- * surprise, and a tooltip names the width it will go to.
+ * width; the tooltip says where it sits in the ladder and which width the
+ * next click goes to.
  *
  * What the ladder contains is not this component's business. Tiers, widths,
  * notes and defaults come from the catalogue; the component draws whatever
@@ -128,24 +128,20 @@ export function ViewportControl({
             }}
           >
             <Icon style={{ width: "16px", height: "16px", strokeWidth: 2, color: empty ? MUTED : active ? ACCENT : IDLE }} />
-            {/* The width and its rung, on the active device only. Three
-                numbers at once is two more than the question being asked. */}
+            {/* The width, on the active device only. Where it sits in the
+                ladder is in the tooltip, not on the button — the number the
+                person is checking is the one worth the space. */}
             {active && !vertical ? (
               <span
                 style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  gap: "4px",
                   fontFamily: FONT,
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  color: ACCENT,
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
-                <span style={{ fontWeight: 600, fontSize: "12px", color: ACCENT }}>{viewport.width}</span>
-                {total > 1 && index >= 0 ? (
-                  <span style={{ fontWeight: 600, fontSize: "9.5px", color: "#93c5fd" }}>
-                    {index + 1}/{total}
-                  </span>
-                ) : null}
+                {viewport.width}
               </span>
             ) : null}
           </button>
