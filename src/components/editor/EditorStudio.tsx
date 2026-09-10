@@ -1967,7 +1967,7 @@ export function EditorStudio({
             fontId={fontId}
             onScaleChange={setCanvasScale}
             paneClassName="py-4"
-            chromeClassName="shadow-2xl rounded-2xl border border-slate-300 bg-white"
+            chromeClassName="shadow-2xl border border-slate-300 bg-white"
             canvasClassName={sections.length === 0 ? "bg-white" : ""}
           >
           {sections.length === 0 ? (

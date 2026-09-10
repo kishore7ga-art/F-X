@@ -494,7 +494,7 @@ export function PreviewSiteViewer({
             themeId={themeId}
             fontId={fontId}
             onScaleChange={setCanvasScale}
-            chromeClassName="shadow-2xl rounded-2xl border border-slate-300 bg-white"
+            chromeClassName="shadow-2xl border border-slate-300 bg-white"
             canvasClassName="min-h-[75vh]"
           >
             {body}
