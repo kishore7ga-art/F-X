@@ -1406,6 +1406,13 @@ export function EditorStudio({
     const target = e.target as HTMLElement;
     if (!target) return;
 
+    // Every right-click inside a section is the editor's, whichever toolbar
+    // it ends up opening. Cancelled here, once, rather than in each branch —
+    // the section-surface branch never did, so the browser's own menu opened
+    // on top of the section toolbar.
+    e.preventDefault();
+    e.stopPropagation();
+
     /**
      * Right-Click (Custom Edit Toolbar):
      * 1. Intercept context menu event (preventDefault and stopPropagation).
