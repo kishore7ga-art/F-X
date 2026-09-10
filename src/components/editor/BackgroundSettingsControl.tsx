@@ -190,53 +190,56 @@ export function SingleRowBackgroundPanel({
       <div className="flex items-center p-0.5 rounded-full bg-slate-100 border border-slate-200 shrink-0">
         <button
           type="button"
+          title="Background colour"
+          aria-label="Background colour"
           onClick={() => {
             setMode("color");
             onDraftImage("");
             onCommitImage("");
             if (safeVideo) onCommitVideo?.("");
           }}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
+          className={`flex items-center justify-center px-2.5 py-1 rounded-full transition-all ${
             mode === "color"
               ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
           }`}
         >
           <Palette className="w-3.5 h-3.5" />
-          <span>Background colour</span>
         </button>
 
         <button
           type="button"
+          title="Background image"
+          aria-label="Background image"
           onClick={() => {
             setMode("image");
             if (safeVideo) onCommitVideo?.("");
           }}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
+          className={`flex items-center justify-center px-2.5 py-1 rounded-full transition-all ${
             mode === "image"
               ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
           }`}
         >
           <ImageIcon className="w-3.5 h-3.5" />
-          <span>Image</span>
         </button>
 
         <button
           type="button"
+          title="Background video"
+          aria-label="Background video"
           onClick={() => {
             setMode("video");
             onDraftImage("");
             onCommitImage("");
           }}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold transition-all ${
+          className={`flex items-center justify-center px-2.5 py-1 rounded-full transition-all ${
             mode === "video"
               ? "bg-slate-900 text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
           }`}
         >
           <VideoIcon className="w-3.5 h-3.5" />
-          <span>Video</span>
         </button>
       </div>
 
