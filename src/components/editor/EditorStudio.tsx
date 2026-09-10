@@ -68,7 +68,7 @@ import {
   type EditorThemeTokens,
 } from "@/lib/editor-themes";
 import { useViewport } from "@/hooks/useViewport";
-import { DEFAULT_WIDTH, nearestWidth, type DeviceMode } from "@/lib/viewport-presets";
+import { switchTier, tierById } from "@/lib/viewport-presets";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { SectionToolbar } from "./SectionToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
@@ -290,7 +290,7 @@ export function EditorStudio({
    * produce markup the client immediately contradicts. It is read in the effect
    * just below, after hydration.
    */
-  const [viewport, setViewport] = useViewport();
+  const [viewport, setViewport, deviceCatalogue] = useViewport();
   const [canvasScale, setCanvasScale] = useState(1);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -1815,17 +1815,20 @@ export function EditorStudio({
    * editor and the panel reads it; pressing Tablet in the panel moves the
    * canvas, because those are the same act.
    */
-  const sectionDevice: Device = viewport.mode === "phone" ? "mobile" : viewport.mode;
+  const activeTierIcon = tierById(deviceCatalogue, viewport.mode)?.icon ?? "desktop";
+  const sectionDevice: Device = activeTierIcon === "phone" ? "mobile" : activeTierIcon;
 
   const handleSectionDeviceChange = useCallback(
     (device: Device) => {
-      const mode: DeviceMode = device === "mobile" ? "phone" : device;
-      if (mode === viewport.mode) return;
-      // The nearest rung in the new mode, so switching device from the panel
-      // behaves exactly as switching it from the dock does.
-      setViewport({ ...viewport, mode, width: nearestWidth(mode, DEFAULT_WIDTH[mode]) });
+      // The panel's three devices are the catalogue's icons; the first tier
+      // drawn with that icon is the one the dock would switch to.
+      const icon = device === "mobile" ? "phone" : device;
+      const tier = deviceCatalogue.tiers.find((t) => t.icon === icon);
+      if (!tier || tier.id === viewport.mode) return;
+      const next = switchTier(viewport, deviceCatalogue, tier.id);
+      if (next !== viewport) setViewport(next);
     },
-    [viewport, setViewport],
+    [viewport, deviceCatalogue, setViewport],
   );
 
   /**
@@ -2440,6 +2443,7 @@ export function EditorStudio({
             onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
             viewport={viewport}
             setViewport={setViewport}
+            deviceCatalogue={deviceCatalogue}
             canvasScale={canvasScale}
             /* Empty when nothing is selected, so the toolbar can say so. */
             activeSectionTitle={

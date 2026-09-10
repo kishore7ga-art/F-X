@@ -1,14 +1,18 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 import {
   DEFAULT_VIEWPORT,
   VIEWPORT_STORAGE_KEY,
   loadViewport,
+  reconcileViewport,
+  sameViewport,
   saveViewport,
+  type DeviceCatalogue,
   type ViewportState,
 } from "@/lib/viewport-presets";
+import { useDeviceCatalogue } from "@/lib/device-catalogue-store";
 
 /**
  * The stored preview viewport, read the way an external store should be read.
@@ -50,15 +54,11 @@ function emit(): void {
   for (const listener of listeners) listener();
 }
 
-function same(a: ViewportState, b: ViewportState): boolean {
-  return a.mode === b.mode && a.width === b.width && a.zoom === b.zoom;
-}
-
 /** Re-reads storage and publishes the result if it differs. */
 function refresh(): void {
   const next = loadViewport();
   hasRead = true;
-  if (same(next, snapshot)) return;
+  if (sameViewport(next, snapshot)) return;
   snapshot = next;
   emit();
 }
@@ -99,18 +99,34 @@ function getServerSnapshot(): ViewportState {
   return DEFAULT_VIEWPORT;
 }
 
-export function useViewport(): [ViewportState, (next: ViewportState) => void] {
+/**
+ * The viewport, the setter, and the catalogue it is valid against.
+ *
+ * The catalogue rides along because nothing that reads the viewport can do
+ * much without it — which tiers exist, which widths, what "next" means. And
+ * the two are reconciled here, once, rather than by every consumer: whenever
+ * either changes, a stored width that the catalogue no longer offers is moved
+ * to the nearest one it does. `reconcileViewport` returns the same object when
+ * nothing needs to move, so a refresh that changed nothing writes nothing.
+ */
+export function useViewport(): [ViewportState, (next: ViewportState) => void, DeviceCatalogue] {
   const viewport = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const catalogue = useDeviceCatalogue();
 
   const setViewport = useCallback((next: ViewportState) => {
     saveViewport(next);
-    if (same(next, snapshot)) return;
+    if (sameViewport(next, snapshot)) return;
     snapshot = next;
     hasRead = true;
     emit();
   }, []);
 
-  return [viewport, setViewport];
+  useEffect(() => {
+    const reconciled = reconcileViewport(viewport, catalogue);
+    if (reconciled !== viewport) setViewport(reconciled);
+  }, [viewport, catalogue, setViewport]);
+
+  return [viewport, setViewport, catalogue];
 }
 
 /** Resets the module cache. Tests only — nothing in the app should need it. */

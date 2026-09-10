@@ -32,14 +32,38 @@ import {
   viewportMediaToContainer,
 } from "../src/lib/section-runtime";
 import {
-  WIDTHS_FOR,
   effectiveScale,
-  type DeviceMode,
+  orderedTiers,
+  presetsForTier,
+  type DeviceCatalogue,
   type ViewportState,
 } from "../src/lib/viewport-presets";
 
 const SCOPE = ".xite-site-canvas";
-const MODES: DeviceMode[] = ["desktop", "tablet", "phone"];
+
+/**
+ * The ladder comes from the backend now, so this asks a running one — the
+ * same call the editor makes. Without one (CI with no API) it probes a
+ * spread of widths that crosses every band below, which is what the test is
+ * actually about; the full catalogue is a bonus, not the point.
+ */
+async function loadCatalogue(): Promise<DeviceCatalogue> {
+  const base = process.env.API_BASE ?? "http://localhost:4000";
+  try {
+    const response = await fetch(`${base}/api/v1/device-presets`);
+    if (response.ok) return (await response.json()) as DeviceCatalogue;
+  } catch {
+    // Fall through to the probe set.
+  }
+  const probe = { desktop: [1024, 1440, 1920, 3840], tablet: [600, 768, 1024], phone: [320, 390, 540] };
+  return {
+    version: 0,
+    tiers: Object.keys(probe).map((id, order) => ({ id, label: id, icon: id as "desktop" | "tablet" | "phone", order })),
+    presets: Object.entries(probe).flatMap(([tierId, widths]) =>
+      widths.map((width) => ({ id: `${tierId}-${width}`, tierId, width })),
+    ),
+  };
+}
 
 /**
  * A section written the way sections here are written: plain `@media` width
@@ -108,6 +132,7 @@ type Reading = {
 };
 
 async function main() {
+  const catalogue = await loadCatalogue();
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
@@ -135,11 +160,12 @@ async function main() {
     await page.setViewportSize({ width: paneWidth, height: 900 });
     await page.setContent(harness());
 
-    for (const mode of MODES) {
-      for (const preset of WIDTHS_FOR[mode]) {
+    for (const tier of orderedTiers(catalogue)) {
+      const mode = tier.id;
+      for (const preset of presetsForTier(catalogue, mode)) {
         // Every zoom, plus fit. The width must be identical in all six.
         for (const zoom of [null, 0.5, 0.75, 1, 1.25, 1.5] as ViewportState["zoom"][]) {
-          const viewport: ViewportState = { mode, width: preset.width, zoom };
+          const viewport: ViewportState = { mode, width: preset.width, zoom, memory: {} };
           const scale = effectiveScale(viewport, paneWidth);
 
           const reading: Reading = await page.evaluate(

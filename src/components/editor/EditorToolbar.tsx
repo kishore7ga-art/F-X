@@ -19,7 +19,7 @@ import {
   Layers,
   Plus,
 } from "lucide-react";
-import type { ViewportState } from "@/lib/viewport-presets";
+import type { DeviceCatalogue, ViewportState } from "@/lib/viewport-presets";
 import { rootDomain } from "@/lib/host-routing";
 import { getPublishStatus, publishSite, type PublishStatus } from "@/lib/publishing-client";
 import { ViewportControl } from "./ViewportControl";
@@ -42,6 +42,8 @@ interface EditorToolbarProps {
    */
   viewport: ViewportState;
   setViewport: (next: ViewportState) => void;
+  /** The tiers and widths the viewport control cycles through. */
+  deviceCatalogue: DeviceCatalogue;
   /** What "Fit" currently works out to, measured by the canvas. */
   canvasScale?: number;
   activeSectionTitle?: string;
@@ -98,6 +100,7 @@ export function EditorToolbar({
   isSettingsOpen = false,
   viewport,
   setViewport,
+  deviceCatalogue,
   canvasScale = 1,
   // Empty, not a sample section name. The fallback below already says
   // "Select a section"; defaulting to "Hero 2" meant an omitted prop rendered
@@ -833,6 +836,7 @@ export function EditorToolbar({
 
               <ViewportControl
                 viewport={viewport}
+                catalogue={deviceCatalogue}
                 onChange={setViewport}
                 scale={canvasScale}
                 orientation="vertical"
@@ -1155,6 +1159,7 @@ export function EditorToolbar({
             <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "12px" }}>
               <ViewportControl
                 viewport={viewport}
+                catalogue={deviceCatalogue}
                 onChange={setViewport}
                 scale={canvasScale}
                 orientation="horizontal"

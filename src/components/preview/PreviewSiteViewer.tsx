@@ -112,7 +112,7 @@ export function PreviewSiteViewer({
    * nothing to simulate, no frame to draw and no scaling to do — see the render
    * below, which keeps the published path exactly as it was.
    */
-  const [viewport, setViewport] = useViewport();
+  const [viewport, setViewport, deviceCatalogue] = useViewport();
   const [canvasScale, setCanvasScale] = useState(1);
 
   // `sections` is replaced only when its contents actually change (see the fetch
@@ -436,6 +436,7 @@ export function PreviewSiteViewer({
         >
           <ViewportControl
             viewport={viewport}
+            catalogue={deviceCatalogue}
             onChange={setViewport}
             scale={canvasScale}
             orientation="horizontal"

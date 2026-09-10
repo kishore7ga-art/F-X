@@ -14,110 +14,133 @@
  *   zoom             how big that is drawn on screen. Purely visual. It must
  *                    never reach the site's CSS.
  *
- * The canvas previously carried `maxWidth: "100%"`, which collapsed the two: a
- * 1920px selection inside a 900px editor pane became a **900px viewport**, so
- * the site laid itself out for 900 and the operator was shown a desktop preview
- * that was really a small-laptop one. Every width above the pane silently
- * became the pane. Six of the ten desktop widths could not be previewed at all.
+ * ── Where the widths come from ─────────────────────────────────────────────
  *
- * The width is now real and the fitting is a transform. 1920 stays 1920 to CSS;
- * `scale()` is what makes it visible.
+ * Not from here. This file used to list thirty of them, and every new phone
+ * was a frontend release. The list is now a *catalogue* the backend serves
+ * (`GET /api/v1/device-presets`): tiers, and presets grouped under them. This
+ * file holds the shape of that catalogue and the rules for moving through it —
+ * cycle within a tier, switch between tiers remembering where each was left,
+ * and reconcile a stored choice against a catalogue that has since changed.
+ * Every function is pure over the catalogue it is handed, so the rules are
+ * testable with a fixture and identical whatever the backend sends.
+ *
+ * The single width that *is* here — `DEFAULT_VIEWPORT` — is the one the server
+ * renders before any catalogue has arrived, so that hydration matches. It is
+ * replaced by a reconcile the moment the catalogue loads.
  */
 
-export type DeviceMode = "desktop" | "tablet" | "phone";
+/* ── The catalogue, as the backend serves it ──────────────────────────────── */
 
-export type ViewportPreset = {
+/** The glyph a tier is drawn with. A closed set: the section toolbar writes
+ *  CSS to three tiers, and this is what maps a tier somebody named onto them. */
+export type DeviceIcon = "phone" | "tablet" | "desktop";
+
+export type DeviceTier = {
+  id: string;
+  label: string;
+  icon: DeviceIcon;
+  order: number;
+};
+
+export type DevicePreset = {
+  id: string;
+  tierId: string;
   /** CSS pixels the site is laid out against. */
   width: number;
   /** What the operator is shown. Blank where the number speaks for itself. */
-  note?: string;
+  note?: string | null;
+  isDefault?: boolean;
 };
 
-/**
- * Desktop widths, from the smallest laptop still worth checking to 4K.
- *
- * 1024 is here as well as in the tablet list on purpose: it is the boundary,
- * and which side of it a layout falls on is exactly what somebody checking
- * 1024 wants to know.
- */
-export const DESKTOP_WIDTHS: readonly ViewportPreset[] = [
-  { width: 1024, note: "Small laptop" },
-  { width: 1280 },
-  { width: 1366, note: "Most common laptop" },
-  { width: 1440, note: "Default" },
-  { width: 1536 },
-  { width: 1600 },
-  { width: 1920, note: "Full HD" },
-  { width: 2560, note: "QHD" },
-  { width: 2880 },
-  { width: 3840, note: "4K" },
-] as const;
-
-export const TABLET_WIDTHS: readonly ViewportPreset[] = [
-  { width: 600 },
-  { width: 640 },
-  { width: 667 },
-  { width: 720 },
-  { width: 768, note: "iPad portrait · default" },
-  { width: 800 },
-  { width: 834, note: "iPad Air" },
-  { width: 900 },
-  { width: 960 },
-  { width: 1024, note: "iPad landscape" },
-] as const;
-
-export const PHONE_WIDTHS: readonly ViewportPreset[] = [
-  { width: 320, note: "iPhone SE (1st gen)" },
-  { width: 360, note: "Most common Android" },
-  { width: 375, note: "iPhone SE / 8" },
-  { width: 390, note: "iPhone 14 · default" },
-  { width: 393, note: "Pixel 7" },
-  { width: 412, note: "Pixel 7 Pro" },
-  { width: 414, note: "iPhone Plus" },
-  { width: 430, note: "iPhone Pro Max" },
-  { width: 480 },
-  { width: 540 },
-] as const;
-
-export const WIDTHS_FOR: Record<DeviceMode, readonly ViewportPreset[]> = {
-  desktop: DESKTOP_WIDTHS,
-  tablet: TABLET_WIDTHS,
-  phone: PHONE_WIDTHS,
+export type DeviceCatalogue = {
+  /** Monotonic; the backend bumps it on every change. Compared to skip work. */
+  version: number;
+  tiers: DeviceTier[];
+  presets: DevicePreset[];
 };
 
-/** Where each mode starts. */
-export const DEFAULT_WIDTH: Record<DeviceMode, number> = {
-  desktop: 1440,
-  tablet: 768,
-  phone: 390,
-};
+/** Before anything has loaded. Referentially stable — it is a server snapshot. */
+export const EMPTY_CATALOGUE: DeviceCatalogue = Object.freeze({
+  version: 0,
+  tiers: [],
+  presets: [],
+}) as DeviceCatalogue;
+
+/** A tier's presets, ascending by width. Tolerates a backend that did not sort. */
+export function presetsForTier(catalogue: DeviceCatalogue, tierId: string): DevicePreset[] {
+  return catalogue.presets.filter((p) => p.tierId === tierId).sort((a, b) => a.width - b.width);
+}
+
+/** Tiers in display order. */
+export function orderedTiers(catalogue: DeviceCatalogue): DeviceTier[] {
+  return [...catalogue.tiers].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+}
+
+export function tierById(catalogue: DeviceCatalogue, tierId: string): DeviceTier | null {
+  return catalogue.tiers.find((t) => t.id === tierId) ?? null;
+}
+
+/** The width a tier starts at: its default, else its smallest, else null if empty. */
+export function tierDefaultWidth(catalogue: DeviceCatalogue, tierId: string): number | null {
+  const presets = presetsForTier(catalogue, tierId);
+  if (presets.length === 0) return null;
+  return (presets.find((p) => p.isDefault) ?? presets[0]!).width;
+}
+
+/** The first tier that has any presets, in display order. */
+export function firstUsableTier(catalogue: DeviceCatalogue): DeviceTier | null {
+  return orderedTiers(catalogue).find((t) => presetsForTier(catalogue, t.id).length > 0) ?? null;
+}
+
+/* ── Zoom ─────────────────────────────────────────────────────────────────── */
 
 export const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5] as const;
 export type ZoomLevel = (typeof ZOOM_LEVELS)[number];
 
+/* ── The state ────────────────────────────────────────────────────────────── */
+
 /**
  * The whole preview state. One object, so nothing can hold half of it.
+ *
+ * `mode` is a tier id from the catalogue. `memory` is the width last viewed
+ * in each tier, keyed by tier id, so switching Phone → Tablet → Phone returns
+ * to the phone width that was being looked at rather than the tier's default.
  *
  * A `zoom` of `null` is "fit", and it is deliberately not one of the levels:
  * fit means "make the selected width visible, whatever that takes", a number
  * derived from the pane rather than one the operator picked. Storing it as a
- * percentage would freeze it at whatever the pane happened to be at the time,
- * so that opening a drawer, or reopening the editor on another screen, would
- * leave the canvas at a scale nobody chose and nothing would correct it.
+ * percentage would freeze it at whatever the pane happened to be at the time.
  */
 export type ViewportState = {
-  mode: DeviceMode;
-  /** CSS pixels. Always one of the presets for `mode`. */
+  mode: string;
+  /** CSS pixels. Reconciled against the catalogue whenever either changes. */
   width: number;
   /** An explicit choice, or `null` while fitting to the pane. */
   zoom: ZoomLevel | null;
+  /** Last-viewed width per tier. */
+  memory: Record<string, number>;
 };
 
+/**
+ * The one width the frontend knows without asking. It is what the server
+ * renders, so that the client hydrates to the same markup; the first
+ * reconcile against the catalogue replaces it. Not a preset — a placeholder.
+ */
 export const DEFAULT_VIEWPORT: ViewportState = {
   mode: "desktop",
-  width: DEFAULT_WIDTH.desktop,
+  width: 1440,
   zoom: null,
+  memory: {},
 };
+
+export function sameViewport(a: ViewportState, b: ViewportState): boolean {
+  if (a.mode !== b.mode || a.width !== b.width || a.zoom !== b.zoom) return false;
+  const ka = Object.keys(a.memory);
+  const kb = Object.keys(b.memory);
+  if (ka.length !== kb.length) return false;
+  return ka.every((k) => a.memory[k] === b.memory[k]);
+}
 
 /**
  * The scale to draw at.
@@ -130,44 +153,131 @@ export const DEFAULT_VIEWPORT: ViewportState = {
  * space. Enlarging would misrepresent both the layout and the type size, which
  * is the whole thing being inspected.
  */
-export function effectiveScale(state: ViewportState, availableWidth: number): number {
+export function effectiveScale(state: { width: number; zoom: ZoomLevel | null }, availableWidth: number): number {
   if (state.zoom !== null) return state.zoom;
   if (!Number.isFinite(availableWidth) || availableWidth <= 0) return 1;
   return Math.min(1, availableWidth / state.width);
 }
 
-/** The nearest preset to `width` within `mode`. Used when switching modes. */
-export function nearestWidth(mode: DeviceMode, width: number): number {
-  const presets = WIDTHS_FOR[mode];
-  let best = presets[0]!.width;
-  let bestGap = Math.abs(best - width);
+/* ── Moving through the catalogue ─────────────────────────────────────────── */
 
+/** The nearest of `presets` to `width`; ties go to the smaller. */
+export function nearestPreset(presets: readonly DevicePreset[], width: number): DevicePreset | null {
+  let best: DevicePreset | null = null;
   for (const preset of presets) {
-    const gap = Math.abs(preset.width - width);
-    if (gap < bestGap) {
-      best = preset.width;
-      bestGap = gap;
-    }
+    if (!best || Math.abs(preset.width - width) < Math.abs(best.width - width)) best = preset;
   }
   return best;
 }
 
-/**
- * Which mode a width belongs to, for restoring a persisted selection.
- *
- * 1024 appears in two lists; tablet wins, because a stored 1024 is far more
- * likely to have come from someone checking the tablet boundary than from
- * someone choosing the smallest desktop.
- */
-export function modeForWidth(width: number): DeviceMode {
-  if (PHONE_WIDTHS.some((p) => p.width === width)) return "phone";
-  if (TABLET_WIDTHS.some((p) => p.width === width)) return "tablet";
-  return "desktop";
+/** Position of the current width in its tier: `{ index, total }`, 0-based. */
+export function positionInTier(state: ViewportState, catalogue: DeviceCatalogue): { index: number; total: number } {
+  const presets = presetsForTier(catalogue, state.mode);
+  return { index: presets.findIndex((p) => p.width === state.width), total: presets.length };
 }
+
+/**
+ * The next width in the current tier, wrapping from the last back to the
+ * first. A tier with one width returns the state unchanged — there is nowhere
+ * to go, and the caller can tell because the object is the same one.
+ */
+export function cycleWidth(state: ViewportState, catalogue: DeviceCatalogue, direction: 1 | -1 = 1): ViewportState {
+  const presets = presetsForTier(catalogue, state.mode);
+  if (presets.length <= 1) return state;
+  const current = presets.findIndex((p) => p.width === state.width);
+  // A width not on the ladder (mid-update) steps from its nearest neighbour.
+  const from = current >= 0 ? current : presets.indexOf(nearestPreset(presets, state.width)!);
+  const next = presets[(from + direction + presets.length) % presets.length]!;
+  return { ...state, width: next.width, memory: { ...state.memory, [state.mode]: next.width } };
+}
+
+/**
+ * Switching tier goes back to where that tier was left, when that width is
+ * still offered; otherwise to the tier's default. Switching to the tier
+ * already active is a cycle, so one button does both without a menu.
+ */
+export function switchTier(state: ViewportState, catalogue: DeviceCatalogue, tierId: string): ViewportState {
+  if (tierId === state.mode) return cycleWidth(state, catalogue);
+  const presets = presetsForTier(catalogue, tierId);
+  if (presets.length === 0) return state;
+  const remembered = state.memory[tierId];
+  const width =
+    remembered !== undefined && presets.some((p) => p.width === remembered)
+      ? remembered
+      : tierDefaultWidth(catalogue, tierId)!;
+  return {
+    ...state,
+    mode: tierId,
+    width,
+    memory: { ...state.memory, [state.mode]: state.width, [tierId]: width },
+  };
+}
+
+export function cycleZoom(state: ViewportState): ViewportState {
+  // Fit → 50 → 75 → 100 → 125 → 150 → Fit.
+  if (state.zoom === null) return { ...state, zoom: ZOOM_LEVELS[0] };
+  const at = ZOOM_LEVELS.indexOf(state.zoom);
+  const next = ZOOM_LEVELS[at + 1];
+  return { ...state, zoom: next ?? null };
+}
+
+/**
+ * A stored state made valid against the catalogue it is now shown with.
+ *
+ * Returns the **same object** when nothing needs to change, so a catalogue
+ * refresh that altered nothing relevant causes no state write, no re-render
+ * and no flicker on the canvas. When something did change:
+ *
+ *   - the tier no longer exists → the first tier that has widths
+ *   - the tier exists but is now empty → likewise
+ *   - the width is no longer in the tier → the nearest width that is; a
+ *     removed 414 lands on 412, not on the default, so the operator keeps
+ *     looking at roughly what they were looking at
+ *   - remembered widths that are no longer offered are forgotten
+ *
+ * An empty catalogue (nothing loaded yet, or nothing configured) leaves the
+ * state alone: there is nothing to reconcile against, and the placeholder
+ * width keeps the canvas drawable until there is.
+ */
+export function reconcileViewport(state: ViewportState, catalogue: DeviceCatalogue): ViewportState {
+  if (catalogue.presets.length === 0) return state;
+
+  let mode = state.mode;
+  let presets = presetsForTier(catalogue, mode);
+  let width: number;
+  if (presets.length === 0) {
+    // The tier is gone or empty. A width from another tier means nothing
+    // here, so this is a switch: what was last viewed in the new tier, else
+    // its default.
+    const fallback = firstUsableTier(catalogue);
+    if (!fallback) return state;
+    mode = fallback.id;
+    presets = presetsForTier(catalogue, mode);
+    const remembered = state.memory[mode];
+    width =
+      remembered !== undefined && presets.some((p) => p.width === remembered)
+        ? remembered
+        : tierDefaultWidth(catalogue, mode)!;
+  } else {
+    width = presets.some((p) => p.width === state.width)
+      ? state.width
+      : nearestPreset(presets, state.width)!.width;
+  }
+
+  const memory: Record<string, number> = {};
+  for (const [tierId, remembered] of Object.entries(state.memory)) {
+    if (presetsForTier(catalogue, tierId).some((p) => p.width === remembered)) memory[tierId] = remembered;
+  }
+  memory[mode] = width;
+
+  const next: ViewportState = { mode, width, zoom: state.zoom, memory };
+  return sameViewport(next, state) ? state : next;
+}
+
+/* ── Persistence ──────────────────────────────────────────────────────────── */
 
 /** Exported so the store hook can tell a cross-tab `storage` event apart. */
 export const VIEWPORT_STORAGE_KEY = "xite_editor_viewport";
-const STORAGE_KEY = VIEWPORT_STORAGE_KEY;
 
 /**
  * Remembered per browser, not per site.
@@ -177,29 +287,32 @@ const STORAGE_KEY = VIEWPORT_STORAGE_KEY;
  * there would also make it a value two open tabs could fight over. It is also
  * deliberately not part of the site's saved content: switching to phone must
  * never be a change to the page.
+ *
+ * Validated for *shape* only. Whether the width is one the catalogue offers is
+ * `reconcileViewport`'s question, answered once the catalogue is here.
  */
 export function loadViewport(): ViewportState {
   if (typeof window === "undefined") return DEFAULT_VIEWPORT;
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(VIEWPORT_STORAGE_KEY);
     if (!raw) return DEFAULT_VIEWPORT;
 
     const parsed = JSON.parse(raw) as Partial<ViewportState>;
     const width = Number(parsed.width);
-    if (!Number.isFinite(width)) return DEFAULT_VIEWPORT;
-
-    // Validated against the presets rather than trusted: a width from an older
-    // build, or one somebody typed into devtools, must not become a viewport.
-    const mode: DeviceMode =
-      parsed.mode === "phone" || parsed.mode === "tablet" || parsed.mode === "desktop"
-        ? parsed.mode
-        : modeForWidth(width);
-
-    const known = WIDTHS_FOR[mode].some((preset) => preset.width === width);
+    if (!Number.isFinite(width) || width <= 0) return DEFAULT_VIEWPORT;
+    const mode = typeof parsed.mode === "string" && parsed.mode ? parsed.mode : DEFAULT_VIEWPORT.mode;
     const zoom = ZOOM_LEVELS.includes(parsed.zoom as ZoomLevel) ? (parsed.zoom as ZoomLevel) : null;
 
-    return { mode, width: known ? width : DEFAULT_WIDTH[mode], zoom };
+    const memory: Record<string, number> = {};
+    if (parsed.memory && typeof parsed.memory === "object") {
+      for (const [tierId, remembered] of Object.entries(parsed.memory)) {
+        if (Number.isFinite(remembered) && (remembered as number) > 0) memory[tierId] = remembered as number;
+      }
+    }
+    memory[mode] = width;
+
+    return { mode, width, zoom, memory };
   } catch {
     return DEFAULT_VIEWPORT;
   }
@@ -208,7 +321,7 @@ export function loadViewport(): ViewportState {
 export function saveViewport(state: ViewportState): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    window.localStorage.setItem(VIEWPORT_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // A browser with storage disabled simply does not remember. Not worth an
     // error path: the editor works identically, it just starts at the default.
