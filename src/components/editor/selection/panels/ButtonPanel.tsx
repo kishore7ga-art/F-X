@@ -2,7 +2,7 @@
 
 import type { ButtonProps, ButtonSize, ButtonVariant } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { ColorField, Divider, Field, PxField, Segmented, TextField, Toggle } from "./fields";
+import { ColorField, Divider, Field, PxField, Segmented, TextField } from "./fields";
 
 const VARIANTS: ReadonlyArray<{ value: ButtonVariant; label: string; title: string }> = [
   { value: "solid", label: "Solid", title: "Filled with the accent colour" },
@@ -17,37 +17,24 @@ const SIZES: ReadonlyArray<{ value: ButtonSize; label: string }> = [
 ];
 
 export function ButtonPanel({ tab, props, onChange }: PanelProps<ButtonProps>) {
-  if (tab === "content") {
+  if (tab === "link") {
+    // The label is edited on the canvas, and whether the link opens a new
+    // tab follows from the link itself (another site: new tab; a page of
+    // this site: in place) — see `lib/editor/link-target.ts`.
     return (
-      <>
-        <Field label="Label">
-          <TextField value={props.label} placeholder="Apply Now" onCommit={(label) => onChange({ label })} width="w-[160px]" />
-        </Field>
-        <Field label="Link / action">
-          <TextField value={props.href} placeholder="/admissions or https://…" onCommit={(href) => onChange({ href })} width="w-[220px]" mono />
-        </Field>
-        <Toggle label="Open in new tab" checked={props.newTab} onChange={(newTab) => onChange({ newTab })} />
-      </>
+      <Field label="Link">
+        <TextField value={props.href} placeholder="/admissions or https://…" onCommit={(href) => onChange({ href })} width="w-[260px]" mono />
+      </Field>
     );
   }
-  if (tab === "style") {
-    return (
-      <>
-        <Segmented label="Style" value={props.variant} options={VARIANTS} onChange={(variant) => onChange({ variant })} />
-        <Segmented label="Size" value={props.size} options={SIZES} onChange={(size) => onChange({ size })} />
-        <Divider />
-        <ColorField label={props.variant === "solid" ? "Fill" : "Accent"} value={props.background} fallback="#2563eb" onChange={(background) => onChange({ background })} />
-        <ColorField label="Text" value={props.textColor} fallback="#ffffff" onChange={(textColor) => onChange({ textColor })} />
-        <PxField label="Radius" value={props.radius} max={40} onChange={(radius) => onChange({ radius })} />
-      </>
-    );
-  }
-  // hover
   return (
     <>
-      <ColorField label="Hover fill" value={props.hoverBackground} fallback="#1d4ed8" allowEmpty onChange={(hoverBackground) => onChange({ hoverBackground })} />
-      <ColorField label="Hover text" value={props.hoverTextColor} fallback="#ffffff" allowEmpty onChange={(hoverTextColor) => onChange({ hoverTextColor })} />
-      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">Hover the button on the canvas to preview</span>
+      <Segmented label="Style" value={props.variant} options={VARIANTS} onChange={(variant) => onChange({ variant })} />
+      <Segmented label="Size" value={props.size} options={SIZES} onChange={(size) => onChange({ size })} />
+      <Divider />
+      <ColorField label={props.variant === "solid" ? "Fill" : "Accent"} value={props.background} fallback="#2563eb" onChange={(background) => onChange({ background })} />
+      <ColorField label="Text" value={props.textColor} fallback="#ffffff" onChange={(textColor) => onChange({ textColor })} />
+      <PxField label="Radius" value={props.radius} max={40} onChange={(radius) => onChange({ radius })} />
     </>
   );
 }

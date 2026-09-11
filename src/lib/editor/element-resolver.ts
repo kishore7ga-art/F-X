@@ -27,6 +27,7 @@
 import { hexFromValue } from "@/lib/sections/section-edit";
 import { ELEMENT_KEY_ATTR } from "@/lib/sections/section-managed-css";
 import type { ElementType } from "./selection-store";
+import { applyLinkTarget } from "./link-target";
 
 /* ── Props, per type ─────────────────────────────────────────────────────── */
 
@@ -46,16 +47,13 @@ export type ButtonVariant = "solid" | "outline" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps {
-  label: string;
+  /** Where it goes. Whether it opens a new tab follows from this — see `link-target.ts`. */
   href: string;
-  newTab: boolean;
   variant: ButtonVariant;
   size: ButtonSize;
   background: string;
   textColor: string;
   radius: string;
-  hoverBackground: string;
-  hoverTextColor: string;
 }
 
 export type AspectRatio = "auto" | "1 / 1" | "4 / 3" | "3 / 2" | "16 / 9" | "21 / 9";
@@ -341,16 +339,12 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
     }
     case "button": {
       const props: ButtonProps = {
-        label: (el.textContent ?? "").trim(),
         href: el.getAttribute("href") ?? el.getAttribute("data-href") ?? "",
-        newTab: el.getAttribute("target") === "_blank",
         variant: buttonVariant(el),
         size: buttonSize(el),
         background: hexFromValue(el.style.backgroundColor || style.backgroundColor, "#2563eb"),
         textColor: hexFromValue(el.style.color || style.color, "#ffffff"),
         radius: el.style.borderRadius || style.borderRadius || "8px",
-        hoverBackground: el.getAttribute("data-xite-hover-bg") ?? "",
-        hoverTextColor: el.getAttribute("data-xite-hover-color") ?? "",
       };
       return props as ElementPropsByType[T];
     }
@@ -447,19 +441,10 @@ function applyCard(el: HTMLElement, p: Partial<CardProps>): void {
 }
 
 function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
-  if (p.label !== undefined) setButtonLabel(el, p.label);
   if (p.href !== undefined) {
     if (el.tagName === "A") el.setAttribute("href", p.href);
     else el.setAttribute("data-href", p.href);
-  }
-  if (p.newTab !== undefined) {
-    if (p.newTab) {
-      el.setAttribute("target", "_blank");
-      el.setAttribute("rel", "noopener noreferrer");
-    } else {
-      el.removeAttribute("target");
-      el.removeAttribute("rel");
-    }
+    applyLinkTarget(el, p.href);
   }
 
   const variant = p.variant ?? (el.getAttribute("data-xite-variant") as ButtonVariant | null) ?? "solid";
@@ -491,8 +476,6 @@ function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
     set(el, "font-size", BUTTON_SIZE_FONT[p.size]);
   }
   set(el, "border-radius", p.radius);
-  if (p.hoverBackground !== undefined) el.setAttribute("data-xite-hover-bg", p.hoverBackground);
-  if (p.hoverTextColor !== undefined) el.setAttribute("data-xite-hover-color", p.hoverTextColor);
 }
 
 function applyImage(el: HTMLElement, p: Partial<ImageProps>): void {
@@ -520,29 +503,6 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "letter-spacing", p.letterSpacing);
 }
 
-/**
- * Replaces a button's visible text and nothing else — the icon `<svg>` or
- * `<i>` beside it stays. The first text node that carries characters is the
- * label; when there is none (icon-only button) a text node is appended.
- */
-function setButtonLabel(el: HTMLElement, label: string): void {
-  const textNode = Array.from(el.childNodes).find(
-    (n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? "").trim().length > 0,
-  );
-  if (textNode) {
-    textNode.textContent = label;
-    return;
-  }
-  // Text held in a single <span>, as most Tailwind templates do it.
-  const span = Array.from(el.children).find(
-    (c) => c.tagName === "SPAN" && (c.textContent ?? "").trim().length > 0 && !c.querySelector("svg, img"),
-  );
-  if (span) {
-    span.textContent = label;
-    return;
-  }
-  el.appendChild(document.createTextNode(label));
-}
 
 export const ELEMENT_TYPE_LABEL: Record<ElementType, string> = {
   section: "Section",

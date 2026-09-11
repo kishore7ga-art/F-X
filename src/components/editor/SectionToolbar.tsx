@@ -81,6 +81,7 @@ import type { SectionCategory } from "@/lib/sections/section-capabilities";
 import type { SaveStatus } from "@/hooks/useEditorPages";
 import { BoundedDimensionControl } from "./BoundedDimensionControl";
 import { CycleButton } from "./CycleButton";
+import { applyLinkTarget } from "@/lib/editor/link-target";
 import { SingleRowButtonPanel } from "./ButtonSettingsControl";
 import { SingleRowBackgroundPanel } from "./BackgroundSettingsControl";
 import { recomposeSectionCode } from "@/lib/section-runtime";
@@ -339,7 +340,6 @@ export function SectionToolbar({
   const [btnRadius, setBtnRadius] = useState<string>("");
   const [btnTextColor, setBtnTextColor] = useState<string>("#ffffff");
   const [btnUrl, setBtnUrl] = useState<string>("");
-  const [btnNewTab, setBtnNewTab] = useState<boolean>(false);
 
   useEffect(() => {
     if (!selectedButtonElement) return;
@@ -349,13 +349,11 @@ export function SectionToolbar({
       const rad = selectedButtonElement.style.borderRadius || comp.borderRadius;
       const col = selectedButtonElement.style.color || comp.color;
       const url = selectedButtonElement.getAttribute("href") || selectedButtonElement.getAttribute("data-href") || "";
-      const isBlank = selectedButtonElement.getAttribute("target") === "_blank";
 
       setBtnBg(hexFromValue(bg, "#2563eb"));
       setBtnRadius(rad || "");
       setBtnTextColor(hexFromValue(col, "#ffffff"));
       setBtnUrl(url);
-      setBtnNewTab(isBlank);
       setActiveGroupId("buttons");
     } catch {}
   }, [selectedButtonElement]);
@@ -365,7 +363,6 @@ export function SectionToolbar({
     radius?: string;
     textColor?: string;
     url?: string;
-    isNewTab?: boolean;
   }) => {
     if (!selectedButtonElement) return;
 
@@ -402,17 +399,8 @@ export function SectionToolbar({
           selectedButtonElement.removeAttribute("onclick");
         }
       }
+      applyLinkTarget(selectedButtonElement, urlVal);
       setBtnUrl(urlVal);
-    }
-    if (updates.isNewTab !== undefined) {
-      if (updates.isNewTab) {
-        selectedButtonElement.setAttribute("target", "_blank");
-        selectedButtonElement.setAttribute("rel", "noopener noreferrer");
-      } else {
-        selectedButtonElement.removeAttribute("target");
-        selectedButtonElement.removeAttribute("rel");
-      }
-      setBtnNewTab(updates.isNewTab);
     }
 
     // Clone and recompose section code
@@ -848,8 +836,6 @@ export function SectionToolbar({
               onCommitTextColor={(val) => commitButtonChanges({ textColor: val })}
               urlValue={btnUrl}
               onCommitUrl={(val) => commitButtonChanges({ url: val })}
-              isNewTab={btnNewTab}
-              onToggleNewTab={(val) => commitButtonChanges({ isNewTab: val })}
             />
           </div>
         ) : activeGroup ? (

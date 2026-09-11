@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { hexFromValue } from "@/lib/sections/section-edit";
-import { ExternalLink, Link2 } from "lucide-react";
+import { Link2 } from "lucide-react";
 
 export interface SingleRowButtonPanelProps {
   // 1. Button Background Color
@@ -19,8 +19,6 @@ export interface SingleRowButtonPanelProps {
   // 4. Button Navigation
   urlValue?: string;
   onCommitUrl?: (url: string) => void;
-  isNewTab?: boolean;
-  onToggleNewTab?: (newTab: boolean) => void;
   // Optional backward-compatibility props
   buttonCount?: number;
   activeButtonIndex?: number;
@@ -44,8 +42,6 @@ export function SingleRowButtonPanel({
   onCommitTextColor,
   urlValue,
   onCommitUrl,
-  isNewTab,
-  onToggleNewTab,
 }: SingleRowButtonPanelProps) {
   // Parse numeric corner radius (0px to 40px)
   const safeRadius = String(radiusValue ?? "").trim();
@@ -144,19 +140,6 @@ export function SingleRowButtonPanel({
           placeholder="https://… or /page or #section"
           className="h-6 w-36 sm:w-44 px-2 text-[11px] font-mono bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-400 text-slate-800 placeholder:text-slate-400"
         />
-        <label
-          className="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer select-none shrink-0"
-          title="Open in new tab"
-        >
-          <input
-            type="checkbox"
-            checked={Boolean(isNewTab)}
-            onChange={(e) => onToggleNewTab?.(e.target.checked)}
-            className="w-3.5 h-3.5 rounded border-slate-300 accent-slate-900 cursor-pointer"
-          />
-          <ExternalLink className="w-3 h-3 text-slate-400" />
-          <span className="hidden sm:inline">New tab</span>
-        </label>
       </div>
     </div>
   );
