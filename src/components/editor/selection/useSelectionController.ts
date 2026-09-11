@@ -52,6 +52,12 @@ export interface SelectionControllerOptions {
   onWriteSection: (sectionId: string, code: string) => void;
   /** An element in this section was selected — the studio marks the section active. */
   onElementSelected?: (sectionIndex: number) => void;
+  /**
+   * A right-click on text. Text is not selected here: it is edited in place,
+   * the same way a double-click edits it, so both gestures open the one text
+   * toolbar. Return true to claim the event.
+   */
+  onTextHit?: (element: HTMLElement, sectionIndex: number) => boolean;
   /** Normalises canvas markup before it is stored (theme tokens, container units). */
   cleanHtml?: (html: string) => string;
 }
@@ -85,6 +91,7 @@ export function useSelectionController({
   sections,
   onWriteSection,
   onElementSelected,
+  onTextHit,
   cleanHtml,
 }: SelectionControllerOptions): SelectionController {
   const selection = useSelection(selectionStore);
@@ -208,6 +215,11 @@ export function useSelectionController({
       event.preventDefault();
       event.stopPropagation();
 
+      if (hit.type === "text" && onTextHit) {
+        clearSelection();
+        if (onTextHit(hit.element, sectionIndex)) return true;
+      }
+
       flushCommit();
       const id = elementId(section.id, hit.path);
       const meta = {
@@ -219,7 +231,7 @@ export function useSelectionController({
       onElementSelected?.(sectionIndex);
       return true;
     },
-    [clearSelection, flushCommit, onElementSelected],
+    [clearSelection, flushCommit, onElementSelected, onTextHit],
   );
 
   const updateElementProps = useCallback(

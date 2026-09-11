@@ -46,6 +46,9 @@ export interface InlineTextToolbarProps {
   onApplyFontSize?: (size: string) => void;
   textAlignValue?: string;
   onApplyTextAlign?: (align: "left" | "center" | "right" | "justify") => void;
+  lineHeightValue?: string;
+  letterSpacingValue?: string;
+  onApplyTextSpacing?: (prop: "lineHeight" | "letterSpacing", value: string) => void;
 }
 
 function dockedStyle(dock: DockPosition): React.CSSProperties {
@@ -82,6 +85,9 @@ export function InlineTextToolbar({
   onApplyFontSize,
   textAlignValue,
   onApplyTextAlign,
+  lineHeightValue,
+  letterSpacingValue,
+  onApplyTextSpacing,
 }: InlineTextToolbarProps) {
   return (
     <div
@@ -139,13 +145,15 @@ export function InlineTextToolbar({
           currentColor={colorValue}
           onSelectColor={onApplyColor}
           onFormat={onApplyFormat}
-          isEditingText
           currentFont={fontFamilyValue}
           onSelectFont={onApplyFontFamily}
           currentFontSize={fontSizeValue}
           onSelectFontSize={onApplyFontSize}
           currentAlign={textAlignValue}
           onSelectAlign={onApplyTextAlign}
+          currentLineHeight={lineHeightValue}
+          currentLetterSpacing={letterSpacingValue}
+          onSelectSpacing={onApplyTextSpacing}
         />
       </div>
     </div>

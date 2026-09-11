@@ -208,6 +208,8 @@ export function useCanvaInteractions({
   const [activeFontFamily, setActiveFontFamily] = useState<string>("");
   const [activeFontSize, setActiveFontSize] = useState<string>("");
   const [activeTextAlign, setActiveTextAlign] = useState<string>("left");
+  const [activeLineHeight, setActiveLineHeight] = useState<string>("");
+  const [activeLetterSpacing, setActiveLetterSpacing] = useState<string>("");
   const [isDragging, setIsDragging] = useState(false);
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [distanceBadges, setDistanceBadges] = useState<DistanceBadge[]>([]);
@@ -584,6 +586,8 @@ export function useCanvaInteractions({
       if (comp.textAlign) {
         setActiveTextAlign(comp.textAlign as any);
       }
+      setActiveLineHeight(element.style.lineHeight || "");
+      setActiveLetterSpacing(element.style.letterSpacing || "");
     } catch {}
 
     onStartTextEditing?.(element, sectionIndex);
@@ -1320,6 +1324,29 @@ export function useCanvaInteractions({
   }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
 
   /**
+   * Line height and letter spacing are properties of the block, not of a run
+   * of characters, so they go on the element like alignment does.
+   */
+  const applyTextSpacing = useCallback((prop: "lineHeight" | "letterSpacing", value: string) => {
+    if (prop === "lineHeight") setActiveLineHeight(value);
+    else setActiveLetterSpacing(value);
+
+    let el = activeEditingElemRef.current;
+    if (!el && selectedElement?.element) {
+      const textTarget = findTextEditableElement(selectedElement.element);
+      if (textTarget) {
+        activateTextEditing(textTarget, selectedElement.sectionIndex);
+        el = textTarget;
+      }
+    }
+    if (!el) return;
+
+    el.style[prop] = value;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    syncCurrentElementCode();
+  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+
+  /**
    * Applies rich text formatting commands (bold, italic, underline, removeFormat)
    */
   const applyTextFormat = useCallback((command: "bold" | "italic" | "underline" | "removeFormat") => {
@@ -1401,7 +1428,11 @@ export function useCanvaInteractions({
     applyFontSize,
     activeTextAlign,
     applyTextAlign,
+    activeLineHeight,
+    activeLetterSpacing,
+    applyTextSpacing,
     applyTextFormat,
+    activateTextEditing,
     activeEditingElement: activeEditingElemRef.current,
     isDragging,
     snapGuides,

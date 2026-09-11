@@ -19,14 +19,13 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SaveStatus } from "@/hooks/useEditorPages";
 import type { SelectionState } from "@/lib/editor/selection-store";
-import type { ButtonProps, CardProps, ElementPropsByType, ImageProps, LeafType, TextProps } from "@/lib/editor/element-resolver";
+import type { ButtonProps, CardProps, ElementPropsByType, ImageProps, LeafType } from "@/lib/editor/element-resolver";
 
 import { ToolbarUtilities } from "../ToolbarUtilities";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
 import { CardPanel } from "./panels/CardPanel";
 import { ButtonPanel } from "./panels/ButtonPanel";
 import { ImagePanel } from "./panels/ImagePanel";
-import { TextPanel } from "./panels/TextPanel";
 
 type DockPosition = "bottom" | "top" | "left" | "right";
 
@@ -82,7 +81,8 @@ export function ElementToolbar({
   const config = type ? TOOLBAR_CONFIG[type] : null;
   const [chosenTab, setTab] = useState<string>("");
 
-  if (!type || type === "section" || !config || !selection.selectedId) return null;
+  // Text is edited in place (see InlineTextToolbar), never selected here.
+  if (!type || type === "section" || type === "text" || !config || !selection.selectedId) return null;
 
   // A tab chosen for another kind of element does not carry over; the first tab does.
   const tab = config.tabs.some((t) => t.id === chosenTab) ? chosenTab : config.tabs[0]!.id;
@@ -100,8 +100,6 @@ export function ElementToolbar({
         return <ButtonPanel tab={tab} props={meta as unknown as ButtonProps} onChange={(p) => onChange<"button">(id, p)} />;
       case "image":
         return <ImagePanel tab={tab} props={meta as unknown as ImageProps} onChange={(p) => onChange<"image">(id, p)} />;
-      case "text":
-        return <TextPanel tab={tab} props={meta as unknown as TextProps} onChange={(p) => onChange<"text">(id, p)} />;
     }
   })();
 

@@ -86,7 +86,7 @@ import { UserProfileMenu } from "./UserProfileMenu";
 import { useSelectionController } from "./selection/useSelectionController";
 import { ElementToolbar } from "./selection/ElementToolbar";
 import { SelectionHighlight } from "./selection/SelectionHighlight";
-import { colorToHex, sanitizeCleanDom } from "./canvas/useCanvaInteractions";
+import { colorToHex, findTextEditableElement, sanitizeCleanDom } from "./canvas/useCanvaInteractions";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
 const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
@@ -760,6 +760,17 @@ export function EditorStudio({
       closeCustomToolbar();
       setImagePopup(null);
       setMapPopup(null);
+    },
+    // Right-click on text edits it in place — the same as a double-click —
+    // so there is one text toolbar, however the person got to it.
+    onTextHit: (element, sectionIndex) => {
+      const textTarget = findTextEditableElement(element);
+      if (!textTarget) return false;
+      setImagePopup(null);
+      setMapPopup(null);
+      setActiveSectionIndex(sectionIndex);
+      inPlaceEditor.activateTextEditing(textTarget, sectionIndex);
+      return true;
     },
   });
 
@@ -2442,6 +2453,9 @@ export function EditorStudio({
             onApplyFontSize={inPlaceEditor.applyFontSize}
             textAlignValue={inPlaceEditor.activeTextAlign}
             onApplyTextAlign={inPlaceEditor.applyTextAlign}
+            lineHeightValue={inPlaceEditor.activeLineHeight}
+            letterSpacingValue={inPlaceEditor.activeLetterSpacing}
+            onApplyTextSpacing={inPlaceEditor.applyTextSpacing}
           />
         ) : isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
           <SectionToolbar

@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect, useId } from "react";
 import {
+  AlignCenter,
+  AlignJustify,
+  AlignLeft,
+  AlignRight,
   Bold,
   Italic,
   Underline,
   RotateCcw,
-  Sparkles,
   Type,
 } from "lucide-react";
 import { hexFromValue } from "@/lib/sections/section-edit";
@@ -15,14 +18,40 @@ export interface SingleRowTextColorPanelProps {
   currentColor: string;
   onSelectColor: (hex: string) => void;
   onFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
-  isEditingText?: boolean;
   currentFont?: string;
   onSelectFont?: (font: string) => void;
   currentFontSize?: string;
   onSelectFontSize?: (size: string) => void;
   currentAlign?: string;
   onSelectAlign?: (align: "left" | "center" | "right" | "justify") => void;
+  currentLineHeight?: string;
+  currentLetterSpacing?: string;
+  onSelectSpacing?: (prop: "lineHeight" | "letterSpacing", value: string) => void;
 }
+
+const ALIGN_OPTIONS: ReadonlyArray<{ value: "left" | "center" | "right" | "justify"; Icon: typeof AlignLeft; label: string }> = [
+  { value: "left", Icon: AlignLeft, label: "Align left" },
+  { value: "center", Icon: AlignCenter, label: "Align centre" },
+  { value: "right", Icon: AlignRight, label: "Align right" },
+  { value: "justify", Icon: AlignJustify, label: "Justify" },
+];
+
+const LINE_HEIGHT_OPTIONS = [
+  { label: "Auto", value: "" },
+  { label: "Tight", value: "1.1" },
+  { label: "Snug", value: "1.3" },
+  { label: "Normal", value: "1.5" },
+  { label: "Relaxed", value: "1.75" },
+  { label: "Loose", value: "2" },
+];
+
+const LETTER_SPACING_OPTIONS = [
+  { label: "Normal", value: "" },
+  { label: "Tight", value: "-0.02em" },
+  { label: "Wide", value: "0.05em" },
+  { label: "Wider", value: "0.1em" },
+  { label: "Widest", value: "0.2em" },
+];
 
 const FONT_FAMILY_OPTIONS = [
   { label: "Default Font", value: "" },
@@ -55,13 +84,15 @@ export function SingleRowTextColorPanel({
   currentColor,
   onSelectColor,
   onFormat,
-  isEditingText = false,
   currentFont = "",
   onSelectFont,
   currentFontSize = "",
   onSelectFontSize,
-  currentAlign: _currentAlign = "left",
-  onSelectAlign: _onSelectAlign,
+  currentAlign = "left",
+  onSelectAlign,
+  currentLineHeight = "",
+  currentLetterSpacing = "",
+  onSelectSpacing,
 }: SingleRowTextColorPanelProps) {
   const [hexDraft, setHexDraft] = useState<string>(currentColor || "#ffffff");
   const colorPickerId = useId();
@@ -201,15 +232,67 @@ export function SingleRowTextColorPanel({
         </div>
       )}
 
-      {/* 4. Context Guidance Badge */}
-      <div className="flex items-center gap-1.5 shrink-0 ml-auto hidden sm:flex text-[10px] font-semibold text-slate-400">
-        <Sparkles className="w-3 h-3 text-cyan-500" />
-        <span>
-          {isEditingText
-            ? "Highlight text or type anywhere in this color"
-            : "Click any text on the page to edit and type in this color"}
-        </span>
-      </div>
+      {/* 6. Alignment */}
+      {onSelectAlign && (
+        <div className="flex items-center gap-0.5 shrink-0 bg-slate-50/80 px-1.5 py-1 rounded-xl border border-slate-200/60">
+          {ALIGN_OPTIONS.map(({ value, Icon, label }) => {
+            const active = (currentAlign || "left").replace("start", "left") === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                title={label}
+                aria-pressed={active}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => onSelectAlign(value)}
+                className={`rounded-md p-1 transition cursor-pointer ${
+                  active ? "bg-white text-slate-900 shadow-xs border border-slate-200/80" : "text-slate-400 hover:text-slate-700"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 7. Line height & letter spacing */}
+      {onSelectSpacing && (
+        <>
+          <div className="flex items-center gap-1 shrink-0 bg-slate-50/80 px-2 py-1 rounded-xl border border-slate-200/60">
+            <span className="text-[10.5px] font-bold text-slate-400 whitespace-nowrap">Line</span>
+            <select
+              value={LINE_HEIGHT_OPTIONS.some((o) => o.value === currentLineHeight) ? currentLineHeight : ""}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => onSelectSpacing("lineHeight", e.target.value)}
+              className="text-[11px] font-bold text-slate-700 bg-transparent border-none outline-none cursor-pointer pr-1 py-0.5"
+              title="Line height"
+            >
+              {LINE_HEIGHT_OPTIONS.map((o) => (
+                <option key={o.label} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 bg-slate-50/80 px-2 py-1 rounded-xl border border-slate-200/60">
+            <span className="text-[10.5px] font-bold text-slate-400 whitespace-nowrap">Spacing</span>
+            <select
+              value={LETTER_SPACING_OPTIONS.some((o) => o.value === currentLetterSpacing) ? currentLetterSpacing : ""}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => onSelectSpacing("letterSpacing", e.target.value)}
+              className="text-[11px] font-bold text-slate-700 bg-transparent border-none outline-none cursor-pointer pr-1 py-0.5"
+              title="Letter spacing"
+            >
+              {LETTER_SPACING_OPTIONS.map((o) => (
+                <option key={o.label} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
     </div>
   );
 }
