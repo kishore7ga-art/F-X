@@ -286,37 +286,17 @@ const cycleControl = (
 ) => styleControl(id, label, target, prop, { kind: "cycle", options, ...extra });
 
 /**
- * The entrance animation, with its duration left to `--x-anim-speed` so the
- * speed is a separate press rather than another seven entries. The fallback
- * is the speed the old fixed values used, so a section saved before the speed
- * control existed plays exactly as it did.
+ * The entrance animation. One press per effect; the duration is the one
+ * every effect has always used, so there is nothing else to set.
  */
-const ENTRANCE_SPEED_VAR = "--x-anim-speed";
-const entrance = (name: string) => `${name} var(${ENTRANCE_SPEED_VAR}, 0.7s) ease-out both`;
-
 export const ENTRANCE_OPTIONS: readonly ControlOption[] = [
   { value: "", label: "None" },
-  { value: entrance("xite-fade-in"), label: "Fade in" },
-  { value: entrance("xite-slide-up"), label: "Slide up" },
-  { value: entrance("xite-slide-down"), label: "Slide down" },
-  { value: entrance("xite-slide-left"), label: "Slide left" },
-  { value: entrance("xite-slide-right"), label: "Slide right" },
-  { value: entrance("xite-zoom-in"), label: "Zoom in" },
-];
-
-/** Normal is the speed everything ran at before there was a choice. */
-export const ENTRANCE_SPEED_OPTIONS: readonly ControlOption[] = [
-  { value: "", label: "Normal" },
-  { value: "0.45s", label: "Medium" },
-  { value: "0.25s", label: "High" },
-];
-
-/** The same three words for the hover speed, so the two controls read alike. */
-export const HOVER_TRANSITION_OPTIONS: readonly ControlOption[] = [
-  { value: "", label: "None" },
-  { value: "all 0.5s ease", label: "Normal" },
-  { value: "all 0.3s ease", label: "Medium" },
-  { value: "all 0.2s ease", label: "High" },
+  { value: "xite-fade-in 0.7s ease-out both", label: "Fade in" },
+  { value: "xite-slide-up 0.7s ease-out both", label: "Slide up" },
+  { value: "xite-slide-down 0.7s ease-out both", label: "Slide down" },
+  { value: "xite-slide-left 0.7s ease-out both", label: "Slide left" },
+  { value: "xite-slide-right 0.7s ease-out both", label: "Slide right" },
+  { value: "xite-zoom-in 0.7s ease-out both", label: "Zoom in" },
 ];
 
 /* ── Building ───────────────────────────────────────────────────────────── */
@@ -407,6 +387,9 @@ export function buildSectionSchema(section: {
       placeholder: "https://…",
     },
     selectControl("bg-gradient", "Designs", rootTarget, "--x-gradient", GRADIENT_OPTIONS),
+    // The entrance animation lives in the Background row rather than a group
+    // of its own: it is one button, and one button is not a tab.
+    cycleControl("anim-preset", "Entrance effect", rootTarget, "animation", ENTRANCE_OPTIONS),
     styleControl("bg-density", "Image density", rootTarget, "--x-bg-size"),
     styleControl("bg-blur", "Image blur", rootTarget, "--x-bg-blur"),
     styleControl("bg-video", "Background video", rootTarget, "--x-bg-video"),
@@ -455,16 +438,6 @@ export function buildSectionSchema(section: {
       );
     });
   }
-
-  /* — 3. Animation (Entrance and hover animation effects) —————————————— */
-  // Cycle buttons rather than dropdowns: one press per step, the way the
-  // Swap button walks through layouts, so trying every effect is seven clicks
-  // on one spot instead of seven open-choose-close trips through a list.
-  group("animation").controls.push(
-    cycleControl("anim-preset", "Entrance effect", rootTarget, "animation", ENTRANCE_OPTIONS),
-    cycleControl("anim-speed", "Entrance speed", rootTarget, ENTRANCE_SPEED_VAR, ENTRANCE_SPEED_OPTIONS),
-    cycleControl("anim-transition", "Hover transition", rootTarget, "transition", HOVER_TRANSITION_OPTIONS),
-  );
 
   /* — 4. Text Color — */
   group("textColor");

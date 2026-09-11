@@ -336,7 +336,7 @@ describe("section-schema — a different toolbar per section", () => {
   it("gives a section the retained background, animation, and text color controls", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
     assert.ok(schema.capabilities.includes("background"));
-    assert.ok(schema.capabilities.includes("animation"));
+    assert.ok(!schema.capabilities.includes("animation" as any));
     assert.ok(schema.capabilities.includes("textColor"));
     assert.ok(!schema.capabilities.includes("buttons"));
     assert.ok(!schema.capabilities.includes("shadow" as any));
@@ -548,41 +548,29 @@ describe("background image & color markup sync", () => {
 
 
 
-describe("animation — cycle buttons, not dropdowns", () => {
+describe("animation — one cycle button in the Background row", () => {
   const schema = buildSectionSchema({ code: HERO, category: "hero" });
-  const control = (id: string) => allControls(schema).find((c) => c.id === id)!;
+  const control = (id: string) => allControls(schema).find((c) => c.id === id);
 
-  it("offers entrance, speed and hover as cycle controls", () => {
-    for (const id of ["anim-preset", "anim-speed", "anim-transition"]) {
-      assert.equal(control(id).kind, "cycle", id);
-      assert.ok((control(id).options?.length ?? 0) >= 3, id);
-      assert.equal(control(id).options![0]!.label, id === "anim-speed" ? "Normal" : "None");
-    }
-    assert.deepEqual(
-      control("anim-speed").options!.map((o) => o.label),
-      ["Normal", "Medium", "High"],
-    );
+  it("keeps the entrance effect as a cycle control inside the background group", () => {
+    const background = schema.groups.find((g) => g.id === "background")!;
+    const entrance = background.controls.find((c) => c.id === "anim-preset")!;
+    assert.equal(entrance.kind, "cycle");
+    assert.equal(entrance.options![0]!.label, "None");
+    assert.equal(entrance.options!.length, 7);
+    assert.ok(!schema.groups.some((g) => (g.id as string) === "animation"));
   });
 
-  it("entrance leaves the duration to the speed control", () => {
-    const fadeIn = control("anim-preset").options![1]!;
-    let current = section(applyControl(section(HERO), control("anim-preset"), "desktop", fadeIn.value)!.code!);
-    assert.ok(current.code.includes("animation:xite-fade-in var(--x-anim-speed, 0.7s) ease-out both !important"));
-    assert.equal(readControlValue(current, control("anim-preset"), "desktop").value, fadeIn.value);
-
-    current = section(applyControl(current, control("anim-speed"), "desktop", "0.25s")!.code!);
-    assert.ok(current.code.includes("--x-anim-speed:0.25s"));
-    assert.equal(readControlValue(current, control("anim-speed"), "desktop").value, "0.25s");
-
-    // Back to Normal removes the variable so the 0.7s fallback applies.
-    current = section(applyControl(current, control("anim-speed"), "desktop", "")!.code!);
-    assert.ok(!current.code.includes("--x-anim-speed:"));
+  it("has no speed or hover controls any more", () => {
+    assert.equal(control("anim-speed"), undefined);
+    assert.equal(control("anim-transition"), undefined);
   });
 
-  it("hover speeds use the same three words", () => {
-    assert.deepEqual(
-      control("anim-transition").options!.map((o) => o.label),
-      ["None", "Normal", "Medium", "High"],
-    );
+  it("applies and reads the entrance effect", () => {
+    const entrance = control("anim-preset")!;
+    const fadeIn = entrance.options![1]!;
+    const current = section(applyControl(section(HERO), entrance, "desktop", fadeIn.value)!.code!);
+    assert.ok(current.code.includes("animation:xite-fade-in 0.7s ease-out both !important"));
+    assert.equal(readControlValue(current, entrance, "desktop").value, fadeIn.value);
   });
 });

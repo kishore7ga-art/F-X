@@ -34,7 +34,6 @@ import type { SectionCategoryId, UNCATEGORISED } from "./categories";
 export type CapabilityId =
   | "background"
   | "buttons"
-  | "animation"
   | "textColor";
 
 export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
@@ -44,31 +43,30 @@ export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
  */
 export const DEFAULT_ORDER: readonly CapabilityId[] = [
   "background",
-  "animation",
   "textColor",
 ];
 
 export const CATEGORY_ORDER: Partial<Record<SectionCategory, readonly CapabilityId[]>> = {
-  navbar: ["background", "animation", "textColor"],
-  hero: ["background", "animation", "textColor"],
-  cta: ["background", "animation", "textColor"],
-  about: ["background", "animation", "textColor"],
-  vision: ["background", "animation", "textColor"],
-  courses: ["background", "animation", "textColor"],
-  departments: ["background", "animation", "textColor"],
-  facilities: ["background", "animation", "textColor"],
-  research: ["background", "animation", "textColor"],
-  admissions: ["background", "animation", "textColor"],
-  placements: ["background", "animation", "textColor"],
-  highlights: ["background", "animation", "textColor"],
-  achievements: ["background", "animation", "textColor"],
-  news: ["background", "animation", "textColor"],
-  events: ["background", "animation", "textColor"],
-  gallery: ["background", "animation", "textColor"],
-  testimonials: ["background", "animation", "textColor"],
-  contact: ["background", "animation", "textColor"],
-  map: ["background", "animation", "textColor"],
-  footer: ["background", "animation", "textColor"],
+  navbar: ["background", "textColor"],
+  hero: ["background", "textColor"],
+  cta: ["background", "textColor"],
+  about: ["background", "textColor"],
+  vision: ["background", "textColor"],
+  courses: ["background", "textColor"],
+  departments: ["background", "textColor"],
+  facilities: ["background", "textColor"],
+  research: ["background", "textColor"],
+  admissions: ["background", "textColor"],
+  placements: ["background", "textColor"],
+  highlights: ["background", "textColor"],
+  achievements: ["background", "textColor"],
+  news: ["background", "textColor"],
+  events: ["background", "textColor"],
+  gallery: ["background", "textColor"],
+  testimonials: ["background", "textColor"],
+  contact: ["background", "textColor"],
+  map: ["background", "textColor"],
+  footer: ["background", "textColor"],
 };
 
 /** The groups, in the order this category wants them. */
@@ -157,6 +155,5 @@ export function categoryLabel(category: SectionCategory): string {
 export const GROUP_LABEL: Record<CapabilityId, string> = {
   background: "Background",
   buttons: "Buttons",
-  animation: "Animation",
   textColor: "Text Color",
 };

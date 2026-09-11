@@ -8,10 +8,13 @@ import {
   Upload,
   X,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { hexFromValue } from "@/lib/sections/section-edit";
 import { uploadImage } from "@/lib/api-client";
 import { isUsableImageUrl } from "@/lib/sections/section-managed-css";
+import type { ControlOption } from "@/lib/sections/section-schema";
+import { CycleButton } from "./CycleButton";
 
 export interface SingleRowBackgroundPanelProps {
   // Background Color
@@ -44,6 +47,11 @@ export interface SingleRowBackgroundPanelProps {
   videoValue?: string;
   onDraftVideo?: (value: string) => void;
   onCommitVideo?: (value: string) => void;
+
+  // Entrance animation — one cycle button, shown whatever the background mode.
+  animationValue?: string;
+  animationOptions?: readonly ControlOption[];
+  onCommitAnimation?: (value: string) => void;
 }
 
 const BACKGROUND_DESIGNS = [
@@ -119,6 +127,9 @@ export function SingleRowBackgroundPanel({
   videoValue,
   onDraftVideo,
   onCommitVideo,
+  animationValue = "",
+  animationOptions = [],
+  onCommitAnimation,
 }: SingleRowBackgroundPanelProps) {
   const safeImage = (imageValue && isUsableImageUrl(imageValue)) ? String(imageValue).trim() : "";
   const safeVideo = String(videoValue || "").trim();
@@ -473,6 +484,18 @@ export function SingleRowBackgroundPanel({
           </div>
 
         </>
+      )}
+
+      {/* ── 5. Entrance animation — one press per effect, in every mode ──── */}
+      {onCommitAnimation && animationOptions.length > 1 && (
+        <CycleButton
+          options={animationOptions}
+          value={animationValue}
+          onCommit={onCommitAnimation}
+          title="Entrance effect"
+          icon={<Zap className="h-3.5 w-3.5 text-amber-500" />}
+          className="shrink-0 min-w-[124px]"
+        />
       )}
     </div>
   );
