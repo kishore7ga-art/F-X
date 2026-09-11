@@ -152,6 +152,9 @@ export function ElementToolbar({
             {tag && <span className="font-mono text-slate-400">&lt;{tag}&gt;</span>}
           </div>
 
+          {/* One tab is no tab: the badge already says what this is. */}
+          {config.tabs.length > 1 && (
+            <>
           <div className="h-4 w-px bg-slate-200 shrink-0 hidden md:block" />
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
             {config.tabs.map((t) => (
@@ -168,6 +171,8 @@ export function ElementToolbar({
               </button>
             ))}
           </div>
+            </>
+          )}
         </div>
 
         <ToolbarUtilities

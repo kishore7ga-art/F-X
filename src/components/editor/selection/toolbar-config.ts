@@ -52,8 +52,7 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
     badge: "Button",
     badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200/60",
     tabs: [
-      { id: "link", label: "Link" },
-      { id: "style", label: "Style & Size" },
+      { id: "button", label: "Button" },
     ],
     deleteLabel: "this button",
   },

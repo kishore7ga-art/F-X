@@ -16,19 +16,17 @@ const SIZES: ReadonlyArray<{ value: ButtonSize; label: string }> = [
   { value: "lg", label: "L" },
 ];
 
-export function ButtonPanel({ tab, props, onChange }: PanelProps<ButtonProps>) {
-  if (tab === "link") {
-    // The label is edited on the canvas, and whether the link opens a new
-    // tab follows from the link itself (another site: new tab; a page of
-    // this site: in place) — see `lib/editor/link-target.ts`.
-    return (
-      <Field label="Link">
-        <TextField value={props.href} placeholder="/admissions or https://…" onCommit={(href) => onChange({ href })} width="w-[260px]" mono />
-      </Field>
-    );
-  }
+export function ButtonPanel({ props, onChange }: PanelProps<ButtonProps>) {
+  // One row, no tabs: a button has few enough settings to see all at once.
+  // The label is edited on the canvas, and whether the link opens a new tab
+  // follows from the link itself (another site: new tab; a page of this
+  // site: in place) — see `lib/editor/link-target.ts`.
   return (
     <>
+      <Field label="Link">
+        <TextField value={props.href} placeholder="/admissions or https://…" onCommit={(href) => onChange({ href })} width="w-[220px]" mono />
+      </Field>
+      <Divider />
       <Segmented label="Style" value={props.variant} options={VARIANTS} onChange={(variant) => onChange({ variant })} />
       <Segmented label="Size" value={props.size} options={SIZES} onChange={(size) => onChange({ size })} />
       <Divider />
