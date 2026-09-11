@@ -33,7 +33,6 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
     badgeClass: "bg-cyan-50 text-cyan-700 border-cyan-200/60",
     tabs: [
       { id: "background", label: "Background" },
-      { id: "textColor", label: "Text Color" },
       { id: "layout", label: "Layout" },
       { id: "badge", label: "Badge" },
     ],

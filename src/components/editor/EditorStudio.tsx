@@ -71,6 +71,7 @@ import { useViewport } from "@/hooks/useViewport";
 import { switchTier, tierById } from "@/lib/viewport-presets";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { SectionToolbar } from "./SectionToolbar";
+import { InlineTextToolbar } from "./InlineTextToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
 import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
@@ -2415,6 +2416,33 @@ export function EditorStudio({
             saveStatus={editor.saveStatus}
             saveError={editor.saveError}
           />
+        ) : inPlaceEditor.isEditingText && customToolbarSection ? (
+          /* Text being typed in: the text toolbar. The section toolbar edits the section only. */
+          <InlineTextToolbar
+            sectionTitle={customToolbarSection.title || "Section"}
+            device={sectionDevice}
+            dockPosition={dockPosition}
+            onDeviceChange={handleSectionDeviceChange}
+            onClose={() => {
+              inPlaceEditor.finishInlineTextEditing(false);
+              closeCustomToolbar();
+            }}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={editor.canUndo}
+            canRedo={editor.canRedo}
+            saveStatus={editor.saveStatus}
+            saveError={editor.saveError}
+            colorValue={inPlaceEditor.activeTextColor}
+            onApplyColor={inPlaceEditor.applyTextColor}
+            onApplyFormat={inPlaceEditor.applyTextFormat}
+            fontFamilyValue={inPlaceEditor.activeFontFamily}
+            onApplyFontFamily={inPlaceEditor.applyFontFamily}
+            fontSizeValue={inPlaceEditor.activeFontSize}
+            onApplyFontSize={inPlaceEditor.applyFontSize}
+            textAlignValue={inPlaceEditor.activeTextAlign}
+            onApplyTextAlign={inPlaceEditor.applyTextAlign}
+          />
         ) : isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
           <SectionToolbar
             key={customToolbarSection.id}
@@ -2426,12 +2454,7 @@ export function EditorStudio({
             onDeviceChange={handleSectionDeviceChange}
             onPatch={handleSectionPatch}
             /* Back button / Deselect: returns to normal dock */
-            onClose={() => {
-              if (inPlaceEditor.isEditingText) {
-                inPlaceEditor.finishInlineTextEditing(false);
-              }
-              closeCustomToolbar();
-            }}
+            onClose={closeCustomToolbar}
             onUndo={handleUndo}
             onRedo={handleRedo}
             canUndo={editor.canUndo}
@@ -2440,16 +2463,6 @@ export function EditorStudio({
             saveStatus={editor.saveStatus}
             saveError={editor.saveError}
             isOverlaid={isHeaderOverlaid(customToolbarSection)}
-            textColorValue={inPlaceEditor.activeTextColor}
-            onApplyTextColor={inPlaceEditor.applyTextColor}
-            onApplyTextFormat={inPlaceEditor.applyTextFormat}
-            fontFamilyValue={inPlaceEditor.activeFontFamily}
-            onApplyFontFamily={inPlaceEditor.applyFontFamily}
-            fontSizeValue={inPlaceEditor.activeFontSize}
-            onApplyFontSize={inPlaceEditor.applyFontSize}
-            textAlignValue={inPlaceEditor.activeTextAlign}
-            onApplyTextAlign={inPlaceEditor.applyTextAlign}
-            isEditingText={inPlaceEditor.isEditingText}
             onToggleOverlay={() => {
               const secIdx = resolvedToolbarSectionIndex;
               if (secIdx === null || !sections[secIdx]) return;

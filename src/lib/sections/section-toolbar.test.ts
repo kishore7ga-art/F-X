@@ -333,11 +333,11 @@ describe("section-probe — controls come from the markup, not from a table", ()
 /* ── The schema ─────────────────────────────────────────────────────────── */
 
 describe("section-schema — a different toolbar per section", () => {
-  it("gives a section the retained background, animation, and text color controls", () => {
+  it("gives a section the background controls and nothing about its text", () => {
     const schema = buildSectionSchema({ code: HERO, category: "hero" });
     assert.ok(schema.capabilities.includes("background"));
     assert.ok(!schema.capabilities.includes("animation" as any));
-    assert.ok(schema.capabilities.includes("textColor"));
+    assert.ok(!schema.capabilities.includes("textColor" as any));
     assert.ok(!schema.capabilities.includes("buttons"));
     assert.ok(!schema.capabilities.includes("shadow" as any));
     assert.equal(schema.categoryLabel, "Hero");

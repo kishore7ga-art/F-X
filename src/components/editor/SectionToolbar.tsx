@@ -83,7 +83,6 @@ import { BoundedDimensionControl } from "./BoundedDimensionControl";
 import { CycleButton } from "./CycleButton";
 import { SingleRowButtonPanel } from "./ButtonSettingsControl";
 import { SingleRowBackgroundPanel } from "./BackgroundSettingsControl";
-import { SingleRowTextColorPanel } from "./TextColorSettingsControl";
 import { recomposeSectionCode } from "@/lib/section-runtime";
 import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 
@@ -109,16 +108,6 @@ type Props = {
   saveError?: string | null;
   isOverlaid?: boolean;
   onToggleOverlay?: () => void;
-  textColorValue?: string;
-  onApplyTextColor?: (color: string) => void;
-  onApplyTextFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
-  fontFamilyValue?: string;
-  onApplyFontFamily?: (font: string) => void;
-  fontSizeValue?: string;
-  onApplyFontSize?: (size: string) => void;
-  textAlignValue?: string;
-  onApplyTextAlign?: (align: "left" | "center" | "right" | "justify") => void;
-  isEditingText?: boolean;
 };
 
 
@@ -301,25 +290,7 @@ export function SectionToolbar({
   saveError = null,
   isOverlaid = false,
   onToggleOverlay,
-  textColorValue = "#ffffff",
-  onApplyTextColor,
-  onApplyTextFormat,
-  fontFamilyValue,
-  onApplyFontFamily,
-  fontSizeValue,
-  onApplyFontSize,
-  textAlignValue,
-  onApplyTextAlign,
-  isEditingText = false,
 }: Props) {
-  const [currentTextColor, setCurrentTextColor] = useState<string>(textColorValue || "#ffffff");
-
-  useEffect(() => {
-    if (textColorValue) {
-      setCurrentTextColor(textColorValue);
-    }
-  }, [textColorValue]);
-
   const editable: EditableSection = useMemo(
     () => ({ title: section.title, code: section.code, category: section.category }),
     [section.title, section.code, section.category],
@@ -357,16 +328,6 @@ export function SectionToolbar({
     () => schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id,
   );
   const activeGroup = schema.groups.find((group) => group.id === activeGroupId) ?? schema.groups[0];
-
-  // If user is editing text, switch to Text Color tab; when editing finishes, revert to the section's default tab
-  useEffect(() => {
-    if (isEditingText) {
-      setActiveGroupId("textColor");
-    } else if (activeGroupId === "textColor") {
-      const defaultGroup = schema.groups.find((group) => group.open)?.id ?? schema.groups[0]?.id;
-      setActiveGroupId(defaultGroup);
-    }
-  }, [isEditingText, schema]);
 
   // Detect if user selected a button on canvas
   const selectedButtonElement = useMemo(() => {
@@ -694,9 +655,6 @@ export function SectionToolbar({
                     <button
                       key={group.id}
                       type="button"
-                      onMouseDown={(e) => {
-                        if (group.id === "textColor") e.preventDefault();
-                      }}
                       onClick={() => setActiveGroupId(group.id)}
                       aria-pressed={active}
                       className={`shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
@@ -892,24 +850,6 @@ export function SectionToolbar({
               onCommitUrl={(val) => commitButtonChanges({ url: val })}
               isNewTab={btnNewTab}
               onToggleNewTab={(val) => commitButtonChanges({ isNewTab: val })}
-            />
-          </div>
-        ) : activeGroup?.id === "textColor" ? (
-          <div className="py-0.5">
-            <SingleRowTextColorPanel
-              currentColor={currentTextColor}
-              onSelectColor={(hex) => {
-                setCurrentTextColor(hex);
-                onApplyTextColor?.(hex);
-              }}
-              onFormat={onApplyTextFormat}
-              isEditingText={isEditingText}
-              currentFont={fontFamilyValue}
-              onSelectFont={onApplyFontFamily}
-              currentFontSize={fontSizeValue}
-              onSelectFontSize={onApplyFontSize}
-              currentAlign={textAlignValue}
-              onSelectAlign={onApplyTextAlign}
             />
           </div>
         ) : activeGroup ? (

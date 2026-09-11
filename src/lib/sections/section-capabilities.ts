@@ -33,8 +33,7 @@ import type { SectionCategoryId, UNCATEGORISED } from "./categories";
 /** A group of related controls in the section toolbar. */
 export type CapabilityId =
   | "background"
-  | "buttons"
-  | "textColor";
+  | "buttons";
 
 export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
 
@@ -43,30 +42,29 @@ export type SectionCategory = SectionCategoryId | typeof UNCATEGORISED;
  */
 export const DEFAULT_ORDER: readonly CapabilityId[] = [
   "background",
-  "textColor",
 ];
 
 export const CATEGORY_ORDER: Partial<Record<SectionCategory, readonly CapabilityId[]>> = {
-  navbar: ["background", "textColor"],
-  hero: ["background", "textColor"],
-  cta: ["background", "textColor"],
-  about: ["background", "textColor"],
-  vision: ["background", "textColor"],
-  courses: ["background", "textColor"],
-  departments: ["background", "textColor"],
-  facilities: ["background", "textColor"],
-  research: ["background", "textColor"],
-  admissions: ["background", "textColor"],
-  placements: ["background", "textColor"],
-  highlights: ["background", "textColor"],
-  achievements: ["background", "textColor"],
-  news: ["background", "textColor"],
-  events: ["background", "textColor"],
-  gallery: ["background", "textColor"],
-  testimonials: ["background", "textColor"],
-  contact: ["background", "textColor"],
-  map: ["background", "textColor"],
-  footer: ["background", "textColor"],
+  navbar: ["background"],
+  hero: ["background"],
+  cta: ["background"],
+  about: ["background"],
+  vision: ["background"],
+  courses: ["background"],
+  departments: ["background"],
+  facilities: ["background"],
+  research: ["background"],
+  admissions: ["background"],
+  placements: ["background"],
+  highlights: ["background"],
+  achievements: ["background"],
+  news: ["background"],
+  events: ["background"],
+  gallery: ["background"],
+  testimonials: ["background"],
+  contact: ["background"],
+  map: ["background"],
+  footer: ["background"],
 };
 
 /** The groups, in the order this category wants them. */
@@ -155,5 +153,4 @@ export function categoryLabel(category: SectionCategory): string {
 export const GROUP_LABEL: Record<CapabilityId, string> = {
   background: "Background",
   buttons: "Buttons",
-  textColor: "Text Color",
 };

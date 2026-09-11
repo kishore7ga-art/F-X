@@ -439,16 +439,13 @@ export function buildSectionSchema(section: {
     });
   }
 
-  /* — 4. Text Color — */
-  group("textColor");
-
   /* — Assemble ——————————————————————————————————————————————— */
 
   const open = defaultOpenFor(category);
   const ordered = groupOrderFor(category)
     .map((id) => groups.get(id))
     .filter((entry): entry is ControlGroup => Boolean(entry))
-    .filter((entry) => entry.id === "textColor" || entry.controls.length > 0 || entry.lists.length > 0)
+    .filter((entry) => entry.controls.length > 0 || entry.lists.length > 0)
     .map((entry) => ({ ...entry, open: open.has(entry.id) }));
 
   return {
