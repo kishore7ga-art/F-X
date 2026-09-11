@@ -41,6 +41,25 @@
 
 import type { EditorSection, LibrarySection, SectionLibrary } from "@/lib/editor-api";
 import { UNCATEGORISED } from "@/lib/sections/categories";
+import { isHeaderOverlaid, toggleHeaderOverlay } from "@/lib/sections/section-edit";
+
+/**
+ * The overlay is a property of the *page* — "the header floats over the hero"
+ * — not of whichever header template happens to be showing. It lives in the
+ * section's managed CSS, so a swap that took a template's code verbatim
+ * dropped it: an overlaid header snapped back into the flow the moment its
+ * layout changed, and the toggle beside it then said "Overlay" as if the user
+ * had never pressed it. The reverse also held: a template that shipped with
+ * the flag would float over a page whose header was deliberately in the flow.
+ *
+ * So the state is read off the section being replaced and written onto the
+ * one replacing it, whichever way it goes.
+ */
+export function carryHeaderOverlay(from: EditorSection, to: EditorSection): EditorSection {
+  if (to.category !== "navbar") return to;
+  const wanted = isHeaderOverlaid(from);
+  return isHeaderOverlaid(to) === wanted ? to : toggleHeaderOverlay(to, wanted);
+}
 
 export type Variant = {
   /** The library template's id, or null for the section's own current markup. */
@@ -129,7 +148,7 @@ export function swapVariant(
     ok: true,
     position: nextIndex + 1,
     total: variants.length,
-    section: {
+    section: carryHeaderOverlay(section, {
       ...section,
       // The id never changes. It is what the reorder endpoint, React's keying
       // and the user's selection all address this section by; a swap that
@@ -141,7 +160,7 @@ export function swapVariant(
       templateId: next.templateId,
       variantIndex: nextIndex,
       category: section.category,
-    },
+    }),
   };
 }
 
@@ -205,10 +224,16 @@ export function insertSection(
     ? sections.filter((section) => section.category !== newSection.category)
     : sections;
 
+  // Replacing the header from the picker is a swap by another route, and the
+  // overlay belongs to the page, not the template — so it follows the new one.
+  const replacedHeader =
+    newSection.category === "navbar" ? sections.find((s) => s.category === "navbar") : undefined;
+  const placed = replacedHeader ? carryHeaderOverlay(replacedHeader, newSection) : newSection;
+
   const index = placementIndex(base, newSection.category, insertSlotAfter(base, anchorId));
 
   const next = [...base];
-  next.splice(index, 0, newSection);
+  next.splice(index, 0, placed);
 
   return { sections: next, index };
 }

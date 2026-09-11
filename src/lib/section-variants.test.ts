@@ -13,6 +13,7 @@ import {
   swapVariant,
   variantsFor,
 } from "@/lib/section-variants";
+import { isHeaderOverlaid, toggleHeaderOverlay } from "@/lib/sections/section-edit";
 
 const template = (id: string, category: string, name = id): LibrarySection => ({
   id,
@@ -388,5 +389,63 @@ describe("canMove / moveSection — the reorder rules", () => {
     const moved = moveSection(page, 1, 1);
     assert.equal(moved.length, page.length);
     assert.deepEqual([...moved].map((s) => s.id).sort(), [...page].map((s) => s.id).sort());
+  });
+});
+
+describe("header overlay survives a swap", () => {
+  const NAV_A = `<header class="nav"><a href="/">A</a></header>`;
+  const NAV_B = `<header class="nav"><a href="/">B</a></header>`;
+  const navLibrary: SectionLibrary = {
+    all: [],
+    byCategory: {
+      navbar: [
+        { id: "nav-a", name: "Nav A", category: "navbar", code: NAV_A },
+        { id: "nav-b", name: "Nav B", category: "navbar", code: NAV_B },
+      ],
+    },
+  } as unknown as SectionLibrary;
+  const header = (code: string, templateId: string): EditorSection => ({
+    id: "s1",
+    title: "Header",
+    category: "navbar",
+    templateId,
+    variantIndex: 0,
+    code,
+  });
+
+  it("keeps an overlaid header overlaid after swapping layouts", () => {
+    const overlaid = toggleHeaderOverlay(header(NAV_A, "nav-a"), true);
+    assert.equal(isHeaderOverlaid(overlaid), true);
+
+    const result = swapVariant(overlaid, navLibrary, 1);
+    assert.ok(result.ok);
+    assert.equal(result.section.templateId, "nav-b");
+    assert.ok(result.section.code.includes("B</a>"));
+    assert.equal(isHeaderOverlaid(result.section), true);
+    assert.ok(result.section.code.includes("position:absolute"));
+  });
+
+  it("does not overlay a header whose overlay was removed, even if the template ships with one", () => {
+    const shipped = toggleHeaderOverlay(header(NAV_B, "nav-b"), true);
+    const lib = {
+      ...navLibrary,
+      byCategory: { navbar: [navLibrary.byCategory.navbar![0], { ...navLibrary.byCategory.navbar![1], code: shipped.code }] },
+    } as SectionLibrary;
+
+    const plain = header(NAV_A, "nav-a");
+    const result = swapVariant(plain, lib, 1);
+    assert.ok(result.ok);
+    assert.equal(isHeaderOverlaid(result.section), false);
+  });
+
+  it("carries the overlay when the header is replaced from the picker", () => {
+    const overlaid = toggleHeaderOverlay(header(NAV_A, "nav-a"), true);
+    const hero: EditorSection = { id: "s2", title: "Hero", category: "hero", templateId: null, variantIndex: 0, code: "<section>hi</section>" };
+    const fresh = sectionFromTemplate(navLibrary.byCategory.navbar![1]!, "s3");
+
+    const { sections, index } = insertSection([overlaid, hero], 1, fresh);
+    assert.equal(index, 0);
+    assert.equal(sections[0]!.id, "s3");
+    assert.equal(isHeaderOverlaid(sections[0]!), true);
   });
 });
