@@ -48,6 +48,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ChevronDown,
+  ChevronRight,
   Copy,
   Eye,
   Layers,
@@ -1200,6 +1201,23 @@ function ControlRow({
   );
 }
 
+/**
+ * Which option a cycle button is on.
+ *
+ * Exact first. Failing that, by the value's first word — a section saved
+ * before the speed control existed carries `xite-fade-in 0.7s ease-out both`,
+ * and it is still "Fade in": the fixed duration is the only difference, and
+ * pressing the button once rewrites it in the current form anyway. A value
+ * matching nothing shows as-is and the next press starts the cycle over.
+ */
+function cycleIndex(options: readonly { value: string }[], draft: string): number {
+  const exact = options.findIndex((option) => option.value === draft);
+  if (exact >= 0) return exact;
+  const head = draft.trim().split(/\s+/)[0] ?? "";
+  if (!head) return -1;
+  return options.findIndex((option) => option.value.split(/\s+/)[0] === head && option.value !== "");
+}
+
 function ControlInput({
   control,
   reading,
@@ -1246,6 +1264,28 @@ function ControlInput({
           )}
         </select>
       );
+
+    case "cycle": {
+      const options = control.options ?? [];
+      const current = cycleIndex(options, draft);
+      const next = options[(current + 1) % Math.max(options.length, 1)];
+      const label = current >= 0 ? options[current]!.label : draft || "Custom";
+      return (
+        <button
+          type="button"
+          onClick={() => next && onCommit(next.value)}
+          disabled={options.length < 2}
+          title={next ? `Next: ${next.label}` : undefined}
+          className={`${INPUT_CLASS} flex cursor-pointer items-center justify-between gap-2 text-left hover:border-cyan-400 disabled:cursor-default`}
+        >
+          <span className="truncate">{label}</span>
+          <span className="flex shrink-0 items-center gap-1 text-[9px] font-bold text-slate-400">
+            {current >= 0 && `${current + 1}/${options.length}`}
+            <ChevronRight className="h-3 w-3" />
+          </span>
+        </button>
+      );
+    }
 
     case "color":
       return (
