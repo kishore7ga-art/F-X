@@ -15,6 +15,8 @@ import {
   generateHarmonicPalette,
   customThemeCss,
   calculateOppositeContrast,
+  presetBrandTokens,
+  DEFAULT_DUAL_THEMES,
 } from "@/lib/editor-themes";
 
 describe("the editor themes", () => {
@@ -345,6 +347,36 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
     assert.ok(css.includes("--xite-on-secondary: #ffffff;"));
     // Ensures child text in themed buttons inherits contrast color
     assert.ok(css.includes("color: var(--xite-on-accent, #ffffff) !important;"));
+  });
+
+  it("layers customThemeCss over whichever preset is chosen, not only `custom`", () => {
+    const css = customThemeCss(".xite-site-canvas", DEFAULT_DUAL_THEMES[0]!.tokens);
+    // Any theme attribute, at higher specificity than the preset blocks, so a
+    // tenant on White & Black who picks a blue primary keeps the white template.
+    assert.ok(css.includes(".xite-site-canvas[data-xite-theme][data-xite-theme] {"));
+    assert.ok(!css.includes('[data-xite-theme="custom"]'));
+  });
+
+  it("starts a preset's primary on its accent and its secondary on its base", () => {
+    const whiteAndBlack = DEFAULT_DUAL_THEMES.find((t) => t.id === "white-and-black")!;
+    const blackAndWhite = DEFAULT_DUAL_THEMES.find((t) => t.id === "black-and-white")!;
+
+    const wb = presetBrandTokens(whiteAndBlack);
+    assert.equal(wb.primary, "#000000");
+    assert.equal(wb.secondary, "#ffffff");
+    assert.equal(wb.onAccent, "#ffffff");
+    assert.equal(wb.onSecondary, "#000000");
+    // A white secondary needs a visible edge on a white surface.
+    assert.equal(wb.secondaryBorder, "#cbd5e1");
+    // The template itself is untouched: still the preset's surfaces and text.
+    assert.equal(wb.surface, whiteAndBlack.tokens.surface);
+    assert.equal(wb.text, whiteAndBlack.tokens.text);
+
+    const bw = presetBrandTokens(blackAndWhite);
+    assert.equal(bw.primary, "#ffffff");
+    assert.equal(bw.secondary, "#000000");
+    assert.equal(bw.onAccent, "#000000");
+    assert.equal(bw.onSecondary, "#ffffff");
   });
 });
 

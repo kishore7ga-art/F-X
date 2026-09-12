@@ -723,9 +723,41 @@ export function themeFontsHref(): string {
 }
 
 /**
+ * The two brand colours a preset starts the tenant off with.
+ *
+ * Picking "White & Black" makes the whole template white with black brand
+ * elements, so the colour cards read primary = the preset's accent (black) and
+ * secondary = its base (white). "Black & White" is the reverse. The tenant can
+ * then replace either one on its own; the surfaces and text stay the preset's.
+ */
+export function presetBrandTokens(theme: EditorTheme): EditorThemeTokens {
+  const primary = theme.swatch.accent;
+  const secondary = theme.swatch.base;
+  const primContrast = calculateOppositeContrast(primary);
+  const secContrast = calculateOppositeContrast(secondary);
+  return {
+    ...theme.tokens,
+    primary,
+    accent: primary,
+    accentSoft: primContrast.softBackground,
+    onAccent: primContrast.textColor,
+    accentBorder: primContrast.borderColor,
+    secondary,
+    onSecondary: secContrast.textColor,
+    secondaryBorder: secContrast.borderColor,
+  };
+}
+
+/**
  * Emits CSS rules for a custom theme's tokens.
  * Specifically scopes customization to brand action elements (buttons, badges, highlights)
  * while preserving natural section surfaces, dark heroes, and card layouts as authored.
+ *
+ * The block matches any chosen theme, not only `custom`, and at one notch
+ * higher specificity than the preset blocks in `themeStylesheet`. That is how
+ * a tenant keeps the White & Black template — surfaces, text, header — while
+ * replacing just the primary or secondary colour: the preset supplies
+ * everything, and this block overrides the brand colours on top of it.
  */
 export function customThemeCss(scope: string, tokens: EditorThemeTokens): string {
   const primary = tokens.primary || tokens.accent || "#000000";
@@ -751,7 +783,7 @@ export function customThemeCss(scope: string, tokens: EditorThemeTokens): string
     `  --xite-secondary-border: ${secondaryBorder};`,
   ].join("\n");
 
-  return `${scope}[data-xite-theme="custom"], ${scope}[data-xite-theme^="custom-"] {\n${declarations}\n}\n\n${themeButtonRules(scope)}`;
+  return `${scope}[data-xite-theme][data-xite-theme] {\n${declarations}\n}\n\n${themeButtonRules(scope)}`;
 }
 
 /* ── Color Palette Algorithms & Harmonies ────────────────────────────────── */

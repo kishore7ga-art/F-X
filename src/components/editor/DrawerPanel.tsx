@@ -7,6 +7,7 @@ import {
   EDITOR_FONTS,
   hexToRgb,
   calculateOppositeContrast,
+  presetBrandTokens,
   type EditorThemeTokens,
 } from "@/lib/editor-themes";
 import {
@@ -51,7 +52,8 @@ interface DrawerPanelProps {
   onPageSelect?: (pageName: string, pageSlug: string) => void;
   /** Fired once, for a page the user has just created and that has no sections yet. */
   onPageCreate?: (pageName: string, pageSlug: string) => void;
-  onPaletteSelect?: (paletteId: string) => void;
+  /** `tokens` accompany a preset: the brand colours it starts the tenant on. */
+  onPaletteSelect?: (paletteId: string, tokens?: EditorThemeTokens) => void;
   onFontSelect?: (fontId: string) => void;
   /**
    * The theme and font currently applied.
@@ -143,7 +145,7 @@ function BrandColorCard({
               borderRadius: "6px",
             }}
           >
-            Active
+            Custom
           </span>
         )}
       </div>
@@ -313,10 +315,23 @@ export function DrawerPanel({
    */
   const currentSecondaryColor = customTokens.secondary || currentAccentColor;
 
+  /**
+   * What the active preset would give, so each card can say when the tenant
+   * has replaced that colour. With no preset chosen there is nothing to differ
+   * from, and any customisation at all counts.
+   */
+  const activePreset = DEFAULT_DUAL_THEMES.find((t) => t.id === activePaletteId);
+  const presetDefaults = activePreset ? presetBrandTokens(activePreset) : null;
+  const differsFromPreset = (value: string, presetValue: string | undefined) =>
+    presetValue ? value.toLowerCase() !== presetValue.toLowerCase() : activePaletteId === "custom";
+
+  /**
+   * Changing a colour keeps the preset selected: the canvas still wears its
+   * surfaces and text, with just this colour overridden on top.
+   */
   const commitCustomTokens = (updated: EditorThemeTokens) => {
     setCustomTokens(updated);
     onCustomThemeChange?.(updated);
-    onPaletteSelect?.("custom");
   };
 
   const handleApplyAccentColor = (newHex: string) => {
@@ -483,13 +498,15 @@ export function DrawerPanel({
    * the tick moved when clicked and then reverted to Academic Navy the next
    * time the drawer opened — the two disagreed after any reload.
    */
+  /**
+   * A preset resets both colour cards to its own pair — black on white, or
+   * white on black — replacing whatever was customised on the previous one.
+   */
   const handleSelectPalette = (paletteId: string, paletteName: string) => {
-    onPaletteSelect?.(paletteId);
     const selectedTheme = DEFAULT_DUAL_THEMES.find((t) => t.id === paletteId);
-    if (selectedTheme) {
-      setCustomTokens(selectedTheme.tokens);
-      onCustomThemeChange?.(selectedTheme.tokens);
-    }
+    const tokens = selectedTheme ? presetBrandTokens(selectedTheme) : undefined;
+    if (tokens) setCustomTokens(tokens);
+    onPaletteSelect?.(paletteId, tokens);
     showNotification(`Applied theme: ${paletteName}`);
   };
 
@@ -821,14 +838,14 @@ export function DrawerPanel({
                 title="Customize Primary Color"
                 label="Primary"
                 value={currentAccentColor}
-                active={activePaletteId === "custom"}
+                active={differsFromPreset(currentAccentColor, presetDefaults?.primary)}
                 onChange={handleApplyAccentColor}
               />
               <BrandColorCard
                 title="Customize Secondary Color"
                 label="Secondary"
                 value={currentSecondaryColor}
-                active={activePaletteId === "custom" && Boolean(customTokens.secondary)}
+                active={differsFromPreset(currentSecondaryColor, presetDefaults?.secondary)}
                 onChange={handleApplySecondaryColor}
               />
             </div>

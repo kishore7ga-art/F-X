@@ -873,13 +873,33 @@ export function EditorStudio({
     if (!style) {
       style = document.createElement("style");
       style.id = id;
-      document.head.prepend(style);
+      // Directly after the preset sheet: it overrides the preset's brand
+      // colours, so it must come later in the cascade as well as being more
+      // specific.
+      const presets = document.getElementById("xite-editor-theme-tokens");
+      if (presets) presets.after(style);
+      else document.head.prepend(style);
     }
     style.textContent = customThemeCss(EDITOR_CANVAS_SCOPE, customThemeTokens);
   }, [customThemeTokens]);
 
-  const handlePaletteSelect = useCallback((next: string) => {
+  const persistCustomThemeTokens = (tokens: EditorThemeTokens) => {
+    setCustomThemeTokens(tokens);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(tokens));
+      } catch {}
+    }
+  };
+
+  /**
+   * `tokens` are the preset's own brand colours, so the colour cards and the
+   * canvas start from what the preset shows rather than from whatever the
+   * tenant last customised on top of a different preset.
+   */
+  const handlePaletteSelect = useCallback((next: string, tokens?: EditorThemeTokens) => {
     setThemeId(next as EditorThemeId);
+    if (tokens) persistCustomThemeTokens(tokens);
     // Fire-and-forget: the theme is already applied on screen, and a failed
     // write is reported by `saveTheme` rather than reverting what the user sees.
     void saveTheme({ themeId: next }).catch((error) => {
@@ -887,16 +907,22 @@ export function EditorStudio({
     });
   }, []);
 
-  const handleCustomThemeChange = useCallback((tokens: EditorThemeTokens) => {
-    setCustomThemeTokens(tokens);
-    setThemeId("custom");
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(tokens));
-      } catch {}
-    }
-    void saveTheme({ themeId: "custom" }).catch(() => {});
-  }, []);
+  /**
+   * The preset stays selected. Replacing the primary or secondary colour is an
+   * override layered on the preset's template, not a different theme — that is
+   * what keeps the White & Black surfaces while the buttons turn blue. Only a
+   * tenant customising with no preset chosen at all needs the `custom` id, and
+   * only so the canvas carries a `data-xite-theme` for the override to attach to.
+   */
+  const handleCustomThemeChange = useCallback(
+    (tokens: EditorThemeTokens) => {
+      persistCustomThemeTokens(tokens);
+      if (themeId) return;
+      setThemeId("custom");
+      void saveTheme({ themeId: "custom" }).catch(() => {});
+    },
+    [themeId],
+  );
 
   const handleFontSelect = useCallback((next: string) => {
     setFontId(next as EditorFontId);
