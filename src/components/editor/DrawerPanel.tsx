@@ -95,6 +95,181 @@ const INITIAL_PAGES: PageItem[] = [
   { id: "11", name: "Scholarships & Grants", slug: "/scholarships", icon: Award },
 ];
 
+/**
+ * One brand colour: a preview box that opens the native picker, a hex field,
+ * and the curated swatches. The colours tab renders it twice — once for the
+ * primary colour, once for the secondary — so each can be changed on its own
+ * without touching the other.
+ */
+function BrandColorCard({
+  title,
+  label,
+  value,
+  active,
+  onChange,
+}: {
+  title: string;
+  label: string;
+  value: string;
+  active: boolean;
+  onChange: (hex: string) => void;
+}) {
+  const isWhite = value.toLowerCase() === "#ffffff";
+  return (
+    <div
+      style={{
+        border: "1px solid #e2e8f0",
+        borderRadius: "14px",
+        padding: "12px",
+        backgroundColor: "#ffffff",
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <Palette style={{ width: "14px", height: "14px", color: "#0f172a" }} />
+          <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>{title}</span>
+        </div>
+        {active && (
+          <span
+            style={{
+              fontSize: "9px",
+              fontWeight: 800,
+              color: "#16a34a",
+              backgroundColor: "#dcfce7",
+              padding: "2px 6px",
+              borderRadius: "6px",
+            }}
+          >
+            Active
+          </span>
+        )}
+      </div>
+
+      {/* The Box & Hex Input */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "6px 8px",
+          borderRadius: "10px",
+          backgroundColor: "#f8fafc",
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* The Box */}
+          <label
+            style={{
+              position: "relative",
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              backgroundColor: value,
+              border: isWhite ? "2px solid #cbd5e1" : "2px solid #ffffff",
+              boxShadow: "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
+              cursor: "pointer",
+              display: "block",
+              flexShrink: 0,
+            }}
+            title="Click to pick any custom color"
+          >
+            <input
+              type="color"
+              value={value.startsWith("#") ? value : "#2563eb"}
+              onChange={(e) => onChange(e.target.value)}
+              style={{
+                opacity: 0,
+                width: "100%",
+                height: "100%",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                cursor: "pointer",
+              }}
+            />
+          </label>
+
+          <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>{label}</span>
+        </div>
+
+        {/* Hex Input */}
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          maxLength={9}
+          style={{
+            width: "80px",
+            height: "28px",
+            borderRadius: "6px",
+            border: "1px solid #cbd5e1",
+            padding: "0 6px",
+            fontSize: "11px",
+            fontFamily: "monospace",
+            fontWeight: 700,
+            color: "#0f172a",
+            backgroundColor: "#ffffff",
+            textAlign: "center",
+          }}
+        />
+      </div>
+
+      {/* The Circle Shape Color Palette Swatches */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          flexWrap: "wrap",
+        }}
+      >
+        {CURATED_ACCENT_SWATCHES.map((swatch) => {
+          const isSelected = value.toLowerCase() === swatch.hex.toLowerCase();
+          return (
+            <button
+              key={swatch.hex}
+              type="button"
+              onClick={() => onChange(swatch.hex)}
+              title={swatch.name}
+              style={{
+                width: "26px",
+                height: "26px",
+                borderRadius: "50%",
+                backgroundColor: swatch.hex,
+                border: isSelected ? "2.5px solid #0f172a" : swatch.hex.toLowerCase() === "#ffffff" ? "1px solid #cbd5e1" : "2px solid #ffffff",
+                boxShadow: isSelected
+                  ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
+                  : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
+                cursor: "pointer",
+                transform: isSelected ? "scale(1.1)" : "scale(1)",
+                transition: "all 0.15s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {isSelected && (
+                <Check
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    color: calculateOppositeContrast(swatch.hex).textColor,
+                    filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.6))",
+                  }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function DrawerPanel({
   isOpen,
   onClose,
@@ -132,20 +307,38 @@ export function DrawerPanel({
   }, [customThemeTokens]);
 
   const currentAccentColor = customTokens.primary || customTokens.accent || "#000000";
+  /**
+   * Falls back to the primary until the tenant picks one, so the secondary
+   * card never shows a colour the canvas is not actually using.
+   */
+  const currentSecondaryColor = customTokens.secondary || currentAccentColor;
+
+  const commitCustomTokens = (updated: EditorThemeTokens) => {
+    setCustomTokens(updated);
+    onCustomThemeChange?.(updated);
+    onPaletteSelect?.("custom");
+  };
 
   const handleApplyAccentColor = (newHex: string) => {
     const contrast = calculateOppositeContrast(newHex);
-    const updated: EditorThemeTokens = {
+    commitCustomTokens({
       ...customTokens,
       primary: newHex,
       accent: newHex,
       accentSoft: contrast.softBackground,
       onAccent: contrast.textColor,
       accentBorder: contrast.borderColor,
-    };
-    setCustomTokens(updated);
-    onCustomThemeChange?.(updated);
-    onPaletteSelect?.("custom");
+    });
+  };
+
+  const handleApplySecondaryColor = (newHex: string) => {
+    const contrast = calculateOppositeContrast(newHex);
+    commitCustomTokens({
+      ...customTokens,
+      secondary: newHex,
+      onSecondary: contrast.textColor,
+      secondaryBorder: contrast.borderColor,
+    });
   };
 
   /**
@@ -623,162 +816,21 @@ export function DrawerPanel({
                 })}
               </div>
 
-              {/* SECTION 2: CUSTOMIZE ACCENT COLOR */}
-              <div
-                style={{
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "14px",
-                  padding: "12px",
-                  backgroundColor: "#ffffff",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Palette style={{ width: "14px", height: "14px", color: "#0f172a" }} />
-                    <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>
-                      Customize Accent Color
-                    </span>
-                  </div>
-                  {activePaletteId === "custom" && (
-                    <span
-                      style={{
-                        fontSize: "9px",
-                        fontWeight: 800,
-                        color: "#16a34a",
-                        backgroundColor: "#dcfce7",
-                        padding: "2px 6px",
-                        borderRadius: "6px",
-                      }}
-                    >
-                      Active
-                    </span>
-                  )}
-                </div>
-
-                {/* The Box & Hex Input */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "6px 8px",
-                    borderRadius: "10px",
-                    backgroundColor: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    {/* The Box */}
-                    <label
-                      style={{
-                        position: "relative",
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "8px",
-                        backgroundColor: currentAccentColor,
-                        border: currentAccentColor.toLowerCase() === "#ffffff" ? "2px solid #cbd5e1" : "2px solid #ffffff",
-                        boxShadow: "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
-                        cursor: "pointer",
-                        display: "block",
-                        flexShrink: 0,
-                      }}
-                      title="Click to pick any custom color"
-                    >
-                      <input
-                        type="color"
-                        value={currentAccentColor.startsWith("#") ? currentAccentColor : "#2563eb"}
-                        onChange={(e) => handleApplyAccentColor(e.target.value)}
-                        style={{
-                          opacity: 0,
-                          width: "100%",
-                          height: "100%",
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          cursor: "pointer",
-                        }}
-                      />
-                    </label>
-
-                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>
-                      Brand Accent
-                    </span>
-                  </div>
-
-                  {/* Hex Input */}
-                  <input
-                    type="text"
-                    value={currentAccentColor}
-                    onChange={(e) => handleApplyAccentColor(e.target.value)}
-                    maxLength={9}
-                    style={{
-                      width: "80px",
-                      height: "28px",
-                      borderRadius: "6px",
-                      border: "1px solid #cbd5e1",
-                      padding: "0 6px",
-                      fontSize: "11px",
-                      fontFamily: "monospace",
-                      fontWeight: 700,
-                      color: "#0f172a",
-                      backgroundColor: "#ffffff",
-                      textAlign: "center",
-                    }}
-                  />
-                </div>
-
-                {/* The Circle Shape Color Palette Swatches */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {CURATED_ACCENT_SWATCHES.map((swatch) => {
-                    const isSelected = currentAccentColor.toLowerCase() === swatch.hex.toLowerCase();
-                    return (
-                      <button
-                        key={swatch.hex}
-                        type="button"
-                        onClick={() => handleApplyAccentColor(swatch.hex)}
-                        title={swatch.name}
-                        style={{
-                          width: "26px",
-                          height: "26px",
-                          borderRadius: "50%",
-                          backgroundColor: swatch.hex,
-                          border: isSelected ? "2.5px solid #0f172a" : swatch.hex.toLowerCase() === "#ffffff" ? "1px solid #cbd5e1" : "2px solid #ffffff",
-                          boxShadow: isSelected
-                            ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
-                            : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
-                          cursor: "pointer",
-                          transform: isSelected ? "scale(1.1)" : "scale(1)",
-                          transition: "all 0.15s ease",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {isSelected && (
-                          <Check
-                            style={{
-                              width: "12px",
-                              height: "12px",
-                              color: calculateOppositeContrast(swatch.hex).textColor,
-                              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.6))",
-                            }}
-                          />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* SECTION 2: PRIMARY & SECONDARY BRAND COLOURS */}
+              <BrandColorCard
+                title="Customize Primary Color"
+                label="Primary"
+                value={currentAccentColor}
+                active={activePaletteId === "custom"}
+                onChange={handleApplyAccentColor}
+              />
+              <BrandColorCard
+                title="Customize Secondary Color"
+                label="Secondary"
+                value={currentSecondaryColor}
+                active={activePaletteId === "custom" && Boolean(customTokens.secondary)}
+                onChange={handleApplySecondaryColor}
+              />
             </div>
           )}
 
