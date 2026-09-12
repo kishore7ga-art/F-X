@@ -607,6 +607,16 @@ export function themeStylesheet(scope: string): string {
 }
 
 function themeButtonRules(scope: string): string {
+  /**
+   * The primary rules above stack seven attribute `:not()`s on `button`, so a
+   * plain `.btn-secondary` rule loses to them and the secondary colour never
+   * shows. Two id-level `:not()`s lift the secondary rules above every primary
+   * rule regardless of source order. (The canvas root has no id `_`.)
+   */
+  const secondaryScope = `${scope}[data-xite-theme]:not(#_):not(#_)`;
+  const anyCta = `:is(a[class*="btn"], a[class*="button"], a[class*="cta"], a[class*="apply"], a[class*="enroll"], a[class*="donate"], a[class*="give"], button, [role="button"])`;
+  const secondaryCta = `:is([class*="secondary"], [class*="btn-alt"], ${anyCta} ~ :is(a[class*="btn"], a[class*="button"], a[class*="cta"])):not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="tab"])`;
+
   return `
 /* Primary Buttons & CTAs */
 ${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]):not([aria-label*="close" i]):not([aria-label*="modal" i]):not([class*="tab"]):not([class*="carousel"]):not([class*="prev"]):not([class*="next"]),
@@ -660,26 +670,24 @@ ${scope}[data-xite-theme] a[class*="btn-outline"]:not([data-custom-styled]) {
   color: var(--xite-accent) !important;
 }
 
-/* Secondary Buttons */
-${scope}[data-xite-theme] .btn-secondary:not([data-custom-styled]),
-${scope}[data-xite-theme] [class*="btn-secondary"]:not([data-custom-styled]),
-${scope}[data-xite-theme] a[class*="btn-secondary"]:not([data-custom-styled]),
-${scope}[data-xite-theme] .bg-secondary:not([data-custom-styled]),
-${scope}[data-xite-theme] [class*="bg-secondary"]:not([data-custom-styled]) {
+/* Secondary Buttons
+   Sections rarely name a button "secondary". What they do have is a pair of
+   calls to action side by side — "Apply Now" then "Download Brochure" — so
+   the rule is: the first CTA in a group is primary, and every CTA that
+   follows a sibling CTA is secondary. Explicit "secondary"/"alt" classes
+   count too. */
+${secondaryScope} ${secondaryCta} {
   background-color: var(--xite-secondary, #2563eb) !important;
   color: var(--xite-on-secondary, #ffffff) !important;
   border: 1.5px solid var(--xite-secondary-border, var(--xite-secondary, #2563eb)) !important;
 }
 
 /* Force child elements inside secondary buttons to inherit contrast color */
-${scope}[data-xite-theme] .btn-secondary:not([data-custom-styled]) :where(span, p, strong, b, div, label),
-${scope}[data-xite-theme] [class*="btn-secondary"]:not([data-custom-styled]) :where(span, p, strong, b, div, label),
-${scope}[data-xite-theme] a[class*="btn-secondary"]:not([data-custom-styled]) :where(span, p, strong, b, div, label) {
+${secondaryScope} ${secondaryCta} :where(span, p, strong, b, div, label) {
   color: var(--xite-on-secondary, #ffffff) !important;
 }
 
-${scope}[data-xite-theme] .btn-secondary:not([data-custom-styled]) svg,
-${scope}[data-xite-theme] [class*="btn-secondary"]:not([data-custom-styled]) svg {
+${secondaryScope} ${secondaryCta} svg {
   color: var(--xite-on-secondary, #ffffff) !important;
   fill: currentColor !important;
 }`;
@@ -761,16 +769,24 @@ export function presetBrandTokens(theme: EditorTheme): EditorThemeTokens {
  */
 export function customThemeCss(scope: string, tokens: EditorThemeTokens): string {
   const primary = tokens.primary || tokens.accent || "#000000";
-  const secondary = tokens.secondary || "#2563eb";
+  // No secondary chosen yet: the template's base colour, which is what the
+  // presets start on (white for White & Black), rather than an unrelated blue.
+  const secondary = tokens.secondary || tokens.surface || "#2563eb";
 
+  /**
+   * Text and borders are always computed from the colour they sit on, never
+   * read from the tokens. A white button therefore always gets black text and
+   * a visible edge even if a stale `onAccent: #ffffff` came along with it —
+   * see `calculateOppositeContrast` for the rule.
+   */
   const primContrast = calculateOppositeContrast(primary);
   const secContrast = calculateOppositeContrast(secondary);
 
-  const onPrimary = tokens.onAccent || primContrast.textColor;
-  const onSecondary = tokens.onSecondary || secContrast.textColor;
-  const primaryBorder = tokens.accentBorder || primContrast.borderColor;
-  const secondaryBorder = tokens.secondaryBorder || secContrast.borderColor;
-  const accentSoft = tokens.accentSoft || primContrast.softBackground;
+  const onPrimary = primContrast.textColor;
+  const onSecondary = secContrast.textColor;
+  const primaryBorder = primContrast.borderColor;
+  const secondaryBorder = secContrast.borderColor;
+  const accentSoft = primContrast.softBackground;
 
   const declarations = [
     `  --xite-accent: ${primary};`,
@@ -893,21 +909,26 @@ export interface ContrastColorResult {
 }
 
 /**
- * Opposite High-Contrast Matching Algorithm.
- * 
- * Guarantees WCAG AAA contrast ratio:
- * - If color is light (e.g. #ffffff), text is opposite pure black (#000000), with a visible border.
- * - If color is dark (e.g. #000000), text is opposite pure white (#ffffff).
- * - Generates appropriate borders so light elements never blend into light surfaces.
+ * Opposite-contrast text: for any colour a tenant picks, the text on it is
+ * whichever of pure black or pure white reads better against it.
+ *
+ * "Better" is the WCAG contrast ratio, (L1 + 0.05) / (L2 + 0.05). Against a
+ * background of luminance L, white text scores 1.05 / (L + 0.05) and black
+ * text scores (L + 0.05) / 0.05; black wins once L exceeds ≈0.179. So a white
+ * button gets black text (21:1), a black one white text, and a mid colour like
+ * amber gets black rather than a white that would only reach ~2.4:1.
+ *
+ * Also returns a border so a light button never blends into a light surface,
+ * and a hover shade one step towards the text colour.
  */
 export function calculateOppositeContrast(hex: string): ContrastColorResult {
   const luminance = getRelativeLuminance(hex);
   const { r, g, b } = hexToRgb(hex);
   const hsl = rgbToHsl(r, g, b);
 
-  // If luminance > 0.45, background is light -> opposite text is pure black (#000000)
-  // If luminance <= 0.45, background is dark -> opposite text is pure white (#ffffff)
-  const isLight = luminance > 0.45;
+  const whiteTextRatio = 1.05 / (luminance + 0.05);
+  const blackTextRatio = (luminance + 0.05) / 0.05;
+  const isLight = blackTextRatio >= whiteTextRatio;
   const textColor = isLight ? "#000000" : "#ffffff";
 
   let borderColor: string;

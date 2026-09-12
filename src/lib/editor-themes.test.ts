@@ -323,6 +323,41 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
     assert.equal(contrast.isLight, true);
   });
 
+  it("picks whichever of black or white has the higher WCAG ratio on a mid colour", () => {
+    // Amber: white text reaches ~2.4:1, black ~8.7:1.
+    assert.equal(calculateOppositeContrast("#f59e0b").textColor, "#000000");
+    // Royal blue: white ~5.2:1, black ~4:1.
+    assert.equal(calculateOppositeContrast("#2563eb").textColor, "#ffffff");
+    // Mid grey right at the crossover still resolves to one or the other.
+    assert.ok(["#000000", "#ffffff"].includes(calculateOppositeContrast("#777777").textColor));
+  });
+
+  it("always derives button text from the button colour, ignoring a stale onAccent", () => {
+    const css = customThemeCss(".xite-site-canvas", {
+      ...DEFAULT_DUAL_THEMES[0]!.tokens,
+      primary: "#ffffff",
+      accent: "#ffffff",
+      onAccent: "#ffffff", // white on white, as a stale token could claim
+      secondary: "#ffffff",
+      onSecondary: "#ffffff",
+    });
+    assert.ok(css.includes("--xite-on-accent: #000000;"));
+    assert.ok(css.includes("--xite-on-secondary: #000000;"));
+    assert.ok(css.includes("--xite-accent-border: #cbd5e1;"));
+    assert.ok(css.includes("--xite-secondary-border: #cbd5e1;"));
+  });
+
+  it("paints the second CTA in a group with the secondary colour, above the primary rules", () => {
+    const css = themeStylesheet(".xite-site-canvas");
+    // A CTA that follows a sibling CTA is secondary…
+    assert.ok(css.includes('~ :is(a[class*="btn"], a[class*="button"], a[class*="cta"])'));
+    // …and so is anything named secondary.
+    assert.ok(css.includes('[class*="secondary"]'));
+    // Lifted above the `button:not(...)...` primary rule by two id-level :not()s.
+    assert.ok(css.includes('[data-xite-theme]:not(#_):not(#_)'));
+    assert.ok(css.includes("background-color: var(--xite-secondary, #2563eb) !important;"));
+  });
+
   it("scopes customThemeCss to brand accents and does not clobber section surfaces", () => {
     const css = customThemeCss(".xite-site-canvas", {
       surface: "#ffffff",
