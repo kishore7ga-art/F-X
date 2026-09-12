@@ -31,6 +31,8 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 
+import { ColorPickerPanel } from "./ColorPickerPanel";
+
 const CURATED_ACCENT_SWATCHES = [
   { name: "Pitch Black", hex: "#000000" },
   { name: "Pure White", hex: "#ffffff" },
@@ -117,6 +119,7 @@ function BrandColorCard({
   onChange: (hex: string) => void;
 }) {
   const isWhite = value.toLowerCase() === "#ffffff";
+  const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <div
       style={{
@@ -163,37 +166,27 @@ function BrandColorCard({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {/* The Box */}
-          <label
+          {/* The Box: opens the colour chart below */}
+          <button
+            type="button"
+            onClick={() => setPickerOpen((open) => !open)}
+            aria-expanded={pickerOpen}
+            aria-label={`${pickerOpen ? "Close" : "Open"} the ${label.toLowerCase()} colour chart`}
+            title="Click to pick any custom color"
             style={{
-              position: "relative",
               width: "32px",
               height: "32px",
               borderRadius: "8px",
               backgroundColor: value,
               border: isWhite ? "2px solid #cbd5e1" : "2px solid #ffffff",
-              boxShadow: "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
+              boxShadow: pickerOpen
+                ? "0 0 0 2px #3b82f6, 0 2px 5px rgba(0,0,0,0.12)"
+                : "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
               cursor: "pointer",
-              display: "block",
+              padding: 0,
               flexShrink: 0,
             }}
-            title="Click to pick any custom color"
-          >
-            <input
-              type="color"
-              value={value.startsWith("#") ? value : "#2563eb"}
-              onChange={(e) => onChange(e.target.value)}
-              style={{
-                opacity: 0,
-                width: "100%",
-                height: "100%",
-                position: "absolute",
-                top: 0,
-                left: 0,
-                cursor: "pointer",
-              }}
-            />
-          </label>
+          />
 
           <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>{label}</span>
         </div>
@@ -219,6 +212,8 @@ function BrandColorCard({
           }}
         />
       </div>
+
+      {pickerOpen && <ColorPickerPanel value={value} onChange={onChange} />}
 
       {/* The Circle Shape Color Palette Swatches */}
       <div
