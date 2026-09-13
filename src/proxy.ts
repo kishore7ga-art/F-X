@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import {
+  LEGACY_ROOT,
   parseHost,
+  PLATFORM_ROOT,
   platformSubdomainOf,
   resolveCustomHost,
   rootDomain,
@@ -36,6 +38,19 @@ import {
  * on the Node runtime by default, which is what lets it use the same `jose`
  * signing code as the rest of the app.
  */
+/**
+ * Whether a hostname belongs to the platform at all.
+ *
+ * The apex, anything under it, and the legacy root. Used to decide whether an
+ * unrecognised host is one of ours — in which case it reaches the app — or
+ * somebody else's, in which case it gets an answer about *their* domain rather
+ * than our sign-in page.
+ */
+function isPlatformHost(host: string): boolean {
+  const roots = [rootDomain(), PLATFORM_ROOT, LEGACY_ROOT, "localhost"].filter(Boolean);
+  return roots.some((root) => host === root || host.endsWith(`.${root}`));
+}
+
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const host = parseHost(request.headers.get("host"));
@@ -56,9 +71,11 @@ export async function proxy(request: NextRequest) {
       return NextResponse.rewrite(url);
     }
 
-    // 2. A custom domain the tenant proved they own and that is serving. The
-    //    lookup is cached, and answers only for ACTIVE domains — a hostname
-    //    that has merely been added to the settings screen routes nowhere.
+    // 2. A custom domain the tenant proved they own. The lookup is cached, and
+    //    answers for ACTIVE and VERIFIED domains — ownership is proven at
+    //    VERIFIED, and a request arriving on the hostname is itself proof the
+    //    edge routes it. A hostname merely added to the settings screen has
+    //    proven nothing and still routes nowhere.
     //
     //    Only consulted for hosts that are not ours, so the common case costs
     //    nothing: every platform host has already returned above.
@@ -67,6 +84,25 @@ export async function proxy(request: NextRequest) {
       if (custom) {
         url.pathname = `/site/${custom}${url.pathname === "/" ? "" : url.pathname}`;
         return NextResponse.rewrite(url);
+      }
+
+      /**
+       * An outside hostname that maps to no tenant.
+       *
+       * It must not fall through. Falling through hands the request to this
+       * app, whose `/` redirects to `/login` — so a visitor typing a college's
+       * own domain was shown **the WebXite sign-in page**. Not their site, not
+       * an error: our login screen, on their address, with our product name in
+       * the title. It is the worst available answer, and it was the default one.
+       *
+       * Scoped to hostnames outside the platform root on purpose. Anything
+       * under `webxite.org` that got here is a reserved label — `app`, `admin`,
+       * `api`, `www` — and those are the platform's own surfaces and must reach
+       * the app normally. Only a genuinely foreign domain is answered this way.
+       */
+      if (!isPlatformHost(host)) {
+        url.pathname = "/site-not-connected";
+        return NextResponse.rewrite(url, { status: 404 });
       }
     }
   }
