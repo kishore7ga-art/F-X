@@ -37,6 +37,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { ApiError, completeOnboardingRequest } from "@/lib/api-client";
 import { ONBOARDING_ROLES } from "@/lib/api-contract";
 import { EDITOR_FONTS, EDITOR_THEMES } from "@/lib/editor-themes";
+import { PaletteRamp } from "@/components/editor/PaletteRamp";
 
 type Step = 0 | 1 | 2;
 
@@ -209,15 +210,13 @@ export function OnboardingWizard({
                       ].join(" ")}
                     >
                       {/* Drawn from the same tokens the renderer uses, so this
-                          is a preview rather than an impression of one. */}
-                      <span
-                        className="mb-3 flex h-14 w-full overflow-hidden rounded-lg"
-                        style={{ backgroundColor: theme.swatch.base }}
-                      >
-                        <span
-                          className="mt-auto mb-2 ml-2 h-4 w-16 rounded"
-                          style={{ backgroundColor: theme.swatch.accent }}
-                        />
+                          is a preview rather than an impression of one. The
+                          full ramp rather than a base with an accent bar: what
+                          somebody is choosing between is how light the page is
+                          and how much contrast it has, and a single flat
+                          rectangle showed neither. */}
+                      <span className="mb-3 block">
+                        <PaletteRamp theme={theme} height={44} width="100%" />
                       </span>
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-sm font-extrabold text-slate-900">

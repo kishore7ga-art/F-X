@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { PaletteRamp } from "@/components/editor/PaletteRamp";
 import {
   DEFAULT_DUAL_THEMES,
   EDITOR_FONTS,
@@ -791,29 +792,12 @@ export function DrawerPanel({
                         transition: "all 0.15s ease",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span
-                            style={{
-                              width: "18px",
-                              height: "18px",
-                              borderRadius: "50%",
-                              backgroundColor: theme.swatch.base,
-                              border: theme.swatch.base === "#ffffff" ? "1px solid #cbd5e1" : "1px solid #000000",
-                              display: "inline-block",
-                            }}
-                          />
-                          <span
-                            style={{
-                              width: "18px",
-                              height: "18px",
-                              borderRadius: "50%",
-                              backgroundColor: theme.swatch.accent,
-                              border: theme.swatch.accent === "#ffffff" ? "1px solid #cbd5e1" : "1px solid #000000",
-                              display: "inline-block",
-                            }}
-                          />
-                        </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        {/* A ramp rather than two circles. Two circles were
+                            `base` and `accent`, so every dark theme looked like
+                            "a dark circle and a coloured circle" and choosing
+                            between five of them meant reading the names. */}
+                        <PaletteRamp theme={theme} />
                         <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
                           {theme.name}
                         </span>
