@@ -94,6 +94,24 @@ export function DnsRecords({
   const { verification, routing, routingUnavailable } = domain.dnsInstructions;
 
   /**
+   * Whether the domain is already through, and the check has nothing left to do.
+   *
+   * `VERIFIED` and `ACTIVE` are both "the records are correct" — the difference
+   * between them is the certificate, which this button does not check and
+   * cannot hurry. So pressing it in either state re-runs a DNS lookup whose
+   * answer is already known, and the tenant learns nothing from doing it twenty
+   * times.
+   *
+   * Nothing is remembered to enforce this. It is read from the status on every
+   * render, so it lifts by itself the moment the domain stops being connected —
+   * a record edited at the registrar drops it to `FAILED` or `DISCONNECTED`
+   * and the button is live again, with no state to get stuck and no way for a
+   * tenant to be locked out of a check they genuinely need.
+   */
+  const connected = domain.status === "VERIFIED" || domain.status === "ACTIVE";
+  const locked = busy || connected;
+
+  /**
    * All records as text, in the shape a DNS panel asks for them.
    *
    * Tab-separated rather than a table or JSON: it pastes into a spreadsheet as
@@ -187,7 +205,7 @@ export function DnsRecords({
         <button
           type="button"
           onClick={onVerify}
-          disabled={busy}
+          disabled={locked}
           style={{
             borderRadius: "8px",
             backgroundColor: "#171717",
@@ -196,18 +214,22 @@ export function DnsRecords({
             fontSize: "12px",
             fontWeight: 600,
             border: "none",
-            cursor: busy ? "default" : "pointer",
-            opacity: busy ? 0.6 : 1,
+            cursor: locked ? "default" : "pointer",
+            opacity: locked ? 0.6 : 1,
           }}
         >
           {busy
             ? "Checking…"
-            : domain.status === "PENDING_VERIFICATION"
-              ? "Verify DNS"
-              : "Check again"}
+            : connected
+              ? "Connected"
+              : domain.status === "PENDING_VERIFICATION"
+                ? "Verify DNS"
+                : "Check again"}
         </button>
         <span style={{ fontSize: "11px", color: "#9CA3AF" }}>
-          DNS changes can take a few minutes to an hour to spread.
+          {connected
+            ? "Your domain is connected — there is nothing left to check. This comes back if the DNS changes."
+            : "DNS changes can take a few minutes to an hour to spread."}
         </span>
       </div>
 
