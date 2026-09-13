@@ -58,14 +58,51 @@ export type Subscription = {
   createdAt: string;
 };
 
+/**
+ * What the mandate is drawn on, as Razorpay reports it.
+ *
+ * Display metadata and nothing else. There is no card number, expiry or CVC in
+ * this type because none exists anywhere in the platform — the instrument is
+ * entered inside Razorpay Checkout and stays with Razorpay.
+ */
+export type PaymentInstrument = {
+  method: string;
+  network: string | null;
+  last4: string | null;
+  type: string | null;
+  issuer: string | null;
+  upiHandle: string | null;
+  bank: string | null;
+  wallet: string | null;
+};
+
 export type BillingState = {
   configured: boolean;
   testMode: boolean;
   webhooksConfigured: boolean;
   plan: Plan | null;
   subscription: Subscription | null;
+  paymentInstrument: PaymentInstrument | null;
   isSubscribed: boolean;
 };
+
+/** "Visa •••• 4242", "UPI k••••@okhdfcbank", "Netbanking — HDFC". */
+export function describeInstrument(instrument: PaymentInstrument): string {
+  if (instrument.method === "card" && instrument.last4) {
+    return `${instrument.network ?? "Card"} •••• ${instrument.last4}`;
+  }
+  if (instrument.method === "upi") {
+    return instrument.upiHandle ? `UPI ${instrument.upiHandle}` : "UPI";
+  }
+  if (instrument.method === "netbanking") {
+    return instrument.bank ? `Netbanking — ${instrument.bank}` : "Netbanking";
+  }
+  if (instrument.method === "wallet") {
+    return instrument.wallet ? `Wallet — ${instrument.wallet}` : "Wallet";
+  }
+  // Razorpay adds methods; an unrecognised one is named rather than hidden.
+  return instrument.method === "unknown" ? "Payment method on file" : instrument.method;
+}
 
 export const getBillingState = () =>
   api<BillingState>("/api/v1/billing/subscription");

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 
 import { SubscriptionPanel } from "@/components/editor/SubscriptionPanel";
+import { PaymentMethodPanel } from "@/components/editor/PaymentMethodPanel";
 
 import { ApiError } from "@/lib/api-client";
 import {
@@ -11,8 +12,6 @@ import {
   changePassword,
   describeDomain,
   domainChecklist,
-  attachPaymentMethod,
-  detachPaymentMethod,
   disconnectDomain,
   getPublishStatus,
   getSiteSettings,
@@ -24,7 +23,6 @@ import {
   verifyDomain,
   type Domain,
   type Invoice,
-  type PaymentMethod,
   type PublishStatus,
   type SiteSettings,
   type SiteSettingsPatch,
@@ -45,13 +43,10 @@ import {
   CheckCircle2,
   Lock,
   Smartphone,
-  Shield,
   Crown,
   Receipt,
   CreditCard,
   Download,
-  Plus,
-  Trash2,
   Calendar,
   Search,
   Sparkles,
@@ -122,17 +117,9 @@ export function DomainSettingsModal({
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [settingsBusy, setSettingsBusy] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [paymentProviderName, setPaymentProviderName] = useState<string | null>(null);
 
   // Subscriptions & Payment state
-  const [selectedPlan, setSelectedPlan] = useState<string>("pro");
-  const [cardHolder, setCardHolder] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExp, setCardExp] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
-  const [cardProvider, setCardProvider] = useState<"stripe" | "razorpay">("stripe");
-  const [cardSubmitting, setCardSubmitting] = useState(false);
 
   const seoIndexing = settings?.seo.indexingEnabled ?? true;
   const maintenanceMode = settings?.maintenance.enabled ?? false;
@@ -190,8 +177,13 @@ export function DomainSettingsModal({
       setHeaderScript(siteSettings.value.customCode.headHtml ?? "");
     }
     if (invoiceList.status === "fulfilled") setInvoices(invoiceList.value);
+    /*
+     * Only the provider name is kept. The card array this endpoint also returns
+     * was rendered by the payment tab's "Cards On File" list, which is gone:
+     * with Razorpay subscriptions the instrument lives on the mandate at
+     * Razorpay, and PaymentMethodPanel reads it from there.
+     */
     if (methods.status === "fulfilled") {
-      setPaymentMethods(methods.value.paymentMethods);
       setPaymentProviderName(methods.value.provider);
     }
     if (status.status === "fulfilled") {
@@ -370,88 +362,6 @@ export function DomainSettingsModal({
     }
   };
 
-  const handleRemovePaymentMethod = async (id: string) => {
-    setSettingsBusy(true);
-    try {
-      await detachPaymentMethod(id);
-      setPaymentMethods((prev) => prev.filter((m) => m.id !== id));
-      showToast("Payment method removed.");
-    } catch (error) {
-      showToast(error instanceof ApiError ? error.message : "Could not remove that card.");
-    } finally {
-      setSettingsBusy(false);
-    }
-  };
-
-  const handleAddPaymentMethod = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const cleanDigits = cardNumber.replace(/\s+/g, "").replace(/\D/g, "");
-    if (cleanDigits.length < 12) {
-      showToast("Please enter a valid card number (at least 12 digits).");
-      return;
-    }
-
-    const expParts = cardExp.split("/").map((p) => p.trim());
-    const expM = parseInt(expParts[0], 10);
-    const expY = expParts[1] ? parseInt(expParts[1], 10) : 28;
-    const fullYear = expY < 100 ? 2000 + expY : expY;
-
-    const last4 = cleanDigits.slice(-4);
-    let brand = "Visa";
-    if (cleanDigits.startsWith("5") || cleanDigits.startsWith("2")) brand = "Mastercard";
-    else if (cleanDigits.startsWith("3")) brand = "Amex";
-    else if (cleanDigits.startsWith("6")) brand = "RuPay";
-
-    setCardSubmitting(true);
-    try {
-      try {
-        const created = await attachPaymentMethod({
-          providerRef: `tok_${cardProvider}_${Date.now()}`,
-          brand,
-          last4,
-          expMonth: expM || 12,
-          expYear: fullYear || 2028,
-        });
-        setPaymentMethods((prev) => [created, ...prev.filter((m) => m.id !== created.id)]);
-        showToast(`Card ${brand} •••• ${last4} attached successfully! 💳`);
-      } catch {
-        // Safe fallback if payment provider environment is not configured on backend
-        const newMethod: PaymentMethod = {
-          id: `card_${Date.now()}`,
-          provider: cardProvider || "stripe",
-          brand,
-          last4,
-          expMonth: expM || 12,
-          expYear: fullYear || 2028,
-          isDefault: paymentMethods.length === 0,
-        };
-        setPaymentMethods((prev) => [newMethod, ...prev]);
-        showToast(`Card ${brand} •••• ${last4} attached successfully! 💳`);
-      }
-      setCardNumber("");
-      setCardExp("");
-      setCardCvc("");
-      setCardHolder("");
-    } catch {
-      showToast("Could not attach payment method. Please check card details.");
-    } finally {
-      setCardSubmitting(false);
-    }
-  };
-
-  const handleFillSandboxCard = () => {
-    setCardHolder("University Accounts Department");
-    setCardNumber("4242 4242 4242 4242");
-    setCardExp("12/28");
-    setCardCvc("123");
-    showToast("Sandbox test card populated! Click 'Attach Card' to save. ⚡");
-  };
-
-  const handleSelectPlan = (planId: string, planName: string, priceDisplay: string) => {
-    setSelectedPlan(planId);
-    setActiveNav("payments");
-    showToast(`Selected ${planName} (${priceDisplay}). Confirm your payment method to activate! 👑`);
-  };
 
   const handleDisconnectDomain = async (id: string) => {
     setDomainBusy(true);
@@ -1106,372 +1016,7 @@ export function DomainSettingsModal({
         {/* TAB 7: PAYMENT METHODS (💳) */}
         {/* ========================================================= */}
         {activeNav === "payments" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#737373" }}>
-                CARDS &amp; GATEWAYS
-              </span>
-              <h1 style={{ fontSize: "30px", fontWeight: 700, color: "#171717", lineHeight: 1.15, margin: 0, letterSpacing: "-0.02em" }}>
-                Payment Methods
-              </h1>
-              <p style={{ fontSize: "13px", color: "#737373", margin: 0 }}>
-                Manage cards and automated billing accounts for your university subscriptions.
-              </p>
-            </div>
-
-            {/* Selected Plan Banner if arriving from a plan selection */}
-            {selectedPlan && (
-              <div
-                style={{
-                  borderRadius: "12px",
-                  backgroundColor: "#EFF6FF",
-                  border: "1px solid #BFDBFE",
-                  padding: "16px 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "12px",
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <Crown style={{ width: "20px", height: "20px", color: "#2563EB" }} />
-                  <div>
-                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#1E40AF" }}>
-                      Plan Ready for Checkout: {selectedPlan === "starter" ? "Campus Starter ($39/mo)" : selectedPlan === "enterprise" ? "Enterprise Multi-Campus ($319/mo)" : "Pro University ($119/mo)"}
-                    </span>
-                    <p style={{ fontSize: "12px", color: "#3B82F6", margin: "2px 0 0 0" }}>
-                      Attach or confirm a card below to activate and renew this subscription tier.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveNav("subscriptions")}
-                  style={{
-                    backgroundColor: "#FFFFFF",
-                    color: "#2563EB",
-                    border: "1px solid #BFDBFE",
-                    borderRadius: "8px",
-                    padding: "6px 14px",
-                    fontSize: "12px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Change Plan
-                </button>
-              </div>
-            )}
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }} className="max-lg:!grid-cols-1">
-              {/* Cards on file column */}
-              <div style={{ borderRadius: "16px", border: "1px solid #E5E7EB", backgroundColor: "#FFFFFF", padding: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Cards On File</h4>
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#6B7280", backgroundColor: "#F3F4F6", padding: "2px 8px", borderRadius: "10px" }}>
-                    {paymentMethods.length} Saved
-                  </span>
-                </div>
-
-                {paymentMethods.length === 0 ? (
-                  <div
-                    style={{
-                      borderRadius: "12px",
-                      border: "1px dashed #D1D5DB",
-                      backgroundColor: "#F9FAFB",
-                      padding: "32px 20px",
-                      textAlign: "center",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <div style={{ width: "42px", height: "42px", borderRadius: "50%", backgroundColor: "#E5E7EB", display: "flex", alignItems: "center", justifyContent: "center", color: "#6B7280" }}>
-                      <CreditCard style={{ width: "20px", height: "20px" }} />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>No card on file yet</p>
-                      <p style={{ fontSize: "12px", color: "#6B7280", margin: "4px 0 0 0" }}>
-                        Add a card using the secure form on the right to enable automatic subscription renewals.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {paymentMethods.map((method) => (
-                      <div
-                        key={method.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "14px",
-                          padding: "16px 20px",
-                          borderRadius: "14px",
-                          backgroundColor: "#171717",
-                          color: "#FFFFFF",
-                          boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                        }}
-                      >
-                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ fontSize: "10px", fontWeight: 800, color: "#F59E0B", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                              {method.provider || "GATEWAY"}
-                            </span>
-                            <span style={{ fontSize: "11px", fontWeight: 700, color: "#9CA3AF" }}>
-                              • {method.brand || "Card"}
-                            </span>
-                          </div>
-                          <span style={{ fontFamily: "monospace", fontSize: "16px", fontWeight: 700, letterSpacing: "0.12em" }}>
-                            &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; {method.last4 || "4242"}
-                          </span>
-                          <span style={{ fontSize: "11px", color: "#9CA3AF" }}>
-                            Expires {method.expMonth ? String(method.expMonth).padStart(2, "0") : "12"}/{method.expYear || "2028"}
-                          </span>
-                        </div>
-
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          {method.isDefault && (
-                            <span style={{ fontSize: "10px", fontWeight: 800, color: "#10B981", backgroundColor: "rgba(16,185,129,0.2)", padding: "3px 8px", borderRadius: "6px" }}>
-                              DEFAULT
-                            </span>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => void handleRemovePaymentMethod(method.id)}
-                            disabled={settingsBusy}
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              color: "#F87171",
-                              cursor: settingsBusy ? "not-allowed" : "pointer",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              padding: "4px 8px",
-                              borderRadius: "6px",
-                            }}
-                          >
-                            <Trash2 style={{ width: "13px", height: "13px" }} />
-                            <span>Remove</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Add Payment Method Form Column */}
-              <div style={{ borderRadius: "16px", border: "1px solid #E5E7EB", backgroundColor: "#FFFFFF", padding: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#111827", margin: 0 }}>Add Payment Method</h4>
-                  <button
-                    type="button"
-                    onClick={handleFillSandboxCard}
-                    style={{
-                      background: "#F3F4F6",
-                      border: "1px solid #E5E7EB",
-                      borderRadius: "6px",
-                      padding: "4px 8px",
-                      fontSize: "11px",
-                      fontWeight: 700,
-                      color: "#4B5563",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    <Zap style={{ width: "12px", height: "12px", color: "#F59E0B" }} />
-                    <span>Fill Sandbox Card</span>
-                  </button>
-                </div>
-
-                {/* Gateway Provider Choice */}
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setCardProvider("stripe")}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      border: cardProvider === "stripe" ? "2px solid #171717" : "1px solid #E5E7EB",
-                      backgroundColor: cardProvider === "stripe" ? "#F9FAFB" : "#FFFFFF",
-                      color: "#171717",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <span>⚡ Stripe (Global)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCardProvider("razorpay")}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      border: cardProvider === "razorpay" ? "2px solid #171717" : "1px solid #E5E7EB",
-                      backgroundColor: cardProvider === "razorpay" ? "#F9FAFB" : "#FFFFFF",
-                      color: "#171717",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <span>🇮🇳 Razorpay (India)</span>
-                  </button>
-                </div>
-
-                <form onSubmit={handleAddPaymentMethod} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#4B5563", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                      Cardholder Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. University Accounts Dept"
-                      value={cardHolder}
-                      onChange={(e) => setCardHolder(e.target.value)}
-                      style={{
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: "1px solid #E5E7EB",
-                        backgroundColor: "#F9FAFB",
-                        fontSize: "13px",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <label style={{ fontSize: "11px", fontWeight: 700, color: "#4B5563", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="4242 4242 4242 4242"
-                      value={cardNumber}
-                      maxLength={19}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, "");
-                        const formatted = raw.match(/.{1,4}/g)?.join(" ") || raw;
-                        setCardNumber(formatted);
-                      }}
-                      style={{
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: "1px solid #E5E7EB",
-                        backgroundColor: "#F9FAFB",
-                        fontSize: "13px",
-                        fontFamily: "monospace",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <label style={{ fontSize: "11px", fontWeight: 700, color: "#4B5563", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                        Expiry (MM/YY)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="12/28"
-                        value={cardExp}
-                        maxLength={5}
-                        onChange={(e) => {
-                          let val = e.target.value.replace(/\D/g, "");
-                          if (val.length > 2) val = val.slice(0, 2) + "/" + val.slice(2);
-                          setCardExp(val);
-                        }}
-                        style={{
-                          padding: "10px 14px",
-                          borderRadius: "8px",
-                          border: "1px solid #E5E7EB",
-                          backgroundColor: "#F9FAFB",
-                          fontSize: "13px",
-                          fontFamily: "monospace",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <label style={{ fontSize: "11px", fontWeight: 700, color: "#4B5563", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                        CVC / CVV
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="123"
-                        value={cardCvc}
-                        maxLength={4}
-                        onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ""))}
-                        style={{
-                          padding: "10px 14px",
-                          borderRadius: "8px",
-                          border: "1px solid #E5E7EB",
-                          backgroundColor: "#F9FAFB",
-                          fontSize: "13px",
-                          fontFamily: "monospace",
-                          outline: "none",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={cardSubmitting}
-                    style={{
-                      marginTop: "6px",
-                      padding: "12px",
-                      borderRadius: "8px",
-                      backgroundColor: "#171717",
-                      color: "#FFFFFF",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                      border: "none",
-                      cursor: cardSubmitting ? "not-allowed" : "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px",
-                      transition: "all 150ms ease",
-                    }}
-                  >
-                    {cardSubmitting ? (
-                      <span>Saving Card...</span>
-                    ) : (
-                      <>
-                        <Plus style={{ width: "15px", height: "15px" }} />
-                        <span>Attach &amp; Save Payment Method</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#6B7280", marginTop: "2px" }}>
-                  <Shield style={{ width: "13px", height: "13px", color: "#10B981" }} />
-                  <span>256-bit SSL encryption. Tokenized via PCI-DSS Level 1 vaults.</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <PaymentMethodPanel onGoToSubscription={() => setActiveNav("subscriptions")} />
         )}
 
         {/* ========================================================= */}
