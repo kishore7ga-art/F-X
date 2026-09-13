@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { SubscriptionPanel } from "@/components/editor/SubscriptionPanel";
 import { PaymentMethodPanel } from "@/components/editor/PaymentMethodPanel";
 import { AnalyticsPanel } from "@/components/editor/AnalyticsPanel";
+import { DnsRecords } from "@/components/editor/DnsRecords";
 
 import { ApiError } from "@/lib/api-client";
 import {
@@ -39,7 +40,6 @@ import {
   ArrowUpRight,
   LogOut,
   Check,
-  Copy,
   RefreshCw,
   Zap,
   CheckCircle2,
@@ -105,7 +105,6 @@ export function DomainSettingsModal({
   const [publishStatusState, setPublishStatusState] = useState<PublishStatus | null>(null);
   /** Non-null when the last load failed. Rendered above every tab. */
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Security State
   const [currentPassword, setCurrentPassword] = useState("");
@@ -218,13 +217,6 @@ export function DomainSettingsModal({
   useEffect(() => {
     if (isOpen) void refresh();
   }, [isOpen, refresh]);
-
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    showToast(`Copied "${text}" to clipboard!`);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
 
   /**
    * Publishes the draft.
@@ -1254,53 +1246,21 @@ export function DomainSettingsModal({
                       </span>
                     </div>
 
-                    {/* Exactly the records this tenant must create, generated
-                        per domain — not the fixed A/CNAME/TXT trio that used to
-                        be printed here with an invented token and a Vercel IP.
-
-                        Hidden while the domain is disconnected: the token is no
-                        longer being checked against anything, so printing it
-                        invites somebody to edit their zone to no effect. */}
-                    <div style={{ display: off ? "none" : "flex", flexDirection: "column", gap: "8px" }}>
-                      {[domain.dnsInstructions.verification, domain.dnsInstructions.routing]
-                        .filter((rec): rec is NonNullable<typeof rec> => rec !== null)
-                        .map((rec) => (
-                        <div key={rec.type + "-" + rec.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "10px 14px", borderRadius: "8px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px", overflowX: "auto" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                            <span style={{ fontWeight: 700, color: "#171717", width: "58px", flexShrink: 0 }}>{rec.type}</span>
-                            <span style={{ fontFamily: "monospace", color: "#737373", whiteSpace: "nowrap" }}>{rec.name}</span>
-                            <span style={{ fontFamily: "monospace", fontWeight: 600, color: "#171717", whiteSpace: "nowrap" }}>{rec.value}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(rec.value, domain.id + "-" + rec.type)}
-                            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#737373", flexShrink: 0 }}
-                            title="Copy value"
-                          >
-                            <Copy style={{ width: "13px", height: "13px" }} />
-                          </button>
-                        </div>
-                      ))}
-
-                      {/* An apex domain this deployment cannot serve. Saying so
-                          beats the CNAME that used to be printed here, which a
-                          zone apex cannot carry and no provider would accept. */}
-                      {domain.dnsInstructions.routingUnavailable && (
-                        <p style={{ margin: 0, padding: "10px 14px", borderRadius: "8px", backgroundColor: "#FEF3C7", border: "1px solid #FDE68A", color: "#92400E", fontSize: "12px", lineHeight: 1.6 }}>
-                          {domain.dnsInstructions.routingUnavailable}
-                        </p>
-                      )}
+                    {/* Every name and value copyable, the TXT separated from
+                        the routing record, and the copied string identical to
+                        the rendered one. Hidden while the domain is
+                        disconnected: the token is no longer being checked
+                        against anything, so printing it invites somebody to
+                        edit their zone to no effect. */}
+                    <div style={{ display: off ? "none" : "block" }}>
+                      <DnsRecords
+                        domain={domain}
+                        busy={domainBusy}
+                        onVerify={() => void handleVerifyDomain(domain.id)}
+                      />
                     </div>
 
                     <div style={{ display: off ? "none" : "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <button
-                        type="button"
-                        onClick={() => void handleVerifyDomain(domain.id)}
-                        disabled={domainBusy}
-                        style={{ borderRadius: "8px", backgroundColor: "#171717", color: "#FFFFFF", padding: "8px 16px", fontSize: "12px", fontWeight: 600, border: "none", cursor: domainBusy ? "not-allowed" : "pointer", opacity: domainBusy ? 0.6 : 1 }}
-                      >
-                        {domainBusy ? "Checking..." : "Check DNS"}
-                      </button>
                       <button
                         type="button"
                         onClick={() => void handleDisconnectDomain(domain.id)}
