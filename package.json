@@ -21,7 +21,8 @@
     "test:parity": "tsx scripts/section-parity-dom.ts",
     "test:toolbar": "tsx scripts/section-toolbar-dom.ts",
     "test:ui": "node scripts/verify-ui-flows.mjs",
-    "test:buttons": "tsx scripts/theme-button-roles.ts"
+    "test:buttons": "tsx scripts/theme-button-roles.ts",
+    "test:surfaces": "tsx scripts/surface-background-parity.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

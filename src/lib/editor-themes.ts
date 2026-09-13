@@ -991,11 +991,14 @@ export function hslToHex(h: number, s: number, l: number): string {
 
 export function getRelativeLuminance(hex: string): number {
   const { r, g, b } = hexToRgb(hex);
-  const [rs, gs, bs] = [r, g, b].map((c) => {
+  // Applied per channel rather than destructured out of a mapped array: this
+  // module is mirrored into xite-admin, which compiles with
+  // noUncheckedIndexedAccess, and an array index is `T | undefined` there.
+  const linear = (c: number) => {
     const s = c / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+  };
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
 }
 
 export interface ContrastColorResult {

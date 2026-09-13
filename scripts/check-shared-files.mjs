@@ -40,7 +40,7 @@ const SHARED = [
  * and nothing checked. It is the one file where drift is invisible until a
  * section renders differently in the studio than it does live.
  */
-const SHARED_WITH_ADMIN = ["src/lib/section-runtime.ts"];
+const SHARED_WITH_ADMIN = ["src/lib/section-runtime.ts", "src/lib/editor-themes.ts"];
 
 const MANIFEST = "shared-files.lock.json";
 
