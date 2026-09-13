@@ -13,7 +13,7 @@ import {
   swapVariant,
   variantsFor,
 } from "@/lib/section-variants";
-import { isHeaderOverlaid, toggleHeaderOverlay } from "@/lib/sections/section-edit";
+import { canApplyHeaderOverlay, isHeaderOverlaid, toggleHeaderOverlay } from "@/lib/sections/section-edit";
 
 const template = (id: string, category: string, name = id): LibrarySection => ({
   id,
@@ -447,5 +447,51 @@ describe("header overlay survives a swap", () => {
     assert.equal(index, 0);
     assert.equal(sections[0]!.id, "s3");
     assert.equal(isHeaderOverlaid(sections[0]!), true);
+  });
+});
+
+describe("an overlaid header only leaves the flow when something follows it", () => {
+  const NAV = `<header class="nav"><a href="/">A</a></header>`;
+  const header = (code: string): EditorSection => ({
+    id: "s1",
+    title: "Header",
+    category: "navbar",
+    templateId: "nav-a",
+    variantIndex: 0,
+    code,
+  });
+  const hero: EditorSection = {
+    id: "s2",
+    title: "Hero",
+    category: "hero",
+    templateId: null,
+    variantIndex: 0,
+    code: "<section>hi</section>",
+  };
+
+  it("does not apply the overlay when the header is the only section", () => {
+    // The reported bug: a page created and given only a navbar rendered the
+    // header `position: absolute`, so nothing was left in flow and the canvas
+    // collapsed to a hairline. The page looked empty, which is exactly what a
+    // page whose section was never added looks like.
+    const overlaid = toggleHeaderOverlay(header(NAV), true);
+    assert.equal(isHeaderOverlaid(overlaid), true, "the setting is still stored");
+    assert.equal(canApplyHeaderOverlay([overlaid], 0), false, "but it is not applied");
+  });
+
+  it("applies it again as soon as a hero is underneath", () => {
+    const overlaid = toggleHeaderOverlay(header(NAV), true);
+    assert.equal(canApplyHeaderOverlay([overlaid, hero], 0), true);
+  });
+
+  it("does not apply it to the last section even on a longer page", () => {
+    const overlaid = toggleHeaderOverlay(header(NAV), true);
+    assert.equal(canApplyHeaderOverlay([hero, overlaid], 1), false);
+  });
+
+  it("says no for a header that was never overlaid, and for a missing index", () => {
+    const plain = header(NAV);
+    assert.equal(canApplyHeaderOverlay([plain, hero], 0), false);
+    assert.equal(canApplyHeaderOverlay([plain, hero], 9), false);
   });
 });

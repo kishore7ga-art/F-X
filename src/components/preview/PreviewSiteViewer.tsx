@@ -18,7 +18,7 @@ import {
 } from "@/lib/site-sections";
 import { tokenizeSectionHtml } from "@/lib/editor-themes";
 import { resolveCategory } from "@/lib/sections/categories";
-import { isHeaderOverlaid } from "@/lib/sections/section-edit";
+import { canApplyHeaderOverlay, isHeaderOverlaid } from "@/lib/sections/section-edit";
 import { handleInteractiveSectionClick, attachInteractiveSectionListeners } from "@/lib/interactive-section-runtime";
 
 
@@ -394,7 +394,9 @@ export function PreviewSiteViewer({
 
   const body = sections.map((sec, idx) => {
       const isHeader = resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
-      const isOverlaid = isHeader && isHeaderOverlaid(sec);
+      // Same rule as the editor canvas, from the same function, so preview and
+      // studio cannot disagree about whether the header is in flow.
+      const isOverlaid = isHeader && canApplyHeaderOverlay(sections, idx);
       const isFollowsOverlaidHeader = idx === 1 && sections[0] && isHeaderOverlaid(sections[0]);
       return (
         <div

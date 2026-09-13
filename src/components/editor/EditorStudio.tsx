@@ -76,7 +76,7 @@ import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
 import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css";
-import { isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
+import { canApplyHeaderOverlay, isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
 import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { resolveCategory } from "@/lib/sections/categories";
 import { handleInteractiveSectionClick, attachInteractiveSectionListeners, resetInteractiveState } from "@/lib/interactive-section-runtime";
@@ -2039,7 +2039,10 @@ export function EditorStudio({
             <div className="w-full" ref={canvasRootRef}>
               {sections.map((sec, idx) => {
                 const isHeader = sec.category === "navbar" || resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
-                const isOverlaid = isHeader && isHeaderOverlaid(sec);
+                // Overlaid only while a section follows to carry the height —
+                // see `canApplyHeaderOverlay`. An absolutely positioned header
+                // with nothing after it leaves the canvas with no height at all.
+                const isOverlaid = isHeader && canApplyHeaderOverlay(sections, idx);
                 const isFollowsOverlaidHeader = idx === 1 && sections[0] && isHeaderOverlaid(sections[0]);
                 return (
                   <React.Fragment key={sec.id}>
