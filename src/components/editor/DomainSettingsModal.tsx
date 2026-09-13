@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 
 import { SubscriptionPanel } from "@/components/editor/SubscriptionPanel";
 import { PaymentMethodPanel } from "@/components/editor/PaymentMethodPanel";
+import { AnalyticsPanel } from "@/components/editor/AnalyticsPanel";
 
 import { ApiError } from "@/lib/api-client";
 import {
@@ -28,6 +29,7 @@ import {
   type SiteSettingsPatch,
 } from "@/lib/publishing-client";
 import {
+  Activity,
   Globe,
   Rocket,
   Key,
@@ -400,6 +402,7 @@ export function DomainSettingsModal({
     { id: "security", label: "Password & Passkey Security", icon: Key },
     { id: "subscriptions", label: "Premium Subscriptions", icon: Crown },
     { id: "payments", label: "Payment Methods", icon: CreditCard },
+    { id: "analytics", label: "Live Analytics", icon: Activity },
     { id: "billing", label: "Billing History", icon: Receipt },
     { id: "advanced", label: "Advanced Settings", icon: Sliders },
   ];
@@ -1015,6 +1018,8 @@ export function DomainSettingsModal({
         {/* ========================================================= */}
         {/* TAB 7: PAYMENT METHODS (💳) */}
         {/* ========================================================= */}
+        {activeNav === "analytics" && <AnalyticsPanel />}
+
         {activeNav === "payments" && (
           <PaymentMethodPanel onGoToSubscription={() => setActiveNav("subscriptions")} />
         )}

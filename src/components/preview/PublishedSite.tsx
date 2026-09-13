@@ -8,6 +8,7 @@ import { loadSiteView } from "@/lib/site-sections.server";
 import type { SiteSettings } from "@/lib/site-sections.server";
 import type { PageItem } from "@/lib/site-sections";
 import { buildSiteMetadata, buildStructuredData, jsonLdScript, type SeoInput } from "@/lib/seo";
+import Script from "next/script";
 
 /**
  * A published tenant site, with its settings applied.
@@ -187,6 +188,36 @@ export async function PublishedSite({
         fontId={theme.fontId}
       />
       <CustomCode html={settings.bodyEndHtml} id="body-end" />
+      <AnalyticsBeacon />
     </>
   );
+}
+
+/**
+ * The telemetry script, on every published page.
+ *
+ * Injected rather than handed to tenants as a snippet to paste. These sites are
+ * built and served by this platform: asking somebody to copy a `<script>` tag
+ * into a site they edit through a visual editor would mean most of them never
+ * do it, and the dashboard would be empty for reasons nobody could diagnose.
+ *
+ * `afterInteractive` so it never competes with the page's own resources — the
+ * script itself defers its first beacon to an idle callback, and a visitor who
+ * leaves before then is a visitor who did not read anything.
+ *
+ * Rendered last, after the tenant's own body-end code, so it cannot be used as
+ * a position from which to observe or rewrite what they injected.
+ *
+ * It loads from the API's origin rather than this app's. That is where the
+ * endpoint is, and serving it from two places would mean two copies to keep in
+ * step. Nothing in it is secret: it posts a hostname, a path and a scroll depth.
+ */
+function AnalyticsBeacon() {
+  const base = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+  // No API base configured means no telemetry rather than a script tag pointing
+  // at this app's own origin, which has no such endpoint and would 404 on every
+  // published page view.
+  if (!base) return null;
+
+  return <Script src={`${base}/analytics.js`} strategy="afterInteractive" />;
 }
