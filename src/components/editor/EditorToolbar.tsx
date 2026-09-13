@@ -20,8 +20,13 @@ import {
   Plus,
 } from "lucide-react";
 import type { DeviceCatalogue, ViewportState } from "@/lib/viewport-presets";
-import { rootDomain } from "@/lib/host-routing";
-import { getPublishStatus, publishSite, type PublishStatus } from "@/lib/publishing-client";
+import {
+  getPublishStatus,
+  getSiteStatus,
+  publishSite,
+  type PublishStatus,
+  type SiteStatus,
+} from "@/lib/publishing-client";
 import { ViewportControl } from "./ViewportControl";
 
 interface EditorToolbarProps {
@@ -131,6 +136,13 @@ export function EditorToolbar({
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   /**
+   * What the server says about whether this site is reachable, and where.
+   *
+   * Beside `shareUrl` so the modal can say "not live yet, and here is why"
+   * instead of offering a link to a page that will not load.
+   */
+  const [siteStatus, setSiteStatus] = useState<SiteStatus | null>(null);
+  /**
    * Whether the URL in the share modal actually matches what was last saved.
    *
    * `/site/[subdomain]` — the URL this modal hands out — serves the tenant's
@@ -239,37 +251,43 @@ export function EditorToolbar({
   const handleCopyLink = async () => {
     if (typeof window === "undefined") return;
     const sub = subdomain || "greenfield";
-    const origin = window.location.origin;
-    const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
-    
-    /**
-     * Clean Live Website Public URL.
-     *
-     * The tenant's own subdomain, not a path on the platform. It used to be
-     * `https://<root>/site/<sub>`, which stopped being an address at all when
-     * the apex became the public landing site — that host no longer serves
-     * `/site/*`, so the share button was handing out links to a marketing page.
-     *
-     * `<sub>.<root>` is also what the rest of the product already calls this
-     * site: `canonicalOrigin` in lib/seo.ts puts it in the canonical tag and the
-     * sitemap, and proxy.ts rewrites it onto `/site/<sub>` on arrival. The link
-     * somebody is given and the link a crawler is told is canonical are now the
-     * same string.
-     *
-     * The host still comes from NEXT_PUBLIC_ROOT_DOMAIN rather than a literal,
-     * so moving the platform's domain does not leave this pointing at the old
-     * one. Locally there is no wildcard to resolve, so the path form stays.
-     */
-    const publicWebsiteUrl = isProd
-      ? `https://${sub}.${rootDomain()}`
-      : `${origin}/site/${sub}`;
 
-    setShareUrl(publicWebsiteUrl);
+    /**
+     * The share link comes from the server, not from this component.
+     *
+     * Every version of composing it here has been wrong, because the right
+     * answer depends on facts only the server holds. It was `<root>/site/<sub>`,
+     * which stopped being an address when the apex became the landing site.
+     * Then it was `<sub>.<root>`, which is what the SEO canonical uses and
+     * needs a wildcard DNS record and certificate — and on this deployment
+     * `*.webxite.org` has never resolved, so the button handed out NXDOMAIN
+     * links that looked perfectly plausible.
+     *
+     * `/api/v1/site-status` knows which of the tenant's domains have actually
+     * passed verification and which platform form this deployment can serve.
+     * It returns null when the site is not being served at all, so the modal
+     * can say so rather than offer a link to a page that will not load.
+     *
+     * The local path form is the fallback for a failed request, so the modal is
+     * never empty.
+     */
+    const fallback = `${window.location.origin}/site/${sub}`;
+
+    setShareUrl("");
     setShowShareModal(true);
     setPublishStatus(null);
-    getPublishStatus()
-      .then(setPublishStatus)
-      .catch(() => setPublishStatus(null));
+    setSiteStatus(null);
+
+    const [status, live] = await Promise.all([
+      getPublishStatus().catch(() => null),
+      getSiteStatus().catch(() => null),
+    ]);
+
+    setPublishStatus(status);
+    setSiteStatus(live);
+
+    const publicWebsiteUrl = live?.liveUrl ?? fallback;
+    setShareUrl(publicWebsiteUrl);
 
     try {
       await navigator.clipboard.writeText(publicWebsiteUrl);
@@ -1371,7 +1389,11 @@ export function EditorToolbar({
                 </div>
                 <div>
                   <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff" }}>Share Live Website Link</h3>
-                  <p style={{ fontSize: "11px", color: "#a1a1aa", margin: "2px 0 0 0" }}>Anyone with this link can view your live website</p>
+                  <p style={{ fontSize: "11px", color: "#a1a1aa", margin: "2px 0 0 0" }}>
+                    {siteStatus && !siteStatus.isLive
+                      ? "This link will work once your website is live"
+                      : "Anyone with this link can view your live website"}
+                  </p>
                 </div>
               </div>
               <button
@@ -1382,10 +1404,49 @@ export function EditorToolbar({
               </button>
             </div>
 
+            {/*
+              Said before the link, when the link will not work.
+
+              The modal used to show a URL unconditionally, so a site that was
+              unpublished, paused for maintenance or on an unverified domain
+              still got a confident "Anyone with this link can view your live
+              website" — and the recipient got a maintenance page or a DNS
+              error. The server returns `liveUrl: null` in exactly those cases;
+              this is that null having a voice.
+
+              `preconditions` names the one that is failing, because "not live"
+              on its own is what sends somebody to re-check DNS they already
+              got right.
+            */}
+            {siteStatus && !siteStatus.isLive && (
+              <div
+                role="status"
+                style={{
+                  borderRadius: "12px",
+                  border: "1px solid #78350f",
+                  backgroundColor: "#451a03",
+                  padding: "12px 14px",
+                  marginBottom: "4px",
+                }}
+              >
+                <p style={{ margin: "0 0 4px", fontSize: "12px", fontWeight: 800, color: "#fcd34d" }}>
+                  {siteStatus.status === "DRAFT"
+                    ? "Not published yet"
+                    : siteStatus.status === "PAUSED"
+                      ? "Maintenance mode is on"
+                      : "Not live yet"}
+                </p>
+                <p style={{ margin: 0, fontSize: "11px", color: "#fde68a", lineHeight: 1.6 }}>
+                  {siteStatus.preconditions.find((p) => !p.ok)?.detail ??
+                    "Anyone opening this link will not see your website yet."}
+                </p>
+              </div>
+            )}
+
             {/* Input URL display */}
             <div>
               <label style={{ fontSize: "11px", fontWeight: 800, color: "#e4e4e7", textTransform: "uppercase", display: "block", marginBottom: "8px", letterSpacing: "0.05em" }}>
-                Public Live Website Link
+                {siteStatus && !siteStatus.isLive ? "Website Link (not live yet)" : "Public Live Website Link"}
               </label>
               <div style={{ display: "flex", gap: "8px" }}>
                 <input

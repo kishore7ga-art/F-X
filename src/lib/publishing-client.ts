@@ -95,6 +95,34 @@ export type Domain = {
   };
 };
 
+export type Precondition = {
+  key: "ownership" | "build" | "deployment" | "linkage" | "domain" | "serving";
+  label: string;
+  ok: boolean;
+  detail: string | null;
+};
+
+export type SiteStatus = {
+  status: "DRAFT" | "LIVE" | "PAUSED" | "FAILED";
+  isLive: boolean;
+  /**
+   * The address to hand somebody, decided by the server.
+   *
+   * Null when the site is not actually being served. The client must not
+   * compose this itself: only the server knows which of the tenant's domains
+   * have passed verification, and whether this deployment has the wildcard DNS
+   * that a `<sub>.<root>` address depends on. Guessing produced a share button
+   * that handed out NXDOMAIN links.
+   */
+  liveUrl: string | null;
+  publishedVersion: number;
+  publishedAt: string | null;
+  hasUnpublishedChanges: boolean;
+  preconditions: Precondition[];
+};
+
+export const getSiteStatus = () => api<SiteStatus>("/api/v1/site-status");
+
 export const getPublishStatus = () => api<PublishStatus>("/api/v1/publish/status");
 
 export const publishSite = () => api<PublishResult>("/api/v1/publish", { method: "POST" });
