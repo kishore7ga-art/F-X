@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, Check, Crown, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { Check, Crown, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 
 import { ApiError } from "@/lib/api-client";
 import {
@@ -502,18 +502,15 @@ export function SubscriptionPanel() {
       </div>
 
       {/*
-        An operator-facing fact, not a customer-facing one — but it belongs on
-        the screen where its absence does damage. Without webhooks a renewal,
-        a failed charge or a cancellation made at Razorpay never reaches this
-        platform, and the status above silently goes stale.
+        `webhooksConfigured` is deliberately not rendered.
+        
+        It is an operator's problem, not a customer's: a tenant can do nothing
+        about a server that has not had its webhook secret set, and a warning
+        about it on a billing card is noise on the one screen that should be a
+        plan, a price and a button. The fact is still on the API response for
+        whoever is diagnosing it, and the Refresh control above is the recovery
+        path either way.
       */}
-      {!state.webhooksConfigured && (
-        <p style={{ fontSize: "11px", color: "#92400E", margin: 0, display: "flex", alignItems: "center", gap: "6px" }}>
-          <AlertCircle style={{ width: "13px", height: "13px" }} />
-          Webhooks are not configured on this server, so renewals and cancellations may take a
-          refresh to appear.
-        </p>
-      )}
     </Frame>
   );
 }
