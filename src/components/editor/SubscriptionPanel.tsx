@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, Crown, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 
 import { ApiError } from "@/lib/api-client";
+import { PayOnceCard } from "@/components/editor/PayOnceCard";
 import {
   cancelSubscription,
   describeCycle,
@@ -273,17 +274,21 @@ export function SubscriptionPanel() {
   }
 
   /**
-   * No provider configured. Said plainly rather than rendering a plan card with
-   * a button that would fail at the last step — which is what the three
-   * hardcoded tiers did for as long as they existed.
+   * No recurring plan configured — fall back to the one-time payment card.
+   *
+   * `configured` is false whenever RAZORPAY_PLAN_ID is missing, and a Plan is
+   * the one piece of Razorpay setup that cannot be automated: it encodes a
+   * price, which is a commercial decision rather than a deployment one.
+   *
+   * A deployment with keys but no Plan can still take a single payment, so it
+   * offers that instead of a dead end. Both paths verify server-side; the only
+   * difference is whether Razorpay renews it. `PayOnceCard` says so itself when
+   * even the amount is unset.
    */
   if (!state?.configured) {
     return (
       <Frame>
-        <Banner
-          tone="neutral"
-          text="Subscriptions are not set up on this server yet. No plan can be purchased until a payment provider is configured."
-        />
+        <PayOnceCard />
       </Frame>
     );
   }
