@@ -17,6 +17,15 @@ import { api } from "@/lib/api-client";
  */
 
 export type PublishStatus = {
+  /**
+   * Whether visitors are seeing the maintenance page instead of the site.
+   *
+   * Carried alongside the publish state because it is the one setting that
+   * makes every other field here true and irrelevant — published, current
+   * version, verified domain, and every visitor still gets "We'll be back
+   * shortly". It lives in a different tab, and nothing connected the two.
+   */
+  maintenanceEnabled: boolean;
   hasDraft: boolean;
   hasPublished: boolean;
   publishedVersion: number;

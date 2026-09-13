@@ -1030,6 +1030,62 @@ export function DomainSettingsModal({
               </h1>
             </div>
 
+            {/*
+              The one fact that makes everything else on this screen
+              meaningless, said first.
+
+              `publishStatusState` was already being fetched here and rendered
+              nowhere — lint had it as an unused variable. So a tenant could
+              build ten pages, publish, connect a domain, watch all four checks
+              go green, and visitors would still get "We'll be back shortly",
+              with nothing on the screen they were staring at mentioning it.
+              Maintenance mode is set two tabs away.
+            */}
+            {publishStatusState?.maintenanceEnabled && (
+              <div
+                role="alert"
+                style={{
+                  borderRadius: "12px",
+                  border: "1px solid #FDE68A",
+                  backgroundColor: "#FEF3C7",
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "12px",
+                }}
+              >
+                <span aria-hidden="true" style={{ fontSize: "16px", lineHeight: 1.2 }}>
+                  &#9888;
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: "0 0 3px", fontSize: "13px", fontWeight: 700, color: "#92400E" }}>
+                    Maintenance mode is on — visitors cannot see your site
+                  </p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#92400E", lineHeight: 1.6 }}>
+                    Your site is published and your domain is set up correctly, but everyone
+                    who visits sees a &ldquo;We&rsquo;ll be back shortly&rdquo; page instead.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveNav("advanced")}
+                  style={{
+                    borderRadius: "8px",
+                    border: "1px solid #FDE68A",
+                    backgroundColor: "#FFFFFF",
+                    color: "#92400E",
+                    padding: "8px 14px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  Turn it off
+                </button>
+              </div>
+            )}
+
             {/* Add a domain. Nothing is claimed about it until it is checked. */}
             <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
               <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Connect a domain you own</h4>
