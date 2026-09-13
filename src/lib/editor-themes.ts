@@ -606,6 +606,95 @@ export function themeStylesheet(scope: string): string {
   return blocks.join("\n\n");
 }
 
+/**
+ * A `<button>` that works the page rather than calling the reader to act.
+ *
+ * The primary rule below paints every `<button>` in the accent colour with
+ * contrast text, which is right for "Apply Now" and wrong for everything that
+ * merely operates the page. A navbar's "Free Resources ⌄" is a `<button>`, so
+ * it was being painted as a call to action — a solid accent block in the middle
+ * of a header, with its own `background: transparent !important` losing because
+ * the theme rule is `!important` too and far more specific.
+ *
+ * Three kinds of escape, because markup in the library states this three ways:
+ *
+ *   1. The platform's own opt-outs, which an author can always reach for.
+ *   2. The ARIA a disclosure control is supposed to carry. `aria-haspopup`,
+ *      `aria-expanded` and `aria-controls` each say "this operates something
+ *      else" and none of them belongs on a call to action.
+ *   3. What these controls are named when the markup says nothing semantic at
+ *      all, which is the common case.
+ */
+const CONTROL_BUTTON_ESCAPES = [
+  "[data-custom-styled]",
+  "[data-no-theme]",
+  '[aria-haspopup]',
+  '[aria-expanded]',
+  '[aria-controls]',
+  '[aria-label*="close" i]',
+  '[aria-label*="menu" i]',
+  '[aria-label*="modal" i]',
+  '[class*="dropdown"]',
+  '[class*="submenu"]',
+  '[class*="menu"]',
+  '[class*="toggle"]',
+  '[class*="hamburger"]',
+  '[class*="burger"]',
+  '[class*="accordion"]',
+  '[class*="chevron"]',
+  '[class*="close"]',
+  '[class*="arrow"]',
+  '[class*="tab"]',
+  '[class*="carousel"]',
+  '[class*="prev"]',
+  '[class*="next"]',
+]
+  .map((attr) => `:not(${attr})`)
+  .join("");
+
+/**
+ * The case none of the names above catch: a button that owns a panel.
+ *
+ * `wx-resources-button` carries no ARIA and no telling class — the only thing
+ * marking it as a disclosure is the `.wx-dropdown` sitting next to it. That is
+ * a structural fact and `:has()` can read it, so the trigger is recognised
+ * whatever the template chose to call it.
+ *
+ * Deliberately the adjacent sibling and a panel *element*, not `~` and not any
+ * class. A browser check caught the loose version un-theming a genuine "Apply
+ * Now" because a mobile menu toggle appeared later in the same nav — `~` reaches
+ * every following sibling, and a `<button class="menu-toggle">` is not a panel.
+ * The narrow form still catches the reported case, where the trigger is
+ * immediately followed by `<div class="wx-dropdown">`.
+ *
+ * Kept in a rule of its own below. An engine without `:has()` treats a selector
+ * containing it as invalid and drops the **whole** rule it appears in, so if it
+ * shared a rule with the class-based CTA selectors an old browser would lose
+ * all button theming instead of some. Alone, the worst case is that plain
+ * `<button>` CTAs go unthemed, which is a smaller and quieter failure.
+ */
+const DISCLOSURE_PANEL =
+  ':is(div, ul, ol, nav, section):is([class*="dropdown"], [class*="submenu"], [class*="flyout"], [class*="mega"], [class*="popover"])';
+
+/**
+ * The other tell, and the more reliable one: the button contains a chevron.
+ *
+ * Chasing panel class names does not generalise — the same header calls its
+ * desktop panel `wx-dropdown` and its mobile one `wx-mobile-resource-list`, and
+ * the next template will invent a third name. What both triggers do carry is a
+ * `<span class="wx-chevron">`, because a control that opens something has to
+ * show which way it opens. A call to action does not have one.
+ *
+ * `chevron` and `caret` only. Not `arrow`, which is common in "Learn more →"
+ * and would cost real calls to action their accent.
+ */
+const HAS_DISCLOSURE_INDICATOR = ':has(:is([class*="chevron"], [class*="caret"]))';
+
+const NOT_A_DISCLOSURE = `:not(:has(+ ${DISCLOSURE_PANEL})):not(${HAS_DISCLOSURE_INDICATOR})`;
+
+/** A `<button>` the theme may treat as a call to action. */
+const THEMED_BUTTON = `button${CONTROL_BUTTON_ESCAPES}${NOT_A_DISCLOSURE}`;
+
 function themeButtonRules(scope: string): string {
   /**
    * The primary rules above stack seven attribute `:not()`s on `button`, so a
@@ -614,12 +703,11 @@ function themeButtonRules(scope: string): string {
    * rule regardless of source order. (The canvas root has no id `_`.)
    */
   const secondaryScope = `${scope}[data-xite-theme]:not(#_):not(#_)`;
-  const anyCta = `:is(a[class*="btn"], a[class*="button"], a[class*="cta"], a[class*="apply"], a[class*="enroll"], a[class*="donate"], a[class*="give"], button, [role="button"])`;
+  const anyCta = `:is(a[class*="btn"], a[class*="button"], a[class*="cta"], a[class*="apply"], a[class*="enroll"], a[class*="donate"], a[class*="give"], ${THEMED_BUTTON}, [role="button"])`;
   const secondaryCta = `:is([class*="secondary"], [class*="btn-alt"], ${anyCta} ~ :is(a[class*="btn"], a[class*="button"], a[class*="cta"])):not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="tab"])`;
 
   return `
 /* Primary Buttons & CTAs */
-${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]):not([aria-label*="close" i]):not([aria-label*="modal" i]):not([class*="tab"]):not([class*="carousel"]):not([class*="prev"]):not([class*="next"]),
 ${scope}[data-xite-theme] .btn:not([data-custom-styled]):not([class*="outline"]):not([class*="ghost"]):not([class*="secondary"]),
 ${scope}[data-xite-theme] [class*="btn-primary"]:not([data-custom-styled]),
 ${scope}[data-xite-theme] [class*="btn_primary"]:not([data-custom-styled]),
@@ -642,7 +730,6 @@ ${scope}[data-xite-theme] [class*="bg-sky-600"]:not([data-custom-styled]) {
 }
 
 /* Force child elements inside primary buttons to inherit contrast color so text never vanishes */
-${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]) :where(span, p, strong, b, div, a, label),
 ${scope}[data-xite-theme] [class*="btn-primary"]:not([data-custom-styled]) :where(span, p, strong, b, div, a, label),
 ${scope}[data-xite-theme] [class*="btn_primary"]:not([data-custom-styled]) :where(span, p, strong, b, div, a, label),
 ${scope}[data-xite-theme] a[class*="btn"]:not([data-custom-styled]):not([class*="secondary"]):not([class*="outline"]) :where(span, p, strong, b, div, label),
@@ -655,9 +742,25 @@ ${scope}[data-xite-theme] [role="button"]:not([data-custom-styled]):not([class*=
   color: var(--xite-on-accent, #ffffff) !important;
 }
 
-${scope}[data-xite-theme] button:not([data-custom-styled]):not([data-no-theme]) svg,
 ${scope}[data-xite-theme] [class*="btn-primary"]:not([data-custom-styled]) svg,
 ${scope}[data-xite-theme] a[class*="cta"]:not([data-custom-styled]) svg {
+  color: var(--xite-on-accent, #ffffff) !important;
+  fill: currentColor !important;
+}
+
+/* Button elements used as calls to action.
+   Alone, so that an engine without :has() drops only this and keeps the rest. */
+${scope}[data-xite-theme] ${THEMED_BUTTON} {
+  background-color: var(--xite-accent) !important;
+  color: var(--xite-on-accent, #ffffff) !important;
+  border: 1.5px solid var(--xite-accent-border, var(--xite-accent)) !important;
+}
+
+${scope}[data-xite-theme] ${THEMED_BUTTON} :where(span, p, strong, b, div, a, label) {
+  color: var(--xite-on-accent, #ffffff) !important;
+}
+
+${scope}[data-xite-theme] ${THEMED_BUTTON} svg {
   color: var(--xite-on-accent, #ffffff) !important;
   fill: currentColor !important;
 }
