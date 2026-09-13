@@ -174,3 +174,71 @@ Not verified, because it cannot be until the records and bindings above exist:
 that `app.webxite.org` serves the editor, that the apex serves the landing site,
 that a tenant subdomain renders, and that sign-in works across the new host pair.
 `app.webxite.org` does not resolve at the time of writing.
+
+---
+
+## Port and domain map
+
+### Public domains → service
+
+| Domain | Service | Repo | Dokploy app | Container port |
+|---|---|---|---|---|
+| `webxite.org` | Landing site | `L-X` | *to be created* | `80` |
+| `www.webxite.org` | Landing site | `L-X` | *to be created* | `80` |
+| `app.webxite.org` | Editor (Next.js) | `F-X` | `xite-xitef-b0aoge` | `3000` |
+| `*.webxite.org` | Tenant sites (same app) | `F-X` | `xite-xitef-b0aoge` | `3000` |
+| `admin.webxite.org` | Admin panel (Nginx) | `AD-X` | `xite-xitead-yeiek3` | `80` |
+| `api.webxite.org` | Backend (Express) | `B-X` | `xite-xiteb-k65xcm` | `4000` |
+
+Tenant sites are not a separate deployment. `proxy.ts` rewrites
+`<tenant>.webxite.org/about` onto `/site/<tenant>/about` inside the same Next
+app that serves the editor, which is why one container answers on two bindings.
+
+### Container ports, as declared
+
+| Service | `EXPOSE` | Listens on | Set by |
+|---|---|---|---|
+| `F-X` | `3000` | `3000` | `PORT=3000` env; Next's default |
+| `B-X` | `4000` | `4000` | `PORT=4000` env; `PORT ?? 4000` in server.ts:145 |
+| `AD-X` | `80 5174 3000` | `80`, `5174`, `3000` | `nginx.conf` — three `listen` lines |
+| `L-X` | `80 3000` | `80`, `3000` | `nginx.conf` — two `listen` lines |
+
+The two Nginx images listen on several ports so the container works whichever
+one Dokploy maps. `80` is the one to use.
+
+### Local development ports
+
+| Port | What | Command |
+|---|---|---|
+| `3000` | xite-F dev | `npm run dev` (`next dev --port 3000`) |
+| `3000` | **lander dev** | `npm run dev` (`vite --port 3000 --host`) |
+| `3001` | xite-F alternate | — listed in `CORS_ORIGINS` |
+| `3002` | xite-admin dev | `npm run dev` (`vite --port 3002`) |
+| `4000` | xite-B dev | `npm run dev` (`tsx watch src/server.ts`) |
+| `5173` | Vite default | — listed in `CORS_ORIGINS` |
+| `5174` | xite-admin preview | `npm run preview` |
+
+**`3000` is claimed twice.** The landing site and the editor cannot both run
+locally as configured; whichever starts second fails to bind. The landing site
+is the newer arrival and the cheaper one to move.
+
+### Service-to-service
+
+`next.config.ts` resolves the backend as
+`BACKEND_INTERNAL_URL || NEXT_PUBLIC_API_BASE_URL || http://localhost:4000`, and
+`resolveCustomHost()` in `host-routing.ts` uses the same chain.
+
+`BACKEND_INTERNAL_URL` is **not set** on xite-F today, so both fall through to
+`https://api.webxite.org` — every `/api/v1/*` rewrite and every custom-domain
+lookup leaves the host, crosses Traefik and comes back. Setting
+
+```
+BACKEND_INTERNAL_URL=http://xite-xiteb-k65xcm:4000
+```
+
+keeps that traffic on the Docker network. Optional, and it is a latency change
+rather than a correctness one — the custom-domain lookup sits in the critical
+path of every page view on a tenant domain, with a 2-second timeout.
+
+Never `localhost` for this: inside a container that resolves to the container
+itself, which is the single most common way a split deployment breaks.
