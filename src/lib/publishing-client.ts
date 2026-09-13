@@ -72,7 +72,18 @@ export type Domain = {
   verificationCheckedAt: string | null;
   sslCheckedAt: string | null;
   createdAt: string;
-  dnsInstructions: { verification: DnsRecord; routing: DnsRecord };
+  dnsInstructions: {
+    verification: DnsRecord;
+    /**
+     * Null when no record can honestly be offered — an apex domain on a
+     * deployment with no apex address configured. The API used to fall through
+     * to a CNAME there, which a zone apex cannot legally carry, so the tenant
+     * was told to create a record their provider would refuse.
+     */
+    routing: DnsRecord | null;
+    /** Why `routing` is null, to show in its place. */
+    routingUnavailable?: string;
+  };
 };
 
 export const getPublishStatus = () => api<PublishStatus>("/api/v1/publish/status");

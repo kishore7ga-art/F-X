@@ -1037,9 +1037,21 @@ export function DomainSettingsModal({
             <div style={{ borderRadius: "14px", border: "1px solid #E5E5E5", backgroundColor: "#FFFFFF", padding: "24px 28px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", gap: "16px" }}>
               <h4 style={{ fontSize: "14px", fontWeight: 600, color: "#171717", margin: 0 }}>Connect a domain you own</h4>
               <p style={{ fontSize: "12px", color: "#737373", margin: 0, lineHeight: 1.6 }}>
-                Your site is always reachable at{" "}
-                <span style={{ fontFamily: "monospace", color: "#171717" }}>{subdomain}.{rootDomain()}</span>.
-                Adding your own domain does not replace that address.
+                {/* "always reachable" was a guarantee this page is in no
+                    position to make: the address depends on a wildcard DNS
+                    record in the platform's own zone, and if that record is
+                    missing the host does not resolve at all. It is a link now,
+                    so it is one click to find out rather than a claim. */}
+                Your site also has a WebXite address:{" "}
+                <a
+                  href={`https://${subdomain}.${rootDomain()}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontFamily: "monospace", color: "#171717", fontWeight: 600 }}
+                >
+                  {subdomain}.{rootDomain()}
+                </a>
+                . Adding your own domain does not replace it.
               </p>
 
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1245,7 +1257,9 @@ export function DomainSettingsModal({
                         longer being checked against anything, so printing it
                         invites somebody to edit their zone to no effect. */}
                     <div style={{ display: off ? "none" : "flex", flexDirection: "column", gap: "8px" }}>
-                      {[domain.dnsInstructions.verification, domain.dnsInstructions.routing].map((rec) => (
+                      {[domain.dnsInstructions.verification, domain.dnsInstructions.routing]
+                        .filter((rec): rec is NonNullable<typeof rec> => rec !== null)
+                        .map((rec) => (
                         <div key={rec.type + "-" + rec.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "10px 14px", borderRadius: "8px", backgroundColor: "#FAFAFA", border: "1px solid #EEEEEE", fontSize: "12px", overflowX: "auto" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
                             <span style={{ fontWeight: 700, color: "#171717", width: "58px", flexShrink: 0 }}>{rec.type}</span>
@@ -1262,6 +1276,15 @@ export function DomainSettingsModal({
                           </button>
                         </div>
                       ))}
+
+                      {/* An apex domain this deployment cannot serve. Saying so
+                          beats the CNAME that used to be printed here, which a
+                          zone apex cannot carry and no provider would accept. */}
+                      {domain.dnsInstructions.routingUnavailable && (
+                        <p style={{ margin: 0, padding: "10px 14px", borderRadius: "8px", backgroundColor: "#FEF3C7", border: "1px solid #FDE68A", color: "#92400E", fontSize: "12px", lineHeight: 1.6 }}>
+                          {domain.dnsInstructions.routingUnavailable}
+                        </p>
+                      )}
                     </div>
 
                     <div style={{ display: off ? "none" : "flex", gap: "8px", flexWrap: "wrap" }}>
