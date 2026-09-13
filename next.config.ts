@@ -86,7 +86,9 @@ const nextConfig: NextConfig = {
      * `frame-ancestors` is what actually prevents clickjacking; `X-Frame-Options`
      * is beside it for older browsers that do not implement the CSP directive.
      * Both allow the platform's own origins because the Admin panel previews
-     * tenant sites in an iframe.
+     * tenant sites in an iframe. `app.` is listed alongside the apex because the
+     * editor moved there when the landing site took the apex, and `'self'` is
+     * the tenant subdomain the preview is actually served on — not the editor.
      */
     const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "webxite.org").trim();
 
@@ -97,7 +99,7 @@ const nextConfig: NextConfig = {
           "object-src 'none'",
           "base-uri 'self'",
           "form-action 'self'",
-          `frame-ancestors 'self' https://${rootDomain} https://admin.${rootDomain}`,
+          `frame-ancestors 'self' https://${rootDomain} https://app.${rootDomain} https://admin.${rootDomain}`,
         ].join("; "),
       },
       { key: "X-Content-Type-Options", value: "nosniff" },

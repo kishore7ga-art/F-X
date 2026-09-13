@@ -242,11 +242,26 @@ export function EditorToolbar({
     const origin = window.location.origin;
     const isProd = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
     
-    // Clean Live Website Public URL. The host comes from NEXT_PUBLIC_ROOT_DOMAIN
-    // rather than a literal, so moving the platform's domain does not leave a
-    // share button handing out links to the previous one.
+    /**
+     * Clean Live Website Public URL.
+     *
+     * The tenant's own subdomain, not a path on the platform. It used to be
+     * `https://<root>/site/<sub>`, which stopped being an address at all when
+     * the apex became the public landing site — that host no longer serves
+     * `/site/*`, so the share button was handing out links to a marketing page.
+     *
+     * `<sub>.<root>` is also what the rest of the product already calls this
+     * site: `canonicalOrigin` in lib/seo.ts puts it in the canonical tag and the
+     * sitemap, and proxy.ts rewrites it onto `/site/<sub>` on arrival. The link
+     * somebody is given and the link a crawler is told is canonical are now the
+     * same string.
+     *
+     * The host still comes from NEXT_PUBLIC_ROOT_DOMAIN rather than a literal,
+     * so moving the platform's domain does not leave this pointing at the old
+     * one. Locally there is no wildcard to resolve, so the path form stays.
+     */
     const publicWebsiteUrl = isProd
-      ? `https://${rootDomain()}/site/${sub}`
+      ? `https://${sub}.${rootDomain()}`
       : `${origin}/site/${sub}`;
 
     setShareUrl(publicWebsiteUrl);
