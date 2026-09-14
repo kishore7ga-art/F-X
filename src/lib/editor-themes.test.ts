@@ -25,6 +25,10 @@ import {
   applyThemeTokens,
   colorTokenMapToThemeTokens,
   themeTokensToColorTokenMap,
+  normalizeHex,
+  isValidHex,
+  hexToRgb,
+  hslToHex,
   type ColorTokenMap,
 } from "@/lib/editor-themes";
 
@@ -547,6 +551,11 @@ describe("Squarespace 7.1 Style Color Engine", () => {
     assert.ok(css.includes("--theme-dark-1: #334155;"));
     assert.ok(css.includes("--theme-dark-2: #0F172A;"));
     assert.ok(css.includes("--xite-accent: #2563EB;"));
+    assert.ok(css.includes("--xite-surface: #FFFFFF;"));
+    assert.ok(css.includes("--xite-surface-raised: #EFF6FF;"));
+    assert.ok(css.includes("--xite-text: #0F172A;"));
+    assert.ok(css.includes("--xite-text-muted: #334155;"));
+    assert.ok(css.includes("--xite-bg: #FFFFFF;"));
   });
 
   it("applyThemeTokens sets properties directly on target element", () => {
@@ -574,6 +583,31 @@ describe("Squarespace 7.1 Style Color Engine", () => {
     assert.equal(fakeElement.style.properties["--theme-dark-1"], "#1E293B");
     assert.equal(fakeElement.style.properties["--theme-dark-2"], "#0F172A");
     assert.equal(fakeElement.style.properties["--xite-accent"], "#10B981");
+    assert.equal(fakeElement.style.properties["--xite-bg"], "#FFFFFF");
+    assert.equal(fakeElement.style.properties["--xite-surface"], "#FFFFFF");
+    assert.equal(fakeElement.style.properties["--xite-text"], "#0F172A");
+  });
+
+  it("normalizeHex, hexToRgb, and hslToHex handle edge cases and malformed inputs gracefully", () => {
+    // normalizeHex edge cases
+    assert.equal(normalizeHex(""), "#000000");
+    assert.equal(normalizeHex(null as any), "#000000");
+    assert.equal(normalizeHex("not-a-color"), "#000000");
+    assert.equal(normalizeHex("fff"), "#FFFFFF");
+    assert.equal(normalizeHex("#fff"), "#FFFFFF");
+    assert.equal(normalizeHex("2563eb"), "#2563EB");
+    assert.equal(normalizeHex("#2563EB"), "#2563EB");
+
+    // hexToRgb edge cases
+    assert.deepEqual(hexToRgb("invalid"), { r: 0, g: 0, b: 0 });
+    assert.deepEqual(hexToRgb("#XYZ"), { r: 0, g: 0, b: 0 });
+    assert.deepEqual(hexToRgb("#ffffff"), { r: 255, g: 255, b: 255 });
+    assert.deepEqual(hexToRgb("000000"), { r: 0, g: 0, b: 0 });
+
+    // hslToHex returns sanitized uppercase hex
+    assert.equal(hslToHex(0, 0, 100), "#FFFFFF");
+    assert.equal(hslToHex(0, 0, 0), "#000000");
+    assert.equal(hslToHex(220, 90, 56), "#2A6DF4");
   });
 });
 
