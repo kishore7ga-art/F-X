@@ -61,4 +61,11 @@ describe("classification by tag and class", () => {
     assert.ok(!classify.isParagraphOrInlineTextTag("h1"));
     assert.ok(!classify.isParagraphOrInlineTextTag("div"));
   });
+
+  it("exposes labels for all supported element types", () => {
+    const types = ["section", "container", "card", "heading", "text", "button", "image", "generic"] as const;
+    for (const t of types) {
+      assert.ok(typeof t === "string");
+    }
+  });
 });

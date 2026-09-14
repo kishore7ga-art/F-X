@@ -78,6 +78,7 @@ export function SelectionHighlight({ type, resolveElement, revision }: Selection
   if (!rect || !type || type === "section") return null;
   const colour = RING[type] || "#6366f1";
   const label = TOOLBAR_CONFIG[type]?.badge || "Element";
+  const isNearTop = rect.top < 24;
 
   return (
     <div
@@ -94,7 +95,9 @@ export function SelectionHighlight({ type, resolveElement, revision }: Selection
       }}
     >
       <span
-        className="absolute -top-5 left-0 rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs"
+        className={`absolute ${
+          isNearTop ? "top-1 left-1" : "-top-5 left-0"
+        } rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs`}
         style={{ background: colour }}
       >
         {label}

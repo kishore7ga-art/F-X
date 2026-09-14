@@ -152,11 +152,23 @@ export function useSelectionController({
    * After every commit the canvas may have rebuilt the section. A path that
    * no longer resolves means the structure changed underneath the selection
    * (an undo past a delete, a swap), and the only honest thing is to drop it.
+   * If it does resolve, refresh the meta snapshot to ensure undo/redo state sync.
    */
   useEffect(() => {
     if (!selection.selectedId) return;
-    if (!resolveSelected(selection)) selectionStore.clearSelection();
-  }, [selection, sections, resolveSelected]);
+    const el = resolveSelected(selection);
+    if (!el) {
+      selectionStore.clearSelection();
+      return;
+    }
+    if (selection.type && selection.type !== "section") {
+      const freshProps = readElementProps(selection.type as LeafType, el);
+      selectionStore.updateElementProps(selection.selectedId, {
+        ...freshProps,
+        tag: el.tagName.toLowerCase(),
+      });
+    }
+  }, [selection.selectedId, selection.type, sections, resolveSelected]);
 
   /* ── Write-back ───────────────────────────────────────────────────────── */
 
@@ -341,6 +353,22 @@ export function useSelectionController({
       const moved = moveElementDom(element, direction);
       if (moved) {
         const sectionId = state.sectionId;
+        const box = canvasBoxFor(sectionId);
+        if (box && state.type && state.type !== "section") {
+          const newPath = pathOf(element, box);
+          const newId = elementId(sectionId, newPath);
+          const ancestors = getAncestorHierarchy(
+            element,
+            box,
+            sectionId,
+            sectionsRef.current.find((s) => s.id === sectionId)?.title || "Section",
+          );
+          const meta = {
+            ...readElementProps(state.type as LeafType, element),
+            tag: element.tagName.toLowerCase(),
+          };
+          selectionStore.selectElement(newId, state.type, sectionId, meta, ancestors);
+        }
         closeContextMenu();
         writeSectionNow(sectionId);
       }
@@ -412,15 +440,32 @@ export function useSelectionController({
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
       const active = document.activeElement as HTMLElement | null;
-      if (active && ["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName)) {
-        active.blur();
+      const isInputActive =
+        active &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(active.tagName) ||
+          active.isContentEditable ||
+          active.getAttribute("contenteditable") === "true");
+
+      if (event.key === "Escape") {
+        if (isInputActive && active) {
+          active.blur();
+          event.stopPropagation();
+          return;
+        }
         event.stopPropagation();
+        clearSelection();
         return;
       }
-      event.stopPropagation();
-      clearSelection();
+
+      if ((event.key === "Delete" || event.key === "Backspace") && !isInputActive) {
+        const state = selectionStore.getState();
+        if (state.selectedId && state.type && state.type !== "section") {
+          event.preventDefault();
+          event.stopPropagation();
+          deleteElement();
+        }
+      }
     };
 
     document.addEventListener("mousedown", onMouseDown);
@@ -429,7 +474,7 @@ export function useSelectionController({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [selection.selectedId, contextMenu.isOpen, resolveSelected, clearSelection]);
+  }, [selection.selectedId, contextMenu.isOpen, resolveSelected, clearSelection, deleteElement]);
 
   return {
     selection,
