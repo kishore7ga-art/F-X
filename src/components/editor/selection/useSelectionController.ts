@@ -28,6 +28,7 @@ import {
   getAncestorHierarchy,
   moveElementDom,
   parseElementId,
+  pathOf,
   readElementProps,
   resolvePath,
   resolveTarget,
