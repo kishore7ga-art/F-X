@@ -2152,6 +2152,7 @@ export function EditorStudio({
                         if (target.closest("[data-xite-canvas-chrome]") || inPlaceEditor.isEditingTarget(target)) {
                           return;
                         }
+                        elementSelection.handleElementDoubleClick?.(target, idx);
                         inPlaceEditor.handleElementDoubleClick(target, idx, e);
                       }}
                       onContextMenu={(e: any) => handleSectionContextMenu(e, idx)}

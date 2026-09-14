@@ -7,6 +7,9 @@ import {
   elementId,
   ELEMENT_TYPE_LABEL,
   extractYouTubeVideoId,
+  findImageElement,
+  findYouTubeElement,
+  findVideoElement,
   parseElementId,
 } from "./element-resolver";
 
@@ -147,4 +150,143 @@ describe("classification by tag and class", () => {
     }
   });
 });
+
+describe("findImageElement & media resolution", () => {
+  function matchMock(el: any, sel: string): boolean {
+    const parts = sel.split(",").map((s) => s.trim().toLowerCase());
+    const t = el.tagName.toLowerCase();
+    const cls = (el.className || "").toLowerCase();
+    for (const p of parts) {
+      if (p === t) return true;
+      if (p.startsWith(".") && cls.includes(p.slice(1))) return true;
+      if (p.includes("[")) {
+        const tagMatch = p.slice(0, p.indexOf("[")).trim();
+        if (tagMatch && tagMatch !== t) continue;
+        const attrMatch = p.slice(p.indexOf("[") + 1, p.lastIndexOf("]"));
+        if (attrMatch.includes("*=")) {
+          const [attr, val] = attrMatch.split("*=").map((s) => s.replace(/['"]/g, "").trim());
+          const actual = (el.getAttribute(attr) || "").toLowerCase();
+          if (actual.includes(val)) return true;
+        } else if (attrMatch.includes("=")) {
+          const [attr, val] = attrMatch.split("=").map((s) => s.replace(/['"]/g, "").trim());
+          const actual = (el.getAttribute(attr) || "").toLowerCase();
+          if (actual === val) return true;
+        } else {
+          if (el.hasAttribute(attrMatch)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function createMockNode(tag: string, attrs: Record<string, string> = {}, text = ""): any {
+    const node: any = {
+      tagName: tag.toUpperCase(),
+      className: attrs.class || "",
+      style: {
+        backgroundImage: attrs["data-bg"] ? `url(${attrs["data-bg"]})` : "none",
+        position: attrs["data-position"] || "static",
+      },
+      textContent: text,
+      children: [],
+      parentElement: null,
+      hasAttribute(name: string) {
+        return name in attrs;
+      },
+      getAttribute(name: string) {
+        return attrs[name] ?? null;
+      },
+      closest(selector: string) {
+        let cur: any = this;
+        while (cur) {
+          if (matchMock(cur, selector)) return cur;
+          cur = cur.parentElement;
+        }
+        return null;
+      },
+      querySelector(selector: string) {
+        const directOnly = selector.startsWith(":scope >");
+        const cleanSel = selector.replace(":scope >", "").trim();
+        for (const child of this.children) {
+          if (matchMock(child, cleanSel)) return child;
+          if (!directOnly) {
+            const found = child.querySelector(selector);
+            if (found) return found;
+          }
+        }
+        return null;
+      },
+      contains(other: any) {
+        let cur = other;
+        while (cur) {
+          if (cur === this) return true;
+          cur = cur.parentElement;
+        }
+        return false;
+      },
+      appendChild(child: any) {
+        child.parentElement = this;
+        this.children.push(child);
+        return child;
+      },
+    };
+    return node;
+  }
+
+  it("resolves a direct <img> element", () => {
+    const root = createMockNode("section");
+    const container = root.appendChild(createMockNode("div", { class: "container" }));
+    const img = container.appendChild(createMockNode("img", { src: "campus.jpg", alt: "Campus" }));
+
+    assert.equal(findImageElement(img, root), img);
+  });
+
+  it("resolves an overlay sitting in front of a sibling <img>", () => {
+    const root = createMockNode("section");
+    const card = root.appendChild(createMockNode("div", { class: "card relative" }));
+    const img = card.appendChild(createMockNode("img", { src: "photo.jpg" }));
+    const overlay = card.appendChild(createMockNode("div", { class: "absolute inset-0 bg-black/30 overlay" }));
+
+    // User clicked directly on the overlay, but it should resolve to the sibling img!
+    const resolved = findImageElement(overlay, root);
+    assert.equal(resolved, img);
+  });
+
+  it("resolves an image wrapper (.image-wrapper) to the nested <img>", () => {
+    const root = createMockNode("section");
+    const wrapper = root.appendChild(createMockNode("div", { class: "image-wrapper aspect-video" }));
+    const img = wrapper.appendChild(createMockNode("img", { src: "lab.jpg" }));
+
+    assert.equal(findImageElement(wrapper, root), img);
+  });
+
+  it("resolves an anchor wrapping only an <img> to the img", () => {
+    const root = createMockNode("section");
+    const link = root.appendChild(createMockNode("a", { href: "/gallery" }));
+    const img = link.appendChild(createMockNode("img", { src: "event.jpg" }));
+
+    assert.equal(findImageElement(link, root), img);
+  });
+
+  it("returns null when clicking root section", () => {
+    const root = createMockNode("section");
+    assert.equal(findImageElement(root, root), null);
+  });
+
+  it("finds YouTube iframe or wrapper", () => {
+    const root = createMockNode("section");
+    const ytWrapper = root.appendChild(createMockNode("div", { class: "youtube-wrapper" }));
+    const iframe = ytWrapper.appendChild(createMockNode("iframe", { src: "https://www.youtube.com/embed/xyz12345678" }));
+
+    assert.ok(findYouTubeElement(iframe, root) !== null);
+  });
+
+  it("finds Video element", () => {
+    const root = createMockNode("section");
+    const video = root.appendChild(createMockNode("video", { src: "tour.mp4" }));
+
+    assert.equal(findVideoElement(video, root), video);
+  });
+});
+
 

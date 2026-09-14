@@ -401,11 +401,152 @@ function isCard(el: HTMLElement, root: HTMLElement): boolean {
   return boxed && parseFloat(style.borderRadius) > 0;
 }
 
+function hasBackgroundImage(el: HTMLElement): boolean {
+  if (el.style && el.style.backgroundImage && el.style.backgroundImage !== "none") return true;
+  const computed = typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(el).backgroundImage : "";
+  return Boolean(computed) && computed !== "none" && computed.includes("url(");
+}
+
+export function findImageElement(target: HTMLElement, root: HTMLElement): HTMLElement | null {
+  if (target === root) return null;
+
+  // Case 1: Direct <img> element
+  if (target.tagName === "IMG") {
+    return target;
+  }
+
+  // Case 2: Explicit image element: [data-xite-image], [data-image], [data-element-type="image"]
+  const explicitImage = target.closest<HTMLElement>("[data-xite-image], [data-image], [data-element-type='image']");
+  if (explicitImage && root.contains(explicitImage) && explicitImage !== root) {
+    const img = explicitImage.tagName === "IMG" ? explicitImage : explicitImage.querySelector<HTMLElement>("img");
+    return img || explicitImage;
+  }
+
+  // Case 3: <picture> or <figure> containing an <img> (unless classified as a card)
+  const picture = target.closest<HTMLElement>("picture, figure");
+  if (picture && root.contains(picture) && picture !== root && !isCard(picture, root)) {
+    const img = picture.querySelector<HTMLElement>("img");
+    if (img) return img;
+  }
+
+  // Case 4: Clicked an overlay, badge, gradient, or sibling sitting directly in front of an <img>
+  const parent = target.parentElement;
+  if (parent && parent !== root) {
+    const siblingImg = parent.querySelector<HTMLElement>(":scope > img, :scope > picture > img");
+    if (siblingImg) {
+      const cls = classText(target);
+      const parentCls = classText(parent);
+      const style = typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(target) : ({} as CSSStyleDeclaration);
+      const isOverlay =
+        style.position === "absolute" ||
+        cls.includes("overlay") ||
+        cls.includes("backdrop") ||
+        cls.includes("mask") ||
+        cls.includes("gradient") ||
+        cls.includes("tint") ||
+        cls.includes("inset") ||
+        parentCls.includes("image") ||
+        parentCls.includes("img") ||
+        parentCls.includes("media") ||
+        parentCls.includes("photo") ||
+        parentCls.includes("aspect") ||
+        parentCls.includes("thumb") ||
+        parent.hasAttribute("data-xite-image") ||
+        parent.hasAttribute("data-image");
+
+      const hasText = (target.textContent ?? "").trim().length > 0;
+      if (isOverlay) {
+        return siblingImg;
+      }
+      if (!isCard(parent, root) && !hasText && target.children.length === 0) {
+        return siblingImg;
+      }
+    }
+  }
+
+  // Case 5: Image wrapper classes (.image-wrapper, .img-wrapper, .media-image, .photo-box, etc.)
+  const imageWrapper = target.closest<HTMLElement>(
+    ".image-wrapper, .img-wrapper, .media-image, .image-container, .img-container, .photo-wrapper, .image-box, .media-box, .photo-frame"
+  );
+  if (imageWrapper && root.contains(imageWrapper) && imageWrapper !== root && !isCard(imageWrapper, root)) {
+    const img = imageWrapper.querySelector<HTMLElement>("img");
+    if (img) return img;
+  }
+
+  // Case 6: Target itself is a wrapper div containing an <img> as its sole visual content
+  if (target !== root && !isCard(target, root)) {
+    const directImg = target.querySelector<HTMLElement>(":scope > img, :scope > picture > img");
+    if (directImg) {
+      const hasHeading = target.querySelector("h1, h2, h3, h4, h5, h6") !== null;
+      const hasParagraph = target.querySelector("p, blockquote") !== null;
+      const hasButton = target.querySelector("button, a:not(:has(img))") !== null;
+      if (!hasHeading && !hasParagraph && !hasButton) {
+        return directImg;
+      }
+    }
+  }
+
+  // Case 7: Anchor tag wrapping ONLY an image: <a href="..."><img .../></a>
+  const anchor = target.closest<HTMLElement>("a");
+  if (anchor && root.contains(anchor) && anchor !== root) {
+    const imgInside = anchor.querySelector<HTMLElement>(":scope > img, :scope > picture > img");
+    const hasText = (anchor.textContent ?? "").trim().length > 0;
+    if (imgInside && !hasText) {
+      return imgInside;
+    }
+  }
+
+  // Case 8: Element with a CSS background-image acting as a visual photo/banner (no text)
+  if (target !== root && hasBackgroundImage(target) && (target.textContent ?? "").trim().length === 0 && target.children.length <= 1) {
+    return target;
+  }
+
+  return null;
+}
+
+export function findYouTubeElement(target: HTMLElement, root: HTMLElement): HTMLElement | null {
+  if (target === root) return null;
+  const ytIframe = target.closest<HTMLElement>("iframe[src*='youtube'], iframe[src*='youtu.be']");
+  if (ytIframe && root.contains(ytIframe) && ytIframe !== root) {
+    const wrapper = ytIframe.closest<HTMLElement>("[data-xite-youtube], [data-youtube], .youtube-wrapper, .video-wrapper");
+    return wrapper && root.contains(wrapper) && wrapper !== root ? wrapper : ytIframe;
+  }
+  const ytWrapper = target.closest<HTMLElement>("[data-xite-youtube], [data-youtube], [data-youtube-id]");
+  if (ytWrapper && root.contains(ytWrapper) && ytWrapper !== root) {
+    return ytWrapper;
+  }
+  const parent = target.parentElement;
+  if (parent && parent !== root) {
+    const siblingIframe = parent.querySelector<HTMLElement>("iframe[src*='youtube'], iframe[src*='youtu.be']");
+    if (siblingIframe) return parent;
+  }
+  return null;
+}
+
+export function findVideoElement(target: HTMLElement, root: HTMLElement): HTMLElement | null {
+  if (target === root) return null;
+  const videoEl = target.closest<HTMLElement>("video, [data-xite-video], [data-video]");
+  if (videoEl && root.contains(videoEl) && videoEl !== root) {
+    return videoEl;
+  }
+  const parent = target.parentElement;
+  if (parent && parent !== root) {
+    const siblingVideo = parent.querySelector<HTMLElement>("video");
+    if (siblingVideo) return siblingVideo;
+  }
+  return null;
+}
+
 function isContainer(el: HTMLElement, root: HTMLElement): boolean {
   if (el === root) return false;
   const tag = el.tagName.toLowerCase();
   if (STRUCTURAL_TAGS.has(tag)) return false;
   if (isCard(el, root)) return false;
+
+  // Never treat an image, video, or youtube frame/wrapper as a generic container
+  if (findImageElement(el, root) !== null) return false;
+  if (findYouTubeElement(el, root) !== null || findVideoElement(el, root) !== null) return false;
+
   if (el.hasAttribute("data-container")) return true;
   const cls = classText(el);
   if (cls.includes("container") || cls.includes("grid") || cls.includes("flex") || cls.includes("col-")) {
@@ -498,21 +639,16 @@ export function getAncestorHierarchy(
 export function resolveTarget(target: HTMLElement, root: HTMLElement): ResolvedTarget | null {
   if (!root.contains(target)) return null;
 
-  // 1. YouTube video (iframe or wrapper with data-youtube / youtube src)
-  const ytIframe = target.closest<HTMLElement>("iframe[src*='youtube'], iframe[src*='youtu.be']");
-  if (ytIframe && root.contains(ytIframe) && ytIframe !== root) {
-    const wrapper = ytIframe.closest<HTMLElement>("[data-xite-youtube], [data-youtube], .youtube-wrapper");
-    return resolved("youtube", wrapper && root.contains(wrapper) && wrapper !== root ? wrapper : ytIframe, root);
-  }
-  const ytWrapper = target.closest<HTMLElement>("[data-xite-youtube], [data-youtube], [data-youtube-id]");
-  if (ytWrapper && root.contains(ytWrapper) && ytWrapper !== root) {
-    return resolved("youtube", ytWrapper, root);
+  // 1. YouTube video
+  const ytElement = findYouTubeElement(target, root);
+  if (ytElement && root.contains(ytElement) && ytElement !== root) {
+    return resolved("youtube", ytElement, root);
   }
 
-  // 2. Video element (<video> or video container)
-  const videoEl = target.closest<HTMLElement>("video, [data-xite-video], [data-video]");
-  if (videoEl && root.contains(videoEl) && videoEl !== root) {
-    return resolved("video", videoEl, root);
+  // 2. Video element
+  const videoElement = findVideoElement(target, root);
+  if (videoElement && root.contains(videoElement) && videoElement !== root) {
+    return resolved("video", videoElement, root);
   }
 
   // 3. Plus Icon / Add Media Placeholder
@@ -530,21 +666,16 @@ export function resolveTarget(target: HTMLElement, root: HTMLElement): ResolvedT
   // 5. Icon (<svg>, [data-icon], or icon container)
   const svgEl = target.closest<HTMLElement>("svg, [data-xite-icon], [data-icon], i[class*='icon'], i[class*='fa-'], i[class*='lucide-']");
   if (svgEl && root.contains(svgEl) && svgEl !== root) {
-    // If it's a small icon or direct icon hit
     return resolved("icon", svgEl, root);
   }
 
-  // 6. Image
-  if (target.tagName === "IMG") {
-    if (classify.isLogoLike(target.tagName, classText(target), target.hasAttribute("data-logo"), target.getAttribute("alt") ?? "")) {
-      return resolved("logo", target, root);
+  // 6. Image & Image Wrappers / Overlays
+  const imageElement = findImageElement(target, root);
+  if (imageElement && root.contains(imageElement) && imageElement !== root) {
+    if (classify.isLogoLike(imageElement.tagName, classText(imageElement), imageElement.hasAttribute("data-logo"), imageElement.getAttribute("alt") ?? "")) {
+      return resolved("logo", imageElement, root);
     }
-    return resolved("image", target, root);
-  }
-  const picture = target.closest<HTMLElement>("picture, figure");
-  if (picture && root.contains(picture) && picture !== root && !isCard(picture, root)) {
-    const img = picture.querySelector<HTMLElement>("img");
-    if (img) return resolved("image", img, root);
+    return resolved("image", imageElement, root);
   }
 
   // 7. Button or interactive button-like link

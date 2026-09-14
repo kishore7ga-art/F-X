@@ -91,6 +91,10 @@ export interface SelectionController {
    * Selects an element on left-click. Returns `true` when an element was selected.
    */
   handleElementSelect: (target: HTMLElement, sectionIndex: number) => boolean;
+  /**
+   * Handles element double-click to select and activate primary editing mode.
+   */
+  handleElementDoubleClick: (target: HTMLElement, sectionIndex: number) => boolean;
   /** Applies props to the element now and writes the section shortly after. */
   updateElementProps: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
   /** Replaces an element's media type (e.g. image <-> video <-> youtube) */
@@ -313,6 +317,23 @@ export function useSelectionController({
       return true;
     },
     [clearSelection, closeContextMenu, flushCommit, onElementSelected],
+  );
+
+  const handleElementDoubleClick = useCallback(
+    (target: HTMLElement, sectionIndex: number): boolean => {
+      const selected = handleElementSelect(target, sectionIndex);
+      if (selected) {
+        const state = selectionStore.getState();
+        if (state.type === "text" || state.type === "heading") {
+          const selectedEl = resolveSelectedElement();
+          if (selectedEl) {
+            onTextHit?.(selectedEl, sectionIndex);
+          }
+        }
+      }
+      return selected;
+    },
+    [handleElementSelect, resolveSelectedElement, onTextHit],
   );
 
   const updateElementProps = useCallback(
@@ -584,6 +605,7 @@ export function useSelectionController({
     resolveSelectedElement,
     handleContextMenu,
     handleElementSelect,
+    handleElementDoubleClick,
     updateElementProps,
     replaceMedia,
     replacePlusWith,
