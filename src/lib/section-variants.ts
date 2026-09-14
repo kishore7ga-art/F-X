@@ -42,6 +42,7 @@
 import type { EditorSection, LibrarySection, SectionLibrary } from "@/lib/editor-api";
 import { UNCATEGORISED } from "@/lib/sections/categories";
 import { isHeaderOverlaid, toggleHeaderOverlay } from "@/lib/sections/section-edit";
+import { getUniqueSectionName } from "@/lib/unique-name";
 
 /**
  * The overlay is a property of the *page* — "the header floats over the hero"
@@ -230,10 +231,16 @@ export function insertSection(
     newSection.category === "navbar" ? sections.find((s) => s.category === "navbar") : undefined;
   const placed = replacedHeader ? carryHeaderOverlay(replacedHeader, newSection) : newSection;
 
+  const uniqueTitle = getUniqueSectionName(
+    placed.title,
+    base.map((s) => s.title),
+  );
+  const finalPlaced = uniqueTitle !== placed.title ? { ...placed, title: uniqueTitle } : placed;
+
   const index = placementIndex(base, newSection.category, insertSlotAfter(base, anchorId));
 
   const next = [...base];
-  next.splice(index, 0, placed);
+  next.splice(index, 0, finalPlaced);
 
   return { sections: next, index };
 }
