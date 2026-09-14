@@ -33,11 +33,12 @@ import {
 } from "@/lib/editor-themes";
 
 describe("the editor themes", () => {
-  it("includes default dual-themes and platform themes with unique ids", () => {
-    assert.equal(EDITOR_THEMES.length, 6);
-    assert.equal(new Set(EDITOR_THEMES.map((t) => t.id)).size, 6);
-    assert.ok(EDITOR_THEMES.some((t) => t.id === "black-and-white"));
-    assert.ok(EDITOR_THEMES.some((t) => t.id === "white-and-black"));
+  it("includes default preset themes and platform themes with unique ids", () => {
+    assert.equal(EDITOR_THEMES.length, 7);
+    assert.equal(new Set(EDITOR_THEMES.map((t) => t.id)).size, 7);
+    assert.ok(EDITOR_THEMES.some((t) => t.id === "ocean-navy"));
+    assert.ok(EDITOR_THEMES.some((t) => t.id === "forest-emerald"));
+    assert.ok(EDITOR_THEMES.some((t) => t.id === "warm-terracotta"));
   });
 
   it("generates mathematical harmonic palettes with all required tokens", () => {
@@ -192,16 +193,15 @@ describe("themeStylesheet — one attribute switches everything", () => {
    * another way everywhere else, permanently, with no setting responsible.
    */
   it("defines no tokens at all until a theme is chosen", () => {
-    const defaults = themeById(DEFAULT_THEME_ID);
     assert.ok(
       !new RegExp(String.raw`\.xite-site-canvas\s*\{`).test(css),
       "a bare scope block would apply the default palette to every unthemed canvas",
     );
-    // The default's own values still appear — inside its attribute block.
-    const bareAccent = css.split(`[data-xite-theme="${DEFAULT_THEME_ID}"]`)[0] ?? "";
+    // The tokens appear only inside attribute blocks.
+    const bareAccent = css.split("[data-xite-theme")[0] ?? "";
     assert.ok(
-      !bareAccent.includes(`--xite-accent: ${defaults.tokens.accent};`),
-      "the default accent is declared before any attribute gate",
+      !bareAccent.includes("--xite-accent:"),
+      "no tokens are declared before any attribute gate",
     );
   });
 
@@ -400,30 +400,36 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
     assert.ok(!css.includes('[data-xite-theme="custom"]'));
   });
 
-  it("correctly derives Black & White and White & Black preset brand tokens", () => {
-    const whiteAndBlack = DEFAULT_DUAL_THEMES.find((t) => t.id === "white-black" || t.id === "white-and-black")!;
-    const blackAndWhite = DEFAULT_DUAL_THEMES.find((t) => t.id === "black-white" || t.id === "black-and-white")!;
+  it("correctly derives preset brand tokens for default preset themes", () => {
+    const oceanNavy = DEFAULT_DUAL_THEMES.find((t) => t.id === "ocean-navy")!;
+    const forestEmerald = DEFAULT_DUAL_THEMES.find((t) => t.id === "forest-emerald")!;
+    const warmTerracotta = DEFAULT_DUAL_THEMES.find((t) => t.id === "warm-terracotta")!;
 
-    const bw = presetBrandTokens(blackAndWhite);
-    assert.equal(bw.primary, "#000000");
-    assert.equal(bw.secondary, "#ffffff");
-    assert.equal(bw.onAccent, "#ffffff");
-    assert.equal(bw.onSecondary, "#000000");
-    assert.equal(bw.secondaryBorder, "#cbd5e1");
-    assert.equal(bw.surface, blackAndWhite.tokens.surface);
-    assert.equal(bw.text, blackAndWhite.tokens.text);
+    const on = presetBrandTokens(oceanNavy);
+    assert.equal(on.primary, "#2563eb");
+    assert.equal(on.secondary, "#0f172a");
+    assert.equal(on.onAccent, "#ffffff");
+    assert.equal(on.surface, "#ffffff");
+    assert.equal(on.surfaceRaised, "#f8fafc");
 
-    const wb = presetBrandTokens(whiteAndBlack);
-    assert.equal(wb.primary, "#ffffff");
-    assert.equal(wb.secondary, "#000000");
-    assert.equal(wb.onAccent, "#000000");
-    assert.equal(wb.onSecondary, "#ffffff");
-    assert.equal(wb.accentBorder, "#cbd5e1");
-    assert.equal(wb.surface, whiteAndBlack.tokens.surface);
-    assert.equal(wb.text, whiteAndBlack.tokens.text);
+    const fe = presetBrandTokens(forestEmerald);
+    assert.equal(fe.primary, "#059669");
+    assert.equal(fe.secondary, "#064e3b");
+    assert.equal(fe.onAccent, "#000000");
+    assert.equal(fe.surface, "#ffffff");
+
+    const wt = presetBrandTokens(warmTerracotta);
+    assert.equal(wt.primary, "#ea580c");
+    assert.equal(wt.secondary, "#1c1917");
+    assert.equal(wt.onAccent, "#000000");
+    assert.equal(wt.surface, "#fffbeb");
   });
 
   it("derives matching default palette IDs or custom accurately", () => {
+    assert.equal(getMatchingPaletteId("#2563EB", "#0F172A"), "ocean-navy");
+    assert.equal(getMatchingPaletteId("#2563eb", "#0f172a"), "ocean-navy");
+    assert.equal(getMatchingPaletteId("#059669", "#064E3B"), "forest-emerald");
+    assert.equal(getMatchingPaletteId("#EA580C", "#1C1917"), "warm-terracotta");
     assert.equal(getMatchingPaletteId("#000000", "#ffffff"), "black-white");
     assert.equal(getMatchingPaletteId("#000", "#fff"), "black-white");
     assert.equal(getMatchingPaletteId("#ffffff", "#000000"), "white-black");
@@ -434,36 +440,47 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
   });
 
   it("exposes DEFAULT_PALETTES with correct specification", () => {
-    assert.equal(DEFAULT_PALETTES.length, 2);
-    assert.equal(DEFAULT_PALETTES[0]!.id, "black-white");
-    assert.equal(DEFAULT_PALETTES[0]!.primary, "#000000");
-    assert.equal(DEFAULT_PALETTES[0]!.secondary, "#FFFFFF");
-    assert.equal(DEFAULT_PALETTES[1]!.id, "white-black");
-    assert.equal(DEFAULT_PALETTES[1]!.primary, "#FFFFFF");
-    assert.equal(DEFAULT_PALETTES[1]!.secondary, "#000000");
+    assert.equal(DEFAULT_PALETTES.length, 3);
+    assert.equal(DEFAULT_PALETTES[0]!.id, "ocean-navy");
+    assert.equal(DEFAULT_PALETTES[0]!.primary, "#2563EB");
+    assert.equal(DEFAULT_PALETTES[0]!.secondary, "#0F172A");
+    assert.equal(DEFAULT_PALETTES[1]!.id, "forest-emerald");
+    assert.equal(DEFAULT_PALETTES[1]!.primary, "#059669");
+    assert.equal(DEFAULT_PALETTES[1]!.secondary, "#064E3B");
+    assert.equal(DEFAULT_PALETTES[2]!.id, "warm-terracotta");
+    assert.equal(DEFAULT_PALETTES[2]!.primary, "#EA580C");
+    assert.equal(DEFAULT_PALETTES[2]!.secondary, "#1C1917");
   });
 });
 
 describe("Squarespace 7.1 Style Color Engine", () => {
   it("exposes DEFAULT_SQUARESPACE_PALETTES matching the data contract", () => {
-    assert.equal(DEFAULT_SQUARESPACE_PALETTES.length, 3);
+    assert.equal(DEFAULT_SQUARESPACE_PALETTES.length, 4);
 
-    const [wb, bw, custom] = DEFAULT_SQUARESPACE_PALETTES;
-    assert.equal(wb?.id, "white-black");
-    assert.equal(wb?.name, "White & Black");
-    assert.equal(wb?.tokens.light1, "#FFFFFF");
-    assert.equal(wb?.tokens.light2, "#F4F4F5");
-    assert.equal(wb?.tokens.accent, "#09090B");
-    assert.equal(wb?.tokens.dark1, "#27272A");
-    assert.equal(wb?.tokens.dark2, "#09090B");
+    const [ocean, forest, terracotta, custom] = DEFAULT_SQUARESPACE_PALETTES;
+    assert.equal(ocean?.id, "ocean-navy");
+    assert.equal(ocean?.name, "Ocean Navy");
+    assert.equal(ocean?.tokens.light1, "#FFFFFF");
+    assert.equal(ocean?.tokens.light2, "#F8FAFC");
+    assert.equal(ocean?.tokens.accent, "#2563EB");
+    assert.equal(ocean?.tokens.dark1, "#334155");
+    assert.equal(ocean?.tokens.dark2, "#0F172A");
 
-    assert.equal(bw?.id, "black-white");
-    assert.equal(bw?.name, "Black & White");
-    assert.equal(bw?.tokens.light1, "#18181B");
-    assert.equal(bw?.tokens.light2, "#27272A");
-    assert.equal(bw?.tokens.accent, "#FAFAFA");
-    assert.equal(bw?.tokens.dark1, "#A1A1AA");
-    assert.equal(bw?.tokens.dark2, "#FAFAFA");
+    assert.equal(forest?.id, "forest-emerald");
+    assert.equal(forest?.name, "Forest Emerald");
+    assert.equal(forest?.tokens.light1, "#FFFFFF");
+    assert.equal(forest?.tokens.light2, "#ECFDF5");
+    assert.equal(forest?.tokens.accent, "#059669");
+    assert.equal(forest?.tokens.dark1, "#334155");
+    assert.equal(forest?.tokens.dark2, "#064E3B");
+
+    assert.equal(terracotta?.id, "warm-terracotta");
+    assert.equal(terracotta?.name, "Warm Terracotta");
+    assert.equal(terracotta?.tokens.light1, "#FFFBEB");
+    assert.equal(terracotta?.tokens.light2, "#FEF3C7");
+    assert.equal(terracotta?.tokens.accent, "#EA580C");
+    assert.equal(terracotta?.tokens.dark1, "#44403C");
+    assert.equal(terracotta?.tokens.dark2, "#1C1917");
 
     assert.equal(custom?.id, "custom");
     assert.equal(custom?.name, "Custom Palette");

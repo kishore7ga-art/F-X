@@ -114,7 +114,8 @@ export function DrawerPanel({
     if (customThemeTokens) {
       return themeTokensToColorTokenMap(customThemeTokens);
     }
-    return DEFAULT_SQUARESPACE_PALETTES[2]!.tokens;
+    const customPreset = DEFAULT_SQUARESPACE_PALETTES.find((p) => p.isCustom);
+    return customPreset?.tokens ?? DEFAULT_SQUARESPACE_PALETTES[DEFAULT_SQUARESPACE_PALETTES.length - 1]!.tokens;
   });
 
   const [isCustomDrawerExpanded, setIsCustomDrawerExpanded] = useState<boolean>(() => {
@@ -126,10 +127,6 @@ export function DrawerPanel({
       setCustomColorTokens(themeTokensToColorTokenMap(customThemeTokens));
     }
   }, [customThemeTokens]);
-
-  const isWb = activePaletteId === "white-black" || activePaletteId === "white-and-black";
-  const isBw = activePaletteId === "black-white" || activePaletteId === "black-and-white";
-  const isCustomSelected = activePaletteId === "custom" || (!isWb && !isBw && activePaletteId !== null);
 
   /**
    * The list shown: every page the college actually has, plus the suggested
@@ -577,38 +574,49 @@ export function DrawerPanel({
 
               {/* SECTION: MASTER LIST OF SELECTABLE PRESET CARDS & INLINE CUSTOM DRAWER */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {/* Card 1: White & Black */}
-                <PaletteCard
-                  preset={DEFAULT_SQUARESPACE_PALETTES[0]!}
-                  selected={isWb}
-                  onSelect={() => handleSelectPreset(DEFAULT_SQUARESPACE_PALETTES[0]!)}
-                />
+                {/* Preset Cards (Ocean Navy, Forest Emerald, Warm Terracotta) */}
+                {DEFAULT_SQUARESPACE_PALETTES.filter((p) => !p.isCustom).map((preset) => {
+                  const isSelected = activePaletteId === preset.id;
+                  return (
+                    <PaletteCard
+                      key={preset.id}
+                      preset={preset}
+                      selected={isSelected}
+                      onSelect={() => handleSelectPreset(preset)}
+                    />
+                  );
+                })}
 
-                {/* Card 2: Black & White */}
-                <PaletteCard
-                  preset={DEFAULT_SQUARESPACE_PALETTES[1]!}
-                  selected={isBw}
-                  onSelect={() => handleSelectPreset(DEFAULT_SQUARESPACE_PALETTES[1]!)}
-                />
+                {/* Custom Palette & In-Place Expandable Drawer */}
+                {(() => {
+                  const customPreset =
+                    DEFAULT_SQUARESPACE_PALETTES.find((p) => p.isCustom) ??
+                    DEFAULT_SQUARESPACE_PALETTES[DEFAULT_SQUARESPACE_PALETTES.length - 1]!;
+                  const isPresetActive = DEFAULT_SQUARESPACE_PALETTES.some(
+                    (p) => !p.isCustom && p.id === activePaletteId,
+                  );
+                  const isCustomSelected =
+                    activePaletteId === "custom" || (!isPresetActive && activePaletteId !== null);
+                  return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <PaletteCard
+                        preset={customPreset}
+                        selected={isCustomSelected}
+                        tokens={customColorTokens}
+                        isExpanded={isCustomDrawerExpanded}
+                        onSelect={handleSelectCustom}
+                        onToggleExpand={() => setIsCustomDrawerExpanded((prev) => !prev)}
+                      />
 
-                {/* Card 3: Custom Palette & In-Place Expandable Drawer */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <PaletteCard
-                    preset={DEFAULT_SQUARESPACE_PALETTES[2]!}
-                    selected={isCustomSelected}
-                    tokens={customColorTokens}
-                    isExpanded={isCustomDrawerExpanded}
-                    onSelect={handleSelectCustom}
-                    onToggleExpand={() => setIsCustomDrawerExpanded((prev) => !prev)}
-                  />
-
-                  {/* EXPANDED DRAWER - Squarespace In-Place Engine */}
-                  <PaletteEditorDrawer
-                    isOpen={isCustomDrawerExpanded}
-                    tokens={customColorTokens}
-                    onChange={handleCustomColorChange}
-                  />
-                </div>
+                      {/* EXPANDED DRAWER - Squarespace In-Place Engine */}
+                      <PaletteEditorDrawer
+                        isOpen={isCustomDrawerExpanded}
+                        tokens={customColorTokens}
+                        onChange={handleCustomColorChange}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
