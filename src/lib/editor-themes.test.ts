@@ -18,7 +18,14 @@ import {
   presetBrandTokens,
   DEFAULT_DUAL_THEMES,
   DEFAULT_PALETTES,
+  DEFAULT_SQUARESPACE_PALETTES,
   getMatchingPaletteId,
+  generateTokensFromSeed,
+  deriveSectionThemes,
+  applyThemeTokens,
+  colorTokenMapToThemeTokens,
+  themeTokensToColorTokenMap,
+  type ColorTokenMap,
 } from "@/lib/editor-themes";
 
 describe("the editor themes", () => {
@@ -432,4 +439,142 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
     assert.equal(DEFAULT_PALETTES[1]!.secondary, "#000000");
   });
 });
+
+describe("Squarespace 7.1 Style Color Engine", () => {
+  it("exposes DEFAULT_SQUARESPACE_PALETTES matching the data contract", () => {
+    assert.equal(DEFAULT_SQUARESPACE_PALETTES.length, 3);
+
+    const [wb, bw, custom] = DEFAULT_SQUARESPACE_PALETTES;
+    assert.equal(wb?.id, "white-black");
+    assert.equal(wb?.name, "White & Black");
+    assert.equal(wb?.tokens.light1, "#FFFFFF");
+    assert.equal(wb?.tokens.light2, "#F4F4F5");
+    assert.equal(wb?.tokens.accent, "#09090B");
+    assert.equal(wb?.tokens.dark1, "#27272A");
+    assert.equal(wb?.tokens.dark2, "#09090B");
+
+    assert.equal(bw?.id, "black-white");
+    assert.equal(bw?.name, "Black & White");
+    assert.equal(bw?.tokens.light1, "#18181B");
+    assert.equal(bw?.tokens.light2, "#27272A");
+    assert.equal(bw?.tokens.accent, "#FAFAFA");
+    assert.equal(bw?.tokens.dark1, "#A1A1AA");
+    assert.equal(bw?.tokens.dark2, "#FAFAFA");
+
+    assert.equal(custom?.id, "custom");
+    assert.equal(custom?.name, "Custom Palette");
+    assert.equal(custom?.isCustom, true);
+    assert.equal(custom?.tokens.light1, "#FFFFFF");
+    assert.equal(custom?.tokens.light2, "#EFF6FF");
+    assert.equal(custom?.tokens.accent, "#2563EB");
+    assert.equal(custom?.tokens.dark1, "#334155");
+    assert.equal(custom?.tokens.dark2, "#0F172A");
+  });
+
+  it("generateTokensFromSeed computes accessible 5-token palette from seed color", () => {
+    const tokens = generateTokensFromSeed("#2563EB");
+    assert.equal(tokens.accent, "#2563EB");
+    assert.ok(tokens.light1.startsWith("#"));
+    assert.ok(tokens.light2.startsWith("#"));
+    assert.ok(tokens.dark1.startsWith("#"));
+    assert.ok(tokens.dark2.startsWith("#"));
+
+    // Verify lightness ranges
+    assert.equal(tokens.accent, "#2563EB");
+  });
+
+  it("deriveSectionThemes calculates all 5 section themes accurately", () => {
+    const tokens: ColorTokenMap = {
+      light1: "#FFFFFF",
+      light2: "#EFF6FF",
+      accent: "#2563EB",
+      dark1: "#334155",
+      dark2: "#0F172A",
+    };
+
+    const derived = deriveSectionThemes(tokens, true);
+    assert.equal(derived.lightest.bg, "#FFFFFF");
+    assert.equal(derived.lightest.text, "#0F172A");
+    assert.equal(derived.lightest.accent, "#2563EB");
+
+    assert.equal(derived.light.bg, "#EFF6FF");
+    assert.equal(derived.light.text, "#0F172A");
+    assert.equal(derived.light.accent, "#2563EB");
+
+    assert.equal(derived.bright.bg, "#2563EB");
+    assert.ok(derived.bright.text === "#ffffff" || derived.bright.text === "#000000");
+
+    assert.equal(derived.dark.bg, "#334155");
+    assert.equal(derived.dark.text, "#FFFFFF");
+
+    assert.equal(derived.darkest.bg, "#0F172A");
+    assert.equal(derived.darkest.text, "#FFFFFF");
+  });
+
+  it("converts between ColorTokenMap and EditorThemeTokens losslessly", () => {
+    const map: ColorTokenMap = {
+      light1: "#FFFFFF",
+      light2: "#F4F4F5",
+      accent: "#2563EB",
+      dark1: "#334155",
+      dark2: "#0F172A",
+    };
+
+    const themeTokens = colorTokenMapToThemeTokens(map);
+    assert.equal(themeTokens.surface, "#FFFFFF");
+    assert.equal(themeTokens.surfaceRaised, "#F4F4F5");
+    assert.equal(themeTokens.accent, "#2563EB");
+    assert.equal(themeTokens.text, "#0F172A");
+    assert.equal(themeTokens.textMuted, "#334155");
+
+    const back = themeTokensToColorTokenMap(themeTokens);
+    assert.deepEqual(back, map);
+  });
+
+  it("customThemeCss injects both --theme-* and --xite-* properties", () => {
+    const map: ColorTokenMap = {
+      light1: "#FFFFFF",
+      light2: "#EFF6FF",
+      accent: "#2563EB",
+      dark1: "#334155",
+      dark2: "#0F172A",
+    };
+
+    const css = customThemeCss(".xite-site-canvas", map);
+    assert.ok(css.includes("--theme-light-1: #FFFFFF;"));
+    assert.ok(css.includes("--theme-light-2: #EFF6FF;"));
+    assert.ok(css.includes("--theme-accent: #2563EB;"));
+    assert.ok(css.includes("--theme-dark-1: #334155;"));
+    assert.ok(css.includes("--theme-dark-2: #0F172A;"));
+    assert.ok(css.includes("--xite-accent: #2563EB;"));
+  });
+
+  it("applyThemeTokens sets properties directly on target element", () => {
+    const fakeElement = {
+      style: {
+        properties: {} as Record<string, string>,
+        setProperty(name: string, val: string) {
+          this.properties[name] = val;
+        },
+      },
+    };
+
+    const map: ColorTokenMap = {
+      light1: "#FFFFFF",
+      light2: "#F8FAFC",
+      accent: "#10B981",
+      dark1: "#1E293B",
+      dark2: "#0F172A",
+    };
+
+    applyThemeTokens(map, fakeElement as any);
+    assert.equal(fakeElement.style.properties["--theme-light-1"], "#FFFFFF");
+    assert.equal(fakeElement.style.properties["--theme-light-2"], "#F8FAFC");
+    assert.equal(fakeElement.style.properties["--theme-accent"], "#10B981");
+    assert.equal(fakeElement.style.properties["--theme-dark-1"], "#1E293B");
+    assert.equal(fakeElement.style.properties["--theme-dark-2"], "#0F172A");
+    assert.equal(fakeElement.style.properties["--xite-accent"], "#10B981");
+  });
+});
+
 

@@ -3,9 +3,13 @@
 import { useMemo, useState } from "react";
 
 import { PaletteRamp } from "@/components/editor/PaletteRamp";
+import { PaletteCard } from "@/components/editor/PaletteCard";
+import { PaletteEditorDrawer } from "@/components/editor/PaletteEditorDrawer";
+import { PalettePillPreview } from "@/components/editor/PalettePillPreview";
 import {
   DEFAULT_DUAL_THEMES,
   DEFAULT_PALETTES,
+  DEFAULT_SQUARESPACE_PALETTES,
   EDITOR_FONTS,
   hexToRgb,
   calculateOppositeContrast,
@@ -13,7 +17,12 @@ import {
   getMatchingPaletteId,
   normalizeHex,
   isValidHex,
+  applyThemeTokens,
+  colorTokenMapToThemeTokens,
+  themeTokensToColorTokenMap,
   type EditorThemeTokens,
+  type ColorTokenMap,
+  type PalettePreset,
 } from "@/lib/editor-themes";
 import {
   X,
@@ -35,23 +44,6 @@ import {
   FileText,
   ArrowLeftRight,
 } from "lucide-react";
-
-import { ColorPickerPanel } from "./ColorPickerPanel";
-
-const CURATED_ACCENT_SWATCHES = [
-  { name: "Pitch Black", hex: "#000000" },
-  { name: "Pure White", hex: "#ffffff" },
-  { name: "Royal Blue", hex: "#2563eb" },
-  { name: "Sky Cyan", hex: "#06b6d4" },
-  { name: "Emerald Green", hex: "#10b981" },
-  { name: "Deep Teal", hex: "#0d9488" },
-  { name: "Vibrant Violet", hex: "#8b5cf6" },
-  { name: "Electric Indigo", hex: "#6366f1" },
-  { name: "Rose Pink", hex: "#f43f5e" },
-  { name: "Coral Red", hex: "#ef4444" },
-  { name: "Sunset Orange", hex: "#f97316" },
-  { name: "Golden Amber", hex: "#f59e0b" },
-];
 
 interface DrawerPanelProps {
   isOpen: boolean;
@@ -92,227 +84,6 @@ const INITIAL_PAGES: PageItem[] = [
   { id: "11", name: "Scholarships & Grants", slug: "/scholarships", icon: Award },
 ];
 
-/**
- * Brand color card control: interactive color swatch, direct editable hex input,
- * color picker panel trigger, and curated swatches.
- */
-function BrandColorCard({
-  title,
-  label,
-  description,
-  value,
-  defaultHex,
-  active,
-  onChange,
-  onReset,
-}: {
-  title: string;
-  label: string;
-  description?: string;
-  value: string;
-  defaultHex?: string;
-  active: boolean;
-  onChange: (hex: string) => void;
-  onReset?: () => void;
-}) {
-  const normValue = normalizeHex(value);
-  const isLight = calculateOppositeContrast(normValue).isLight;
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [typedHex, setTypedHex] = useState(normValue);
-
-  // Synchronize internal typedHex when external value changes
-  useMemo(() => {
-    setTypedHex(normValue);
-  }, [normValue]);
-
-  const handleInputChange = (raw: string) => {
-    setTypedHex(raw);
-    let val = raw.trim();
-    if (!val.startsWith("#")) val = "#" + val;
-    if (isValidHex(val)) {
-      onChange(normalizeHex(val));
-    }
-  };
-
-  const isChangedFromDefault = defaultHex && normValue.toUpperCase() !== normalizeHex(defaultHex).toUpperCase();
-
-  return (
-    <div
-      style={{
-        border: "1px solid #e2e8f0",
-        borderRadius: "14px",
-        padding: "14px",
-        backgroundColor: "#ffffff",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Palette style={{ width: "14px", height: "14px", color: "#0f172a" }} />
-            <span style={{ fontSize: "12.5px", fontWeight: 900, color: "#0f172a" }}>{title}</span>
-          </div>
-          {description && (
-            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#64748b" }}>{description}</p>
-          )}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          {isChangedFromDefault && onReset && (
-            <button
-              type="button"
-              onClick={onReset}
-              title={`Reset ${label} to ${defaultHex}`}
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "#64748b",
-                backgroundColor: "#f1f5f9",
-                border: "1px solid #cbd5e1",
-                borderRadius: "6px",
-                padding: "2px 6px",
-                cursor: "pointer",
-              }}
-            >
-              Reset
-            </button>
-          )}
-          {active && (
-            <span
-              style={{
-                fontSize: "9px",
-                fontWeight: 800,
-                color: "#16a34a",
-                backgroundColor: "#dcfce7",
-                padding: "2px 8px",
-                borderRadius: "6px",
-                border: "1px solid #bbf7d0",
-              }}
-            >
-              Custom
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* The Box & Hex Input */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "8px 10px",
-          borderRadius: "10px",
-          backgroundColor: "#f8fafc",
-          border: "1px solid #e2e8f0",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {/* The Box: opens the colour chart below */}
-          <button
-            type="button"
-            onClick={() => setPickerOpen((open) => !open)}
-            aria-expanded={pickerOpen}
-            aria-label={`${pickerOpen ? "Close" : "Open"} the ${label.toLowerCase()} colour chart`}
-            title="Click to pick any custom color"
-            style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "8px",
-              backgroundColor: normValue,
-              border: isLight ? "2px solid #cbd5e1" : "2px solid #ffffff",
-              boxShadow: pickerOpen
-                ? "0 0 0 2px #0f172a, 0 2px 5px rgba(0,0,0,0.12)"
-                : "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
-              cursor: "pointer",
-              padding: 0,
-              flexShrink: 0,
-            }}
-          />
-
-          <span style={{ fontSize: "12px", fontWeight: 800, color: "#0f172a" }}>{label}</span>
-        </div>
-
-        {/* Hex Input */}
-        <input
-          type="text"
-          value={typedHex}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onBlur={() => setTypedHex(normValue)}
-          maxLength={9}
-          aria-label={`${label} Hex Code`}
-          style={{
-            width: "85px",
-            height: "30px",
-            borderRadius: "6px",
-            border: isValidHex(typedHex) ? "1px solid #cbd5e1" : "1px solid #ef4444",
-            padding: "0 6px",
-            fontSize: "12px",
-            fontFamily: "monospace",
-            fontWeight: 700,
-            color: "#0f172a",
-            backgroundColor: "#ffffff",
-            textAlign: "center",
-          }}
-        />
-      </div>
-
-      {pickerOpen && <ColorPickerPanel value={normValue} onChange={onChange} />}
-
-      {/* The Circle Shape Color Palette Swatches */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          flexWrap: "wrap",
-        }}
-      >
-        {CURATED_ACCENT_SWATCHES.map((swatch) => {
-          const isSelected = normValue.toLowerCase() === swatch.hex.toLowerCase();
-          return (
-            <button
-              key={swatch.hex}
-              type="button"
-              onClick={() => onChange(swatch.hex)}
-              title={swatch.name}
-              aria-label={swatch.name}
-              style={{
-                width: "26px",
-                height: "26px",
-                borderRadius: "50%",
-                backgroundColor: swatch.hex,
-                border: isSelected ? "2.5px solid #0f172a" : swatch.hex.toLowerCase() === "#ffffff" ? "1px solid #cbd5e1" : "2px solid #ffffff",
-                boxShadow: isSelected
-                  ? "0 0 0 2px #0f172a, 0 2px 4px rgba(0,0,0,0.2)"
-                  : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
-                cursor: "pointer",
-                transform: isSelected ? "scale(1.1)" : "scale(1)",
-                transition: "all 0.15s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {isSelected && (
-                <Check
-                  style={{
-                    width: "12px",
-                    height: "12px",
-                    color: calculateOppositeContrast(swatch.hex).textColor,
-                    filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.6))",
-                  }}
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function DrawerPanel({
   isOpen,
   onClose,
@@ -339,54 +110,26 @@ export function DrawerPanel({
   const [activeTab, setActiveTab] = useState<"pages" | "colors" | "fonts">("pages");
   const [pages, setPages] = useState<PageItem[]>(INITIAL_PAGES);
 
-  const [customTokens, setCustomTokens] = useState<EditorThemeTokens>(() => {
-    return customThemeTokens ?? DEFAULT_DUAL_THEMES[0]!.tokens;
+  const [customColorTokens, setCustomColorTokens] = useState<ColorTokenMap>(() => {
+    if (customThemeTokens) {
+      return themeTokensToColorTokenMap(customThemeTokens);
+    }
+    return DEFAULT_SQUARESPACE_PALETTES[2]!.tokens;
+  });
+
+  const [isCustomDrawerExpanded, setIsCustomDrawerExpanded] = useState<boolean>(() => {
+    return activePaletteId === "custom";
   });
 
   useMemo(() => {
     if (customThemeTokens) {
-      setCustomTokens(customThemeTokens);
+      setCustomColorTokens(themeTokensToColorTokenMap(customThemeTokens));
     }
   }, [customThemeTokens]);
 
-  const currentPrimaryColor = normalizeHex(customTokens.primary || customTokens.accent || "#000000");
-  const currentSecondaryColor = normalizeHex(customTokens.secondary || (customTokens.surface ? customTokens.surface : "#FFFFFF"));
-
-  const derivedMatchingPaletteId = useMemo(() => {
-    return getMatchingPaletteId(currentPrimaryColor, currentSecondaryColor);
-  }, [currentPrimaryColor, currentSecondaryColor]);
-
-  const effectivePaletteId = derivedMatchingPaletteId !== "custom" ? derivedMatchingPaletteId : (activePaletteId ?? "custom");
-  const isCustomPaletteActive = effectivePaletteId === "custom";
-
-  const commitCustomTokens = (updated: EditorThemeTokens) => {
-    setCustomTokens(updated);
-    onCustomThemeChange?.(updated);
-  };
-
-  const handleApplyAccentColor = (newHex: string) => {
-    const norm = normalizeHex(newHex);
-    const contrast = calculateOppositeContrast(norm);
-    commitCustomTokens({
-      ...customTokens,
-      primary: norm,
-      accent: norm,
-      accentSoft: contrast.softBackground,
-      onAccent: contrast.textColor,
-      accentBorder: contrast.borderColor,
-    });
-  };
-
-  const handleApplySecondaryColor = (newHex: string) => {
-    const norm = normalizeHex(newHex);
-    const contrast = calculateOppositeContrast(norm);
-    commitCustomTokens({
-      ...customTokens,
-      secondary: norm,
-      onSecondary: contrast.textColor,
-      secondaryBorder: contrast.borderColor,
-    });
-  };
+  const isWb = activePaletteId === "white-black" || activePaletteId === "white-and-black";
+  const isBw = activePaletteId === "black-white" || activePaletteId === "black-and-white";
+  const isCustomSelected = activePaletteId === "custom" || (!isWb && !isBw && activePaletteId !== null);
 
   /**
    * The list shown: every page the college actually has, plus the suggested
@@ -534,13 +277,31 @@ export function DrawerPanel({
    * A preset resets both colour cards to its own pair — black on white, or
    * white on black — replacing whatever was customised on the previous one.
    */
-  const handleSelectPalette = (paletteId: string, paletteName: string) => {
-    const norm = paletteId === "black-white" ? "black-and-white" : paletteId === "white-black" ? "white-and-black" : paletteId;
-    const selectedTheme = DEFAULT_DUAL_THEMES.find((t) => t.id === norm || t.id === paletteId);
-    const tokens = selectedTheme ? presetBrandTokens(selectedTheme) : undefined;
-    if (tokens) setCustomTokens(tokens);
-    onPaletteSelect?.(paletteId, tokens);
-    showNotification(`Applied theme: ${paletteName}`);
+  const handleSelectPreset = (preset: PalettePreset) => {
+    setIsCustomDrawerExpanded(false);
+    setCustomColorTokens(preset.tokens);
+    applyThemeTokens(preset.tokens);
+    const fullThemeTokens = colorTokenMapToThemeTokens(preset.tokens);
+    onPaletteSelect?.(preset.id, fullThemeTokens);
+    onCustomThemeChange?.(fullThemeTokens);
+    showNotification(`Applied theme: ${preset.name}`);
+  };
+
+  const handleSelectCustom = () => {
+    setIsCustomDrawerExpanded(true);
+    applyThemeTokens(customColorTokens);
+    const fullThemeTokens = colorTokenMapToThemeTokens(customColorTokens);
+    onPaletteSelect?.("custom", fullThemeTokens);
+    onCustomThemeChange?.(fullThemeTokens);
+    showNotification(`Custom Palette activated`);
+  };
+
+  const handleCustomColorChange = (newTokens: ColorTokenMap) => {
+    setCustomColorTokens(newTokens);
+    applyThemeTokens(newTokens);
+    const fullThemeTokens = colorTokenMapToThemeTokens(newTokens);
+    onCustomThemeChange?.(fullThemeTokens);
+    onPaletteSelect?.("custom", fullThemeTokens);
   };
 
   const handleSelectFont = (fontId: string, fontName: string) => {
@@ -571,7 +332,7 @@ export function DrawerPanel({
         onClick={(e) => e.stopPropagation()}
         style={{
           height: "100%",
-          width: "320px",
+          width: "360px",
           backgroundColor: "#ffffff",
           borderRight: "1px solid #e2e8f0",
           boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
@@ -807,172 +568,47 @@ export function DrawerPanel({
               {/* Header Title & Subtitle */}
               <div>
                 <h2 style={{ fontSize: "14px", fontWeight: 900, color: "#0f172a", margin: 0 }}>
-                  Color Theme
+                  Site Styles &gt; Colors
                 </h2>
                 <p style={{ fontSize: "11.5px", color: "#64748b", margin: "3px 0 0" }}>
-                  Choose a default palette or customize your website colors.
+                  Choose a preset palette or customize your theme tokens.
                 </p>
               </div>
 
-              {/* SECTION A: DEFAULT PALETTES */}
+              {/* SECTION: MASTER LIST OF SELECTABLE PRESET CARDS & INLINE CUSTOM DRAWER */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div>
-                  <h3 style={{ fontSize: "12px", fontWeight: 800, color: "#1e293b", margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    Default Palettes
-                  </h3>
-                  <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0" }}>
-                    Start with a predefined color combination or customize it for your website.
-                  </p>
-                </div>
+                {/* Card 1: White & Black */}
+                <PaletteCard
+                  preset={DEFAULT_SQUARESPACE_PALETTES[0]!}
+                  selected={isWb}
+                  onSelect={() => handleSelectPreset(DEFAULT_SQUARESPACE_PALETTES[0]!)}
+                />
 
+                {/* Card 2: Black & White */}
+                <PaletteCard
+                  preset={DEFAULT_SQUARESPACE_PALETTES[1]!}
+                  selected={isBw}
+                  onSelect={() => handleSelectPreset(DEFAULT_SQUARESPACE_PALETTES[1]!)}
+                />
+
+                {/* Card 3: Custom Palette & In-Place Expandable Drawer */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {DEFAULT_DUAL_THEMES.map((theme) => {
-                    const isBW = theme.id === "black-white" || theme.id === "black-and-white";
-                    const isSelected =
-                      effectivePaletteId === theme.id ||
-                      (isBW && (effectivePaletteId === "black-white" || effectivePaletteId === "black-and-white")) ||
-                      (!isBW && (effectivePaletteId === "white-black" || effectivePaletteId === "white-and-black"));
-                    const primColor = isBW ? "#000000" : "#FFFFFF";
-                    const secColor = isBW ? "#FFFFFF" : "#000000";
+                  <PaletteCard
+                    preset={DEFAULT_SQUARESPACE_PALETTES[2]!}
+                    selected={isCustomSelected}
+                    tokens={customColorTokens}
+                    isExpanded={isCustomDrawerExpanded}
+                    onSelect={handleSelectCustom}
+                    onToggleExpand={() => setIsCustomDrawerExpanded((prev) => !prev)}
+                  />
 
-                    return (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => handleSelectPalette(theme.id, theme.name)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handleSelectPalette(theme.id, theme.name);
-                          }
-                        }}
-                        aria-pressed={isSelected}
-                        style={{
-                          padding: "12px 14px",
-                          borderRadius: "14px",
-                          backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
-                          border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
-                          boxShadow: isSelected ? "0 2px 6px rgba(15,23,42,0.08)" : "none",
-                          cursor: "pointer",
-                          display: "flex",
-                          flexDirection: "column",
-                          textAlign: "left",
-                          width: "100%",
-                          transition: "all 0.15s ease",
-                          gap: "6px",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            {/* Two distinct color swatches */}
-                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                              <span
-                                style={{
-                                  width: "18px",
-                                  height: "18px",
-                                  borderRadius: "50%",
-                                  backgroundColor: primColor,
-                                  border: primColor === "#FFFFFF" ? "1.5px solid #cbd5e1" : "1.5px solid rgba(0,0,0,0.15)",
-                                  boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                                }}
-                                title={`Primary: ${primColor}`}
-                              />
-                              <span
-                                style={{
-                                  width: "18px",
-                                  height: "18px",
-                                  borderRadius: "50%",
-                                  backgroundColor: secColor,
-                                  border: secColor === "#FFFFFF" ? "1.5px solid #cbd5e1" : "1.5px solid rgba(0,0,0,0.15)",
-                                  boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                                }}
-                                title={`Secondary: ${secColor}`}
-                              />
-                            </div>
-                            <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
-                              {theme.name}
-                            </span>
-                          </div>
-                          {isSelected && (
-                            <div
-                              style={{
-                                width: "20px",
-                                height: "20px",
-                                borderRadius: "50%",
-                                backgroundColor: "#0f172a",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                              }}
-                            >
-                              <Check style={{ width: "12px", height: "12px", color: "#ffffff", strokeWidth: 3 }} />
-                            </div>
-                          )}
-                        </div>
-                        <p style={{ margin: 0, fontSize: "11px", color: "#64748b" }}>{theme.description}</p>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10.5px", color: "#475569", marginTop: "2px" }}>
-                          <span style={{ backgroundColor: "#f1f5f9", padding: "1px 6px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
-                            Primary: <code style={{ fontFamily: "monospace", fontWeight: 700 }}>{primColor}</code>
-                          </span>
-                          <span style={{ backgroundColor: "#f1f5f9", padding: "1px 6px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
-                            Secondary: <code style={{ fontFamily: "monospace", fontWeight: 700 }}>{secColor}</code>
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {/* EXPANDED DRAWER - Squarespace In-Place Engine */}
+                  <PaletteEditorDrawer
+                    isOpen={isCustomDrawerExpanded}
+                    tokens={customColorTokens}
+                    onChange={handleCustomColorChange}
+                  />
                 </div>
-              </div>
-
-              {/* SECTION B: CUSTOMIZE COLORS */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div>
-                    <h3 style={{ fontSize: "12px", fontWeight: 800, color: "#1e293b", margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                      Customize Colors
-                    </h3>
-                    <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0" }}>
-                      Fine-tune your website colors to match your brand.
-                    </p>
-                  </div>
-                  {isCustomPaletteActive && (
-                    <span
-                      style={{
-                        fontSize: "9.5px",
-                        fontWeight: 800,
-                        color: "#047857",
-                        backgroundColor: "#d1fae5",
-                        padding: "3px 8px",
-                        borderRadius: "6px",
-                        border: "1px solid #a7f3d0",
-                      }}
-                    >
-                      Custom Palette
-                    </span>
-                  )}
-                </div>
-
-                <BrandColorCard
-                  title="Primary Color"
-                  label="Primary"
-                  description="Main brand accents & primary elements"
-                  value={currentPrimaryColor}
-                  defaultHex={effectivePaletteId === "white-black" ? "#FFFFFF" : "#000000"}
-                  active={isCustomPaletteActive}
-                  onChange={handleApplyAccentColor}
-                  onReset={() => handleApplyAccentColor(effectivePaletteId === "white-black" ? "#FFFFFF" : "#000000")}
-                />
-                <BrandColorCard
-                  title="Secondary Color"
-                  label="Secondary"
-                  description="Secondary brand highlights & surfaces"
-                  value={currentSecondaryColor}
-                  defaultHex={effectivePaletteId === "white-black" ? "#000000" : "#FFFFFF"}
-                  active={isCustomPaletteActive}
-                  onChange={handleApplySecondaryColor}
-                  onReset={() => handleApplySecondaryColor(effectivePaletteId === "white-black" ? "#000000" : "#FFFFFF")}
-                />
               </div>
             </div>
           )}
