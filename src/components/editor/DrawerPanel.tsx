@@ -101,15 +101,19 @@ function BrandColorCard({
   label,
   description,
   value,
+  defaultHex,
   active,
   onChange,
+  onReset,
 }: {
   title: string;
   label: string;
   description?: string;
   value: string;
+  defaultHex?: string;
   active: boolean;
   onChange: (hex: string) => void;
+  onReset?: () => void;
 }) {
   const normValue = normalizeHex(value);
   const isLight = calculateOppositeContrast(normValue).isLight;
@@ -129,6 +133,8 @@ function BrandColorCard({
       onChange(normalizeHex(val));
     }
   };
+
+  const isChangedFromDefault = defaultHex && normValue.toUpperCase() !== normalizeHex(defaultHex).toUpperCase();
 
   return (
     <div
@@ -152,21 +158,42 @@ function BrandColorCard({
             <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#64748b" }}>{description}</p>
           )}
         </div>
-        {active && (
-          <span
-            style={{
-              fontSize: "9px",
-              fontWeight: 800,
-              color: "#16a34a",
-              backgroundColor: "#dcfce7",
-              padding: "2px 8px",
-              borderRadius: "6px",
-              border: "1px solid #bbf7d0",
-            }}
-          >
-            Custom
-          </span>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          {isChangedFromDefault && onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              title={`Reset ${label} to ${defaultHex}`}
+              style={{
+                fontSize: "10px",
+                fontWeight: 700,
+                color: "#64748b",
+                backgroundColor: "#f1f5f9",
+                border: "1px solid #cbd5e1",
+                borderRadius: "6px",
+                padding: "2px 6px",
+                cursor: "pointer",
+              }}
+            >
+              Reset
+            </button>
+          )}
+          {active && (
+            <span
+              style={{
+                fontSize: "9px",
+                fontWeight: 800,
+                color: "#16a34a",
+                backgroundColor: "#dcfce7",
+                padding: "2px 8px",
+                borderRadius: "6px",
+                border: "1px solid #bbf7d0",
+              }}
+            >
+              Custom
+            </span>
+          )}
+        </div>
       </div>
 
       {/* The Box & Hex Input */}
@@ -800,11 +827,11 @@ export function DrawerPanel({
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {DEFAULT_DUAL_THEMES.map((theme) => {
+                    const isBW = theme.id === "black-white" || theme.id === "black-and-white";
                     const isSelected =
                       effectivePaletteId === theme.id ||
-                      (theme.id === "black-and-white" && effectivePaletteId === "black-white") ||
-                      (theme.id === "white-and-black" && effectivePaletteId === "white-black");
-                    const isBW = theme.id === "black-and-white" || (theme.id as string) === "black-white";
+                      (isBW && (effectivePaletteId === "black-white" || effectivePaletteId === "black-and-white")) ||
+                      (!isBW && (effectivePaletteId === "white-black" || effectivePaletteId === "white-and-black"));
                     const primColor = isBW ? "#000000" : "#FFFFFF";
                     const secColor = isBW ? "#FFFFFF" : "#000000";
 
@@ -828,15 +855,14 @@ export function DrawerPanel({
                           boxShadow: isSelected ? "0 2px 6px rgba(15,23,42,0.08)" : "none",
                           cursor: "pointer",
                           display: "flex",
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
+                          flexDirection: "column",
                           textAlign: "left",
                           width: "100%",
                           transition: "all 0.15s ease",
+                          gap: "6px",
                         }}
                       >
-                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             {/* Two distinct color swatches */}
                             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -867,30 +893,32 @@ export function DrawerPanel({
                               {theme.name}
                             </span>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#64748b" }}>
-                            <span>{theme.description}</span>
-                            <span>•</span>
-                            <span style={{ fontFamily: "monospace", fontSize: "10.5px" }}>
-                              {primColor} / {secColor}
-                            </span>
-                          </div>
+                          {isSelected && (
+                            <div
+                              style={{
+                                width: "20px",
+                                height: "20px",
+                                borderRadius: "50%",
+                                backgroundColor: "#0f172a",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Check style={{ width: "12px", height: "12px", color: "#ffffff", strokeWidth: 3 }} />
+                            </div>
+                          )}
                         </div>
-                        {isSelected && (
-                          <div
-                            style={{
-                              width: "22px",
-                              height: "22px",
-                              borderRadius: "50%",
-                              backgroundColor: "#0f172a",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Check style={{ width: "13px", height: "13px", color: "#ffffff", strokeWidth: 3 }} />
-                          </div>
-                        )}
+                        <p style={{ margin: 0, fontSize: "11px", color: "#64748b" }}>{theme.description}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "10.5px", color: "#475569", marginTop: "2px" }}>
+                          <span style={{ backgroundColor: "#f1f5f9", padding: "1px 6px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
+                            Primary: <code style={{ fontFamily: "monospace", fontWeight: 700 }}>{primColor}</code>
+                          </span>
+                          <span style={{ backgroundColor: "#f1f5f9", padding: "1px 6px", borderRadius: "4px", border: "1px solid #e2e8f0" }}>
+                            Secondary: <code style={{ fontFamily: "monospace", fontWeight: 700 }}>{secColor}</code>
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
@@ -930,16 +958,20 @@ export function DrawerPanel({
                   label="Primary"
                   description="Main brand accents & primary elements"
                   value={currentPrimaryColor}
+                  defaultHex={effectivePaletteId === "white-black" ? "#FFFFFF" : "#000000"}
                   active={isCustomPaletteActive}
                   onChange={handleApplyAccentColor}
+                  onReset={() => handleApplyAccentColor(effectivePaletteId === "white-black" ? "#FFFFFF" : "#000000")}
                 />
                 <BrandColorCard
                   title="Secondary Color"
                   label="Secondary"
                   description="Secondary brand highlights & surfaces"
                   value={currentSecondaryColor}
+                  defaultHex={effectivePaletteId === "white-black" ? "#000000" : "#FFFFFF"}
                   active={isCustomPaletteActive}
                   onChange={handleApplySecondaryColor}
+                  onReset={() => handleApplySecondaryColor(effectivePaletteId === "white-black" ? "#000000" : "#FFFFFF")}
                 />
               </div>
             </div>

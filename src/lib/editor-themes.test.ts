@@ -390,8 +390,8 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
   });
 
   it("correctly derives Black & White and White & Black preset brand tokens", () => {
-    const whiteAndBlack = DEFAULT_DUAL_THEMES.find((t) => t.id === "white-and-black")!;
-    const blackAndWhite = DEFAULT_DUAL_THEMES.find((t) => t.id === "black-and-white")!;
+    const whiteAndBlack = DEFAULT_DUAL_THEMES.find((t) => t.id === "white-black" || t.id === "white-and-black")!;
+    const blackAndWhite = DEFAULT_DUAL_THEMES.find((t) => t.id === "black-white" || t.id === "black-and-white")!;
 
     const bw = presetBrandTokens(blackAndWhite);
     assert.equal(bw.primary, "#000000");
@@ -413,10 +413,10 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
   });
 
   it("derives matching default palette IDs or custom accurately", () => {
-    assert.equal(getMatchingPaletteId("#000000", "#ffffff"), "black-and-white");
-    assert.equal(getMatchingPaletteId("#000", "#fff"), "black-and-white");
-    assert.equal(getMatchingPaletteId("#ffffff", "#000000"), "white-and-black");
-    assert.equal(getMatchingPaletteId("#fff", "#000"), "white-and-black");
+    assert.equal(getMatchingPaletteId("#000000", "#ffffff"), "black-white");
+    assert.equal(getMatchingPaletteId("#000", "#fff"), "black-white");
+    assert.equal(getMatchingPaletteId("#ffffff", "#000000"), "white-black");
+    assert.equal(getMatchingPaletteId("#fff", "#000"), "white-black");
     assert.equal(getMatchingPaletteId("#ff0000", "#ffffff"), "custom");
     assert.equal(getMatchingPaletteId("#000000", "#00ff00"), "custom");
     assert.equal(getMatchingPaletteId("#123456", "#654321"), "custom");
