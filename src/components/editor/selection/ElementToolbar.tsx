@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * The toolbar for a card, button, image or text selected inside a section.
+ * The contextual toolbar for a container, card, button, image, heading, text, or generic element selected inside a section.
  *
  * Takes the dock's place exactly as `SectionToolbar` does — same edge, same
  * header shape, same right-hand utilities — so what changes when a person
- * right-clicks a button instead of the section around it is the badge, the
+ * clicks or right-clicks an element instead of the section around it is the badge, the
  * tabs and the fields, and nothing about where they look for undo or save.
  *
  * Holds one piece of state: which tab is open. Every field renders from the
@@ -14,18 +14,33 @@
  */
 
 import { useState } from "react";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Copy, ArrowUp, ArrowDown } from "lucide-react";
 
 import type { Device } from "@/lib/sections/section-managed-css";
 import type { SaveStatus } from "@/hooks/useEditorPages";
-import type { SelectionState } from "@/lib/editor/selection-store";
-import type { ButtonProps, CardProps, ElementPropsByType, ImageProps, LeafType } from "@/lib/editor/element-resolver";
+import type { ElementType, SelectionAncestor, SelectionState } from "@/lib/editor/selection-store";
+import type {
+  ButtonProps,
+  CardProps,
+  ContainerProps,
+  ElementPropsByType,
+  GenericProps,
+  HeadingLevel,
+  HeadingProps,
+  ImageProps,
+  LeafType,
+  TextProps,
+} from "@/lib/editor/element-resolver";
 
 import { ToolbarUtilities } from "../ToolbarUtilities";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
 import { CardPanel } from "./panels/CardPanel";
 import { ButtonPanel } from "./panels/ButtonPanel";
 import { ImagePanel } from "./panels/ImagePanel";
+import { HeadingPanel } from "./panels/HeadingPanel";
+import { TextPanel } from "./panels/TextPanel";
+import { ContainerPanel } from "./panels/ContainerPanel";
+import { GenericPanel } from "./panels/GenericPanel";
 
 type DockPosition = "bottom" | "top" | "left" | "right";
 
@@ -37,6 +52,11 @@ export interface ElementToolbarProps {
   dockPosition?: DockPosition;
   onDeviceChange: (device: Device) => void;
   onChange: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
+  onChangeHeadingLevel?: (level: HeadingLevel) => void;
+  onSelectAncestor?: (path: string, type: ElementType) => void;
+  onDuplicate?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   /** Back: clears the element selection, which returns to the section's toolbar. */
   onClose: () => void;
   onDelete: () => void;
@@ -68,6 +88,11 @@ export function ElementToolbar({
   dockPosition = "bottom",
   onDeviceChange,
   onChange,
+  onChangeHeadingLevel,
+  onSelectAncestor,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
   onClose,
   onDelete,
   onUndo,
@@ -81,16 +106,15 @@ export function ElementToolbar({
   const config = type ? TOOLBAR_CONFIG[type] : null;
   const [chosenTab, setTab] = useState<string>("");
 
-  // Text is edited in place (see InlineTextToolbar), never selected here.
-  if (!type || type === "section" || type === "text" || !config || !selection.selectedId) return null;
+  if (!type || type === "section" || !config || !selection.selectedId) return null;
 
   // A tab chosen for another kind of element does not carry over; the first tab does.
-  const tab = config.tabs.some((t) => t.id === chosenTab) ? chosenTab : config.tabs[0]!.id;
+  const tab = config.tabs.some((t) => t.id === chosenTab) ? chosenTab : config.tabs[0]?.id || "";
 
   const id = selection.selectedId;
   const meta = (selection.meta ?? {}) as Record<string, unknown>;
   const tag = typeof meta.tag === "string" ? meta.tag : "";
-  const inCard = typeof meta.cardPath === "string";
+  const ancestors = selection.ancestors ?? [];
 
   const panel = (() => {
     switch (type) {
@@ -100,6 +124,23 @@ export function ElementToolbar({
         return <ButtonPanel tab={tab} props={meta as unknown as ButtonProps} onChange={(p) => onChange<"button">(id, p)} />;
       case "image":
         return <ImagePanel tab={tab} props={meta as unknown as ImageProps} onChange={(p) => onChange<"image">(id, p)} />;
+      case "heading":
+        return (
+          <HeadingPanel
+            tab={tab}
+            props={meta as unknown as HeadingProps}
+            onChange={(p) => onChange<"heading">(id, p)}
+            onChangeLevel={onChangeHeadingLevel}
+          />
+        );
+      case "text":
+        return <TextPanel tab={tab} props={meta as unknown as TextProps} onChange={(p) => onChange<"text">(id, p)} />;
+      case "container":
+        return <ContainerPanel tab={tab} props={meta as unknown as ContainerProps} onChange={(p) => onChange<"container">(id, p)} />;
+      case "generic":
+        return <GenericPanel tab={tab} props={meta as unknown as GenericProps} onChange={(p) => onChange<"generic">(id, p)} />;
+      default:
+        return null;
     }
   })();
 
@@ -121,7 +162,7 @@ export function ElementToolbar({
       style={dockedStyle(dockPosition)}
     >
       <header className="flex shrink-0 items-center justify-between gap-2.5 border-b border-slate-200/80 px-3 py-1.5 bg-white">
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={onClose}
@@ -132,43 +173,108 @@ export function ElementToolbar({
             <ArrowLeft className="h-4 w-4" />
           </button>
 
-          {/* Breadcrumb: Section › (Card ›) Element */}
+          {/* Interactive Breadcrumb: Section › [Ancestor Container / Card] › Current Element */}
           <div className="flex items-center gap-1 shrink-0 text-[10px] font-semibold text-slate-400">
-            <span className="truncate max-w-[120px]" title={sectionTitle}>
-              {sectionTitle}
-            </span>
-            <ChevronRight className="h-3 w-3" />
-            {inCard && type !== "card" && (
+            {ancestors.length > 0 ? (
+              ancestors.map((anc, idx) => (
+                <span key={anc.id || idx} className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (anc.type === "section") {
+                        onClose();
+                      } else if (onSelectAncestor) {
+                        onSelectAncestor(anc.path, anc.type);
+                      }
+                    }}
+                    title={`Select ${anc.label}`}
+                    className="truncate max-w-[100px] hover:text-indigo-600 hover:underline cursor-pointer transition"
+                  >
+                    {anc.label}
+                  </button>
+                  <ChevronRight className="h-3 w-3 text-slate-300 shrink-0" />
+                </span>
+              ))
+            ) : (
               <>
-                <span>Card</span>
-                <ChevronRight className="h-3 w-3" />
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title="Select Section"
+                  className="truncate max-w-[120px] hover:text-indigo-600 hover:underline cursor-pointer transition"
+                >
+                  {sectionTitle}
+                </button>
+                <ChevronRight className="h-3 w-3 text-slate-300 shrink-0" />
               </>
             )}
-            <span className={`rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider border ${config.badgeClass}`}>
+
+            <span
+              className={`rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider border ${config.badgeClass}`}
+            >
               {config.badge}
             </span>
-            {tag && <span className="font-mono text-slate-400">&lt;{tag}&gt;</span>}
+            {tag && <span className="font-mono text-slate-400 text-[10px]">&lt;{tag}&gt;</span>}
           </div>
 
-          {/* One tab is no tab: the badge already says what this is. */}
+          {/* Quick action buttons: Duplicate, Move Up, Move Down */}
+          <div className="hidden sm:flex items-center gap-0.5 pl-1.5 border-l border-slate-200/80">
+            {onDuplicate && (
+              <button
+                type="button"
+                onClick={onDuplicate}
+                title={`Duplicate ${config.badge.toLowerCase()}`}
+                aria-label={`Duplicate ${config.badge.toLowerCase()}`}
+                className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 cursor-pointer"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onMoveUp && (
+              <button
+                type="button"
+                onClick={onMoveUp}
+                title="Move element up"
+                aria-label="Move element up"
+                className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 cursor-pointer"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onMoveDown && (
+              <button
+                type="button"
+                onClick={onMoveDown}
+                title="Move element down"
+                aria-label="Move element down"
+                className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 cursor-pointer"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Tabs */}
           {config.tabs.length > 1 && (
             <>
-          <div className="h-4 w-px bg-slate-200 shrink-0 hidden md:block" />
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
-            {config.tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                aria-pressed={t.id === tab}
-                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
-                  t.id === tab ? "bg-slate-900 text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+              <div className="h-4 w-px bg-slate-200 shrink-0 hidden md:block" />
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+                {config.tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTab(t.id)}
+                    aria-pressed={t.id === tab}
+                    className={`shrink-0 whitespace-nowrap rounded-full px-3 py-0.5 text-[11px] font-bold transition-all duration-150 cursor-pointer ${
+                      t.id === tab
+                        ? "bg-slate-900 text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -187,7 +293,9 @@ export function ElementToolbar({
         />
       </header>
 
-      <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar py-1.5 px-3 flex-nowrap w-full">{panel}</div>
+      <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto no-scrollbar py-1.5 px-3 flex-nowrap w-full">
+        {panel}
+      </div>
     </div>
   );
 }

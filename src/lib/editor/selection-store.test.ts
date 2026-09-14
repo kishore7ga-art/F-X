@@ -21,30 +21,42 @@ describe("selection store", () => {
       type: "button",
       sectionId: "sec1",
       meta: { label: "Apply" },
+      ancestors: [],
     });
 
     // Re-selecting the same element is a no-op.
     store.selectElement("sec1::0/2", "button", "sec1");
     assert.equal(ticks, 1);
 
-    store.updateElementProps("sec1::0/2", { href: "/admissions" });
+    // Selecting with ancestors
+    store.selectElement("sec1::0/2/1", "heading", "sec1", { fontSize: "24px" }, [
+      { id: "sec1", type: "section", label: "Hero", path: "" },
+      { id: "sec1::0/2", type: "container", label: "Container", path: "0/2" },
+    ]);
     assert.equal(ticks, 2);
-    assert.deepEqual(store.getState().meta, { label: "Apply", href: "/admissions" });
+    assert.deepEqual(store.getState().ancestors, [
+      { id: "sec1", type: "section", label: "Hero", path: "" },
+      { id: "sec1::0/2", type: "container", label: "Container", path: "0/2" },
+    ]);
+
+    store.updateElementProps("sec1::0/2/1", { fontSize: "32px" });
+    assert.equal(ticks, 3);
+    assert.deepEqual(store.getState().meta, { fontSize: "32px" });
 
     // Props for something that is not selected are dropped, not applied.
     store.updateElementProps("other", { label: "x" });
-    assert.equal(ticks, 2);
+    assert.equal(ticks, 3);
 
     store.clearSelection();
-    assert.equal(ticks, 3);
+    assert.equal(ticks, 4);
     assert.deepEqual(store.getState(), { selectedId: null, type: null });
 
     // Clearing an empty selection does not notify.
     store.clearSelection();
-    assert.equal(ticks, 3);
+    assert.equal(ticks, 4);
 
     unsubscribe();
     store.selectElement("sec1::1", "card", "sec1");
-    assert.equal(ticks, 3);
+    assert.equal(ticks, 4);
   });
 });

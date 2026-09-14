@@ -28,13 +28,30 @@
 
 import { useSyncExternalStore } from "react";
 
-export type ElementType = "section" | "card" | "button" | "image" | "text";
+export type ElementType =
+  | "section"
+  | "container"
+  | "card"
+  | "heading"
+  | "text"
+  | "image"
+  | "button"
+  | "generic";
+
+export interface SelectionAncestor {
+  id: string;
+  type: ElementType;
+  label: string;
+  path: string;
+}
 
 export interface SelectionState {
   selectedId: string | null;
   type: ElementType | null;
   /** The section the element lives in — the editing context for every write. */
   sectionId?: string;
+  /** Hierarchy of ancestors from section root down to this element's parent. */
+  ancestors?: SelectionAncestor[];
   /**
    * The element's current props as the toolbar last read them. A snapshot,
    * refreshed on every selection and every commit; the toolbar renders from it
@@ -62,13 +79,31 @@ export function createSelectionStore(initial: SelectionState = EMPTY) {
         listeners.delete(listener);
       };
     },
-    selectElement(id: string, type: ElementType, sectionId: string, meta?: Record<string, unknown>) {
+    selectElement(
+      id: string,
+      type: ElementType,
+      sectionId: string,
+      meta?: Record<string, unknown>,
+      ancestors?: SelectionAncestor[],
+    ) {
       // Re-selecting the same thing is a no-op, so a right-click on an already
       // selected card does not reset the toolbar's tab.
-      if (state.selectedId === id && state.type === type && state.sectionId === sectionId && meta === undefined) {
+      if (
+        state.selectedId === id &&
+        state.type === type &&
+        state.sectionId === sectionId &&
+        meta === undefined &&
+        ancestors === undefined
+      ) {
         return;
       }
-      state = { selectedId: id, type, sectionId, meta: meta ?? {} };
+      state = {
+        selectedId: id,
+        type,
+        sectionId,
+        meta: meta ?? {},
+        ancestors: ancestors ?? [],
+      };
       emit();
     },
     clearSelection() {

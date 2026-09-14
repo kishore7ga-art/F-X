@@ -1,48 +1,50 @@
 "use client";
 
 /**
- * The controller between a right-click on the canvas and the section it edits.
+ * The controller between canvas interactions (left-click, right-click) and the section it edits.
  *
  * ── What it owns ──────────────────────────────────────────────────────────
  *
- * - Routing a `contextmenu` event: leaf or card → select it and stop the event
- *   there; section surface → let the caller open the section toolbar.
+ * - Routing contextmenu & click events: resolves element hierarchy, updates selectionStore.
+ * - Right-click context menu state (position, open/close).
  * - Applying prop changes to the live element, then writing the section's
- *   code back through the editor's history path — debounced, so dragging a
- *   colour picker is one undo step, not forty.
- * - Keeping the selected node fresh: the canvas rebuilds a section's DOM on
- *   every code change, so the element is re-resolved from its path after each
- *   commit rather than held by reference.
- * - Dismissal: an outside click or Escape clears the selection.
- *
- * ── What it does not own ──────────────────────────────────────────────────
- *
- * Section selection, the section toolbar and inline text editing all predate
- * this and stay where they are. The hook reports "an element in section N was
- * selected" and "a section was right-clicked" and the studio does the rest.
+ *   code back through the editor's history path — debounced for smooth live editing.
+ * - Element operations: delete, duplicate, move up/down, heading level change, ancestor selection.
+ * - Re-resolving elements after DOM rebuilds.
+ * - Dismissal: an outside click or Escape clears the selection and context menu.
  */
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { recomposeSectionCode } from "@/lib/section-runtime";
 import { joinSectionCode, splitSectionCode } from "@/lib/sections/section-managed-css";
 import { writeHoverRule } from "@/lib/editor/element-hover-css";
 import {
   applyElementProps,
+  changeHeadingTagDom,
+  duplicateElementDom,
   elementId,
   ensureElementKey,
+  getAncestorHierarchy,
+  moveElementDom,
   parseElementId,
   readElementProps,
   resolvePath,
   resolveTarget,
   type ElementPropsByType,
+  type HeadingLevel,
   type LeafType,
 } from "@/lib/editor/element-resolver";
-import { selectionStore, useSelection, type SelectionState } from "@/lib/editor/selection-store";
+import {
+  selectionStore,
+  useSelection,
+  type ElementType,
+  type SelectionState,
+} from "@/lib/editor/selection-store";
 import { sanitizeCleanDom } from "@/components/editor/canvas/useCanvaInteractions";
 
 /** Anything under one of these is editor chrome, and a click there is not "outside". */
-const CHROME_SELECTOR = '[data-xite-toolbar], [role="dialog"], .section-toolbar, [data-xite-canvas-chrome]';
+const CHROME_SELECTOR = '[data-xite-toolbar], [role="dialog"], .section-toolbar, [data-xite-canvas-chrome], [data-xite-context-menu]';
 
 const COMMIT_DELAY_MS = 250;
 
@@ -53,9 +55,7 @@ export interface SelectionControllerOptions {
   /** An element in this section was selected — the studio marks the section active. */
   onElementSelected?: (sectionIndex: number) => void;
   /**
-   * A right-click on text. Text is not selected here: it is edited in place,
-   * the same way a double-click edits it, so both gestures open the one text
-   * toolbar. Return true to claim the event.
+   * A right-click on text. Return true to claim the event for inline editing.
    */
   onTextHit?: (element: HTMLElement, sectionIndex: number) => boolean;
   /** Normalises canvas markup before it is stored (theme tokens, container units). */
@@ -64,6 +64,11 @@ export interface SelectionControllerOptions {
 
 export interface SelectionController {
   selection: SelectionState;
+  contextMenu: {
+    isOpen: boolean;
+    position: { x: number; y: number };
+  };
+  closeContextMenu: () => void;
   /**
    * The live node for the selection, looked up from its path at call time —
    * never held, because the canvas rebuilds a section's DOM on every change.
@@ -71,14 +76,25 @@ export interface SelectionController {
   resolveSelectedElement: () => HTMLElement | null;
   /**
    * Routes a right-click. Returns `true` when it selected an element and
-   * consumed the event; `false` when the click is the section's own and the
-   * caller should open the section toolbar.
+   * consumed the event; `false` when the click is the section's own.
    */
   handleContextMenu: (event: React.MouseEvent, sectionIndex: number) => boolean;
+  /**
+   * Selects an element on left-click. Returns `true` when an element was selected.
+   */
+  handleElementSelect: (target: HTMLElement, sectionIndex: number) => boolean;
   /** Applies props to the element now and writes the section shortly after. */
   updateElementProps: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
   /** Removes the selected element from its section. */
   deleteElement: () => void;
+  /** Duplicates the selected element in its section. */
+  duplicateElement: () => void;
+  /** Moves the selected element up or down among its siblings. */
+  moveElement: (direction: "up" | "down") => void;
+  /** Changes a heading element's semantic tag (h1-h6). */
+  changeHeadingLevel: (level: HeadingLevel) => void;
+  /** Selects an ancestor in the element hierarchy (Container, Card, Section). */
+  selectAncestor: (path: string, type: ElementType) => void;
   clearSelection: () => void;
 }
 
@@ -95,6 +111,14 @@ export function useSelectionController({
   cleanHtml,
 }: SelectionControllerOptions): SelectionController {
   const selection = useSelection(selectionStore);
+  const [contextMenu, setContextMenu] = useState<{ isOpen: boolean; position: { x: number; y: number } }>({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+  });
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu((prev) => (prev.isOpen ? { ...prev, isOpen: false } : prev));
+  }, []);
 
   // Latest values for listeners that must not re-subscribe on every render.
   const sectionsRef = useRef(sections);
@@ -192,8 +216,9 @@ export function useSelectionController({
 
   const clearSelection = useCallback(() => {
     flushCommit();
+    closeContextMenu();
     selectionStore.clearSelection();
-  }, [flushCommit]);
+  }, [flushCommit, closeContextMenu]);
 
   const handleContextMenu = useCallback(
     (event: React.MouseEvent, sectionIndex: number): boolean => {
@@ -204,34 +229,64 @@ export function useSelectionController({
 
       const box = canvasBoxFor(section.id);
       const hit = box ? resolveTarget(target, box) : null;
-      if (!hit) {
-        // The section's own surface: hand it back, with no element selected.
+      if (!box || !hit) {
         clearSelection();
         return false;
       }
 
-      // Nothing above this element gets to react: not the section wrapper's
-      // own menu, and not the browser's.
       event.preventDefault();
       event.stopPropagation();
 
-      if (hit.type === "text" && onTextHit) {
-        clearSelection();
-        if (onTextHit(hit.element, sectionIndex)) return true;
-      }
-
       flushCommit();
       const id = elementId(section.id, hit.path);
+      const ancestors = getAncestorHierarchy(hit.element, box, section.id, section.title);
       const meta = {
         ...readElementProps(hit.type, hit.element),
         tag: hit.element.tagName.toLowerCase(),
         cardPath: hit.cardPath,
+        containerPath: hit.containerPath,
       };
-      selectionStore.selectElement(id, hit.type, section.id, meta);
+
+      selectionStore.selectElement(id, hit.type, section.id, meta, ancestors);
+      setContextMenu({
+        isOpen: true,
+        position: { x: event.clientX, y: event.clientY },
+      });
       onElementSelected?.(sectionIndex);
       return true;
     },
-    [clearSelection, flushCommit, onElementSelected, onTextHit],
+    [clearSelection, flushCommit, onElementSelected],
+  );
+
+  const handleElementSelect = useCallback(
+    (target: HTMLElement, sectionIndex: number): boolean => {
+      const section = sectionsRef.current[sectionIndex];
+      if (!section || !target) return false;
+      if (target.closest(CHROME_SELECTOR)) return false;
+
+      const box = canvasBoxFor(section.id);
+      const hit = box ? resolveTarget(target, box) : null;
+      if (!box || !hit) {
+        clearSelection();
+        return false;
+      }
+
+      closeContextMenu();
+      flushCommit();
+      const id = elementId(section.id, hit.path);
+      const ancestors = getAncestorHierarchy(hit.element, box, section.id, section.title);
+      const meta = {
+        ...readElementProps(hit.type, hit.element),
+        tag: hit.element.tagName.toLowerCase(),
+        cardPath: hit.cardPath,
+        containerPath: hit.containerPath,
+      };
+
+      selectionStore.selectElement(id, hit.type, section.id, meta, ancestors);
+      onElementSelected?.(sectionIndex);
+      return true;
+    },
+    [clearSelection, closeContextMenu, flushCommit, onElementSelected],
   );
 
   const updateElementProps = useCallback(
@@ -254,20 +309,97 @@ export function useSelectionController({
     if (!state.selectedId || !state.sectionId) return;
     const element = resolveSelected(state);
     if (!element) return;
-    // Cancel any pending write; the delete's own write supersedes it.
     if (commitTimer.current !== null) window.clearTimeout(commitTimer.current);
     commitTimer.current = null;
     pendingSectionId.current = null;
     element.remove();
     const sectionId = state.sectionId;
     selectionStore.clearSelection();
+    closeContextMenu();
     writeSectionNow(sectionId);
-  }, [resolveSelected, writeSectionNow]);
+  }, [resolveSelected, closeContextMenu, writeSectionNow]);
+
+  const duplicateElement = useCallback(() => {
+    const state = selectionStore.getState();
+    if (!state.selectedId || !state.sectionId) return;
+    const element = resolveSelected(state);
+    if (!element) return;
+    flushCommit();
+    duplicateElementDom(element);
+    const sectionId = state.sectionId;
+    closeContextMenu();
+    writeSectionNow(sectionId);
+  }, [resolveSelected, flushCommit, closeContextMenu, writeSectionNow]);
+
+  const moveElement = useCallback(
+    (direction: "up" | "down") => {
+      const state = selectionStore.getState();
+      if (!state.selectedId || !state.sectionId) return;
+      const element = resolveSelected(state);
+      if (!element) return;
+      flushCommit();
+      const moved = moveElementDom(element, direction);
+      if (moved) {
+        const sectionId = state.sectionId;
+        closeContextMenu();
+        writeSectionNow(sectionId);
+      }
+    },
+    [resolveSelected, flushCommit, closeContextMenu, writeSectionNow],
+  );
+
+  const changeHeadingLevel = useCallback(
+    (level: HeadingLevel) => {
+      const state = selectionStore.getState();
+      if (!state.selectedId || !state.sectionId || state.type !== "heading") return;
+      const element = resolveSelected(state);
+      if (!element) return;
+      flushCommit();
+      changeHeadingTagDom(element, level);
+      const sectionId = state.sectionId;
+      writeSectionNow(sectionId);
+    },
+    [resolveSelected, flushCommit, writeSectionNow],
+  );
+
+  const selectAncestor = useCallback(
+    (path: string, type: ElementType) => {
+      const state = selectionStore.getState();
+      if (!state.sectionId) return;
+      const box = canvasBoxFor(state.sectionId);
+      if (!box) return;
+
+      if (path === "" || type === "section") {
+        clearSelection();
+        return;
+      }
+
+      const ancestorEl = resolvePath(box, path);
+      if (!ancestorEl) return;
+
+      const leafType = type as LeafType;
+      const id = elementId(state.sectionId, path);
+      const ancestors = getAncestorHierarchy(
+        ancestorEl,
+        box,
+        state.sectionId,
+        sectionsRef.current.find((s) => s.id === state.sectionId)?.title || "Section",
+      );
+      const meta = {
+        ...readElementProps(leafType, ancestorEl),
+        tag: ancestorEl.tagName.toLowerCase(),
+      };
+
+      selectionStore.selectElement(id, type, state.sectionId, meta, ancestors);
+      closeContextMenu();
+    },
+    [clearSelection, closeContextMenu],
+  );
 
   /* ── Dismissal ────────────────────────────────────────────────────────── */
 
   useEffect(() => {
-    if (!selection.selectedId) return;
+    if (!selection.selectedId && !contextMenu.isOpen) return;
 
     const onMouseDown = (event: MouseEvent) => {
       if (event.button !== 0) return;
@@ -279,8 +411,6 @@ export function useSelectionController({
       clearSelection();
     };
 
-    // Capture phase, so this runs before the studio's own Escape handling and
-    // an Escape with an element selected clears only that.
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       const active = document.activeElement as HTMLElement | null;
@@ -299,14 +429,21 @@ export function useSelectionController({
       document.removeEventListener("mousedown", onMouseDown);
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [selection.selectedId, resolveSelected, clearSelection]);
+  }, [selection.selectedId, contextMenu.isOpen, resolveSelected, clearSelection]);
 
   return {
     selection,
+    contextMenu,
+    closeContextMenu,
     resolveSelectedElement,
     handleContextMenu,
+    handleElementSelect,
     updateElementProps,
     deleteElement,
+    duplicateElement,
+    moveElement,
+    changeHeadingLevel,
+    selectAncestor,
     clearSelection,
   };
 }

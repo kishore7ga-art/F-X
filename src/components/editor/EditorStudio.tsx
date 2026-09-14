@@ -90,6 +90,7 @@ import { UserProfileMenu } from "./UserProfileMenu";
 import { useSelectionController } from "./selection/useSelectionController";
 import { ElementToolbar } from "./selection/ElementToolbar";
 import { SelectionHighlight } from "./selection/SelectionHighlight";
+import { ContextMenu } from "./selection/ContextMenu";
 import { colorToHex, findTextEditableElement, sanitizeCleanDom } from "./canvas/useCanvaInteractions";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
@@ -1880,9 +1881,10 @@ export function EditorStudio({
 
   /** Deselecting section and closing custom edit toolbar. */
   const clearSelection = useCallback(() => {
+    elementSelection.clearSelection();
     setActiveSectionIndex(null);
     closeCustomToolbar();
-  }, [setActiveSectionIndex, closeCustomToolbar]);
+  }, [elementSelection, setActiveSectionIndex, closeCustomToolbar]);
 
   /**
    * The device the panel is editing, taken from the canvas rather than kept
@@ -1996,6 +1998,23 @@ export function EditorStudio({
         revision={`${elementSelection.selection.selectedId ?? ""}|${
           sections.find((s) => s.id === elementSelection.selection.sectionId)?.code ?? ""
         }`}
+      />
+
+      <ContextMenu
+        isOpen={elementSelection.contextMenu.isOpen}
+        position={elementSelection.contextMenu.position}
+        elementType={elementSelection.selection.type}
+        tag={typeof elementSelection.selection.meta?.tag === "string" ? elementSelection.selection.meta.tag : undefined}
+        ancestors={elementSelection.selection.ancestors}
+        onClose={elementSelection.closeContextMenu}
+        onEdit={() => {
+          elementSelection.closeContextMenu();
+        }}
+        onDuplicate={elementSelection.duplicateElement}
+        onMoveUp={() => elementSelection.moveElement("up")}
+        onMoveDown={() => elementSelection.moveElement("down")}
+        onDelete={elementSelection.deleteElement}
+        onSelectAncestor={elementSelection.selectAncestor}
       />
 
       <main
@@ -2118,6 +2137,7 @@ export function EditorStudio({
                         }
 
                         setActiveSectionIndex(idx);
+                        elementSelection.handleElementSelect(target, idx);
                         inPlaceEditor.handleElementClick(target, idx, e);
                       }}
                       onClick={(e) => {
@@ -2459,6 +2479,11 @@ export function EditorStudio({
             dockPosition={dockPosition}
             onDeviceChange={handleSectionDeviceChange}
             onChange={elementSelection.updateElementProps}
+            onChangeHeadingLevel={elementSelection.changeHeadingLevel}
+            onSelectAncestor={elementSelection.selectAncestor}
+            onDuplicate={elementSelection.duplicateElement}
+            onMoveUp={() => elementSelection.moveElement("up")}
+            onMoveDown={() => elementSelection.moveElement("down")}
             onClose={elementSelection.clearSelection}
             onDelete={elementSelection.deleteElement}
             onUndo={handleUndo}

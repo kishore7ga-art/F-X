@@ -20,10 +20,13 @@ import type { ElementType } from "@/lib/editor/selection-store";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
 
 const RING: Record<Exclude<ElementType, "section">, string> = {
-  card: "#7c3aed",
-  button: "#4f46e5",
-  image: "#059669",
-  text: "#d97706",
+  container: "#3b82f6",
+  card: "#8b5cf6",
+  heading: "#ec4899",
+  text: "#f59e0b",
+  button: "#6366f1",
+  image: "#10b981",
+  generic: "#64748b",
 };
 
 interface SelectionHighlightProps {
@@ -73,13 +76,13 @@ export function SelectionHighlight({ type, resolveElement, revision }: Selection
   }, [resolveElement, revision]);
 
   if (!rect || !type || type === "section") return null;
-  const colour = RING[type];
-  const label = TOOLBAR_CONFIG[type].badge;
+  const colour = RING[type] || "#6366f1";
+  const label = TOOLBAR_CONFIG[type]?.badge || "Element";
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed z-[9998]"
+      className="pointer-events-none fixed z-[9998] transition-all duration-75"
       style={{
         top: rect.top - 2,
         left: rect.left - 2,
@@ -91,7 +94,7 @@ export function SelectionHighlight({ type, resolveElement, revision }: Selection
       }}
     >
       <span
-        className="absolute -top-5 left-0 rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white"
+        className="absolute -top-5 left-0 rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs"
         style={{ background: colour }}
       >
         {label}

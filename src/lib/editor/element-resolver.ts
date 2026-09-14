@@ -1,9 +1,9 @@
 /**
- * What was right-clicked, and what the toolbar can do to it.
+ * What was clicked or right-clicked, and what the toolbar can do to it.
  *
  * ── The hierarchy ─────────────────────────────────────────────────────────
  *
- *   Canvas → Section → Container → Card → Leaf (button, image, text)
+ *   Canvas → Section → Container → Card → Leaf (button, image, heading, text, generic)
  *
  * A section is a string of HTML with no structure the editor put there, so the
  * hierarchy is read off the DOM at the moment of the click, from the clicked
@@ -26,7 +26,7 @@
 
 import { hexFromValue } from "@/lib/sections/section-edit";
 import { ELEMENT_KEY_ATTR } from "@/lib/sections/section-managed-css";
-import type { ElementType } from "./selection-store";
+import type { ElementType, SelectionAncestor } from "./selection-store";
 import { applyLinkTarget } from "./link-target";
 
 /* ── Props, per type ─────────────────────────────────────────────────────── */
@@ -69,6 +69,19 @@ export interface ImageProps {
 
 export type TextAlign = "left" | "center" | "right" | "justify";
 
+export type HeadingLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+
+export interface HeadingProps {
+  level: HeadingLevel;
+  color: string;
+  fontSize: string;
+  fontWeight: string;
+  textAlign: TextAlign;
+  lineHeight: string;
+  letterSpacing: string;
+  margin: string;
+}
+
 export interface TextProps {
   color: string;
   fontSize: string;
@@ -76,16 +89,46 @@ export interface TextProps {
   textAlign: TextAlign;
   lineHeight: string;
   letterSpacing: string;
+  margin: string;
+}
+
+export interface ContainerProps {
+  display: "flex" | "grid" | "block";
+  flexDirection: "row" | "column";
+  gap: string;
+  alignItems: string;
+  justifyContent: string;
+  background: string;
+  radius: string;
+  shadow: ShadowPreset;
+  borderWidth: string;
+  borderColor: string;
+  padding: string;
+  margin: string;
+  maxWidth: string;
+}
+
+export interface GenericProps {
+  background: string;
+  color: string;
+  radius: string;
+  borderWidth: string;
+  borderColor: string;
+  padding: string;
+  margin: string;
 }
 
 export type ElementPropsByType = {
   card: CardProps;
   button: ButtonProps;
   image: ImageProps;
+  heading: HeadingProps;
   text: TextProps;
+  container: ContainerProps;
+  generic: GenericProps;
 };
 
-/** The types this resolver hands to the element toolbar. `section` is not one. */
+/** The types this resolver hands to the element toolbar. `section` is handled separately. */
 export type LeafType = keyof ElementPropsByType;
 
 export interface ResolvedTarget<T extends LeafType = LeafType> {
@@ -95,6 +138,8 @@ export interface ResolvedTarget<T extends LeafType = LeafType> {
   path: string;
   /** The card the element sits in, if any — the parent context a leaf reports. */
   cardPath: string | null;
+  /** The container the element sits in, if any. */
+  containerPath: string | null;
 }
 
 /* ── Ids ─────────────────────────────────────────────────────────────────── */
@@ -137,12 +182,18 @@ export function resolvePath(root: Element, path: string): HTMLElement | null {
 
 /* ── Classification ──────────────────────────────────────────────────────── */
 
+const HEADING_TAGS = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
+
 const TEXT_TAGS = new Set([
-  "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "small", "strong", "em", "b", "i",
+  "p", "span", "small", "strong", "em", "b", "i",
   "label", "li", "blockquote", "figcaption", "td", "th", "dt", "dd", "cite", "q", "mark", "time",
 ]);
 
-const CARD_TAGS = new Set(["article", "li", "figure"]);
+const CARD_TAGS = new Set(["article", "figure"]);
+
+const CONTAINER_CLASS_HINTS = [
+  "container", "wrapper", "grid", "flex", "row", "col", "columns", "layout", "section-content"
+];
 
 const BUTTON_CLASS_HINTS = ["btn", "button", "cta", "apply", "give", "enroll", "enrol", "register"];
 
@@ -153,6 +204,9 @@ const classText = (el: Element) => (typeof el.className === "string" ? el.classN
 
 /** Tag- and class-level checks, kept free of `getComputedStyle` so they can be unit-tested. */
 export const classify = {
+  isHeadingTag(tag: string): boolean {
+    return HEADING_TAGS.has(tag.toLowerCase());
+  },
   isButtonLike(tag: string, cls: string, role: string | null, type: string | null): boolean {
     if (tag === "button") return true;
     if (role === "button") return true;
@@ -160,6 +214,9 @@ export const classify = {
     return BUTTON_CLASS_HINTS.some((hint) => cls.includes(hint));
   },
   isTextTag(tag: string): boolean {
+    return HEADING_TAGS.has(tag) || TEXT_TAGS.has(tag);
+  },
+  isParagraphOrInlineTextTag(tag: string): boolean {
     return TEXT_TAGS.has(tag);
   },
   isCardLike(tag: string, cls: string, hasDataCard: boolean): boolean {
@@ -167,7 +224,16 @@ export const classify = {
     if (cls.split(/\s+/).some((c) => c.includes("card"))) return true;
     return CARD_TAGS.has(tag);
   },
+  isContainerLike(tag: string, cls: string, hasDataContainer: boolean): boolean {
+    if (hasDataContainer) return true;
+    if (cls.split(/\s+/).some((c) => CONTAINER_CLASS_HINTS.some((hint) => c.includes(hint)))) return true;
+    return tag === "div" || tag === "main" || tag === "aside";
+  },
 };
+
+function isHeading(el: HTMLElement): boolean {
+  return classify.isHeadingTag(el.tagName);
+}
 
 function isButton(el: HTMLElement): boolean {
   const tag = el.tagName.toLowerCase();
@@ -183,7 +249,12 @@ function isButton(el: HTMLElement): boolean {
 
 /** A text element is one whose own text nodes carry visible characters. */
 function isText(el: HTMLElement): boolean {
-  if (!classify.isTextTag(el.tagName.toLowerCase())) return false;
+  if (isHeading(el)) return false;
+  if (!classify.isParagraphOrInlineTextTag(el.tagName.toLowerCase())) {
+    // If it's a leaf element with text
+    if (el.children.length === 0 && (el.textContent ?? "").trim().length > 0) return true;
+    return false;
+  }
   return Array.from(el.childNodes).some(
     (n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? "").trim().length > 0,
   );
@@ -210,10 +281,32 @@ function isCard(el: HTMLElement, root: HTMLElement): boolean {
   return boxed && parseFloat(style.borderRadius) > 0;
 }
 
+function isContainer(el: HTMLElement, root: HTMLElement): boolean {
+  if (el === root) return false;
+  const tag = el.tagName.toLowerCase();
+  if (STRUCTURAL_TAGS.has(tag)) return false;
+  if (isCard(el, root)) return false;
+  if (el.hasAttribute("data-container")) return true;
+  const cls = classText(el);
+  if (cls.includes("container") || cls.includes("grid") || cls.includes("flex") || cls.includes("col-")) {
+    return true;
+  }
+  return el.children.length > 0 && (tag === "div" || tag === "ul" || tag === "ol");
+}
+
 function nearestCardPath(from: HTMLElement | null, root: HTMLElement): string | null {
   let node = from;
   while (node && node !== root) {
     if (isCard(node, root)) return pathOf(node, root);
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function nearestContainerPath(from: HTMLElement | null, root: HTMLElement): string | null {
+  let node = from;
+  while (node && node !== root) {
+    if (isContainer(node, root)) return pathOf(node, root);
     node = node.parentElement;
   }
   return null;
@@ -224,28 +317,75 @@ const resolved = (type: LeafType, element: HTMLElement, root: HTMLElement): Reso
   element,
   path: pathOf(element, root),
   cardPath: nearestCardPath(element.parentElement, root),
+  containerPath: nearestContainerPath(element.parentElement, root),
 });
+
+/**
+ * Builds the chain of ancestors from the section root down to the selected element.
+ */
+export function getAncestorHierarchy(
+  element: HTMLElement,
+  root: HTMLElement,
+  sectionId: string,
+  sectionTitle: string,
+): SelectionAncestor[] {
+  const ancestors: SelectionAncestor[] = [
+    {
+      id: sectionId,
+      type: "section",
+      label: sectionTitle || "Section",
+      path: "",
+    },
+  ];
+
+  const stack: HTMLElement[] = [];
+  let node: HTMLElement | null = element.parentElement;
+  while (node && node !== root) {
+    stack.unshift(node);
+    node = node.parentElement;
+  }
+
+  for (const ancestor of stack) {
+    const p = pathOf(ancestor, root);
+    if (isCard(ancestor, root)) {
+      ancestors.push({
+        id: elementId(sectionId, p),
+        type: "card",
+        label: "Card",
+        path: p,
+      });
+    } else if (isContainer(ancestor, root)) {
+      ancestors.push({
+        id: elementId(sectionId, p),
+        type: "container",
+        label: "Container",
+        path: p,
+      });
+    }
+  }
+
+  return ancestors;
+}
 
 /**
  * Walks from the clicked node up to the section root and returns the innermost
  * element the toolbar has a panel for, or `null` when the click lands on the
  * section itself.
  *
- * Order matters and is deliberate: an image or text *inside* a button selects
- * the button, because that is what the person is pointing at when they want to
- * change its label. Text nested in a card selects the text; only a click on
- * the card's own surface selects the card.
+ * Hierarchy order:
+ * Button -> Image -> Heading -> Text -> Card -> Container -> Generic
  */
 export function resolveTarget(target: HTMLElement, root: HTMLElement): ResolvedTarget | null {
   if (!root.contains(target)) return null;
 
+  // 1. Button or interactive button-like link
   const button = target.closest<HTMLElement>(
     "button, a, [role='button'], input[type='button'], input[type='submit']",
   );
   if (button && root.contains(button) && button !== root && isButton(button)) {
     return resolved("button", button, root);
   }
-  // A button by class alone — a styled <div>.
+
   let node: HTMLElement | null = target;
   while (node && node !== root) {
     const tag = node.tagName.toLowerCase();
@@ -255,6 +395,7 @@ export function resolveTarget(target: HTMLElement, root: HTMLElement): ResolvedT
     node = node.parentElement;
   }
 
+  // 2. Image
   if (target.tagName === "IMG") return resolved("image", target, root);
   const picture = target.closest<HTMLElement>("picture, figure");
   if (picture && root.contains(picture) && picture !== root && !isCard(picture, root)) {
@@ -262,12 +403,27 @@ export function resolveTarget(target: HTMLElement, root: HTMLElement): ResolvedT
     if (img) return resolved("image", img, root);
   }
 
+  // 3. Heading
+  const heading = target.closest<HTMLElement>("h1, h2, h3, h4, h5, h6");
+  if (heading && root.contains(heading) && heading !== root) {
+    return resolved("heading", heading, root);
+  }
+
+  // 4. Text or Paragraph
   node = target;
   while (node && node !== root) {
+    if (isHeading(node)) return resolved("heading", node, root);
     if (isText(node)) return resolved("text", node, root);
     if (isCard(node, root)) return resolved("card", node, root);
+    if (isContainer(node, root)) return resolved("container", node, root);
     node = node.parentElement;
   }
+
+  // 5. If direct click is on an element inside root that is not root itself
+  if (target !== root) {
+    return resolved("generic", target, root);
+  }
+
   return null;
 }
 
@@ -359,6 +515,20 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
       };
       return props as ElementPropsByType[T];
     }
+    case "heading": {
+      const level = (el.tagName.toLowerCase() as HeadingLevel) || "h2";
+      const props: HeadingProps = {
+        level,
+        color: hexFromValue(el.style.color || style.color, "#0f172a"),
+        fontSize: el.style.fontSize || style.fontSize || "24px",
+        fontWeight: el.style.fontWeight || style.fontWeight || "700",
+        textAlign: ((el.style.textAlign || style.textAlign) as TextAlign) || "left",
+        lineHeight: el.style.lineHeight || "",
+        letterSpacing: el.style.letterSpacing || "",
+        margin: el.style.margin || style.margin || "0px",
+      };
+      return props as ElementPropsByType[T];
+    }
     case "text": {
       const props: TextProps = {
         color: hexFromValue(el.style.color || style.color, "#0f172a"),
@@ -367,6 +537,43 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         textAlign: ((el.style.textAlign || style.textAlign) as TextAlign) || "left",
         lineHeight: el.style.lineHeight || "",
         letterSpacing: el.style.letterSpacing || "",
+        margin: el.style.margin || style.margin || "0px",
+      };
+      return props as ElementPropsByType[T];
+    }
+    case "container": {
+      const display = style.display.includes("grid")
+        ? "grid"
+        : style.display.includes("flex")
+        ? "flex"
+        : "block";
+      const flexDirection = style.flexDirection === "row" ? "row" : "column";
+      const props: ContainerProps = {
+        display,
+        flexDirection,
+        gap: el.style.gap || style.gap || "0px",
+        alignItems: el.style.alignItems || style.alignItems || "stretch",
+        justifyContent: el.style.justifyContent || style.justifyContent || "flex-start",
+        background: hexFromValue(el.style.backgroundColor || style.backgroundColor, "transparent"),
+        radius: el.style.borderRadius || style.borderRadius || "0px",
+        shadow: shadowPreset(el),
+        borderWidth: el.style.borderWidth || style.borderWidth || "0px",
+        borderColor: hexFromValue(el.style.borderColor || style.borderColor, "#e2e8f0"),
+        padding: el.style.padding || style.padding || "0px",
+        margin: el.style.margin || style.margin || "0px",
+        maxWidth: el.style.maxWidth || style.maxWidth || "none",
+      };
+      return props as ElementPropsByType[T];
+    }
+    case "generic": {
+      const props: GenericProps = {
+        background: hexFromValue(el.style.backgroundColor || style.backgroundColor, "transparent"),
+        color: hexFromValue(el.style.color || style.color, "#0f172a"),
+        radius: el.style.borderRadius || style.borderRadius || "0px",
+        borderWidth: el.style.borderWidth || style.borderWidth || "0px",
+        borderColor: hexFromValue(el.style.borderColor || style.borderColor, "#e2e8f0"),
+        padding: el.style.padding || style.padding || "0px",
+        margin: el.style.margin || style.margin || "0px",
       };
       return props as ElementPropsByType[T];
     }
@@ -416,8 +623,17 @@ export function applyElementProps<T extends LeafType>(
     case "image":
       applyImage(el, props as Partial<ImageProps>);
       return;
+    case "heading":
+      applyHeading(el, props as Partial<HeadingProps>);
+      return;
     case "text":
       applyText(el, props as Partial<TextProps>);
+      return;
+    case "container":
+      applyContainer(el, props as Partial<ContainerProps>);
+      return;
+    case "generic":
+      applyGeneric(el, props as Partial<GenericProps>);
       return;
   }
 }
@@ -450,8 +666,6 @@ function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
   const variant = p.variant ?? (el.getAttribute("data-xite-variant") as ButtonVariant | null) ?? "solid";
   if (p.variant !== undefined) el.setAttribute("data-xite-variant", p.variant);
 
-  // The accent colour means "fill" on a solid button and "border + text" on
-  // the other two, so one control recolours whichever the variant shows.
   const accent = p.background ?? (el.style.backgroundColor ? hexFromValue(el.style.backgroundColor) : undefined);
   if (p.variant !== undefined || p.background !== undefined) {
     const colour = accent ?? "#2563eb";
@@ -481,7 +695,6 @@ function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
 function applyImage(el: HTMLElement, p: Partial<ImageProps>): void {
   if (p.src !== undefined) {
     el.setAttribute("src", p.src);
-    // A `srcset` would keep showing the old picture at most widths.
     el.removeAttribute("srcset");
     el.closest("picture")?.querySelectorAll("source").forEach((s) => s.remove());
   }
@@ -494,6 +707,16 @@ function applyImage(el: HTMLElement, p: Partial<ImageProps>): void {
   set(el, "border-radius", p.radius);
 }
 
+function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
+  set(el, "color", p.color);
+  set(el, "font-size", p.fontSize);
+  set(el, "font-weight", p.fontWeight);
+  set(el, "text-align", p.textAlign);
+  set(el, "line-height", p.lineHeight);
+  set(el, "letter-spacing", p.letterSpacing);
+  set(el, "margin", p.margin);
+}
+
 function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "color", p.color);
   set(el, "font-size", p.fontSize);
@@ -501,13 +724,94 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "text-align", p.textAlign);
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
+  set(el, "margin", p.margin);
 }
 
+function applyContainer(el: HTMLElement, p: Partial<ContainerProps>): void {
+  if (p.display !== undefined) set(el, "display", p.display);
+  if (p.flexDirection !== undefined) set(el, "flex-direction", p.flexDirection);
+  set(el, "gap", p.gap);
+  set(el, "align-items", p.alignItems);
+  set(el, "justify-content", p.justifyContent);
+  set(el, "background-color", p.background);
+  set(el, "border-radius", p.radius);
+  if (p.shadow !== undefined) {
+    set(el, "box-shadow", SHADOW_CSS[p.shadow]);
+    el.setAttribute("data-xite-shadow", p.shadow);
+  }
+  if (p.borderWidth !== undefined || p.borderColor !== undefined) {
+    const width = p.borderWidth ?? el.style.borderWidth ?? "0px";
+    const color = p.borderColor ?? el.style.borderColor ?? "#e2e8f0";
+    set(el, "border-width", width);
+    set(el, "border-style", parseFloat(width) > 0 ? "solid" : "none");
+    set(el, "border-color", color);
+  }
+  set(el, "padding", p.padding);
+  set(el, "margin", p.margin);
+  set(el, "max-width", p.maxWidth);
+}
+
+function applyGeneric(el: HTMLElement, p: Partial<GenericProps>): void {
+  set(el, "background-color", p.background);
+  set(el, "color", p.color);
+  set(el, "border-radius", p.radius);
+  if (p.borderWidth !== undefined || p.borderColor !== undefined) {
+    const width = p.borderWidth ?? el.style.borderWidth ?? "0px";
+    const color = p.borderColor ?? el.style.borderColor ?? "#e2e8f0";
+    set(el, "border-width", width);
+    set(el, "border-style", parseFloat(width) > 0 ? "solid" : "none");
+    set(el, "border-color", color);
+  }
+  set(el, "padding", p.padding);
+  set(el, "margin", p.margin);
+}
+
+/* ── DOM Mutation Helpers ────────────────────────────────────────────────── */
+
+export function duplicateElementDom(element: HTMLElement): HTMLElement {
+  const clone = element.cloneNode(true) as HTMLElement;
+  element.after(clone);
+  return clone;
+}
+
+export function moveElementDom(element: HTMLElement, direction: "up" | "down"): boolean {
+  if (direction === "up") {
+    const prev = element.previousElementSibling;
+    if (prev) {
+      prev.before(element);
+      return true;
+    }
+  } else {
+    const next = element.nextElementSibling;
+    if (next) {
+      next.after(element);
+      return true;
+    }
+  }
+  return false;
+}
+
+export function changeHeadingTagDom(element: HTMLElement, newTag: HeadingLevel): HTMLElement {
+  if (element.tagName.toLowerCase() === newTag.toLowerCase()) return element;
+  const newHeading = document.createElement(newTag);
+  for (let i = 0; i < element.attributes.length; i++) {
+    const attr = element.attributes[i]!;
+    newHeading.setAttribute(attr.name, attr.value);
+  }
+  while (element.firstChild) {
+    newHeading.appendChild(element.firstChild);
+  }
+  element.replaceWith(newHeading);
+  return newHeading;
+}
 
 export const ELEMENT_TYPE_LABEL: Record<ElementType, string> = {
   section: "Section",
+  container: "Container",
   card: "Card",
+  heading: "Heading",
+  text: "Text",
   button: "Button",
   image: "Image",
-  text: "Text",
+  generic: "Element",
 };

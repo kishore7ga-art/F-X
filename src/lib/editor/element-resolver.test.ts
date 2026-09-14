@@ -35,4 +35,30 @@ describe("classification by tag and class", () => {
     assert.ok(classify.isCardLike("article", "", false));
     assert.ok(!classify.isCardLike("div", "grid gap-4", false));
   });
+
+  it("recognises containers", () => {
+    assert.ok(classify.isContainerLike("div", "container mx-auto", false));
+    assert.ok(classify.isContainerLike("div", "grid grid-cols-3", false));
+    assert.ok(classify.isContainerLike("div", "flex flex-row items-center", false));
+    assert.ok(classify.isContainerLike("div", "columns-2", false));
+    assert.ok(classify.isContainerLike("div", "", true));
+    assert.ok(classify.isContainerLike("main", "", false));
+  });
+
+  it("recognises heading tags", () => {
+    assert.ok(classify.isHeadingTag("h1"));
+    assert.ok(classify.isHeadingTag("H2"));
+    assert.ok(classify.isHeadingTag("h6"));
+    assert.ok(!classify.isHeadingTag("p"));
+    assert.ok(!classify.isHeadingTag("div"));
+  });
+
+  it("recognises paragraph and inline text tags", () => {
+    assert.ok(classify.isParagraphOrInlineTextTag("p"));
+    assert.ok(classify.isParagraphOrInlineTextTag("span"));
+    assert.ok(classify.isParagraphOrInlineTextTag("strong"));
+    assert.ok(classify.isParagraphOrInlineTextTag("blockquote"));
+    assert.ok(!classify.isParagraphOrInlineTextTag("h1"));
+    assert.ok(!classify.isParagraphOrInlineTextTag("div"));
+  });
 });
