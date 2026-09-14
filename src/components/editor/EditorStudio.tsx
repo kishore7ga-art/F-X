@@ -1479,9 +1479,11 @@ export function EditorStudio({
      * the element controller's. Two legacy modals keep their targets: the logo
      * (it can apply one picture to every logo on the page) and the map iframe.
      */
-    const isLogoTarget = target.closest('[data-logo="true"], [class*="logo"]') !== null;
-    const isMapElement = target.tagName === "IFRAME" || target.closest("iframe") !== null;
-    if (!isLogoTarget && !isMapElement && elementSelection.handleContextMenu(e, sectionIndex)) {
+    const isMapElement =
+      (target.tagName === "IFRAME" || target.closest("iframe") !== null) &&
+      !target.closest("[data-xite-youtube], [data-youtube], [data-youtube-id]") &&
+      !(target as HTMLIFrameElement).src?.includes("youtube");
+    if (!isMapElement && elementSelection.handleContextMenu(e, sectionIndex)) {
       return;
     }
 
@@ -2010,6 +2012,8 @@ export function EditorStudio({
         onEdit={() => {
           elementSelection.closeContextMenu();
         }}
+        onReplaceMedia={elementSelection.replaceMedia}
+        onReplacePlus={elementSelection.replacePlusWith}
         onDuplicate={elementSelection.duplicateElement}
         onMoveUp={() => elementSelection.moveElement("up")}
         onMoveDown={() => elementSelection.moveElement("down")}
@@ -2481,6 +2485,9 @@ export function EditorStudio({
             onChange={elementSelection.updateElementProps}
             onChangeHeadingLevel={elementSelection.changeHeadingLevel}
             onSelectAncestor={elementSelection.selectAncestor}
+            onReplaceMedia={elementSelection.replaceMedia}
+            onReplacePlus={elementSelection.replacePlusWith}
+            onChangeIcon={elementSelection.changeIcon}
             onDuplicate={elementSelection.duplicateElement}
             onMoveUp={() => elementSelection.moveElement("up")}
             onMoveDown={() => elementSelection.moveElement("down")}

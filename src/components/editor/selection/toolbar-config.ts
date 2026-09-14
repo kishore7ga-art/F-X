@@ -87,8 +87,55 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
     tabs: [
       { id: "media", label: "Media" },
       { id: "layout", label: "Ratio & Fit" },
+      { id: "style", label: "Style & Link" },
     ],
     deleteLabel: "this image",
+  },
+  video: {
+    badge: "Video",
+    badgeClass: "bg-cyan-50 text-cyan-700 border-cyan-200/60",
+    tabs: [
+      { id: "media", label: "Media & Source" },
+      { id: "playback", label: "Playback" },
+      { id: "layout", label: "Ratio & Style" },
+    ],
+    deleteLabel: "this video",
+  },
+  youtube: {
+    badge: "YouTube",
+    badgeClass: "bg-red-50 text-red-700 border-red-200/60",
+    tabs: [
+      { id: "youtube", label: "YouTube Video" },
+      { id: "settings", label: "Embed Settings" },
+      { id: "layout", label: "Ratio & Style" },
+    ],
+    deleteLabel: "this YouTube video",
+  },
+  icon: {
+    badge: "Icon",
+    badgeClass: "bg-purple-50 text-purple-700 border-purple-200/60",
+    tabs: [
+      { id: "icon", label: "Icon Picker" },
+      { id: "style", label: "Style & Link" },
+    ],
+    deleteLabel: "this icon",
+  },
+  logo: {
+    badge: "Logo",
+    badgeClass: "bg-sky-50 text-sky-700 border-sky-200/60",
+    tabs: [
+      { id: "logo", label: "Brand Logo" },
+      { id: "style", label: "Style & Link" },
+    ],
+    deleteLabel: "this logo",
+  },
+  plus: {
+    badge: "Add Media",
+    badgeClass: "bg-teal-50 text-teal-700 border-teal-200/60",
+    tabs: [
+      { id: "insert", label: "Insert Media" },
+    ],
+    deleteLabel: "this placeholder",
   },
   generic: {
     badge: "Element",

@@ -190,12 +190,12 @@ export const fetchSectionHistory = (id: string) =>
   }>(`/api/v1/sections/${requireId(id)}`);
 
 /**
- * Uploads an image to the backend.
+ * Uploads an image or video to the backend.
  *
  * multipart, so it does not go through `api()` — that sets a JSON content type
  * and would strip the multipart boundary the server needs to parse the body.
  */
-export async function uploadImage(file: File): Promise<{ url: string }> {
+export async function uploadMedia(file: File): Promise<{ url: string }> {
   const body = new FormData();
   body.append("file", file);
 
@@ -226,6 +226,8 @@ export async function uploadImage(file: File): Promise<{ url: string }> {
   // all — a broken image with a URL that looks perfectly reasonable.
   return { url: absoluteAssetUrl(payload.url) };
 }
+
+export const uploadImage = uploadMedia;
 
 /** Resolves a backend-relative asset path against the backend's origin. */
 export function absoluteAssetUrl(url: string): string {

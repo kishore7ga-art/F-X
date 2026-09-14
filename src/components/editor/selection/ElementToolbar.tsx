@@ -27,9 +27,14 @@ import type {
   GenericProps,
   HeadingLevel,
   HeadingProps,
+  IconProps,
   ImageProps,
   LeafType,
+  LogoProps,
+  PlusProps,
   TextProps,
+  VideoProps,
+  YouTubeProps,
 } from "@/lib/editor/element-resolver";
 
 import { ToolbarUtilities } from "../ToolbarUtilities";
@@ -37,6 +42,11 @@ import { TOOLBAR_CONFIG } from "./toolbar-config";
 import { CardPanel } from "./panels/CardPanel";
 import { ButtonPanel } from "./panels/ButtonPanel";
 import { ImagePanel } from "./panels/ImagePanel";
+import { VideoPanel } from "./panels/VideoPanel";
+import { YouTubePanel } from "./panels/YouTubePanel";
+import { IconPanel } from "./panels/IconPanel";
+import { LogoPanel } from "./panels/LogoPanel";
+import { PlusPanel } from "./panels/PlusPanel";
 import { HeadingPanel } from "./panels/HeadingPanel";
 import { TextPanel } from "./panels/TextPanel";
 import { ContainerPanel } from "./panels/ContainerPanel";
@@ -54,6 +64,9 @@ export interface ElementToolbarProps {
   onChange: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
   onChangeHeadingLevel?: (level: HeadingLevel) => void;
   onSelectAncestor?: (path: string, type: ElementType) => void;
+  onReplaceMedia?: (targetType: "image" | "video" | "youtube", initialProps?: Record<string, unknown>) => void;
+  onReplacePlus?: (targetType: "image" | "video" | "youtube" | "icon" | "button", initialProps?: Record<string, unknown>) => void;
+  onChangeIcon?: (iconName: string) => void;
   onDuplicate?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
@@ -90,6 +103,9 @@ export function ElementToolbar({
   onChange,
   onChangeHeadingLevel,
   onSelectAncestor,
+  onReplaceMedia,
+  onReplacePlus,
+  onChangeIcon,
   onDuplicate,
   onMoveUp,
   onMoveDown,
@@ -123,7 +139,52 @@ export function ElementToolbar({
       case "button":
         return <ButtonPanel tab={tab} props={meta as unknown as ButtonProps} onChange={(p) => onChange<"button">(id, p)} />;
       case "image":
-        return <ImagePanel tab={tab} props={meta as unknown as ImageProps} onChange={(p) => onChange<"image">(id, p)} />;
+        return (
+          <ImagePanel
+            tab={tab}
+            props={meta as unknown as ImageProps}
+            onChange={(p) => onChange<"image">(id, p)}
+            onReplaceMedia={onReplaceMedia}
+          />
+        );
+      case "video":
+        return (
+          <VideoPanel
+            tab={tab}
+            props={meta as unknown as VideoProps}
+            onChange={(p) => onChange<"video">(id, p)}
+            onReplaceMedia={onReplaceMedia}
+          />
+        );
+      case "youtube":
+        return (
+          <YouTubePanel
+            tab={tab}
+            props={meta as unknown as YouTubeProps}
+            onChange={(p) => onChange<"youtube">(id, p)}
+            onReplaceMedia={onReplaceMedia}
+          />
+        );
+      case "icon":
+        return (
+          <IconPanel
+            tab={tab}
+            props={meta as unknown as IconProps}
+            onChange={(p) => onChange<"icon">(id, p)}
+            onChangeIcon={onChangeIcon}
+          />
+        );
+      case "logo":
+        return <LogoPanel tab={tab} props={meta as unknown as LogoProps} onChange={(p) => onChange<"logo">(id, p)} />;
+      case "plus":
+        return (
+          <PlusPanel
+            tab={tab}
+            props={meta as unknown as PlusProps}
+            onChange={(p) => onChange<"plus">(id, p)}
+            onInsertElement={onReplacePlus}
+          />
+        );
       case "heading":
         return (
           <HeadingPanel

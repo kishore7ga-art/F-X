@@ -35,7 +35,12 @@ export type ElementType =
   | "heading"
   | "text"
   | "image"
+  | "video"
+  | "youtube"
+  | "icon"
+  | "logo"
   | "button"
+  | "plus"
   | "generic";
 
 export interface SelectionAncestor {

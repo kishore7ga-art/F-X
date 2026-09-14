@@ -26,6 +26,11 @@ const RING: Record<Exclude<ElementType, "section">, string> = {
   text: "#f59e0b",
   button: "#6366f1",
   image: "#10b981",
+  video: "#06b6d4",
+  youtube: "#ef4444",
+  icon: "#a855f7",
+  logo: "#0284c7",
+  plus: "#14b8a6",
   generic: "#64748b",
 };
 

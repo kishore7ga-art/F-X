@@ -30,6 +30,13 @@ import {
   parseElementId,
   pathOf,
   readElementProps,
+  replaceImageWithVideoDom,
+  replaceImageWithYouTubeDom,
+  replacePlusWithElementDom,
+  replaceVideoWithImageDom,
+  replaceVideoWithYouTubeDom,
+  replaceYouTubeWithImageDom,
+  replaceYouTubeWithVideoDom,
   resolvePath,
   resolveTarget,
   type ElementPropsByType,
@@ -86,6 +93,12 @@ export interface SelectionController {
   handleElementSelect: (target: HTMLElement, sectionIndex: number) => boolean;
   /** Applies props to the element now and writes the section shortly after. */
   updateElementProps: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
+  /** Replaces an element's media type (e.g. image <-> video <-> youtube) */
+  replaceMedia: (targetType: "image" | "video" | "youtube", initialProps?: Record<string, unknown>) => void;
+  /** Replaces a plus placeholder with a real element */
+  replacePlusWith: (targetType: "image" | "video" | "youtube" | "icon" | "button", initialProps?: Record<string, unknown>) => void;
+  /** Changes the icon SVG of an icon element */
+  changeIcon: (iconName: string) => void;
   /** Removes the selected element from its section. */
   deleteElement: () => void;
   /** Duplicates the selected element in its section. */
@@ -477,6 +490,93 @@ export function useSelectionController({
     };
   }, [selection.selectedId, contextMenu.isOpen, resolveSelected, clearSelection, deleteElement]);
 
+  const replaceMedia = useCallback(
+    (targetType: "image" | "video" | "youtube", initialProps?: Record<string, unknown>) => {
+      const state = selectionStore.getState();
+      if (!state.selectedId || !state.sectionId) return;
+      const element = resolveSelected(state);
+      if (!element) return;
+      flushCommit();
+
+      let newEl: HTMLElement;
+      if (targetType === "video") {
+        newEl = replaceImageWithVideoDom(element, initialProps);
+      } else if (targetType === "youtube") {
+        newEl = replaceImageWithYouTubeDom(element, initialProps);
+      } else {
+        newEl = replaceVideoWithImageDom(element, initialProps);
+      }
+
+      const sectionId = state.sectionId;
+      const box = canvasBoxFor(sectionId);
+      if (box) {
+        const newPath = pathOf(newEl, box);
+        const newId = elementId(sectionId, newPath);
+        const ancestors = getAncestorHierarchy(
+          newEl,
+          box,
+          sectionId,
+          sectionsRef.current.find((s) => s.id === sectionId)?.title || "Section",
+        );
+        const meta = {
+          ...readElementProps(targetType as LeafType, newEl),
+          tag: newEl.tagName.toLowerCase(),
+        };
+        selectionStore.selectElement(newId, targetType, sectionId, meta, ancestors);
+      }
+      closeContextMenu();
+      writeSectionNow(sectionId);
+    },
+    [resolveSelected, flushCommit, closeContextMenu, writeSectionNow],
+  );
+
+  const replacePlusWith = useCallback(
+    (targetType: "image" | "video" | "youtube" | "icon" | "button", initialProps?: Record<string, unknown>) => {
+      const state = selectionStore.getState();
+      if (!state.selectedId || !state.sectionId) return;
+      const element = resolveSelected(state);
+      if (!element) return;
+      flushCommit();
+
+      const newEl = replacePlusWithElementDom(element, targetType, initialProps);
+      const sectionId = state.sectionId;
+      const box = canvasBoxFor(sectionId);
+      if (box) {
+        const newPath = pathOf(newEl, box);
+        const newId = elementId(sectionId, newPath);
+        const ancestors = getAncestorHierarchy(
+          newEl,
+          box,
+          sectionId,
+          sectionsRef.current.find((s) => s.id === sectionId)?.title || "Section",
+        );
+        const meta = {
+          ...readElementProps(targetType as LeafType, newEl),
+          tag: newEl.tagName.toLowerCase(),
+        };
+        selectionStore.selectElement(newId, targetType, sectionId, meta, ancestors);
+      }
+      closeContextMenu();
+      writeSectionNow(sectionId);
+    },
+    [resolveSelected, flushCommit, closeContextMenu, writeSectionNow],
+  );
+
+  const changeIcon = useCallback(
+    (iconName: string) => {
+      const state = selectionStore.getState();
+      if (!state.selectedId || !state.sectionId || state.type !== "icon") return;
+      const element = resolveSelected(state);
+      if (!element) return;
+      flushCommit();
+
+      element.setAttribute("data-icon-name", iconName);
+      selectionStore.updateElementProps(state.selectedId, { iconName });
+      writeSectionNow(state.sectionId);
+    },
+    [resolveSelected, flushCommit, writeSectionNow],
+  );
+
   return {
     selection,
     contextMenu,
@@ -485,6 +585,9 @@ export function useSelectionController({
     handleContextMenu,
     handleElementSelect,
     updateElementProps,
+    replaceMedia,
+    replacePlusWith,
+    changeIcon,
     deleteElement,
     duplicateElement,
     moveElement,

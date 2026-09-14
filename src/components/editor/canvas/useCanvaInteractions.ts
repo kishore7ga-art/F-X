@@ -679,10 +679,11 @@ export function useCanvaInteractions({
       return;
     }
 
+    e?.preventDefault();
+    e?.stopPropagation();
+
     const textTarget = findTextEditableElement(target);
     if (textTarget) {
-      e?.preventDefault();
-      e?.stopPropagation();
       activateTextEditing(textTarget, sectionIndex, e);
       return;
     }
