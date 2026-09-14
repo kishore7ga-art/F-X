@@ -5,10 +5,14 @@ import { useMemo, useState } from "react";
 import { PaletteRamp } from "@/components/editor/PaletteRamp";
 import {
   DEFAULT_DUAL_THEMES,
+  DEFAULT_PALETTES,
   EDITOR_FONTS,
   hexToRgb,
   calculateOppositeContrast,
   presetBrandTokens,
+  getMatchingPaletteId,
+  normalizeHex,
+  isValidHex,
   type EditorThemeTokens,
 } from "@/lib/editor-themes";
 import {
@@ -58,21 +62,9 @@ interface DrawerPanelProps {
   /** `tokens` accompany a preset: the brand colours it starts the tenant on. */
   onPaletteSelect?: (paletteId: string, tokens?: EditorThemeTokens) => void;
   onFontSelect?: (fontId: string) => void;
-  /**
-   * The theme and font currently applied.
-   *
-   * Passed in rather than held here. The drawer used to keep its own
-   * `selectedPalette`, so the tick moved when you clicked but reverted to
-   * "Academic Navy" the next time the drawer was opened — it had no idea what
-   * the canvas was actually showing, and the two disagreed after any reload.
-   */
   activePaletteId?: string | null;
   activeFontId?: string | null;
-  /**
-   * Deletes a page for real — from the database, not just from this list.
-   */
   onPageDelete?: (pageSlug: string) => Promise<void>;
-  /** The pages that exist, from the editor's own store. */
   pages?: { slug: string; title: string }[];
   activePageSlug?: string;
   customThemeTokens?: EditorThemeTokens | null;
@@ -101,42 +93,64 @@ const INITIAL_PAGES: PageItem[] = [
 ];
 
 /**
- * One brand colour: a preview box that opens the native picker, a hex field,
- * and the curated swatches. The colours tab renders it twice — once for the
- * primary colour, once for the secondary — so each can be changed on its own
- * without touching the other.
+ * Brand color card control: interactive color swatch, direct editable hex input,
+ * color picker panel trigger, and curated swatches.
  */
 function BrandColorCard({
   title,
   label,
+  description,
   value,
   active,
   onChange,
 }: {
   title: string;
   label: string;
+  description?: string;
   value: string;
   active: boolean;
   onChange: (hex: string) => void;
 }) {
-  const isWhite = value.toLowerCase() === "#ffffff";
+  const normValue = normalizeHex(value);
+  const isLight = calculateOppositeContrast(normValue).isLight;
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [typedHex, setTypedHex] = useState(normValue);
+
+  // Synchronize internal typedHex when external value changes
+  useMemo(() => {
+    setTypedHex(normValue);
+  }, [normValue]);
+
+  const handleInputChange = (raw: string) => {
+    setTypedHex(raw);
+    let val = raw.trim();
+    if (!val.startsWith("#")) val = "#" + val;
+    if (isValidHex(val)) {
+      onChange(normalizeHex(val));
+    }
+  };
+
   return (
     <div
       style={{
         border: "1px solid #e2e8f0",
         borderRadius: "14px",
-        padding: "12px",
+        padding: "14px",
         backgroundColor: "#ffffff",
         display: "flex",
         flexDirection: "column",
-        gap: "10px",
+        gap: "12px",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <Palette style={{ width: "14px", height: "14px", color: "#0f172a" }} />
-          <span style={{ fontSize: "12px", fontWeight: 900, color: "#0f172a" }}>{title}</span>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Palette style={{ width: "14px", height: "14px", color: "#0f172a" }} />
+            <span style={{ fontSize: "12.5px", fontWeight: 900, color: "#0f172a" }}>{title}</span>
+          </div>
+          {description && (
+            <p style={{ margin: "2px 0 0", fontSize: "11px", color: "#64748b" }}>{description}</p>
+          )}
         </div>
         {active && (
           <span
@@ -145,8 +159,9 @@ function BrandColorCard({
               fontWeight: 800,
               color: "#16a34a",
               backgroundColor: "#dcfce7",
-              padding: "2px 6px",
+              padding: "2px 8px",
               borderRadius: "6px",
+              border: "1px solid #bbf7d0",
             }}
           >
             Custom
@@ -160,7 +175,7 @@ function BrandColorCard({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "6px 8px",
+          padding: "8px 10px",
           borderRadius: "10px",
           backgroundColor: "#f8fafc",
           border: "1px solid #e2e8f0",
@@ -178,10 +193,10 @@ function BrandColorCard({
               width: "32px",
               height: "32px",
               borderRadius: "8px",
-              backgroundColor: value,
-              border: isWhite ? "2px solid #cbd5e1" : "2px solid #ffffff",
+              backgroundColor: normValue,
+              border: isLight ? "2px solid #cbd5e1" : "2px solid #ffffff",
               boxShadow: pickerOpen
-                ? "0 0 0 2px #3b82f6, 0 2px 5px rgba(0,0,0,0.12)"
+                ? "0 0 0 2px #0f172a, 0 2px 5px rgba(0,0,0,0.12)"
                 : "0 2px 5px rgba(0,0,0,0.12), 0 0 0 1px #cbd5e1",
               cursor: "pointer",
               padding: 0,
@@ -195,16 +210,18 @@ function BrandColorCard({
         {/* Hex Input */}
         <input
           type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={typedHex}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onBlur={() => setTypedHex(normValue)}
           maxLength={9}
+          aria-label={`${label} Hex Code`}
           style={{
-            width: "80px",
-            height: "28px",
+            width: "85px",
+            height: "30px",
             borderRadius: "6px",
-            border: "1px solid #cbd5e1",
+            border: isValidHex(typedHex) ? "1px solid #cbd5e1" : "1px solid #ef4444",
             padding: "0 6px",
-            fontSize: "11px",
+            fontSize: "12px",
             fontFamily: "monospace",
             fontWeight: 700,
             color: "#0f172a",
@@ -214,7 +231,7 @@ function BrandColorCard({
         />
       </div>
 
-      {pickerOpen && <ColorPickerPanel value={value} onChange={onChange} />}
+      {pickerOpen && <ColorPickerPanel value={normValue} onChange={onChange} />}
 
       {/* The Circle Shape Color Palette Swatches */}
       <div
@@ -226,13 +243,14 @@ function BrandColorCard({
         }}
       >
         {CURATED_ACCENT_SWATCHES.map((swatch) => {
-          const isSelected = value.toLowerCase() === swatch.hex.toLowerCase();
+          const isSelected = normValue.toLowerCase() === swatch.hex.toLowerCase();
           return (
             <button
               key={swatch.hex}
               type="button"
               onClick={() => onChange(swatch.hex)}
               title={swatch.name}
+              aria-label={swatch.name}
               style={{
                 width: "26px",
                 height: "26px",
@@ -240,7 +258,7 @@ function BrandColorCard({
                 backgroundColor: swatch.hex,
                 border: isSelected ? "2.5px solid #0f172a" : swatch.hex.toLowerCase() === "#ffffff" ? "1px solid #cbd5e1" : "2px solid #ffffff",
                 boxShadow: isSelected
-                  ? "0 0 0 2px #3b82f6, 0 2px 4px rgba(0,0,0,0.2)"
+                  ? "0 0 0 2px #0f172a, 0 2px 4px rgba(0,0,0,0.2)"
                   : "0 1px 3px rgba(0,0,0,0.15), 0 0 0 1px #cbd5e1",
                 cursor: "pointer",
                 transform: isSelected ? "scale(1.1)" : "scale(1)",
@@ -304,38 +322,28 @@ export function DrawerPanel({
     }
   }, [customThemeTokens]);
 
-  const currentAccentColor = customTokens.primary || customTokens.accent || "#000000";
-  /**
-   * Falls back to the primary until the tenant picks one, so the secondary
-   * card never shows a colour the canvas is not actually using.
-   */
-  const currentSecondaryColor = customTokens.secondary || currentAccentColor;
+  const currentPrimaryColor = normalizeHex(customTokens.primary || customTokens.accent || "#000000");
+  const currentSecondaryColor = normalizeHex(customTokens.secondary || (customTokens.surface ? customTokens.surface : "#FFFFFF"));
 
-  /**
-   * What the active preset would give, so each card can say when the tenant
-   * has replaced that colour. With no preset chosen there is nothing to differ
-   * from, and any customisation at all counts.
-   */
-  const activePreset = DEFAULT_DUAL_THEMES.find((t) => t.id === activePaletteId);
-  const presetDefaults = activePreset ? presetBrandTokens(activePreset) : null;
-  const differsFromPreset = (value: string, presetValue: string | undefined) =>
-    presetValue ? value.toLowerCase() !== presetValue.toLowerCase() : activePaletteId === "custom";
+  const derivedMatchingPaletteId = useMemo(() => {
+    return getMatchingPaletteId(currentPrimaryColor, currentSecondaryColor);
+  }, [currentPrimaryColor, currentSecondaryColor]);
 
-  /**
-   * Changing a colour keeps the preset selected: the canvas still wears its
-   * surfaces and text, with just this colour overridden on top.
-   */
+  const effectivePaletteId = derivedMatchingPaletteId !== "custom" ? derivedMatchingPaletteId : (activePaletteId ?? "custom");
+  const isCustomPaletteActive = effectivePaletteId === "custom";
+
   const commitCustomTokens = (updated: EditorThemeTokens) => {
     setCustomTokens(updated);
     onCustomThemeChange?.(updated);
   };
 
   const handleApplyAccentColor = (newHex: string) => {
-    const contrast = calculateOppositeContrast(newHex);
+    const norm = normalizeHex(newHex);
+    const contrast = calculateOppositeContrast(norm);
     commitCustomTokens({
       ...customTokens,
-      primary: newHex,
-      accent: newHex,
+      primary: norm,
+      accent: norm,
       accentSoft: contrast.softBackground,
       onAccent: contrast.textColor,
       accentBorder: contrast.borderColor,
@@ -343,10 +351,11 @@ export function DrawerPanel({
   };
 
   const handleApplySecondaryColor = (newHex: string) => {
-    const contrast = calculateOppositeContrast(newHex);
+    const norm = normalizeHex(newHex);
+    const contrast = calculateOppositeContrast(norm);
     commitCustomTokens({
       ...customTokens,
-      secondary: newHex,
+      secondary: norm,
       onSecondary: contrast.textColor,
       secondaryBorder: contrast.borderColor,
     });
@@ -499,7 +508,8 @@ export function DrawerPanel({
    * white on black — replacing whatever was customised on the previous one.
    */
   const handleSelectPalette = (paletteId: string, paletteName: string) => {
-    const selectedTheme = DEFAULT_DUAL_THEMES.find((t) => t.id === paletteId);
+    const norm = paletteId === "black-white" ? "black-and-white" : paletteId === "white-black" ? "white-and-black" : paletteId;
+    const selectedTheme = DEFAULT_DUAL_THEMES.find((t) => t.id === norm || t.id === paletteId);
     const tokens = selectedTheme ? presetBrandTokens(selectedTheme) : undefined;
     if (tokens) setCustomTokens(tokens);
     onPaletteSelect?.(paletteId, tokens);
@@ -766,67 +776,172 @@ export function DrawerPanel({
 
           {/* COLORS TAB */}
           {activeTab === "colors" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {/* SECTION 1: WHITE & BLACK / BLACK & WHITE PRESETS */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {DEFAULT_DUAL_THEMES.map((theme) => {
-                  const isSelected = activePaletteId === theme.id;
-                  return (
-                    <button
-                      key={theme.id}
-                      type="button"
-                      onClick={() => handleSelectPalette(theme.id, theme.name)}
-                      aria-pressed={isSelected}
-                      style={{
-                        padding: "10px 14px",
-                        borderRadius: "12px",
-                        backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
-                        border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
-                        cursor: "pointer",
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        textAlign: "left",
-                        width: "100%",
-                        transition: "all 0.15s ease",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        {/* A ramp rather than two circles. Two circles were
-                            `base` and `accent`, so every dark theme looked like
-                            "a dark circle and a coloured circle" and choosing
-                            between five of them meant reading the names. */}
-                        <PaletteRamp theme={theme} />
-                        <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
-                          {theme.name}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <div style={{ width: "20px", height: "20px", borderRadius: "50%", backgroundColor: "#0f172a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Check style={{ width: "12px", height: "12px", color: "#ffffff", strokeWidth: 3 }} />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {/* Header Title & Subtitle */}
+              <div>
+                <h2 style={{ fontSize: "14px", fontWeight: 900, color: "#0f172a", margin: 0 }}>
+                  Color Theme
+                </h2>
+                <p style={{ fontSize: "11.5px", color: "#64748b", margin: "3px 0 0" }}>
+                  Choose a default palette or customize your website colors.
+                </p>
               </div>
 
-              {/* SECTION 2: PRIMARY & SECONDARY BRAND COLOURS */}
-              <BrandColorCard
-                title="Customize Primary Color"
-                label="Primary"
-                value={currentAccentColor}
-                active={differsFromPreset(currentAccentColor, presetDefaults?.primary)}
-                onChange={handleApplyAccentColor}
-              />
-              <BrandColorCard
-                title="Customize Secondary Color"
-                label="Secondary"
-                value={currentSecondaryColor}
-                active={differsFromPreset(currentSecondaryColor, presetDefaults?.secondary)}
-                onChange={handleApplySecondaryColor}
-              />
+              {/* SECTION A: DEFAULT PALETTES */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <h3 style={{ fontSize: "12px", fontWeight: 800, color: "#1e293b", margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Default Palettes
+                  </h3>
+                  <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0" }}>
+                    Start with a predefined color combination or customize it for your website.
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {DEFAULT_DUAL_THEMES.map((theme) => {
+                    const isSelected =
+                      effectivePaletteId === theme.id ||
+                      (theme.id === "black-and-white" && effectivePaletteId === "black-white") ||
+                      (theme.id === "white-and-black" && effectivePaletteId === "white-black");
+                    const isBW = theme.id === "black-and-white" || (theme.id as string) === "black-white";
+                    const primColor = isBW ? "#000000" : "#FFFFFF";
+                    const secColor = isBW ? "#FFFFFF" : "#000000";
+
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => handleSelectPalette(theme.id, theme.name)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleSelectPalette(theme.id, theme.name);
+                          }
+                        }}
+                        aria-pressed={isSelected}
+                        style={{
+                          padding: "12px 14px",
+                          borderRadius: "14px",
+                          backgroundColor: isSelected ? "#f8fafc" : "#ffffff",
+                          border: isSelected ? "2px solid #0f172a" : "1px solid #e2e8f0",
+                          boxShadow: isSelected ? "0 2px 6px rgba(15,23,42,0.08)" : "none",
+                          cursor: "pointer",
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          textAlign: "left",
+                          width: "100%",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {/* Two distinct color swatches */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                              <span
+                                style={{
+                                  width: "18px",
+                                  height: "18px",
+                                  borderRadius: "50%",
+                                  backgroundColor: primColor,
+                                  border: primColor === "#FFFFFF" ? "1.5px solid #cbd5e1" : "1.5px solid rgba(0,0,0,0.15)",
+                                  boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                }}
+                                title={`Primary: ${primColor}`}
+                              />
+                              <span
+                                style={{
+                                  width: "18px",
+                                  height: "18px",
+                                  borderRadius: "50%",
+                                  backgroundColor: secColor,
+                                  border: secColor === "#FFFFFF" ? "1.5px solid #cbd5e1" : "1.5px solid rgba(0,0,0,0.15)",
+                                  boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                                }}
+                                title={`Secondary: ${secColor}`}
+                              />
+                            </div>
+                            <span style={{ fontSize: "13px", fontWeight: 800, color: "#0f172a" }}>
+                              {theme.name}
+                            </span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#64748b" }}>
+                            <span>{theme.description}</span>
+                            <span>•</span>
+                            <span style={{ fontFamily: "monospace", fontSize: "10.5px" }}>
+                              {primColor} / {secColor}
+                            </span>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div
+                            style={{
+                              width: "22px",
+                              height: "22px",
+                              borderRadius: "50%",
+                              backgroundColor: "#0f172a",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <Check style={{ width: "13px", height: "13px", color: "#ffffff", strokeWidth: 3 }} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* SECTION B: CUSTOMIZE COLORS */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <h3 style={{ fontSize: "12px", fontWeight: 800, color: "#1e293b", margin: 0, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                      Customize Colors
+                    </h3>
+                    <p style={{ fontSize: "11px", color: "#64748b", margin: "2px 0 0" }}>
+                      Fine-tune your website colors to match your brand.
+                    </p>
+                  </div>
+                  {isCustomPaletteActive && (
+                    <span
+                      style={{
+                        fontSize: "9.5px",
+                        fontWeight: 800,
+                        color: "#047857",
+                        backgroundColor: "#d1fae5",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        border: "1px solid #a7f3d0",
+                      }}
+                    >
+                      Custom Palette
+                    </span>
+                  )}
+                </div>
+
+                <BrandColorCard
+                  title="Primary Color"
+                  label="Primary"
+                  description="Main brand accents & primary elements"
+                  value={currentPrimaryColor}
+                  active={isCustomPaletteActive}
+                  onChange={handleApplyAccentColor}
+                />
+                <BrandColorCard
+                  title="Secondary Color"
+                  label="Secondary"
+                  description="Secondary brand highlights & surfaces"
+                  value={currentSecondaryColor}
+                  active={isCustomPaletteActive}
+                  onChange={handleApplySecondaryColor}
+                />
+              </div>
             </div>
           )}
 

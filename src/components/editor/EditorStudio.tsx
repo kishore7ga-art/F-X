@@ -63,6 +63,10 @@ import {
   themeStylesheet,
   customThemeCss,
   tokenizeSectionHtml,
+  getMatchingPaletteId,
+  normalizeThemeId,
+  presetBrandTokens,
+  themeById,
   type EditorFontId,
   type EditorThemeId,
   type EditorThemeTokens,
@@ -835,7 +839,14 @@ export function EditorStudio({
     void (async () => {
       const stored = await fetchTheme();
       if (cancelled) return;
-      if (stored.themeId) setThemeId(stored.themeId as EditorThemeId);
+      if (stored.themeId) {
+        const norm = normalizeThemeId(stored.themeId);
+        setThemeId(norm);
+        if (!customThemeTokens) {
+          const defaultTokens = presetBrandTokens(themeById(norm));
+          persistCustomThemeTokens(defaultTokens);
+        }
+      }
       if (stored.fontId) setFontId(stored.fontId as EditorFontId);
     })();
     return () => {
@@ -898,30 +909,31 @@ export function EditorStudio({
    * tenant last customised on top of a different preset.
    */
   const handlePaletteSelect = useCallback((next: string, tokens?: EditorThemeTokens) => {
-    setThemeId(next as EditorThemeId);
-    if (tokens) persistCustomThemeTokens(tokens);
+    const norm = normalizeThemeId(next);
+    const resolvedTokens = tokens ?? presetBrandTokens(themeById(norm));
+    setThemeId(norm);
+    persistCustomThemeTokens(resolvedTokens);
     // Fire-and-forget: the theme is already applied on screen, and a failed
     // write is reported by `saveTheme` rather than reverting what the user sees.
-    void saveTheme({ themeId: next }).catch((error) => {
+    void saveTheme({ themeId: norm }).catch((error) => {
       console.error("[editor] could not save the theme selection:", error);
     });
   }, []);
 
   /**
-   * The preset stays selected. Replacing the primary or secondary colour is an
-   * override layered on the preset's template, not a different theme — that is
-   * what keeps the White & Black surfaces while the buttons turn blue. Only a
-   * tenant customising with no preset chosen at all needs the `custom` id, and
-   * only so the canvas carries a `data-xite-theme` for the override to attach to.
+   * Derives whether the updated brand tokens match a default preset or custom,
+   * keeping the selected palette state and customization controls in exact sync.
    */
   const handleCustomThemeChange = useCallback(
     (tokens: EditorThemeTokens) => {
       persistCustomThemeTokens(tokens);
-      if (themeId) return;
-      setThemeId("custom");
-      void saveTheme({ themeId: "custom" }).catch(() => {});
+      const primary = tokens.primary || tokens.accent || "#000000";
+      const secondary = tokens.secondary || tokens.surface || "#ffffff";
+      const matching = getMatchingPaletteId(primary, secondary);
+      setThemeId(matching);
+      void saveTheme({ themeId: matching }).catch(() => {});
     },
-    [themeId],
+    [],
   );
 
   const handleFontSelect = useCallback((next: string) => {

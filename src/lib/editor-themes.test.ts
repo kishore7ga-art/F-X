@@ -17,6 +17,8 @@ import {
   calculateOppositeContrast,
   presetBrandTokens,
   DEFAULT_DUAL_THEMES,
+  DEFAULT_PALETTES,
+  getMatchingPaletteId,
 } from "@/lib/editor-themes";
 
 describe("the editor themes", () => {
@@ -387,26 +389,47 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
     assert.ok(!css.includes('[data-xite-theme="custom"]'));
   });
 
-  it("starts a preset's primary on its accent and its secondary on its base", () => {
+  it("correctly derives Black & White and White & Black preset brand tokens", () => {
     const whiteAndBlack = DEFAULT_DUAL_THEMES.find((t) => t.id === "white-and-black")!;
     const blackAndWhite = DEFAULT_DUAL_THEMES.find((t) => t.id === "black-and-white")!;
 
+    const bw = presetBrandTokens(blackAndWhite);
+    assert.equal(bw.primary, "#000000");
+    assert.equal(bw.secondary, "#ffffff");
+    assert.equal(bw.onAccent, "#ffffff");
+    assert.equal(bw.onSecondary, "#000000");
+    assert.equal(bw.secondaryBorder, "#cbd5e1");
+    assert.equal(bw.surface, blackAndWhite.tokens.surface);
+    assert.equal(bw.text, blackAndWhite.tokens.text);
+
     const wb = presetBrandTokens(whiteAndBlack);
-    assert.equal(wb.primary, "#000000");
-    assert.equal(wb.secondary, "#ffffff");
-    assert.equal(wb.onAccent, "#ffffff");
-    assert.equal(wb.onSecondary, "#000000");
-    // A white secondary needs a visible edge on a white surface.
-    assert.equal(wb.secondaryBorder, "#cbd5e1");
-    // The template itself is untouched: still the preset's surfaces and text.
+    assert.equal(wb.primary, "#ffffff");
+    assert.equal(wb.secondary, "#000000");
+    assert.equal(wb.onAccent, "#000000");
+    assert.equal(wb.onSecondary, "#ffffff");
+    assert.equal(wb.accentBorder, "#cbd5e1");
     assert.equal(wb.surface, whiteAndBlack.tokens.surface);
     assert.equal(wb.text, whiteAndBlack.tokens.text);
+  });
 
-    const bw = presetBrandTokens(blackAndWhite);
-    assert.equal(bw.primary, "#ffffff");
-    assert.equal(bw.secondary, "#000000");
-    assert.equal(bw.onAccent, "#000000");
-    assert.equal(bw.onSecondary, "#ffffff");
+  it("derives matching default palette IDs or custom accurately", () => {
+    assert.equal(getMatchingPaletteId("#000000", "#ffffff"), "black-and-white");
+    assert.equal(getMatchingPaletteId("#000", "#fff"), "black-and-white");
+    assert.equal(getMatchingPaletteId("#ffffff", "#000000"), "white-and-black");
+    assert.equal(getMatchingPaletteId("#fff", "#000"), "white-and-black");
+    assert.equal(getMatchingPaletteId("#ff0000", "#ffffff"), "custom");
+    assert.equal(getMatchingPaletteId("#000000", "#00ff00"), "custom");
+    assert.equal(getMatchingPaletteId("#123456", "#654321"), "custom");
+  });
+
+  it("exposes DEFAULT_PALETTES with correct specification", () => {
+    assert.equal(DEFAULT_PALETTES.length, 2);
+    assert.equal(DEFAULT_PALETTES[0]!.id, "black-white");
+    assert.equal(DEFAULT_PALETTES[0]!.primary, "#000000");
+    assert.equal(DEFAULT_PALETTES[0]!.secondary, "#FFFFFF");
+    assert.equal(DEFAULT_PALETTES[1]!.id, "white-black");
+    assert.equal(DEFAULT_PALETTES[1]!.primary, "#FFFFFF");
+    assert.equal(DEFAULT_PALETTES[1]!.secondary, "#000000");
   });
 });
 
