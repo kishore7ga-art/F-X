@@ -347,18 +347,14 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
     assert.ok(css.includes("--xite-secondary-border: #cbd5e1;"));
   });
 
-  it("paints the second CTA in a group with the secondary colour, above the primary rules", () => {
+  it("does not automatically force background colors onto buttons or CTAs", () => {
     const css = themeStylesheet(".xite-site-canvas");
-    // A CTA that follows a sibling CTA is secondary…
-    assert.ok(css.includes('~ :is(a[class*="btn"], a[class*="button"], a[class*="cta"])'));
-    // …and so is anything named secondary.
-    assert.ok(css.includes('[class*="secondary"]'));
-    // Lifted above the `button:not(...)...` primary rule by two id-level :not()s.
-    assert.ok(css.includes('[data-xite-theme]:not(#_):not(#_)'));
-    assert.ok(css.includes("background-color: var(--xite-secondary, #2563eb) !important;"));
+    assert.ok(!css.includes("background-color: var(--xite-accent) !important;"));
+    assert.ok(!css.includes("background-color: var(--xite-secondary"));
+    assert.ok(!css.includes("button[data-custom-styled]"));
   });
 
-  it("scopes customThemeCss to brand accents and does not clobber section surfaces", () => {
+  it("scopes customThemeCss to brand tokens without forcing button backgrounds", () => {
     const css = customThemeCss(".xite-site-canvas", {
       surface: "#ffffff",
       surfaceRaised: "#f1f5f9",
@@ -380,8 +376,7 @@ describe("calculateOppositeContrast — WCAG AAA contrast matching algorithm", (
     assert.ok(css.includes("--xite-accent-border: #cbd5e1;"));
     assert.ok(css.includes("--xite-secondary: #000000;"));
     assert.ok(css.includes("--xite-on-secondary: #ffffff;"));
-    // Ensures child text in themed buttons inherits contrast color
-    assert.ok(css.includes("color: var(--xite-on-accent, #ffffff) !important;"));
+    assert.ok(!css.includes("background-color: var(--xite-accent) !important;"));
   });
 
   it("layers customThemeCss over whichever preset is chosen, not only `custom`", () => {

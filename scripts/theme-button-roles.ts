@@ -99,7 +99,7 @@ const run = async () => {
   };
 
   check("dropdown trigger", false, painted(results.trigger.bg), `bg=${results.trigger.bg} — must not be the accent`);
-  check("real CTA still themed", true, painted(results.cta.bg), `bg=${results.cta.bg} — must be the accent`);
+  check("regular CTA not auto-themed", false, painted(results.cta.bg), `bg=${results.cta.bg} — must not have automatic theme background`);
   check("mobile disclosure", false, painted(results.mobile.bg), `bg=${results.mobile.bg} — panel named "list", caught by the chevron`);
   check("menu-toggle control", false, painted(results.hamburger.bg), `bg=${results.hamburger.bg}`);
   check("aria-expanded control", false, painted(results.aria.bg), `bg=${results.aria.bg}`);
