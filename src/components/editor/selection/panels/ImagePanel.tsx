@@ -7,7 +7,7 @@ import { Youtube } from "../YouTubeIcon";
 import { ApiError, uploadMedia } from "@/lib/api-client";
 import type { AspectRatio, ImageProps, ObjectFit, ShadowPreset } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { ColorField, Divider, Field, PxField, Segmented, SelectField, TextField } from "./fields";
+import { ColorField, Divider, Field, PxField, RangeField, Segmented, SelectField, TextField } from "./fields";
 
 /** Mirrors the server's ceiling so the answer arrives before the upload does. */
 const MAX_MEDIA_BYTES = 30 * 1024 * 1024;
@@ -169,6 +169,7 @@ export function ImagePanel({ tab, props, onChange, onReplaceMedia }: ExtendedIma
         <Divider />
         <Segmented label="Shadow" value={props.shadow || "none"} options={SHADOWS} onChange={(shadow) => onChange({ shadow })} />
         <PxField label="Padding" value={props.padding || "0px"} max={48} onChange={(padding) => onChange({ padding })} />
+        <RangeField label="Opacity" value={props.opacity || "1"} min={0.1} max={1} step={0.05} fallback={1} onChange={(opacity) => onChange({ opacity })} />
       </>
     );
   }

@@ -2556,6 +2556,9 @@ export function EditorStudio({
             canUndo={editor.canUndo}
             canRedo={editor.canRedo}
             onDeleteSection={handleDeleteSection}
+            onDuplicateSection={handleDuplicateSection}
+            onMoveUp={handleMoveUp}
+            onMoveDown={handleMoveDown}
             saveStatus={editor.saveStatus}
             saveError={editor.saveError}
             isOverlaid={isHeaderOverlaid(customToolbarSection)}

@@ -105,6 +105,9 @@ type Props = {
   canUndo?: boolean;
   canRedo?: boolean;
   onDeleteSection?: () => void;
+  onDuplicateSection?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   saveStatus?: SaveStatus;
   saveError?: string | null;
   isOverlaid?: boolean;
@@ -287,6 +290,9 @@ export function SectionToolbar({
   canUndo = false,
   canRedo = false,
   onDeleteSection,
+  onDuplicateSection,
+  onMoveUp,
+  onMoveDown,
   saveStatus = "idle",
   saveError = null,
   isOverlaid = false,
@@ -616,6 +622,43 @@ export function SectionToolbar({
             <span className="text-[10px] font-semibold text-slate-400">
               {position.index + 1}/{position.total}
             </span>
+
+            {/* Quick action buttons: Duplicate, Move Up, Move Down */}
+            <div className="flex items-center gap-0.5 pl-1.5 border-l border-slate-200/80">
+              {onDuplicateSection && (
+                <button
+                  type="button"
+                  onClick={onDuplicateSection}
+                  title="Duplicate this section"
+                  aria-label="Duplicate section"
+                  className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 cursor-pointer"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {onMoveUp && position.index > 0 && (
+                <button
+                  type="button"
+                  onClick={onMoveUp}
+                  title="Move section up"
+                  aria-label="Move section up"
+                  className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 cursor-pointer"
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {onMoveDown && position.index < position.total - 1 && (
+                <button
+                  type="button"
+                  onClick={onMoveDown}
+                  title="Move section down"
+                  aria-label="Move section down"
+                  className="flex items-center justify-center rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition shrink-0 cursor-pointer"
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Embedded Group Tabs in horizontal mode */}

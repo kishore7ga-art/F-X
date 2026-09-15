@@ -21,6 +21,21 @@ const DIRECTION_OPTIONS = [
   { value: "column" as const, label: "Column (Vertical)" },
 ];
 
+const ALIGN_OPTIONS = [
+  { value: "stretch", label: "Stretch" },
+  { value: "start", label: "Start" },
+  { value: "center", label: "Center" },
+  { value: "end", label: "End" },
+];
+
+const JUSTIFY_OPTIONS = [
+  { value: "flex-start", label: "Start" },
+  { value: "center", label: "Center" },
+  { value: "flex-end", label: "End" },
+  { value: "space-between", label: "Between" },
+  { value: "space-around", label: "Around" },
+];
+
 export function ContainerPanel({ tab, props, onChange }: PanelProps<ContainerProps>) {
   if (tab === "layout") {
     return (
@@ -32,12 +47,26 @@ export function ContainerPanel({ tab, props, onChange }: PanelProps<ContainerPro
           onChange={(display) => onChange({ display })}
         />
         {props.display === "flex" && (
-          <Segmented
-            label="Direction"
-            value={props.flexDirection}
-            options={DIRECTION_OPTIONS}
-            onChange={(flexDirection) => onChange({ flexDirection })}
-          />
+          <>
+            <Segmented
+              label="Direction"
+              value={props.flexDirection}
+              options={DIRECTION_OPTIONS}
+              onChange={(flexDirection) => onChange({ flexDirection })}
+            />
+            <Segmented
+              label="Align"
+              value={props.alignItems || "stretch"}
+              options={ALIGN_OPTIONS}
+              onChange={(alignItems) => onChange({ alignItems })}
+            />
+            <Segmented
+              label="Justify"
+              value={props.justifyContent || "flex-start"}
+              options={JUSTIFY_OPTIONS}
+              onChange={(justifyContent) => onChange({ justifyContent })}
+            />
+          </>
         )}
         <Divider />
         <Field label="Gap">

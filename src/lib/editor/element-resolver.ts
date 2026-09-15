@@ -64,6 +64,8 @@ export interface ButtonProps {
   background: string;
   textColor: string;
   radius: string;
+  text?: string;
+  newTab?: boolean;
 }
 
 export type AspectRatio = "auto" | "1 / 1" | "4 / 3" | "3 / 2" | "16 / 9" | "21 / 9";
@@ -82,6 +84,7 @@ export interface ImageProps {
   width?: string;
   height?: string;
   padding?: string;
+  opacity?: string;
 }
 
 export interface VideoProps {
@@ -100,6 +103,7 @@ export interface VideoProps {
   shadow?: ShadowPreset;
   width?: string;
   height?: string;
+  padding?: string;
 }
 
 export interface YouTubeProps {
@@ -147,6 +151,7 @@ export interface PlusProps {
 }
 
 export type TextAlign = "left" | "center" | "right" | "justify";
+export type TextTransform = "none" | "uppercase" | "capitalize" | "lowercase";
 
 export type HeadingLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
 
@@ -159,6 +164,8 @@ export interface HeadingProps {
   lineHeight: string;
   letterSpacing: string;
   margin: string;
+  fontFamily?: string;
+  textTransform?: TextTransform;
 }
 
 export interface TextProps {
@@ -169,6 +176,8 @@ export interface TextProps {
   lineHeight: string;
   letterSpacing: string;
   margin: string;
+  fontFamily?: string;
+  textTransform?: TextTransform;
 }
 
 export interface ContainerProps {
@@ -885,6 +894,7 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
       return props as ElementPropsByType[T];
     }
     case "button": {
+      const targetAttr = el.getAttribute("target");
       const props: ButtonProps = {
         href: el.getAttribute("href") ?? el.getAttribute("data-href") ?? "",
         variant: buttonVariant(el),
@@ -892,6 +902,8 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         background: hexFromValue(el.style.backgroundColor || style.backgroundColor, "#2563eb"),
         textColor: hexFromValue(el.style.color || style.color, "#ffffff"),
         radius: el.style.borderRadius || style.borderRadius || "8px",
+        text: el.textContent?.trim() ?? "",
+        newTab: targetAttr === "_blank",
       };
       return props as ElementPropsByType[T];
     }
@@ -910,6 +922,7 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         width: el.style.width || style.width || "auto",
         height: el.style.height || style.height || "auto",
         padding: el.style.padding || style.padding || "0px",
+        opacity: el.style.opacity || style.opacity || "1",
       };
       return props as ElementPropsByType[T];
     }
@@ -933,6 +946,7 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         shadow: shadowPreset(el),
         width: el.style.width || style.width || "100%",
         height: el.style.height || style.height || "auto",
+        padding: el.style.padding || style.padding || "0px",
       };
       return props as ElementPropsByType[T];
     }
@@ -1012,6 +1026,8 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         lineHeight: el.style.lineHeight || "",
         letterSpacing: el.style.letterSpacing || "",
         margin: el.style.margin || style.margin || "0px",
+        fontFamily: el.style.fontFamily || style.fontFamily || "",
+        textTransform: ((el.style.textTransform || style.textTransform || "none") as TextTransform),
       };
       return props as ElementPropsByType[T];
     }
@@ -1024,6 +1040,8 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         lineHeight: el.style.lineHeight || "",
         letterSpacing: el.style.letterSpacing || "",
         margin: el.style.margin || style.margin || "0px",
+        fontFamily: el.style.fontFamily || style.fontFamily || "",
+        textTransform: ((el.style.textTransform || style.textTransform || "none") as TextTransform),
       };
       return props as ElementPropsByType[T];
     }
@@ -1162,6 +1180,41 @@ function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
     applyLinkTarget(el, p.href);
   }
 
+  if (p.newTab !== undefined) {
+    if (p.newTab) {
+      el.setAttribute("target", "_blank");
+      el.setAttribute("rel", "noopener noreferrer");
+    } else {
+      el.removeAttribute("target");
+      el.removeAttribute("rel");
+    }
+  }
+
+  if (p.text !== undefined) {
+    let replaced = false;
+    const childNodes = el.childNodes ? Array.from(el.childNodes) : [];
+    for (const node of childNodes) {
+      if (node && node.nodeType === 3 && node.textContent?.trim()) {
+        node.textContent = p.text;
+        replaced = true;
+        break;
+      }
+    }
+    if (!replaced) {
+      const span = el.querySelector ? el.querySelector("span:not([aria-hidden])") : null;
+      if (span) {
+        span.textContent = p.text;
+      } else if (!el.children || el.children.length === 0) {
+        el.textContent = p.text;
+      } else if (typeof document !== "undefined") {
+        const textNode = document.createTextNode(p.text);
+        el.appendChild(textNode);
+      } else {
+        el.textContent = p.text;
+      }
+    }
+  }
+
   const variant = p.variant ?? (el.getAttribute("data-xite-variant") as ButtonVariant | null) ?? "solid";
   if (p.variant !== undefined) el.setAttribute("data-xite-variant", p.variant);
 
@@ -1239,6 +1292,7 @@ function applyImage(el: HTMLElement, p: Partial<ImageProps>): void {
   if (p.width !== undefined) set(el, "width", p.width);
   if (p.height !== undefined) set(el, "height", p.height);
   if (p.padding !== undefined) set(el, "padding", p.padding);
+  if (p.opacity !== undefined) set(el, "opacity", p.opacity);
 }
 
 function applyVideo(el: HTMLElement, p: Partial<VideoProps>): void {
@@ -1313,6 +1367,7 @@ function applyVideo(el: HTMLElement, p: Partial<VideoProps>): void {
   }
   if (p.width !== undefined) set(el, "width", p.width);
   if (p.height !== undefined) set(el, "height", p.height);
+  if (p.padding !== undefined) set(el, "padding", p.padding);
 }
 
 function applyYouTube(el: HTMLElement, p: Partial<YouTubeProps>): void {
@@ -1435,6 +1490,8 @@ function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
   set(el, "margin", p.margin);
+  if (p.fontFamily !== undefined) set(el, "font-family", p.fontFamily);
+  if (p.textTransform !== undefined) set(el, "text-transform", p.textTransform);
 }
 
 function applyText(el: HTMLElement, p: Partial<TextProps>): void {
@@ -1445,6 +1502,8 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
   set(el, "margin", p.margin);
+  if (p.fontFamily !== undefined) set(el, "font-family", p.fontFamily);
+  if (p.textTransform !== undefined) set(el, "text-transform", p.textTransform);
 }
 
 function applyContainer(el: HTMLElement, p: Partial<ContainerProps>): void {

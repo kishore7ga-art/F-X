@@ -2,7 +2,7 @@
 
 import type { ButtonProps, ButtonSize, ButtonVariant } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { ColorField, Divider, Field, PxField, Segmented, TextField } from "./fields";
+import { ColorField, Divider, Field, PxField, Segmented, TextField, Toggle } from "./fields";
 
 const VARIANTS: ReadonlyArray<{ value: ButtonVariant; label: string; title: string }> = [
   { value: "solid", label: "Solid", title: "Filled with the accent colour" },
@@ -17,15 +17,30 @@ const SIZES: ReadonlyArray<{ value: ButtonSize; label: string }> = [
 ];
 
 export function ButtonPanel({ props, onChange }: PanelProps<ButtonProps>) {
-  // One row, no tabs: a button has few enough settings to see all at once.
-  // The label is edited on the canvas, and whether the link opens a new tab
-  // follows from the link itself (another site: new tab; a page of this
-  // site: in place) — see `lib/editor/link-target.ts`.
   return (
     <>
-      <Field label="Link">
-        <TextField value={props.href} placeholder="/admissions or https://…" onCommit={(href) => onChange({ href })} width="w-[220px]" mono />
+      <Field label="Label">
+        <TextField
+          value={props.text ?? ""}
+          placeholder="Button text"
+          onCommit={(text) => onChange({ text })}
+          width="w-[120px]"
+        />
       </Field>
+      <Field label="Link">
+        <TextField
+          value={props.href}
+          placeholder="/admissions or https://…"
+          onCommit={(href) => onChange({ href })}
+          width="w-[180px]"
+          mono
+        />
+      </Field>
+      <Toggle
+        label="New tab"
+        checked={Boolean(props.newTab)}
+        onChange={(newTab) => onChange({ newTab })}
+      />
       <Divider />
       <Segmented label="Style" value={props.variant} options={VARIANTS} onChange={(variant) => onChange({ variant })} />
       <Segmented label="Size" value={props.size} options={SIZES} onChange={(size) => onChange({ size })} />

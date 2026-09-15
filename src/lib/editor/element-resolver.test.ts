@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   applyCardLayoutDom,
+  applyElementProps,
   buildYouTubeEmbedUrl,
   classify,
   elementId,
@@ -200,7 +201,7 @@ describe("findImageElement & media resolution", () => {
         },
         remove(...classes: string[]) {
           const current = (node.className || "").split(/\s+/).filter(Boolean);
-          const filtered = current.filter((c) => !classes.includes(c));
+          const filtered = current.filter((c: string) => !classes.includes(c));
           node.className = filtered.join(" ");
           nodeAttrs.class = node.className;
         },
@@ -233,6 +234,10 @@ describe("findImageElement & media resolution", () => {
       setAttribute(name: string, val: string) {
         nodeAttrs[name] = val;
         if (name === "class") node.className = val;
+      },
+      removeAttribute(name: string) {
+        delete nodeAttrs[name];
+        if (name === "class") node.className = "";
       },
       closest(selector: string) {
         let cur: any = this;
@@ -507,6 +512,50 @@ describe("findImageElement & media resolution", () => {
     assert.equal(content.children.length, 2);
     assert.equal(content.children[0], heading);
     assert.equal(content.children[1], desc);
+  });
+
+  it("applies button label and newTab target/rel safely", () => {
+    const btn = createMockNode("a", { href: "/apply" }, "Old Label");
+    applyElementProps("button", btn, { text: "Apply Now", newTab: true });
+    assert.equal(btn.getAttribute("target"), "_blank");
+    assert.equal(btn.getAttribute("rel"), "noopener noreferrer");
+    assert.equal(btn.textContent, "Apply Now");
+
+    applyElementProps("button", btn, { newTab: false });
+    assert.equal(btn.getAttribute("target"), null);
+    assert.equal(btn.getAttribute("rel"), null);
+  });
+
+  it("applies typography font-family and text-transform to headings and text", () => {
+    const heading = createMockNode("h2", {}, "Engineering");
+    applyElementProps("heading", heading, {
+      fontFamily: "'Outfit', sans-serif",
+      textTransform: "uppercase",
+    });
+    assert.equal(heading.style["font-family"], "'Outfit', sans-serif");
+    assert.equal(heading.style["text-transform"], "uppercase");
+
+    const text = createMockNode("p", {}, "Description text");
+    applyElementProps("text", text, {
+      fontFamily: "'Inter', sans-serif",
+      textTransform: "capitalize",
+    });
+    assert.equal(text.style["font-family"], "'Inter', sans-serif");
+    assert.equal(text.style["text-transform"], "capitalize");
+  });
+
+  it("applies alignment, justification to flex containers and opacity to images", () => {
+    const container = createMockNode("div", { class: "flex" });
+    applyElementProps("container", container, {
+      alignItems: "center",
+      justifyContent: "space-between",
+    });
+    assert.equal(container.style["align-items"], "center");
+    assert.equal(container.style["justify-content"], "space-between");
+
+    const img = createMockNode("img", { src: "photo.jpg" });
+    applyElementProps("image", img, { opacity: "0.8" });
+    assert.equal(img.style["opacity"], "0.8");
   });
 });
 

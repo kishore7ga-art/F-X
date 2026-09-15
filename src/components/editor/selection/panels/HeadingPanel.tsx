@@ -2,7 +2,7 @@
 
 import type { HeadingLevel, HeadingProps, TextAlign } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { ColorField, Divider, Field, PxField, RangeField, Segmented, TextField } from "./fields";
+import { ColorField, Divider, Field, PxField, RangeField, Segmented, SelectField, TextField } from "./fields";
 
 const HEADING_LEVELS: ReadonlyArray<{ value: HeadingLevel; label: string; title: string }> = [
   { value: "h1", label: "H1", title: "Heading 1 (Main page title)" },
@@ -27,6 +27,22 @@ const WEIGHTS = [
   { value: "700", label: "Bold" },
   { value: "800", label: "Extra Bold" },
   { value: "900", label: "Black" },
+];
+
+const FONT_FAMILIES = [
+  { value: "", label: "Default Font" },
+  { value: "'Inter', sans-serif", label: "Inter" },
+  { value: "'Outfit', sans-serif", label: "Outfit" },
+  { value: "'Plus Jakarta Sans', sans-serif", label: "Plus Jakarta" },
+  { value: "'Playfair Display', serif", label: "Playfair" },
+  { value: "Georgia, serif", label: "Georgia" },
+  { value: "ui-monospace, monospace", label: "Monospace" },
+];
+
+const TRANSFORMS = [
+  { value: "none" as const, label: "Aa", title: "Normal case" },
+  { value: "uppercase" as const, label: "AA", title: "Uppercase" },
+  { value: "capitalize" as const, label: "Ab", title: "Capitalize" },
 ];
 
 export interface HeadingPanelProps extends PanelProps<HeadingProps> {
@@ -56,6 +72,12 @@ export function HeadingPanel({ tab, props, onChange, onChangeLevel }: HeadingPan
   if (tab === "type") {
     return (
       <>
+        <SelectField
+          label="Font"
+          value={props.fontFamily || ""}
+          options={FONT_FAMILIES}
+          onChange={(fontFamily) => onChange({ fontFamily })}
+        />
         <ColorField
           label="Color"
           value={props.color}
@@ -76,6 +98,12 @@ export function HeadingPanel({ tab, props, onChange, onChangeLevel }: HeadingPan
           onChange={(fontWeight) => onChange({ fontWeight })}
         />
         <Divider />
+        <Segmented
+          label="Case"
+          value={props.textTransform || "none"}
+          options={TRANSFORMS}
+          onChange={(textTransform) => onChange({ textTransform })}
+        />
         <Segmented
           label="Align"
           value={props.textAlign || "left"}

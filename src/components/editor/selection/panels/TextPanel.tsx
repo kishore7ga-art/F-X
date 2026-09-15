@@ -2,7 +2,7 @@
 
 import type { TextAlign, TextProps } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { ColorField, Divider, Field, PxField, RangeField, Segmented, TextField } from "./fields";
+import { ColorField, Divider, Field, PxField, RangeField, Segmented, SelectField, TextField } from "./fields";
 
 const ALIGNMENTS: ReadonlyArray<{ value: TextAlign; label: string; title: string }> = [
   { value: "left", label: "Left", title: "Align left" },
@@ -19,10 +19,32 @@ const WEIGHTS = [
   { value: "700", label: "Bold" },
 ];
 
+const FONT_FAMILIES = [
+  { value: "", label: "Default Font" },
+  { value: "'Inter', sans-serif", label: "Inter" },
+  { value: "'Outfit', sans-serif", label: "Outfit" },
+  { value: "'Plus Jakarta Sans', sans-serif", label: "Plus Jakarta" },
+  { value: "'Playfair Display', serif", label: "Playfair" },
+  { value: "Georgia, serif", label: "Georgia" },
+  { value: "ui-monospace, monospace", label: "Monospace" },
+];
+
+const TRANSFORMS = [
+  { value: "none" as const, label: "Aa", title: "Normal case" },
+  { value: "uppercase" as const, label: "AA", title: "Uppercase" },
+  { value: "capitalize" as const, label: "Ab", title: "Capitalize" },
+];
+
 export function TextPanel({ tab, props, onChange }: PanelProps<TextProps>) {
   if (tab === "type") {
     return (
       <>
+        <SelectField
+          label="Font"
+          value={props.fontFamily || ""}
+          options={FONT_FAMILIES}
+          onChange={(fontFamily) => onChange({ fontFamily })}
+        />
         <ColorField
           label="Text color"
           value={props.color}
@@ -43,6 +65,12 @@ export function TextPanel({ tab, props, onChange }: PanelProps<TextProps>) {
           onChange={(fontWeight) => onChange({ fontWeight })}
         />
         <Divider />
+        <Segmented
+          label="Case"
+          value={props.textTransform || "none"}
+          options={TRANSFORMS}
+          onChange={(textTransform) => onChange({ textTransform })}
+        />
         <Segmented
           label="Align"
           value={props.textAlign || "left"}
