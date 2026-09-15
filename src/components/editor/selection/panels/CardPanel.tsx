@@ -320,7 +320,7 @@ export function CardPanel({
     );
   }
 
-  if (tab === "style") {
+  if (tab === "style" || tab === "border") {
     return (
       <>
         <ColorField
@@ -331,13 +331,6 @@ export function CardPanel({
         />
         <PxField label="Corner radius" value={props.radius} max={48} onChange={(radius) => onChange({ radius })} />
         <Divider />
-        <Segmented label="Shadow" value={props.shadow} options={SHADOW_OPTIONS} onChange={(shadow) => onChange({ shadow })} />
-      </>
-    );
-  }
-  if (tab === "border") {
-    return (
-      <>
         <PxField label="Border width" value={props.borderWidth} max={8} onChange={(borderWidth) => onChange({ borderWidth })} />
         <ColorField
           label="Border colour"
@@ -345,6 +338,8 @@ export function CardPanel({
           fallback="#e2e8f0"
           onChange={(borderColor) => onChange({ borderColor })}
         />
+        <Divider />
+        <Segmented label="Shadow" value={props.shadow} options={SHADOW_OPTIONS} onChange={(shadow) => onChange({ shadow })} />
       </>
     );
   }
