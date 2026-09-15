@@ -41,25 +41,6 @@ const SHADOW_OPTIONS = SHADOW_PRESETS.map((value) => ({
   label: value === "none" ? "None" : value.toUpperCase(),
 }));
 
-const LAYOUT_OPTIONS = [
-  { value: "vertical", label: "Stacked" },
-  { value: "horizontal-left", label: "Media Left" },
-  { value: "horizontal-right", label: "Media Right" },
-];
-
-const MEDIA_WIDTH_OPTIONS = [
-  { value: "compact", label: "Compact (130px)" },
-  { value: "1/4", label: "25% (1/4)" },
-  { value: "1/3", label: "33% (1/3)" },
-  { value: "1/2", label: "50% (1/2)" },
-];
-
-const ALIGN_OPTIONS = [
-  { value: "start", label: "Top" },
-  { value: "center", label: "Center" },
-  { value: "end", label: "Bottom" },
-];
-
 const MAX_MEDIA_BYTES = 30 * 1024 * 1024;
 
 export function CardPanel({
@@ -334,38 +315,6 @@ export function CardPanel({
 
         {status && (
           <span className="text-[10px] font-semibold text-slate-500 whitespace-nowrap">{status}</span>
-        )}
-      </div>
-    );
-  }
-
-  if (tab === "layout") {
-    return (
-      <div className="flex items-center gap-3 flex-wrap">
-        <Segmented
-          label="Card Layout"
-          value={props.layout || "vertical"}
-          options={LAYOUT_OPTIONS}
-          onChange={(val) => onChange({ layout: val as "vertical" | "horizontal-left" | "horizontal-right" })}
-        />
-
-        {(props.layout === "horizontal-left" || props.layout === "horizontal-right" || props.hasMedia) && (
-          <>
-            <Divider />
-            <Segmented
-              label="Media Sizing"
-              value={props.mediaWidth || "1/3"}
-              options={MEDIA_WIDTH_OPTIONS}
-              onChange={(val) => onChange({ mediaWidth: val as "compact" | "1/4" | "1/3" | "1/2" })}
-            />
-            <Divider />
-            <Segmented
-              label="Align Content"
-              value={props.align || "center"}
-              options={ALIGN_OPTIONS}
-              onChange={(val) => onChange({ align: val as "start" | "center" | "end" })}
-            />
-          </>
         )}
       </div>
     );
