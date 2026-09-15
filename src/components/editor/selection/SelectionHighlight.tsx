@@ -37,13 +37,18 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Youtube } from "./YouTubeIcon";
 import { uploadMedia, ApiError } from "@/lib/api-client";
+import { calculateOppositeContrast } from "@/lib/editor-themes";
 
 import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
 import {
   extractYouTubeVideoId,
+  BUTTON_SIZE_PADDING,
+  BUTTON_SIZE_FONT,
+  type ButtonSize,
   type ElementPropsByType,
   type HeadingLevel,
   type LeafType,
@@ -248,6 +253,11 @@ export function SelectionHighlight({
   const [showYoutubeMediaPopover, setShowYoutubeMediaPopover] = useState(false);
   const [showYoutubePlaybackPopover, setShowYoutubePlaybackPopover] = useState(false);
 
+  // Button specific popover states
+  const [showButtonLinkPopover, setShowButtonLinkPopover] = useState(false);
+  const [showButtonFillPopover, setShowButtonFillPopover] = useState(false);
+  const [showButtonRadiusPopover, setShowButtonRadiusPopover] = useState(false);
+
   useEffect(() => {
     let frame = 0;
     let observed: HTMLElement | null = null;
@@ -309,6 +319,9 @@ export function SelectionHighlight({
       setShowVideoPlaybackPopover(false);
       setShowYoutubeMediaPopover(false);
       setShowYoutubePlaybackPopover(false);
+      setShowButtonLinkPopover(false);
+      setShowButtonFillPopover(false);
+      setShowButtonRadiusPopover(false);
     };
     window.addEventListener("pointerdown", handleOutside);
     window.addEventListener("mousedown", handleOutside);
@@ -950,6 +963,79 @@ export function SelectionHighlight({
       } else {
         onUpdateProps(selectedId, { [prop]: value } as any);
       }
+    }
+  };
+
+  // Button-specific props & live mutation handlers
+  const buttonHref = meta.href ?? (activeElement instanceof HTMLAnchorElement ? activeElement.getAttribute("href") || "" : activeElement?.getAttribute("data-href") || "");
+  const buttonNewTab = Boolean(meta.newTab ?? activeElement?.getAttribute("target") === "_blank");
+  const buttonSize = ((meta.size || activeElement?.getAttribute("data-xite-size") || "md") as ButtonSize);
+  const buttonFill = meta.background ?? (activeElement ? (activeElement.style.backgroundColor ? (activeElement.style.backgroundColor.startsWith("#") ? activeElement.style.backgroundColor : "#2563eb") : "#2563eb") : "#2563eb");
+  const buttonRadius = meta.radius || (activeElement?.style.borderRadius || "50px");
+
+  const handleButtonHrefChange = (href: string) => {
+    const el = resolveElement();
+    if (el) {
+      if (el.tagName === "A") el.setAttribute("href", href);
+      else el.setAttribute("data-href", href);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { href } as any);
+    }
+  };
+
+  const handleButtonNewTabToggle = (newTab: boolean) => {
+    const el = resolveElement();
+    if (el) {
+      if (newTab) {
+        el.setAttribute("target", "_blank");
+        el.setAttribute("rel", "noopener noreferrer");
+      } else {
+        el.removeAttribute("target");
+        el.removeAttribute("rel");
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { newTab } as any);
+    }
+  };
+
+  const handleButtonSizeChange = (size: ButtonSize) => {
+    const el = resolveElement();
+    if (el) {
+      el.setAttribute("data-xite-size", size);
+      el.style.setProperty("padding", BUTTON_SIZE_PADDING[size], "important");
+      el.style.setProperty("font-size", BUTTON_SIZE_FONT[size], "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { size } as any);
+    }
+  };
+
+  const handleButtonFillChange = (hex: string) => {
+    const el = resolveElement();
+    const autoTextColor = calculateOppositeContrast(hex).textColor;
+    if (el) {
+      el.style.setProperty("background-color", hex, "important");
+      el.style.setProperty("color", autoTextColor, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { background: hex, textColor: autoTextColor } as any);
+    }
+  };
+
+  const handleButtonRadiusChange = (rad: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("border-radius", rad, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { radius: rad } as any);
     }
   };
 
@@ -2983,6 +3069,273 @@ export function SelectionHighlight({
                     onDelete();
                   }}
                   title="Delete YouTube Video"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : null}
+
+        {/* 8. Button Element Floating Pop Toolbar */}
+        {effectiveType === "button" ? (
+          <>
+            {/* 1. Link Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowButtonLinkPopover(!showButtonLinkPopover);
+                  setShowButtonFillPopover(false);
+                  setShowButtonRadiusPopover(false);
+                }}
+                title="Button Link"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showButtonLinkPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span>Link</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showButtonLinkPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Destination URL</div>
+                  <input
+                    type="text"
+                    defaultValue={buttonHref}
+                    placeholder="/admissions or https://…"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleButtonHrefChange((e.target as HTMLInputElement).value);
+                        setShowButtonLinkPopover(false);
+                      }
+                    }}
+                    onBlur={(e) => handleButtonHrefChange(e.target.value)}
+                    className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-400"
+                  />
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                    <span className="text-[11px] font-medium text-slate-600">Open in new tab</span>
+                    <button
+                      type="button"
+                      onClick={() => handleButtonNewTabToggle(!buttonNewTab)}
+                      className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors cursor-pointer ${
+                        buttonNewTab ? "bg-indigo-600" : "bg-slate-200"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                          buttonNewTab ? "translate-x-3.5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Size Selector (S, M, L) */}
+            <div className="flex items-center bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 gap-0.5">
+              {(["sm", "md", "lg"] as const).map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => handleButtonSizeChange(sz)}
+                  className={`h-7 w-7 rounded-lg text-[11px] font-semibold uppercase flex items-center justify-center transition cursor-pointer ${
+                    buttonSize === sz
+                      ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200/80"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                  }`}
+                >
+                  {sz}
+                </button>
+              ))}
+            </div>
+
+            {/* 3. Fill Color Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowButtonFillPopover(!showButtonFillPopover);
+                  setShowButtonLinkPopover(false);
+                  setShowButtonRadiusPopover(false);
+                }}
+                title="Button Fill Color"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 ${
+                  showButtonFillPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <span
+                  className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0 shadow-xs"
+                  style={{ backgroundColor: buttonFill }}
+                />
+                <span>Fill</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showButtonFillPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Fill Color</div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {PRESET_COLORS.map((hex) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => {
+                          handleButtonFillChange(hex);
+                          setShowButtonFillPopover(false);
+                        }}
+                        className={`w-7 h-7 rounded-lg border transition cursor-pointer relative flex items-center justify-center ${
+                          buttonFill.toLowerCase() === hex.toLowerCase()
+                            ? "border-slate-900 scale-110 shadow-xs ring-2 ring-indigo-500/20"
+                            : "border-slate-200/80 hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: hex }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    <input
+                      type="color"
+                      value={buttonFill.startsWith("#") ? buttonFill : "#2563eb"}
+                      onChange={(e) => handleButtonFillChange(e.target.value)}
+                      className="w-6 h-6 rounded-md border border-slate-200 cursor-pointer p-0 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={buttonFill}
+                      onChange={(e) => handleButtonFillChange(e.target.value)}
+                      placeholder="#2563eb"
+                      className="flex-1 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] font-mono text-slate-700 outline-none uppercase"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Radius Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowButtonRadiusPopover(!showButtonRadiusPopover);
+                  setShowButtonLinkPopover(false);
+                  setShowButtonFillPopover(false);
+                }}
+                title="Corner Radius"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showButtonRadiusPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <Square className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Radius</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showButtonRadiusPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2 z-[100000] w-60 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                    <span>Corner Radius</span>
+                    <span className="font-mono text-slate-600 font-semibold">{buttonRadius}</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                    {["0px", "8px", "16px", "24px", "50px"].map((rad) => (
+                      <button
+                        key={rad}
+                        type="button"
+                        onClick={() => {
+                          handleButtonRadiusChange(rad);
+                          setShowButtonRadiusPopover(false);
+                        }}
+                        className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
+                          buttonRadius === rad
+                            ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                        }`}
+                      >
+                        {rad === "50px" ? "Full" : rad.replace("px", "")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* Actions: Duplicate, Move Up, Move Down, Delete */}
+            <div className="flex items-center gap-0.5">
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicate Button"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveUp && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp();
+                  }}
+                  title="Move Button Up"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown();
+                  }}
+                  title="Move Button Down"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete Button"
                   className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
