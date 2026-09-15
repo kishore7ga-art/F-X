@@ -3,9 +3,9 @@
 /**
  * The interactive outline and floating toolbar around the selected element.
  *
- * Renders directly over the canvas bounding box, providing all contextual
- * text formatting (tags, fonts, sizes, line height, letter spacing, colors,
- * alignment, styles, reset) right on the element where the user is working.
+ * Renders directly over the canvas bounding box, providing contextual
+ * text formatting, direct interactive resizing (8 handles for width & height),
+ * and free drag-to-reposition anywhere within the section.
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -23,12 +23,11 @@ import {
   ArrowDown,
   Trash2,
   X,
-  Edit3,
-  Check,
   ChevronDown,
   Type,
-  Palette,
   MoreHorizontal,
+  GripVertical,
+  Move,
 } from "lucide-react";
 
 import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
@@ -195,6 +194,11 @@ export function SelectionHighlight({
   const [showTagPopover, setShowTagPopover] = useState(false);
   const [showSizePopover, setShowSizePopover] = useState(false);
   const [showMorePopover, setShowMorePopover] = useState(false);
+
+  // Resize and reposition states
+  const [isResizing, setIsResizing] = useState(false);
+  const [isRepositioning, setIsRepositioning] = useState(false);
+  const [liveDimensions, setLiveDimensions] = useState<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
     let frame = 0;
@@ -467,14 +471,115 @@ export function SelectionHighlight({
     }
   };
 
+  // Direct Interactive Resize Controller (8-directional resize handles)
+  const handleResizeStart = (
+    direction: "e" | "w" | "s" | "n" | "se" | "sw" | "ne" | "nw",
+    e: React.PointerEvent
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = resolveElement();
+    if (!el) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origWidth = el.offsetWidth;
+    const origHeight = el.offsetHeight;
+    setIsResizing(true);
+    setLiveDimensions({ width: origWidth, height: origHeight });
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      const deltaX = moveEv.clientX - startX;
+      const deltaY = moveEv.clientY - startY;
+      let newW = origWidth;
+      let newH = origHeight;
+
+      if (direction.includes("e")) {
+        newW = Math.max(60, origWidth + deltaX);
+        el.style.width = `${newW}px`;
+        el.style.maxWidth = "100%";
+      } else if (direction.includes("w")) {
+        newW = Math.max(60, origWidth - deltaX);
+        el.style.width = `${newW}px`;
+      }
+
+      if (direction.includes("s")) {
+        newH = Math.max(24, origHeight + deltaY);
+        el.style.height = `${newH}px`;
+      } else if (direction.includes("n")) {
+        newH = Math.max(24, origHeight - deltaY);
+        el.style.height = `${newH}px`;
+      }
+
+      setLiveDimensions({ width: Math.round(newW), height: Math.round(newH) });
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      setIsResizing(false);
+      setLiveDimensions(null);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (selectedId && onUpdateProps && effectiveType) {
+        onUpdateProps(selectedId, {
+          width: el.style.width,
+          height: el.style.height,
+        } as any);
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
+
+  // Direct Reposition / Drag Anywhere Controller
+  const handleRepositionStart = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = resolveElement();
+    if (!el) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    setIsRepositioning(true);
+
+    const computedStyle = window.getComputedStyle(el);
+    if (computedStyle.position === "static") {
+      el.style.position = "relative";
+    }
+
+    const currentTransform = el.style.transform || "";
+    const match = currentTransform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+    const initialTranslateX = match ? parseFloat(match[1]) : 0;
+    const initialTranslateY = match ? parseFloat(match[2]) : 0;
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      const deltaX = moveEv.clientX - startX;
+      const deltaY = moveEv.clientY - startY;
+      const newX = initialTranslateX + deltaX;
+      const newY = initialTranslateY + deltaY;
+
+      el.style.transform = `translate(${Math.round(newX)}px, ${Math.round(newY)}px)`;
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      setIsRepositioning(false);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
+
   // Compute horizontal positioning so toolbar is anchored at the END (right side) of the element
   const toolbarRight = Math.max(420, Math.min(rect.right, window.innerWidth - 12));
 
   return (
     <>
-      {/* 1. Bounding Outline Box */}
+      {/* 1. Bounding Outline Box with Interactive Resize Handles & Reposition Badge */}
       <div
-        aria-hidden
         className="pointer-events-none fixed z-[9998] transition-all duration-75"
         style={{
           top: rect.top - 2,
@@ -483,18 +588,84 @@ export function SelectionHighlight({
           height: rect.height + 4,
           border: `2px solid ${colour}`,
           borderRadius: 6,
-          boxShadow: `0 0 0 3px ${colour}33`,
+          boxShadow: isResizing || isRepositioning ? `0 0 0 4px ${colour}55` : `0 0 0 3px ${colour}33`,
         }}
       >
-        {/* Badge */}
-        <span
-          className={`absolute ${
-            isNearTop ? "top-1 left-1" : "-top-5 left-0"
-          } rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs select-none`}
+        {/* Badge & Drag-to-Reposition Handle */}
+        <div
+          onPointerDown={handleRepositionStart}
+          title="Drag to reposition text board anywhere in section"
+          className={`pointer-events-auto absolute ${
+            isNearTop ? "top-1 left-1" : "-top-6 left-0"
+          } rounded-md px-2 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-md flex items-center gap-1 cursor-grab active:cursor-grabbing select-none hover:scale-105 transition-transform`}
           style={{ background: colour }}
         >
-          {label}
-        </span>
+          <GripVertical className="w-2.5 h-2.5 opacity-80" />
+          <span>{label}</span>
+          <Move className="w-2.5 h-2.5 opacity-80 ml-0.5" />
+        </div>
+
+        {/* Live Dimension Tooltip during resize */}
+        {liveDimensions && (
+          <div className="pointer-events-none absolute -bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-lg bg-slate-900/95 text-white text-[10px] font-mono font-bold shadow-xl border border-slate-700 select-none whitespace-nowrap z-50">
+            {liveDimensions.width} × {liveDimensions.height} px
+          </div>
+        )}
+
+        {/* 8 Interactive Resize Handles */}
+        {/* Corner Handles */}
+        <div
+          onPointerDown={(e) => handleResizeStart("nw", e)}
+          title="Resize Top-Left"
+          className="pointer-events-auto absolute -top-1.5 -left-1.5 w-3 h-3 bg-white rounded-full shadow-md cursor-nwse-resize hover:scale-125 transition-transform"
+          style={{ border: `2px solid ${colour}` }}
+        />
+        <div
+          onPointerDown={(e) => handleResizeStart("ne", e)}
+          title="Resize Top-Right"
+          className="pointer-events-auto absolute -top-1.5 -right-1.5 w-3 h-3 bg-white rounded-full shadow-md cursor-nesw-resize hover:scale-125 transition-transform"
+          style={{ border: `2px solid ${colour}` }}
+        />
+        <div
+          onPointerDown={(e) => handleResizeStart("sw", e)}
+          title="Resize Bottom-Left"
+          className="pointer-events-auto absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white rounded-full shadow-md cursor-nesw-resize hover:scale-125 transition-transform"
+          style={{ border: `2px solid ${colour}` }}
+        />
+        <div
+          onPointerDown={(e) => handleResizeStart("se", e)}
+          title="Resize Bottom-Right"
+          className="pointer-events-auto absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white rounded-full shadow-md cursor-nwse-resize hover:scale-125 transition-transform"
+          style={{ border: `2px solid ${colour}` }}
+        />
+
+        {/* Side Edge Handles (Left & Right width resize pills) */}
+        <div
+          onPointerDown={(e) => handleResizeStart("e", e)}
+          title="Drag to resize text board width"
+          className="pointer-events-auto absolute top-1/2 -right-1.5 -translate-y-1/2 w-2.5 h-8 bg-white rounded-full shadow-md cursor-ew-resize hover:scale-125 transition-transform flex items-center justify-center"
+          style={{ border: `2px solid ${colour}` }}
+        />
+        <div
+          onPointerDown={(e) => handleResizeStart("w", e)}
+          title="Drag to resize text board width"
+          className="pointer-events-auto absolute top-1/2 -left-1.5 -translate-y-1/2 w-2.5 h-8 bg-white rounded-full shadow-md cursor-ew-resize hover:scale-125 transition-transform flex items-center justify-center"
+          style={{ border: `2px solid ${colour}` }}
+        />
+
+        {/* Top & Bottom Height Handles */}
+        <div
+          onPointerDown={(e) => handleResizeStart("s", e)}
+          title="Drag to resize height"
+          className="pointer-events-auto absolute -bottom-1.5 left-1/2 -translate-x-1/2 h-2.5 w-8 bg-white rounded-full shadow-md cursor-ns-resize hover:scale-125 transition-transform"
+          style={{ border: `2px solid ${colour}` }}
+        />
+        <div
+          onPointerDown={(e) => handleResizeStart("n", e)}
+          title="Drag to resize height"
+          className="pointer-events-auto absolute -top-1.5 left-1/2 -translate-x-1/2 h-2.5 w-8 bg-white rounded-full shadow-md cursor-ns-resize hover:scale-125 transition-transform"
+          style={{ border: `2px solid ${colour}` }}
+        />
       </div>
 
       {/* 2. Floating Contextual Toolbar - Modern Sleek Pill UI */}
