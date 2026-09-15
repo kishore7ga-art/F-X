@@ -26,7 +26,15 @@ import {
   ChevronDown,
   Type,
   MoreHorizontal,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  Upload,
+  Plus,
+  Layers,
+  Square,
 } from "lucide-react";
+import { Youtube } from "./YouTubeIcon";
+import { uploadMedia, ApiError } from "@/lib/api-client";
 
 import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
 import type {
@@ -143,6 +151,16 @@ export interface SelectionHighlightProps {
   onFinishEditing?: () => void;
   onClose?: () => void;
 
+  // Card specific actions
+  onAddMediaToCard?: (
+    mediaType: "image" | "video" | "youtube",
+    initialProps?: Record<string, unknown>,
+    position?: "top" | "bottom" | "left" | "right",
+  ) => void;
+  onRemoveMediaFromCard?: () => void;
+  onSelectChildMedia?: () => void;
+  onInsertChildIntoCard?: (childType: "heading" | "text" | "button") => void;
+
   // Direct formatting actions from inPlaceEditor
   activeTextColor?: string;
   onApplyTextColor?: (hex: string) => void;
@@ -173,6 +191,10 @@ export function SelectionHighlight({
   onEditText,
   onFinishEditing,
   onClose,
+  onAddMediaToCard,
+  onRemoveMediaFromCard,
+  onSelectChildMedia,
+  onInsertChildIntoCard,
   activeTextColor,
   onApplyTextColor,
   onApplyTextFormat,
@@ -192,6 +214,14 @@ export function SelectionHighlight({
   const [showTagPopover, setShowTagPopover] = useState(false);
   const [showSizePopover, setShowSizePopover] = useState(false);
   const [showMorePopover, setShowMorePopover] = useState(false);
+
+  // Card specific popover states
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showCardBgPopover, setShowCardBgPopover] = useState(false);
+  const [showCardStylePopover, setShowCardStylePopover] = useState(false);
+  const [showCardMediaPopover, setShowCardMediaPopover] = useState(false);
+  const [cardCustomUrl, setCardCustomUrl] = useState("");
+  const [cardUploadStatus, setCardUploadStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let frame = 0;
@@ -245,6 +275,9 @@ export function SelectionHighlight({
       setShowTagPopover(false);
       setShowSizePopover(false);
       setShowMorePopover(false);
+      setShowCardBgPopover(false);
+      setShowCardStylePopover(false);
+      setShowCardMediaPopover(false);
     };
     window.addEventListener("pointerdown", handleOutside);
     window.addEventListener("mousedown", handleOutside);
@@ -462,6 +495,106 @@ export function SelectionHighlight({
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { letterSpacing: val } as any);
     }
+  };
+
+  // Card-specific props & live inspection
+  const cardBg = meta.background || "#ffffff";
+  const cardRadius = meta.radius || "16px";
+  const cardBorderWidth = meta.borderWidth || "0px";
+  const cardBorderColor = meta.borderColor || "#e2e8f0";
+  const cardShadow = meta.shadow || "none";
+  const cardHasMedia = Boolean(
+    meta.hasMedia ||
+      (activeElement &&
+        (activeElement.querySelector("img, video, iframe, [data-xite-video], [data-xite-youtube]") ||
+          activeElement.querySelector(".card-media, .image-wrapper")))
+  );
+  const cardMediaType =
+    meta.mediaType ||
+    (activeElement?.querySelector("video, [data-xite-video]")
+      ? "video"
+      : activeElement?.querySelector("iframe, [data-xite-youtube]")
+      ? "youtube"
+      : "image");
+
+  const handleCardBgChange = (hex: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("background-color", hex, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { background: hex } as any);
+    }
+  };
+
+  const handleCardRadiusChange = (rad: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("border-radius", rad, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { radius: rad } as any);
+    }
+  };
+
+  const handleCardBorderWidthChange = (w: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("border-width", w, "important");
+      el.style.setProperty("border-style", "solid", "important");
+      el.style.setProperty("border-color", cardBorderColor || "#e2e8f0", "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { borderWidth: w, borderColor: cardBorderColor || "#e2e8f0" } as any);
+    }
+  };
+
+  const handleCardBorderColorChange = (c: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("border-color", c, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { borderColor: c } as any);
+    }
+  };
+
+  const handleCardShadowChange = (sh: string) => {
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { shadow: sh as any });
+    }
+  };
+
+  const handleCardFileUpload = async (file: File | undefined) => {
+    if (!file || !onAddMediaToCard) return;
+    const isVideo = file.type.startsWith("video/");
+    setCardUploadStatus(`Uploading ${file.name}…`);
+    try {
+      const { url } = await uploadMedia(file);
+      onAddMediaToCard(isVideo ? "video" : "image", { src: url }, "top");
+      setCardUploadStatus(null);
+      setShowCardMediaPopover(false);
+    } catch (err) {
+      setCardUploadStatus(err instanceof ApiError ? err.message : "Upload failed");
+    }
+  };
+
+  const handleAddCustomMediaUrl = () => {
+    if (!cardCustomUrl.trim() || !onAddMediaToCard) return;
+    const url = cardCustomUrl.trim();
+    if (url.includes("youtube.com") || url.includes("youtu.be")) {
+      onAddMediaToCard("youtube", { url }, "top");
+    } else if (/\.(mp4|webm|ogg|mov)($|\?)/i.test(url)) {
+      onAddMediaToCard("video", { src: url }, "top");
+    } else {
+      onAddMediaToCard("image", { src: url }, "top");
+    }
+    setCardCustomUrl("");
+    setShowCardMediaPopover(false);
   };
 
   // Compute horizontal positioning so toolbar is anchored at the END (right side) of the element
@@ -1023,6 +1156,473 @@ export function SelectionHighlight({
                     )}
                   </div>
                 </div>
+              )}
+            </div>
+          </>
+        ) : effectiveType === "card" ? (
+          <>
+            {/* Hidden file input for direct card media upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(e) => {
+                void handleCardFileUpload(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+
+            {/* 1. Card Background Color Swatch & Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCardBgPopover(!showCardBgPopover);
+                  setShowCardStylePopover(false);
+                  setShowCardMediaPopover(false);
+                }}
+                title="Card Background Color"
+                className="p-1 rounded-xl hover:bg-slate-100 flex items-center gap-1.5 border border-slate-200/80 transition cursor-pointer text-[11px] font-semibold text-slate-700 bg-slate-50"
+              >
+                <span
+                  className="w-4 h-4 rounded-full border border-slate-300 shadow-xs shrink-0"
+                  style={{ background: cardBg }}
+                />
+                <span className="text-[10.5px] font-mono uppercase">{cardBg.slice(0, 7)}</span>
+              </button>
+
+              {showCardBgPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2.5 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-2 z-[100000] w-48 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Card Background
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {PRESET_COLORS.map((hex) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCardBgChange(hex);
+                          setShowCardBgPopover(false);
+                        }}
+                        className="w-5 h-5 rounded-full border border-slate-200 hover:scale-115 transition shadow-xs cursor-pointer"
+                        style={{ background: hex }}
+                      />
+                    ))}
+                  </div>
+                  <div className="pt-1.5 border-t border-slate-100 flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={cardBg.startsWith("#") ? cardBg : "#ffffff"}
+                      onChange={(e) => handleCardBgChange(e.target.value)}
+                      className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={cardBg}
+                      onChange={(e) => handleCardBgChange(e.target.value)}
+                      className="flex-1 px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-mono text-slate-800 uppercase focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Shape, Border & Shadow Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCardStylePopover(!showCardStylePopover);
+                  setShowCardBgPopover(false);
+                  setShowCardMediaPopover(false);
+                }}
+                title="Card Shape, Border & Shadow"
+                className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold border transition cursor-pointer ${
+                  showCardStylePopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <Square className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                <span>Border & Shape</span>
+              </button>
+
+              {showCardStylePopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-3 z-[100000] w-60 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Corner Radius */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+                      <span>Corner Radius</span>
+                      <span className="font-mono text-slate-600">{cardRadius}</span>
+                    </div>
+                    <div className="grid grid-cols-6 gap-1">
+                      {["0px", "8px", "12px", "16px", "24px", "32px"].map((rad) => (
+                        <button
+                          key={rad}
+                          type="button"
+                          onClick={() => handleCardRadiusChange(rad)}
+                          className={`py-0.5 rounded-lg text-[10px] font-mono font-bold text-center transition cursor-pointer ${
+                            cardRadius === rad
+                              ? "bg-violet-50 text-violet-700 border border-violet-200 font-black"
+                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60"
+                          }`}
+                        >
+                          {rad.replace("px", "")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Border Width & Color */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Border Width & Colour
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="grid grid-cols-5 gap-1 flex-1">
+                        {["0px", "1px", "2px", "3px", "4px"].map((w) => (
+                          <button
+                            key={w}
+                            type="button"
+                            onClick={() => handleCardBorderWidthChange(w)}
+                            className={`py-0.5 rounded-lg text-[10px] font-mono font-bold text-center transition cursor-pointer ${
+                              cardBorderWidth === w
+                                ? "bg-violet-50 text-violet-700 border border-violet-200 font-black"
+                                : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60"
+                            }`}
+                          >
+                            {w.replace("px", "")}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="color"
+                        value={cardBorderColor.startsWith("#") ? cardBorderColor : "#e2e8f0"}
+                        onChange={(e) => handleCardBorderColorChange(e.target.value)}
+                        className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent shrink-0"
+                        title="Border Color"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Shadow Presets */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Shadow
+                    </div>
+                    <div className="grid grid-cols-5 gap-1">
+                      {["none", "sm", "md", "lg", "xl"].map((sh) => (
+                        <button
+                          key={sh}
+                          type="button"
+                          onClick={() => handleCardShadowChange(sh)}
+                          className={`py-0.5 rounded-lg text-[10px] font-bold uppercase text-center transition cursor-pointer ${
+                            cardShadow === sh
+                              ? "bg-violet-50 text-violet-700 border border-violet-200 font-black"
+                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60"
+                          }`}
+                        >
+                          {sh}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* 3. Media Controls Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCardMediaPopover(!showCardMediaPopover);
+                  setShowCardBgPopover(false);
+                  setShowCardStylePopover(false);
+                }}
+                title="Add or Manage Media in Card"
+                className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold border transition cursor-pointer ${
+                  showCardMediaPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : cardHasMedia
+                    ? "bg-violet-50 text-violet-700 border-violet-200/80"
+                    : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/80"
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>{cardHasMedia ? "Media" : "+ Media"}</span>
+              </button>
+
+              {showCardMediaPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-2.5 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {cardHasMedia ? (
+                    <>
+                      <div className="flex items-center justify-between text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-1 rounded-lg border border-violet-200/60">
+                        <span className="capitalize">{cardMediaType} in Card</span>
+                        {onSelectChildMedia && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onSelectChildMedia();
+                              setShowCardMediaPopover(false);
+                            }}
+                            className="underline hover:text-violet-900 cursor-pointer"
+                          >
+                            Edit Settings
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">
+                        Replace Media
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onAddMediaToCard?.("image", undefined, "top");
+                            setShowCardMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <ImageIcon className="w-3 h-3 text-emerald-600" />
+                          Image
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onAddMediaToCard?.("video", undefined, "top");
+                            setShowCardMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold bg-slate-50 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <VideoIcon className="w-3 h-3 text-cyan-600" />
+                          Video
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onAddMediaToCard?.("youtube", undefined, "top");
+                            setShowCardMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <Youtube className="w-3 h-3 text-rose-600" />
+                          YouTube
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center justify-center gap-1 w-full py-1 rounded-lg text-[10.5px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
+                      >
+                        <Upload className="w-3 h-3 text-slate-500" />
+                        Upload New File
+                      </button>
+
+                      {onRemoveMediaFromCard && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onRemoveMediaFromCard();
+                            setShowCardMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 w-full py-1 rounded-lg text-[10.5px] font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Remove Media
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">
+                        Add Media to Card
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onAddMediaToCard?.("image", undefined, "top");
+                            setShowCardMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition cursor-pointer"
+                        >
+                          <ImageIcon className="w-3 h-3" />
+                          Image
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onAddMediaToCard?.("video", undefined, "top");
+                            setShowCardMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200/80 transition cursor-pointer"
+                        >
+                          <VideoIcon className="w-3 h-3" />
+                          Video
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onAddMediaToCard?.("youtube", undefined, "top");
+                            setShowCardMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 transition cursor-pointer"
+                        >
+                          <Youtube className="w-3 h-3" />
+                          YouTube
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center justify-center gap-1 w-full py-1.5 rounded-lg text-[10.5px] font-bold bg-slate-900 text-white hover:bg-slate-700 transition cursor-pointer shadow-xs"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        Upload File
+                      </button>
+
+                      <div className="flex items-center gap-1 pt-1 border-t border-slate-100">
+                        <input
+                          type="url"
+                          value={cardCustomUrl}
+                          onChange={(e) => setCardCustomUrl(e.target.value)}
+                          placeholder="Paste URL…"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddCustomMediaUrl();
+                          }}
+                          className="flex-1 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] text-slate-800 placeholder-slate-400 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCustomMediaUrl}
+                          className="px-2 py-0.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-[10.5px] font-bold text-slate-800 cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {cardUploadStatus && (
+                    <div className="text-[9.5px] font-semibold text-slate-500 text-center">{cardUploadStatus}</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* 4. Add Child Content: Heading, Text, Button */}
+            {onInsertChildIntoCard && (
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => onInsertChildIntoCard("heading")}
+                  title="Add Heading into this Card"
+                  className="flex items-center gap-0.5 px-2 py-1 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 text-[10.5px] font-bold border border-pink-200/80 transition cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Heading</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onInsertChildIntoCard("text")}
+                  title="Add Text into this Card"
+                  className="flex items-center gap-0.5 px-2 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10.5px] font-bold border border-amber-200/80 transition cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Text</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onInsertChildIntoCard("button")}
+                  title="Add Button into this Card"
+                  className="flex items-center gap-0.5 px-2 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10.5px] font-bold border border-indigo-200/80 transition cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Button</span>
+                </button>
+              </div>
+            )}
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* 5. Common Actions: Duplicate, Move, Delete */}
+            <div className="flex items-center gap-0.5">
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicate Card"
+                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveUp && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp();
+                  }}
+                  title="Move Card Up"
+                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown();
+                  }}
+                  title="Move Card Down"
+                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete Card"
+                  className="p-1 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
           </>

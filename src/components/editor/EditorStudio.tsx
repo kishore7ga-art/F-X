@@ -2044,6 +2044,10 @@ export function EditorStudio({
         activeLineHeight={inPlaceEditor.activeLineHeight}
         activeLetterSpacing={inPlaceEditor.activeLetterSpacing}
         onApplyTextSpacing={inPlaceEditor.applyTextSpacing}
+        onAddMediaToCard={elementSelection.addMediaToCard}
+        onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
+        onSelectChildMedia={elementSelection.selectCardMedia}
+        onInsertChildIntoCard={elementSelection.insertChildIntoCard}
       />
 
       <ContextMenu
@@ -2546,8 +2550,11 @@ export function EditorStudio({
         When no element or section is selected, it displays the global EditorToolbar.
       */}
       {!isSettingsOpen && !isDrawerOpen && (
-        elementSelection.selection.selectedId && elementSelection.selection.type !== "heading" && elementSelection.selection.type !== "text" ? (
-          /* Non-text element (container, card, button, image, video, icon): its own toolbar, same dock. Text & Heading are edited via the floating toolbar directly on the element */
+        elementSelection.selection.selectedId &&
+        elementSelection.selection.type !== "heading" &&
+        elementSelection.selection.type !== "text" &&
+        elementSelection.selection.type !== "card" ? (
+          /* Non-text element (container, button, image, video, icon): its own toolbar, same dock. Text, Heading, & Card are edited via floating toolbar directly on canvas */
           <ElementToolbar
             key={elementSelection.selection.selectedId}
             selection={elementSelection.selection}
