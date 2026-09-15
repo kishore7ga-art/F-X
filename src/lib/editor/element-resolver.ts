@@ -798,6 +798,19 @@ function buttonVariant(el: HTMLElement): ButtonVariant {
   return "ghost";
 }
 
+export function getEffectiveElementBackground(el: HTMLElement | null): string {
+  let curr = el;
+  while (curr && curr !== document.body && curr !== document.documentElement) {
+    const bg = curr.style.backgroundColor || (typeof window !== "undefined" ? window.getComputedStyle(curr).backgroundColor : "");
+    if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") {
+      const hex = hexFromValue(bg, "");
+      if (hex) return hex;
+    }
+    curr = curr.parentElement;
+  }
+  return "#ffffff";
+}
+
 export function findCardMediaElement(card: HTMLElement): HTMLElement | null {
   const yt = card.querySelector<HTMLElement>(
     "iframe[src*='youtube'], iframe[src*='youtu.be'], [data-xite-youtube], [data-youtube], .youtube-wrapper",
@@ -1018,9 +1031,12 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
     }
     case "heading": {
       const level = (el.tagName.toLowerCase() as HeadingLevel) || "h2";
+      const bg = getEffectiveElementBackground(el);
+      const autoColor = calculateOppositeContrast(bg).textColor;
+      const rawColor = el.style.color || style.color;
       const props: HeadingProps = {
         level,
-        color: hexFromValue(el.style.color || style.color, "#0f172a"),
+        color: hexFromValue(rawColor, autoColor),
         fontSize: el.style.fontSize || style.fontSize || "24px",
         fontWeight: el.style.fontWeight || style.fontWeight || "700",
         textAlign: ((el.style.textAlign || style.textAlign) as TextAlign) || "left",
@@ -1033,8 +1049,11 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
       return props as ElementPropsByType[T];
     }
     case "text": {
+      const bg = getEffectiveElementBackground(el);
+      const autoColor = calculateOppositeContrast(bg).textColor;
+      const rawColor = el.style.color || style.color;
       const props: TextProps = {
-        color: hexFromValue(el.style.color || style.color, "#0f172a"),
+        color: hexFromValue(rawColor, autoColor),
         fontSize: el.style.fontSize || style.fontSize || "16px",
         fontWeight: el.style.fontWeight || style.fontWeight || "400",
         textAlign: ((el.style.textAlign || style.textAlign) as TextAlign) || "left",

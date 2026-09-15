@@ -42,10 +42,12 @@ import {
 import { Youtube } from "./YouTubeIcon";
 import { uploadMedia, ApiError } from "@/lib/api-client";
 import { calculateOppositeContrast } from "@/lib/editor-themes";
+import { hexFromValue } from "@/lib/sections/section-edit";
 
 import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
 import {
   extractYouTubeVideoId,
+  getEffectiveElementBackground,
   BUTTON_SIZE_PADDING,
   BUTTON_SIZE_FONT,
   type ButtonSize,
@@ -353,8 +355,15 @@ export function SelectionHighlight({
   const selectedId = selection?.selectedId;
   const meta = (selection?.meta ?? {}) as Record<string, any>;
 
-  // Current props extraction with live inPlaceEditor fallback
-  const currentColor = activeTextColor || meta.color || (effectiveType === "heading" ? "#0f172a" : "#334155");
+  const effectiveBg = getEffectiveElementBackground(activeElement);
+  const autoContrastColor = calculateOppositeContrast(effectiveBg).textColor;
+  const rawElementColor = activeElement?.style.color
+    ? hexFromValue(activeElement.style.color, autoContrastColor)
+    : autoContrastColor;
+
+  // Current props extraction with live inPlaceEditor fallback:
+  // Auto-matches the background's high contrast color before the user sets an explicit color
+  const currentColor = activeTextColor || meta.color || rawElementColor;
   const rawFontSize = activeFontSize || String(meta.fontSize || (effectiveType === "heading" ? "32px" : "16px"));
   const parsedFontSize = parseInt(rawFontSize, 10) || (effectiveType === "heading" ? 32 : 16);
   const currentFontFamily = activeFontFamily || meta.fontFamily || "";
@@ -370,6 +379,7 @@ export function SelectionHighlight({
   const handleColorChange = (hex: string) => {
     const el = resolveElement();
     if (el) {
+      el.setAttribute("data-xite-user-color", "true");
       el.style.setProperty("color", hex, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
@@ -574,6 +584,15 @@ export function SelectionHighlight({
     const el = resolveElement();
     if (el) {
       el.style.setProperty("background-color", hex, "important");
+      const autoTextColor = calculateOppositeContrast(hex).textColor;
+      const autoMutedColor = autoTextColor === "#ffffff" ? "#cbd5e1" : "#64748b";
+      const textNodes = Array.from(el.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6, p, span, li"));
+      for (const node of textNodes) {
+        if (!node.getAttribute("data-xite-user-color") && !node.closest("button, [data-xite-user-color='true']")) {
+          const isHeading = /^h[1-6]$/i.test(node.tagName);
+          node.style.setProperty("color", isHeading ? autoTextColor : autoMutedColor, "important");
+        }
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (selectedId && onUpdateProps) {
@@ -1062,6 +1081,15 @@ export function SelectionHighlight({
         el.style.removeProperty("background-color");
       } else {
         el.style.setProperty("background-color", hex, "important");
+        const autoTextColor = calculateOppositeContrast(hex).textColor;
+        const autoMutedColor = autoTextColor === "#ffffff" ? "#cbd5e1" : "#64748b";
+        const textNodes = Array.from(el.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6, p, span, li"));
+        for (const node of textNodes) {
+          if (!node.getAttribute("data-xite-user-color") && !node.closest("button, .card, [data-xite-user-color='true']")) {
+            const isHeading = /^h[1-6]$/i.test(node.tagName);
+            node.style.setProperty("color", isHeading ? autoTextColor : autoMutedColor, "important");
+          }
+        }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }

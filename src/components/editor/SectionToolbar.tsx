@@ -86,6 +86,7 @@ import { SingleRowButtonPanel } from "./ButtonSettingsControl";
 import { SingleRowBackgroundPanel } from "./BackgroundSettingsControl";
 import { recomposeSectionCode } from "@/lib/section-runtime";
 import { resetInteractiveState } from "@/lib/interactive-section-runtime";
+import { calculateOppositeContrast } from "@/lib/editor-themes";
 
 type Props = {
   section: { id: string; title: string; code: string; category: string };
@@ -182,6 +183,23 @@ function applyCanvasBackgroundDirectly(secEl: HTMLElement, controlId: string, va
 
     // 5. Apply background-color
     root.style.setProperty("background-color", val, "important");
+
+    // 6. Auto-match text colors for all text/headings in section that haven't had their color explicitly set by the user
+    if (val) {
+      const autoTextColor = calculateOppositeContrast(val).textColor;
+      const autoMutedColor = autoTextColor === "#ffffff" ? "#cbd5e1" : "#64748b";
+      const textElements = Array.from(root.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6, p, span, li, label, blockquote, [data-xite-text]"));
+      for (const textEl of textElements) {
+        if (textEl.closest("button, [data-xite-type='button'], .card, [class*='card'], [data-xite-user-color='true']")) {
+          continue;
+        }
+        if (textEl.getAttribute("data-xite-user-color") === "true") {
+          continue;
+        }
+        const isHeading = /^h[1-6]$/i.test(textEl.tagName);
+        textEl.style.setProperty("color", isHeading ? autoTextColor : autoMutedColor, "important");
+      }
+    }
   } else if (controlId === "bg-image") {
     const val = String(value || "").trim();
     if (isUsableImageUrl(val)) {

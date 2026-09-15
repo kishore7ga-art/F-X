@@ -54,6 +54,7 @@ import {
 } from "./section-managed-css";
 import { resolvePath, type ElementPath } from "./section-probe";
 import type { Control, ControlList, ListAction } from "./section-schema";
+import { calculateOppositeContrast } from "@/lib/editor-themes";
 
 /** The part of a section this module reads and rewrites. */
 export type EditableSection = {
@@ -638,6 +639,8 @@ function writeStyles(
       // 3. Remove any background <img> elements
       updatedBody = updatedBody.replace(/<img[^>]*?(?:(?:absolute|inset-0)[^>]*?(?:object-cover|w-full)|(?:object-cover)[^>]*?(?:absolute|inset-0)|data-xite-bg-img)[^>]*?>/gi, "");
 
+      const { textColor: autoTextColor } = calculateOppositeContrast(bgColor);
+
       // 4. In root element's style, clear any background-image and apply background-color
       updatedBody = updatedBody.replace(/(<(?:header|section|footer|main|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i, (match, pre, quote, styleContent) => {
         let sc = styleContent
@@ -655,6 +658,16 @@ function writeStyles(
         } else {
           sc = sc.replace(/;?\s*$/, `; background-color: ${bgColor};`);
         }
+
+        // Auto-match root text color if not user-specified
+        if (!/data-xite-user-color/i.test(pre)) {
+          if (/(?<![\w-])color\s*:\s*[^;]+/i.test(sc)) {
+            sc = sc.replace(/(?<![\w-])color\s*:\s*[^;]+/gi, `color: ${autoTextColor}`);
+          } else {
+            sc = sc.replace(/;?\s*$/, `; color: ${autoTextColor};`);
+          }
+        }
+
         return `${pre}${sc}${quote}`;
       });
 
