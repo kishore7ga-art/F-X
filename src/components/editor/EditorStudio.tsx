@@ -2047,6 +2047,7 @@ export function EditorStudio({
         onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
         onSelectChildMedia={elementSelection.selectCardMedia}
         onInsertChildIntoCard={elementSelection.insertChildIntoCard}
+        onReplaceMedia={elementSelection.replaceMedia}
       />
 
       <main
@@ -2506,8 +2507,9 @@ export function EditorStudio({
         elementSelection.selection.type !== "heading" &&
         elementSelection.selection.type !== "text" &&
         elementSelection.selection.type !== "card" &&
-        elementSelection.selection.type !== "container" ? (
-          /* Non-text element (button, image, video, icon): its own toolbar, same dock. Text, Heading, Card, & Container are edited via floating toolbar directly on canvas */
+        elementSelection.selection.type !== "container" &&
+        elementSelection.selection.type !== "image" ? (
+          /* Non-text element (button, video, icon): its own toolbar, same dock. Text, Heading, Card, Container, & Image are edited via floating toolbar directly on canvas */
           <ElementToolbar
             key={elementSelection.selection.selectedId}
             selection={elementSelection.selection}

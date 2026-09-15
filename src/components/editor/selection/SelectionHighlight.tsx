@@ -161,6 +161,7 @@ export interface SelectionHighlightProps {
   onRemoveMediaFromCard?: () => void;
   onSelectChildMedia?: () => void;
   onInsertChildIntoCard?: (childType: "heading" | "text" | "button") => void;
+  onReplaceMedia?: (targetType: "image" | "video" | "youtube", props?: Record<string, unknown>) => void;
 
   // Direct formatting actions from inPlaceEditor
   activeTextColor?: string;
@@ -196,6 +197,7 @@ export function SelectionHighlight({
   onRemoveMediaFromCard,
   onSelectChildMedia,
   onInsertChildIntoCard,
+  onReplaceMedia,
   activeTextColor,
   onApplyTextColor,
   onApplyTextFormat,
@@ -223,6 +225,11 @@ export function SelectionHighlight({
   const [showCardMediaPopover, setShowCardMediaPopover] = useState(false);
   const [cardCustomUrl, setCardCustomUrl] = useState("");
   const [cardUploadStatus, setCardUploadStatus] = useState<string | null>(null);
+
+  // Image specific popover states
+  const [showImageMediaPopover, setShowImageMediaPopover] = useState(false);
+  const [showImageFitPopover, setShowImageFitPopover] = useState(false);
+  const [imageUploadStatus, setImageUploadStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let frame = 0;
@@ -279,6 +286,8 @@ export function SelectionHighlight({
       setShowCardBgPopover(false);
       setShowCardStylePopover(false);
       setShowCardMediaPopover(false);
+      setShowImageMediaPopover(false);
+      setShowImageFitPopover(false);
     };
     window.addEventListener("pointerdown", handleOutside);
     window.addEventListener("mousedown", handleOutside);
@@ -635,6 +644,98 @@ export function SelectionHighlight({
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { gap: val } as any);
+    }
+  };
+  // Image-specific props & live mutation handlers
+  const imageSrc = meta.src || (activeElement instanceof HTMLImageElement ? activeElement.src : "");
+  const imageAlt = meta.alt || (activeElement instanceof HTMLImageElement ? activeElement.alt : "");
+  const imageFit = (meta.objectFit || "cover") as "cover" | "contain" | "fill";
+  const imageRadius = meta.radius || "0px";
+
+  const handleImageSrcChange = (src: string) => {
+    const el = resolveElement();
+    if (el) {
+      if (el instanceof HTMLImageElement) {
+        el.src = src;
+      } else {
+        const img = el.querySelector("img");
+        if (img) img.src = src;
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { src } as any);
+    }
+  };
+
+  const handleImageAltChange = (alt: string) => {
+    const el = resolveElement();
+    if (el) {
+      if (el instanceof HTMLImageElement) {
+        el.alt = alt;
+      } else {
+        const img = el.querySelector("img");
+        if (img) img.alt = alt;
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { alt } as any);
+    }
+  };
+
+  const handleImageFitChange = (fit: "cover" | "contain" | "fill") => {
+    const el = resolveElement();
+    if (el) {
+      if (el instanceof HTMLImageElement) {
+        el.style.setProperty("object-fit", fit, "important");
+      } else {
+        const img = el.querySelector("img");
+        if (img) img.style.setProperty("object-fit", fit, "important");
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { objectFit: fit } as any);
+    }
+  };
+
+  const handleImageRadiusChange = (rad: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("border-radius", rad, "important");
+      const img = el.querySelector("img");
+      if (img) img.style.setProperty("border-radius", rad, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { radius: rad } as any);
+    }
+  };
+
+  const handleImageFileUpload = async (file: File | undefined) => {
+    if (!file) return;
+    const isVideo = file.type.startsWith("video/");
+    if (isVideo && onReplaceMedia) {
+      setImageUploadStatus(`Uploading video ${file.name}…`);
+      try {
+        const { url } = await uploadMedia(file);
+        onReplaceMedia("video", { src: url });
+        setImageUploadStatus(null);
+        setShowImageMediaPopover(false);
+      } catch (err) {
+        setImageUploadStatus(err instanceof ApiError ? err.message : "Upload failed");
+      }
+      return;
+    }
+    setImageUploadStatus(`Uploading ${file.name}…`);
+    try {
+      const { url } = await uploadMedia(file);
+      handleImageSrcChange(url);
+      setImageUploadStatus(null);
+      setShowImageMediaPopover(false);
+    } catch (err) {
+      setImageUploadStatus(err instanceof ApiError ? err.message : "Upload failed");
     }
   };
 
@@ -1792,6 +1893,270 @@ export function SelectionHighlight({
                     onDelete();
                   }}
                   title="Delete Container"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : effectiveType === "image" ? (
+          <>
+            {/* Hidden file input for image upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(e) => {
+                void handleImageFileUpload(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+
+            {/* 1. Media & Replace Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowImageMediaPopover(!showImageMediaPopover);
+                  setShowImageFitPopover(false);
+                }}
+                title="Replace or Manage Image"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showImageMediaPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>Replace</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showImageMediaPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Replace Media Type Switcher */}
+                  {onReplaceMedia && (
+                    <>
+                      <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">
+                        Media Type
+                      </div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <span className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-slate-900 text-white shadow-xs">
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          Image
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReplaceMedia("video");
+                            setShowImageMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <VideoIcon className="w-3.5 h-3.5 text-cyan-600" />
+                          Video
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReplaceMedia("youtube");
+                            setShowImageMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <Youtube className="w-3.5 h-3.5 text-rose-600" />
+                          YouTube
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Upload file button */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-white hover:bg-slate-800 transition cursor-pointer shadow-xs"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload Image
+                  </button>
+
+                  {/* URL Input */}
+                  <div className="flex items-center gap-1 pt-1.5 border-t border-slate-100">
+                    <input
+                      type="url"
+                      defaultValue={imageSrc}
+                      placeholder="Paste image URL…"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleImageSrcChange((e.target as HTMLInputElement).value);
+                          setShowImageMediaPopover(false);
+                        }
+                      }}
+                      onBlur={(e) => handleImageSrcChange(e.target.value)}
+                      className="flex-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  {/* Alt text Input */}
+                  <div className="pt-1">
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Alt Text
+                    </div>
+                    <input
+                      type="text"
+                      defaultValue={imageAlt}
+                      placeholder="Describe the image…"
+                      onBlur={(e) => handleImageAltChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleImageAltChange((e.target as HTMLInputElement).value);
+                      }}
+                      className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  {imageUploadStatus && (
+                    <div className="text-[10px] font-semibold text-slate-500 text-center">{imageUploadStatus}</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Fit & Radius Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowImageFitPopover(!showImageFitPopover);
+                  setShowImageMediaPopover(false);
+                }}
+                title="Image Fit & Corner Radius"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showImageFitPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <Square className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Fit & Radius</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showImageFitPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Object Fit */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Object Fit
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {(["cover", "contain", "fill"] as const).map((fit) => (
+                        <button
+                          key={fit}
+                          type="button"
+                          onClick={() => handleImageFitChange(fit)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold capitalize text-center transition cursor-pointer ${
+                            imageFit === fit
+                              ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                          }`}
+                        >
+                          {fit}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Corner Radius */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+                      <span>Corner Radius</span>
+                      <span className="font-mono text-slate-600 font-semibold">{imageRadius}</span>
+                    </div>
+                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                        <button
+                          key={rad}
+                          type="button"
+                          onClick={() => handleImageRadiusChange(rad)}
+                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
+                            imageRadius === rad
+                              ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                          }`}
+                        >
+                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* 3. Common Actions: Duplicate, Move, Delete */}
+            <div className="flex items-center gap-0.5">
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicate Image"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveUp && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp();
+                  }}
+                  title="Move Image Up"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown();
+                  }}
+                  title="Move Image Down"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete Image"
                   className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
