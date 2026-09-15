@@ -385,8 +385,8 @@ export function SelectionHighlight({
     }
   };
 
-  // Compute horizontal positioning so toolbar is never clipped offscreen
-  const toolbarLeft = Math.max(12, Math.min(rect.left, window.innerWidth - 600));
+  // Compute horizontal positioning so toolbar is anchored at the END (right side) of the element
+  const toolbarRight = Math.max(420, Math.min(rect.right, window.innerWidth - 12));
 
   return (
     <>
@@ -415,7 +415,7 @@ export function SelectionHighlight({
         </span>
       </div>
 
-      {/* 2. Floating Contextual Toolbar - Ultra Clean Layout */}
+      {/* 2. Floating Contextual Toolbar - Anchored at the end */}
       <div
         data-xite-floating-toolbar=""
         data-xite-toolbar=""
@@ -425,7 +425,8 @@ export function SelectionHighlight({
         className={`fixed z-[99999] pointer-events-auto flex items-center gap-1.5 bg-slate-900/95 text-slate-100 backdrop-blur-md border border-slate-700/90 shadow-2xl rounded-xl p-1 text-xs select-none transition-all duration-75`}
         style={{
           top: isNearTop ? `${rect.bottom + 8}px` : `${Math.max(6, rect.top - 46)}px`,
-          left: `${toolbarLeft}px`,
+          left: `${toolbarRight}px`,
+          transform: "translateX(-100%)",
         }}
       >
         {isTextLike ? (
@@ -632,7 +633,7 @@ export function SelectionHighlight({
 
               {showColorPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-44"
+                  className="xite-floating-popover absolute top-full right-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-44"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
@@ -697,7 +698,7 @@ export function SelectionHighlight({
               {/* All Other Options Popover Menu */}
               {showMorePopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2 bg-slate-900/98 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2.5 z-[100000] w-64 text-slate-200"
+                  className="xite-floating-popover absolute top-full right-0 mt-1.5 p-2 bg-slate-900/98 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2.5 z-[100000] w-64 text-slate-200"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
