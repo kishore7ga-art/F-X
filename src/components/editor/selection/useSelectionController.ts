@@ -409,8 +409,24 @@ export function useSelectionController({
     const element = resolveSelected(state);
     if (!element) return;
     flushCommit();
-    duplicateElementDom(element);
+    const clone = duplicateElementDom(element);
     const sectionId = state.sectionId;
+    const box = canvasBoxFor(sectionId);
+    if (box && state.type && state.type !== "section" && clone) {
+      const newPath = pathOf(clone, box);
+      const newId = elementId(sectionId, newPath);
+      const ancestors = getAncestorHierarchy(
+        clone,
+        box,
+        sectionId,
+        sectionsRef.current.find((s) => s.id === sectionId)?.title || "Section",
+      );
+      const meta = {
+        ...readElementProps(state.type as LeafType, clone),
+        tag: clone.tagName.toLowerCase(),
+      };
+      selectionStore.selectElement(newId, state.type, sectionId, meta, ancestors);
+    }
     closeContextMenu();
     writeSectionNow(sectionId);
   }, [resolveSelected, flushCommit, closeContextMenu, writeSectionNow]);

@@ -1584,7 +1584,126 @@ function applyGeneric(el: HTMLElement, p: Partial<GenericProps>): void {
 
 export function duplicateElementDom(element: HTMLElement): HTMLElement {
   const clone = element.cloneNode(true) as HTMLElement;
+
+  // 1. Remove existing unique identifiers so they don't collide
+  clone.removeAttribute(ELEMENT_KEY_ATTR);
+  clone.removeAttribute("id");
+  const nestedUnique = clone.querySelectorAll<HTMLElement>(`[${ELEMENT_KEY_ATTR}], [id]`);
+  for (const n of nestedUnique) {
+    n.removeAttribute(ELEMENT_KEY_ATTR);
+    n.removeAttribute("id");
+  }
+
+  // 2. Insert clone after the original element
   element.after(clone);
+
+  const parent = element.parentElement;
+  if (!parent) return clone;
+
+  const tag = element.tagName.toLowerCase();
+  const parentTag = parent.tagName.toLowerCase();
+  const parentComputed = typeof window !== "undefined" && window.getComputedStyle ? window.getComputedStyle(parent) : null;
+  const parentCls = (parent.className || "").toLowerCase();
+  const elCls = (element.className || "").toLowerCase();
+
+  const isButtonEl = isButton(element) || tag === "button" || tag === "a" || elCls.includes("btn") || elCls.includes("button");
+  const isCardEl = elCls.includes("card") || element.hasAttribute("data-card") || (element.children.length >= 2 && !STRUCTURAL_TAGS.has(tag) && (parentCls.includes("grid") || parentCls.includes("cards") || parentCls.includes("col-")));
+  const isImageEl = tag === "img" || tag === "picture" || tag === "figure" || elCls.includes("image") || elCls.includes("avatar");
+
+  // 3. Auto-fit and auto-adjust parent layout depending on element type
+  if (isButtonEl) {
+    // Buttons: Ensure parent is a flex row with clean wrapping and proper button gap
+    const isParentFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
+    const isParentGrid = parentComputed?.display.includes("grid") || parentCls.includes("grid");
+
+    if (!isParentFlex && !isParentGrid && parentTag !== "body" && !STRUCTURAL_TAGS.has(parentTag)) {
+      parent.style.setProperty("display", "flex", "important");
+      parent.style.setProperty("flex-wrap", "wrap", "important");
+      parent.style.setProperty("gap", "12px", "important");
+      parent.style.setProperty("align-items", "center", "important");
+      if (parentComputed?.textAlign === "center" || parentCls.includes("text-center") || parentCls.includes("justify-center")) {
+        parent.style.setProperty("justify-content", "center", "important");
+      }
+    } else if (isParentFlex) {
+      parent.style.setProperty("flex-wrap", "wrap", "important");
+      if (!parent.style.gap && (!parentComputed || parentComputed.gap === "normal" || parentComputed.gap === "0px")) {
+        parent.style.setProperty("gap", "12px", "important");
+      }
+    }
+
+    // Ensure buttons don't have rigid 100% widths unless full-width block was intended
+    clone.style.setProperty("flex", "0 0 auto", "important");
+    element.style.setProperty("flex", "0 0 auto", "important");
+  } else if (isCardEl || parentCls.includes("grid") || (parentComputed?.display.includes("grid") && parent.children.length >= 2)) {
+    // Cards or Grid items: Auto-adjust grid / flex columns to auto-fit and balance seamlessly
+    const isGrid = parentComputed?.display.includes("grid") || parentCls.includes("grid");
+    const isFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
+
+    if (isGrid || (!isFlex && parent.children.length >= 2 && !STRUCTURAL_TAGS.has(parentTag))) {
+      parent.style.setProperty("display", "grid", "important");
+      parent.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", "important");
+      parent.style.setProperty("gap", parent.style.gap || "24px", "important");
+      parent.style.setProperty("width", "100%", "important");
+      parent.style.setProperty("box-sizing", "border-box", "important");
+
+      // Auto-fit all sibling cards
+      const allCards = Array.from(parent.children) as HTMLElement[];
+      for (const c of allCards) {
+        c.style.setProperty("min-width", "0", "important");
+        c.style.setProperty("width", "100%", "important");
+        c.style.setProperty("box-sizing", "border-box", "important");
+      }
+    } else if (isFlex) {
+      parent.style.setProperty("flex-wrap", "wrap", "important");
+      parent.style.setProperty("gap", parent.style.gap || "24px", "important");
+      parent.style.setProperty("justify-content", "center", "important");
+      parent.style.setProperty("width", "100%", "important");
+
+      const allCards = Array.from(parent.children) as HTMLElement[];
+      for (const c of allCards) {
+        c.style.setProperty("flex", "1 1 280px", "important");
+        c.style.setProperty("max-width", "100%", "important");
+        c.style.setProperty("min-width", "0", "important");
+        c.style.setProperty("box-sizing", "border-box", "important");
+      }
+    }
+  } else if (isImageEl) {
+    // Images: Ensure container wraps cleanly and images scale responsively
+    const isFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
+    const isGrid = parentComputed?.display.includes("grid") || parentCls.includes("grid");
+
+    if (isFlex) {
+      parent.style.setProperty("flex-wrap", "wrap", "important");
+      if (!parent.style.gap && (!parentComputed || parentComputed.gap === "0px" || parentComputed.gap === "normal")) {
+        parent.style.setProperty("gap", "16px", "important");
+      }
+    } else if (isGrid) {
+      parent.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", "important");
+      if (!parent.style.gap) {
+        parent.style.setProperty("gap", "16px", "important");
+      }
+    }
+    clone.style.setProperty("max-width", "100%", "important");
+  } else {
+    // Generic containers / columns / items:
+    const isFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
+    const isGrid = parentComputed?.display.includes("grid") || parentCls.includes("grid");
+
+    if (isFlex) {
+      parent.style.setProperty("flex-wrap", "wrap", "important");
+      if (!parent.style.gap && (!parentComputed || parentComputed.gap === "0px" || parentComputed.gap === "normal")) {
+        parent.style.setProperty("gap", "16px", "important");
+      }
+    } else if (isGrid) {
+      parent.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", "important");
+      if (!parent.style.gap) {
+        parent.style.setProperty("gap", "16px", "important");
+      }
+    }
+    clone.style.setProperty("max-width", "100%", "important");
+    clone.style.setProperty("box-sizing", "border-box", "important");
+  }
+
   return clone;
 }
 
