@@ -137,7 +137,6 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
     badgeClass: "bg-slate-50 text-slate-700 border-slate-200/60",
     tabs: [
       { id: "style", label: "Style" },
-      { id: "spacing", label: "Spacing" },
     ],
     deleteLabel: "this element",
   },
