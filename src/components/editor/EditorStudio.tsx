@@ -2006,12 +2006,31 @@ export function EditorStudio({
         isOpen={elementSelection.contextMenu.isOpen}
         position={elementSelection.contextMenu.position}
         elementType={elementSelection.selection.type}
+        elementId={elementSelection.selection.selectedId}
+        elementMeta={elementSelection.selection.meta}
         tag={typeof elementSelection.selection.meta?.tag === "string" ? elementSelection.selection.meta.tag : undefined}
         ancestors={elementSelection.selection.ancestors}
         onClose={elementSelection.closeContextMenu}
         onEdit={() => {
           elementSelection.closeContextMenu();
+          if (elementSelection.selection.type === "text" || elementSelection.selection.type === "heading") {
+            const secIdx = activeSectionIndex;
+            if (secIdx !== null && sections[secIdx]) {
+              const secContainer = document.querySelectorAll(".section-wrapper-container")[secIdx] as HTMLElement;
+              if (secContainer) {
+                const textTarget = secContainer.querySelector("h1, h2, h3, h4, h5, h6, p") as HTMLElement | null;
+                if (textTarget) inPlaceEditor.activateTextEditing(textTarget, secIdx);
+              }
+            }
+          }
         }}
+        onUpdateProps={(props) => {
+          if (elementSelection.selection.selectedId) {
+            elementSelection.updateElementProps(elementSelection.selection.selectedId as any, props as any);
+          }
+        }}
+        onChangeHeadingLevel={elementSelection.changeHeadingLevel}
+        onChangeIcon={elementSelection.changeIcon}
         onReplaceMedia={elementSelection.replaceMedia}
         onReplacePlus={elementSelection.replacePlusWith}
         onAddMediaToCard={elementSelection.addMediaToCard}
@@ -2022,6 +2041,12 @@ export function EditorStudio({
         onMoveDown={() => elementSelection.moveElement("down")}
         onDelete={elementSelection.deleteElement}
         onSelectAncestor={elementSelection.selectAncestor}
+        onSwapVariant={() => handleSwapVariant(1)}
+        onDuplicateSection={handleDuplicateSection}
+        onMoveSectionUp={handleMoveUp}
+        onMoveSectionDown={handleMoveDown}
+        onDeleteSection={handleDeleteSection}
+        onPatchSection={handleSectionPatch}
       />
 
       <main
@@ -2471,141 +2496,31 @@ export function EditorStudio({
       )}
 
       {/*
-        Toolbar Dock: Mutually exclusive render.
-        When SectionToolbar is open, EditorToolbar is completely unmounted, ensuring zero overlap.
+        Persistent Global Main Toolbar:
+        [ Logo | Layers | Undo | Redo ]      [ Device | Zoom ]      [ Save | Preview | Publish ]
+        Never swapped out when an element or section is selected.
+        All element editing tools are accessed via Right-Click Context Menu.
       */}
       {!isSettingsOpen && !isDrawerOpen && (
-        elementSelection.selection.selectedId ? (
-          /* A card, button, image or text inside a section: its own toolbar, same dock. */
-          <ElementToolbar
-            key={elementSelection.selection.selectedId}
-            selection={elementSelection.selection}
-            sectionTitle={
-              sections.find((s) => s.id === elementSelection.selection.sectionId)?.title ?? "Section"
-            }
-            device={sectionDevice}
-            dockPosition={dockPosition}
-            onDeviceChange={handleSectionDeviceChange}
-            onChange={elementSelection.updateElementProps}
-            onChangeHeadingLevel={elementSelection.changeHeadingLevel}
-            onSelectAncestor={elementSelection.selectAncestor}
-            onReplaceMedia={elementSelection.replaceMedia}
-            onReplacePlus={elementSelection.replacePlusWith}
-            onChangeIcon={elementSelection.changeIcon}
-            onAddMediaToCard={elementSelection.addMediaToCard}
-            onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
-            onSelectChildMedia={elementSelection.selectCardMedia}
-            onSelectParentCard={elementSelection.selectParentCard}
-            onInsertChildIntoCard={elementSelection.insertChildIntoCard}
-            onDuplicate={elementSelection.duplicateElement}
-            onMoveUp={() => elementSelection.moveElement("up")}
-            onMoveDown={() => elementSelection.moveElement("down")}
-            onClose={elementSelection.clearSelection}
-            onDelete={elementSelection.deleteElement}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-          />
-        ) : inPlaceEditor.isEditingText && customToolbarSection ? (
-          /* Text being typed in: the text toolbar. The section toolbar edits the section only. */
-          <InlineTextToolbar
-            sectionTitle={customToolbarSection.title || "Section"}
-            device={sectionDevice}
-            dockPosition={dockPosition}
-            onDeviceChange={handleSectionDeviceChange}
-            onClose={() => {
-              inPlaceEditor.finishInlineTextEditing(false);
-              closeCustomToolbar();
-            }}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-            colorValue={inPlaceEditor.activeTextColor}
-            onApplyColor={inPlaceEditor.applyTextColor}
-            onApplyFormat={inPlaceEditor.applyTextFormat}
-            fontFamilyValue={inPlaceEditor.activeFontFamily}
-            onApplyFontFamily={inPlaceEditor.applyFontFamily}
-            fontSizeValue={inPlaceEditor.activeFontSize}
-            onApplyFontSize={inPlaceEditor.applyFontSize}
-            textAlignValue={inPlaceEditor.activeTextAlign}
-            onApplyTextAlign={inPlaceEditor.applyTextAlign}
-            lineHeightValue={inPlaceEditor.activeLineHeight}
-            letterSpacingValue={inPlaceEditor.activeLetterSpacing}
-            onApplyTextSpacing={inPlaceEditor.applyTextSpacing}
-          />
-        ) : isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
-          <SectionToolbar
-            key={customToolbarSection.id}
-            section={customToolbarSection}
-            position={{ index: resolvedToolbarSectionIndex, total: sections.length }}
-            device={sectionDevice}
-            dockPosition={dockPosition}
-            selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
-            onDeviceChange={handleSectionDeviceChange}
-            onPatch={handleSectionPatch}
-            /* Back button / Deselect: returns to normal dock */
-            onClose={closeCustomToolbar}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            onDeleteSection={handleDeleteSection}
-            onDuplicateSection={handleDuplicateSection}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-            isOverlaid={isHeaderOverlaid(customToolbarSection)}
-            onToggleOverlay={() => {
-              const secIdx = resolvedToolbarSectionIndex;
-              if (secIdx === null || !sections[secIdx]) return;
-              const target = sections[secIdx];
-              const updated = toggleHeaderOverlay(target);
-              setSectionsWithHistory((prev) =>
-                prev.map((s, i) => (i === secIdx ? updated : s)),
-              );
-            }}
-          />
-        ) : (
-          <EditorToolbar
-            subdomain={subdomain}
-            activePageSlug={editor.activePage.slug}
-            onOpenSettings={() => setIsSettingsOpen((prev) => !prev)}
-            isSettingsOpen={isSettingsOpen}
-            onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
-            viewport={viewport}
-            setViewport={setViewport}
-            deviceCatalogue={deviceCatalogue}
-            canvasScale={canvasScale}
-            /* Empty when nothing is selected, so the toolbar can say so. */
-            activeSectionTitle={
-              activeSectionIndex !== null ? sections[activeSectionIndex]?.title ?? "" : ""
-            }
-            hasSections={sections.length > 0}
-            isSectionSelected={activeSectionIndex !== null}
-            onAddSection={() => setShowAddSectionModal(true)}
-            onDuplicateSection={handleDuplicateSection}
-            onSwapVariant={() => handleSwapVariant(1)}
-            variantCount={activeVariantCount}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
-            onDeleteSection={handleDeleteSection}
-            onSyncAdminWebsite={handlePersistWebsiteSave}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-            onDockPositionChange={setDockPosition}
-          />
-        )
+        <EditorToolbar
+          subdomain={subdomain}
+          activePageSlug={editor.activePage.slug}
+          onOpenSettings={() => setIsSettingsOpen((prev) => !prev)}
+          isSettingsOpen={isSettingsOpen}
+          onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
+          viewport={viewport}
+          setViewport={setViewport}
+          deviceCatalogue={deviceCatalogue}
+          canvasScale={canvasScale}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={editor.canUndo}
+          canRedo={editor.canRedo}
+          onSyncAdminWebsite={handlePersistWebsiteSave}
+          saveStatus={editor.saveStatus}
+          saveError={editor.saveError}
+          onDockPositionChange={setDockPosition}
+        />
       )}
 
 

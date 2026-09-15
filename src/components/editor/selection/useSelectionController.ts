@@ -278,15 +278,36 @@ export function useSelectionController({
 
       const box = canvasBoxFor(section.id);
       const hit = box ? resolveTarget(target, box) : null;
-      if (!box || !hit) {
+      if (!box) {
         clearSelection();
         return false;
       }
 
       event.preventDefault();
       event.stopPropagation();
-
       flushCommit();
+
+      if (!hit) {
+        const id = section.id;
+        const secAny = section as unknown as { id: string; title?: string; category?: string; variant?: string; background?: string };
+        const meta = {
+          tag: "section",
+          title: section.title,
+          category: secAny.category,
+          variant: secAny.variant,
+          background: secAny.background,
+        };
+        selectionStore.selectElement(id, "section", section.id, meta, [
+          { id: section.id, label: section.title || secAny.category || "Section", type: "section", path: "" },
+        ]);
+        setContextMenu({
+          isOpen: true,
+          position: { x: event.clientX, y: event.clientY },
+        });
+        onElementSelected?.(sectionIndex);
+        return true;
+      }
+
       const id = elementId(section.id, hit.path);
       const ancestors = getAncestorHierarchy(hit.element, box, section.id, section.title);
       const meta = {
