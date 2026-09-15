@@ -348,16 +348,6 @@ export function CardPanel({
       </>
     );
   }
-  // spacing
-  return (
-    <>
-      <Field label="Padding">
-        <TextField value={props.padding} placeholder="24px" onCommit={(padding) => onChange({ padding })} width="w-[120px]" mono />
-      </Field>
-      <Field label="Margin">
-        <TextField value={props.margin} placeholder="0px" onCommit={(margin) => onChange({ margin })} width="w-[120px]" mono />
-      </Field>
-      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">CSS shorthand: top right bottom left</span>
-    </>
-  );
+
+  return null;
 }

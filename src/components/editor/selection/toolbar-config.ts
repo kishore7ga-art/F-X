@@ -51,7 +51,6 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
       { id: "media", label: "Media & Content" },
       { id: "style", label: "Background & Shape" },
       { id: "border", label: "Border" },
-      { id: "spacing", label: "Margin & Padding" },
     ],
     deleteLabel: "this card",
   },
