@@ -1184,22 +1184,29 @@ export function SelectionHighlight({
                   setShowCardMediaPopover(false);
                 }}
                 title="Card Background Color"
-                className="p-1 rounded-xl hover:bg-slate-100 flex items-center gap-1.5 border border-slate-200/80 transition cursor-pointer text-[11px] font-semibold text-slate-700 bg-slate-50"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 ${
+                  showCardBgPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
               >
                 <span
-                  className="w-4 h-4 rounded-full border border-slate-300 shadow-xs shrink-0"
+                  className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-xs shrink-0"
                   style={{ background: cardBg }}
                 />
-                <span className="text-[10.5px] font-mono uppercase">{cardBg.slice(0, 7)}</span>
+                <span className="font-mono text-[11px] uppercase font-semibold">
+                  {cardBg.startsWith("#") ? cardBg.toUpperCase() : "Bg"}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
               </button>
 
               {showCardBgPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2.5 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-2 z-[100000] w-48 text-slate-800"
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 z-[100000] w-52 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">
                     Card Background
                   </div>
                   <div className="grid grid-cols-6 gap-1.5">
@@ -1212,23 +1219,27 @@ export function SelectionHighlight({
                           handleCardBgChange(hex);
                           setShowCardBgPopover(false);
                         }}
-                        className="w-5 h-5 rounded-full border border-slate-200 hover:scale-115 transition shadow-xs cursor-pointer"
+                        className={`w-6 h-6 rounded-lg border transition hover:scale-110 shadow-xs cursor-pointer ${
+                          cardBg.toLowerCase() === hex.toLowerCase()
+                            ? "border-violet-600 ring-2 ring-violet-400/30"
+                            : "border-slate-200"
+                        }`}
                         style={{ background: hex }}
                       />
                     ))}
                   </div>
-                  <div className="pt-1.5 border-t border-slate-100 flex items-center gap-1.5">
+                  <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
                     <input
                       type="color"
                       value={cardBg.startsWith("#") ? cardBg : "#ffffff"}
                       onChange={(e) => handleCardBgChange(e.target.value)}
-                      className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                      className="w-7 h-7 rounded-lg cursor-pointer border border-slate-200 bg-transparent p-0.5 shrink-0"
                     />
                     <input
                       type="text"
                       value={cardBg}
                       onChange={(e) => handleCardBgChange(e.target.value)}
-                      className="flex-1 px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-mono text-slate-800 uppercase focus:outline-none"
+                      className="flex-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-mono text-slate-800 uppercase focus:outline-none focus:border-violet-400"
                     />
                   </div>
                 </div>
@@ -1246,41 +1257,42 @@ export function SelectionHighlight({
                   setShowCardMediaPopover(false);
                 }}
                 title="Card Shape, Border & Shadow"
-                className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold border transition cursor-pointer ${
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
                   showCardStylePopover
                     ? "bg-slate-900 text-white border-slate-900 shadow-xs"
                     : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
                 }`}
               >
-                <Square className="w-3.5 h-3.5 text-violet-500 shrink-0" />
-                <span>Border & Shape</span>
+                <Square className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Style</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
               </button>
 
               {showCardStylePopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-3 z-[100000] w-60 text-slate-800"
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
                   {/* Corner Radius */}
                   <div>
-                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
                       <span>Corner Radius</span>
-                      <span className="font-mono text-slate-600">{cardRadius}</span>
+                      <span className="font-mono text-slate-600 font-semibold">{cardRadius}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1">
-                      {["0px", "8px", "12px", "16px", "24px", "32px"].map((rad) => (
+                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
                         <button
                           key={rad}
                           type="button"
                           onClick={() => handleCardRadiusChange(rad)}
-                          className={`py-0.5 rounded-lg text-[10px] font-mono font-bold text-center transition cursor-pointer ${
+                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
                             cardRadius === rad
-                              ? "bg-violet-50 text-violet-700 border border-violet-200 font-black"
-                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60"
+                              ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {rad.replace("px", "")}
+                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
                         </button>
                       ))}
                     </div>
@@ -1288,20 +1300,20 @@ export function SelectionHighlight({
 
                   {/* Border Width & Color */}
                   <div>
-                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                      Border Width & Colour
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      Border Width & Color
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="grid grid-cols-5 gap-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="grid grid-cols-5 gap-1 flex-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
                         {["0px", "1px", "2px", "3px", "4px"].map((w) => (
                           <button
                             key={w}
                             type="button"
                             onClick={() => handleCardBorderWidthChange(w)}
-                            className={`py-0.5 rounded-lg text-[10px] font-mono font-bold text-center transition cursor-pointer ${
+                            className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
                               cardBorderWidth === w
-                                ? "bg-violet-50 text-violet-700 border border-violet-200 font-black"
-                                : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60"
+                                ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                             }`}
                           >
                             {w.replace("px", "")}
@@ -1312,7 +1324,7 @@ export function SelectionHighlight({
                         type="color"
                         value={cardBorderColor.startsWith("#") ? cardBorderColor : "#e2e8f0"}
                         onChange={(e) => handleCardBorderColorChange(e.target.value)}
-                        className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent shrink-0"
+                        className="w-7 h-7 rounded-lg cursor-pointer border border-slate-200 bg-transparent p-0.5 shrink-0"
                         title="Border Color"
                       />
                     </div>
@@ -1320,19 +1332,19 @@ export function SelectionHighlight({
 
                   {/* Shadow Presets */}
                   <div>
-                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                       Shadow
                     </div>
-                    <div className="grid grid-cols-5 gap-1">
+                    <div className="grid grid-cols-5 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
                       {["none", "sm", "md", "lg", "xl"].map((sh) => (
                         <button
                           key={sh}
                           type="button"
                           onClick={() => handleCardShadowChange(sh)}
-                          className={`py-0.5 rounded-lg text-[10px] font-bold uppercase text-center transition cursor-pointer ${
+                          className={`py-1 rounded-lg text-[10px] font-semibold uppercase text-center transition cursor-pointer ${
                             cardShadow === sh
-                              ? "bg-violet-50 text-violet-700 border border-violet-200 font-black"
-                              : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60"
+                              ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
                           {sh}
@@ -1343,8 +1355,6 @@ export function SelectionHighlight({
                 </div>
               )}
             </div>
-
-            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
 
             {/* 3. Media Controls Popover */}
             <div className="relative">
@@ -1357,27 +1367,29 @@ export function SelectionHighlight({
                   setShowCardStylePopover(false);
                 }}
                 title="Add or Manage Media in Card"
-                className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold border transition cursor-pointer ${
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
                   showCardMediaPopover
                     ? "bg-slate-900 text-white border-slate-900 shadow-xs"
                     : cardHasMedia
-                    ? "bg-violet-50 text-violet-700 border-violet-200/80"
-                    : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200/80"
+                    ? "bg-violet-50 text-violet-700 border-violet-200 font-semibold"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
                 }`}
               >
-                <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-                <span>{cardHasMedia ? "Media" : "+ Media"}</span>
+                <ImageIcon className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Media</span>
+                {cardHasMedia && <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />}
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
               </button>
 
               {showCardMediaPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-2.5 z-[100000] w-64 text-slate-800"
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 z-[100000] w-64 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
                   {cardHasMedia ? (
                     <>
-                      <div className="flex items-center justify-between text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-1 rounded-lg border border-violet-200/60">
+                      <div className="flex items-center justify-between text-[10px] font-bold text-violet-700 bg-violet-50 px-2.5 py-1.5 rounded-xl border border-violet-200/60">
                         <span className="capitalize">{cardMediaType} in Card</span>
                         {onSelectChildMedia && (
                           <button
@@ -1403,9 +1415,9 @@ export function SelectionHighlight({
                             onAddMediaToCard?.("image", undefined, "top");
                             setShowCardMediaPopover(false);
                           }}
-                          className="flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200/80 transition cursor-pointer"
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
                         >
-                          <ImageIcon className="w-3 h-3 text-emerald-600" />
+                          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
                           Image
                         </button>
                         <button
@@ -1414,9 +1426,9 @@ export function SelectionHighlight({
                             onAddMediaToCard?.("video", undefined, "top");
                             setShowCardMediaPopover(false);
                           }}
-                          className="flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold bg-slate-50 hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border border-slate-200/80 transition cursor-pointer"
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
                         >
-                          <VideoIcon className="w-3 h-3 text-cyan-600" />
+                          <VideoIcon className="w-3.5 h-3.5 text-cyan-600" />
                           Video
                         </button>
                         <button
@@ -1425,9 +1437,9 @@ export function SelectionHighlight({
                             onAddMediaToCard?.("youtube", undefined, "top");
                             setShowCardMediaPopover(false);
                           }}
-                          className="flex items-center justify-center gap-1 py-1 rounded-lg text-[10.5px] font-bold bg-slate-50 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200/80 transition cursor-pointer"
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
                         >
-                          <Youtube className="w-3 h-3 text-rose-600" />
+                          <Youtube className="w-3.5 h-3.5 text-rose-600" />
                           YouTube
                         </button>
                       </div>
@@ -1435,9 +1447,9 @@ export function SelectionHighlight({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1 w-full py-1 rounded-lg text-[10.5px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
+                        className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer"
                       >
-                        <Upload className="w-3 h-3 text-slate-500" />
+                        <Upload className="w-3.5 h-3.5 text-slate-500" />
                         Upload New File
                       </button>
 
@@ -1448,9 +1460,9 @@ export function SelectionHighlight({
                             onRemoveMediaFromCard();
                             setShowCardMediaPopover(false);
                           }}
-                          className="flex items-center justify-center gap-1 w-full py-1 rounded-lg text-[10.5px] font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer"
+                          className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl text-[11px] font-semibold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                           Remove Media
                         </button>
                       )}
@@ -1467,9 +1479,9 @@ export function SelectionHighlight({
                             onAddMediaToCard?.("image", undefined, "top");
                             setShowCardMediaPopover(false);
                           }}
-                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 transition cursor-pointer"
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
                         >
-                          <ImageIcon className="w-3 h-3" />
+                          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
                           Image
                         </button>
                         <button
@@ -1478,9 +1490,9 @@ export function SelectionHighlight({
                             onAddMediaToCard?.("video", undefined, "top");
                             setShowCardMediaPopover(false);
                           }}
-                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-cyan-50 hover:bg-cyan-100 text-cyan-700 border border-cyan-200/80 transition cursor-pointer"
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
                         >
-                          <VideoIcon className="w-3 h-3" />
+                          <VideoIcon className="w-3.5 h-3.5 text-cyan-600" />
                           Video
                         </button>
                         <button
@@ -1489,9 +1501,9 @@ export function SelectionHighlight({
                             onAddMediaToCard?.("youtube", undefined, "top");
                             setShowCardMediaPopover(false);
                           }}
-                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 transition cursor-pointer"
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
                         >
-                          <Youtube className="w-3 h-3" />
+                          <Youtube className="w-3.5 h-3.5 text-rose-600" />
                           YouTube
                         </button>
                       </div>
@@ -1499,35 +1511,35 @@ export function SelectionHighlight({
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1 w-full py-1.5 rounded-lg text-[10.5px] font-bold bg-slate-900 text-white hover:bg-slate-700 transition cursor-pointer shadow-xs"
+                        className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-white hover:bg-slate-800 transition cursor-pointer shadow-xs"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         Upload File
                       </button>
 
-                      <div className="flex items-center gap-1 pt-1 border-t border-slate-100">
+                      <div className="flex items-center gap-1 pt-1.5 border-t border-slate-100">
                         <input
                           type="url"
                           value={cardCustomUrl}
                           onChange={(e) => setCardCustomUrl(e.target.value)}
-                          placeholder="Paste URL…"
+                          placeholder="Paste image or video URL…"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") handleAddCustomMediaUrl();
                           }}
-                          className="flex-1 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] text-slate-800 placeholder-slate-400 focus:outline-none"
+                          className="flex-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-violet-400"
                         />
                         <button
                           type="button"
                           onClick={handleAddCustomMediaUrl}
-                          className="px-2 py-0.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-[10.5px] font-bold text-slate-800 cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-[11px] font-bold text-white transition cursor-pointer"
                         >
-                          +
+                          Add
                         </button>
                       </div>
                     </>
                   )}
                   {cardUploadStatus && (
-                    <div className="text-[9.5px] font-semibold text-slate-500 text-center">{cardUploadStatus}</div>
+                    <div className="text-[10px] font-semibold text-slate-500 text-center">{cardUploadStatus}</div>
                   )}
                 </div>
               )}
@@ -1535,34 +1547,34 @@ export function SelectionHighlight({
 
             <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
 
-            {/* 4. Add Child Content: Heading, Text, Button */}
+            {/* 4. Add Child Content: Heading, Text, Button (Segmented modern control) */}
             {onInsertChildIntoCard && (
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 gap-0.5">
                 <button
                   type="button"
                   onClick={() => onInsertChildIntoCard("heading")}
-                  title="Add Heading into this Card"
-                  className="flex items-center gap-0.5 px-2 py-1 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 text-[10.5px] font-bold border border-pink-200/80 transition cursor-pointer"
+                  title="Add Heading into Card"
+                  className="h-7 px-2.5 flex items-center gap-1 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-white hover:text-pink-600 hover:shadow-xs transition cursor-pointer shrink-0"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3 text-pink-500 shrink-0" />
                   <span>Heading</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onInsertChildIntoCard("text")}
-                  title="Add Text into this Card"
-                  className="flex items-center gap-0.5 px-2 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10.5px] font-bold border border-amber-200/80 transition cursor-pointer"
+                  title="Add Text into Card"
+                  className="h-7 px-2.5 flex items-center gap-1 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-white hover:text-amber-600 hover:shadow-xs transition cursor-pointer shrink-0"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3 text-amber-500 shrink-0" />
                   <span>Text</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => onInsertChildIntoCard("button")}
-                  title="Add Button into this Card"
-                  className="flex items-center gap-0.5 px-2 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10.5px] font-bold border border-indigo-200/80 transition cursor-pointer"
+                  title="Add Button into Card"
+                  className="h-7 px-2.5 flex items-center gap-1 rounded-lg text-[11px] font-semibold text-slate-700 hover:bg-white hover:text-indigo-600 hover:shadow-xs transition cursor-pointer shrink-0"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3 h-3 text-indigo-500 shrink-0" />
                   <span>Button</span>
                 </button>
               </div>
@@ -1580,7 +1592,7 @@ export function SelectionHighlight({
                     onDuplicate();
                   }}
                   title="Duplicate Card"
-                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
@@ -1593,7 +1605,7 @@ export function SelectionHighlight({
                     onMoveUp();
                   }}
                   title="Move Card Up"
-                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
                 >
                   <ArrowUp className="w-3.5 h-3.5" />
                 </button>
@@ -1606,7 +1618,7 @@ export function SelectionHighlight({
                     onMoveDown();
                   }}
                   title="Move Card Down"
-                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
                 >
                   <ArrowDown className="w-3.5 h-3.5" />
                 </button>
@@ -1619,7 +1631,7 @@ export function SelectionHighlight({
                     onDelete();
                   }}
                   title="Delete Card"
-                  className="p-1 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -1637,7 +1649,7 @@ export function SelectionHighlight({
               onClose();
             }}
             title="Deselect (Esc)"
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer ml-0.5"
+            className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
