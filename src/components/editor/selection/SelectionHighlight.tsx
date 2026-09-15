@@ -1069,17 +1069,7 @@ export function SelectionHighlight({
           borderRadius: 6,
           boxShadow: `0 0 0 3px ${colour}33`,
         }}
-      >
-        {/* Badge */}
-        <span
-          className={`absolute ${
-            isNearTop ? "top-1 left-1" : "-top-5 left-0"
-          } rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs select-none`}
-          style={{ background: colour }}
-        >
-          {label}
-        </span>
-      </div>
+      />
 
       {/* 2. Floating Contextual Toolbar - Modern Sleek Pill UI with auto viewport containment */}
       <div
