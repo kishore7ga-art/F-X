@@ -1507,7 +1507,19 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
 }
 
 function applyContainer(el: HTMLElement, p: Partial<ContainerProps>): void {
-  if (p.display !== undefined) set(el, "display", p.display);
+  if (p.display !== undefined) {
+    set(el, "display", p.display);
+    if (p.display === "grid") {
+      if (!el.style.gridTemplateColumns) {
+        el.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))");
+      }
+    } else if (p.display === "flex") {
+      el.style.removeProperty("grid-template-columns");
+      if (!el.style.alignItems) el.style.setProperty("align-items", "center");
+    } else if (p.display === "block") {
+      el.style.removeProperty("grid-template-columns");
+    }
+  }
   if (p.flexDirection !== undefined) set(el, "flex-direction", p.flexDirection);
   set(el, "gap", p.gap);
   set(el, "align-items", p.alignItems);

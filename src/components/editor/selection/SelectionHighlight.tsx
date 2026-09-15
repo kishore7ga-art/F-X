@@ -631,12 +631,32 @@ export function SelectionHighlight({
   // Container-specific props & live mutation handlers
   const containerGap = meta.gap || "16px";
   const containerGapNum = parseInt(containerGap, 10) || 0;
-  const containerDisplay = meta.display === "block" ? "block" : "grid";
+  const containerDisplay =
+    meta.display ||
+    (activeElement
+      ? window.getComputedStyle(activeElement).display.includes("grid")
+        ? "grid"
+        : window.getComputedStyle(activeElement).display.includes("flex")
+        ? "flex"
+        : "block"
+      : "flex");
 
-  const handleContainerDisplayChange = (disp: "grid" | "block") => {
+  const handleContainerDisplayChange = (disp: "flex" | "grid" | "block") => {
     const el = resolveElement();
     if (el) {
       el.style.setProperty("display", disp, "important");
+      if (disp === "grid") {
+        el.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", "important");
+        el.style.setProperty("width", "100%", "important");
+      } else if (disp === "flex") {
+        el.style.removeProperty("grid-template-columns");
+        el.style.setProperty("flex-wrap", "wrap", "important");
+        el.style.setProperty("align-items", "center", "important");
+        el.style.setProperty("justify-content", "space-between", "important");
+        el.style.setProperty("width", "100%", "important");
+      } else {
+        el.style.removeProperty("grid-template-columns");
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (selectedId && onUpdateProps) {
@@ -650,6 +670,9 @@ export function SelectionHighlight({
     const el = resolveElement();
     if (el) {
       el.style.setProperty("gap", gapStr, "important");
+      if (el.style.display === "grid" && !el.style.gridTemplateColumns) {
+        el.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", "important");
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (selectedId && onUpdateProps) {
@@ -661,6 +684,9 @@ export function SelectionHighlight({
     const el = resolveElement();
     if (el) {
       el.style.setProperty("gap", val, "important");
+      if (el.style.display === "grid" && !el.style.gridTemplateColumns) {
+        el.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", "important");
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (selectedId && onUpdateProps) {
@@ -1970,14 +1996,24 @@ export function SelectionHighlight({
           </>
         ) : effectiveType === "container" ? (
           <>
-            {/* 1. Display Selector (Grid, Block) - Flex removed per request */}
+            {/* 1. Display Selector (Auto Fit, Grid, Block) */}
             <div className="flex items-center bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 gap-0.5">
-              <span className="px-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Display
-              </span>
+              <button
+                type="button"
+                onClick={() => handleContainerDisplayChange("flex")}
+                title="Auto-Fit Row (horizontal auto layout)"
+                className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                  containerDisplay === "flex"
+                    ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                }`}
+              >
+                Auto Fit
+              </button>
               <button
                 type="button"
                 onClick={() => handleContainerDisplayChange("grid")}
+                title="Grid with Auto-Fit columns"
                 className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
                   containerDisplay === "grid"
                     ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200/80"
@@ -1989,6 +2025,7 @@ export function SelectionHighlight({
               <button
                 type="button"
                 onClick={() => handleContainerDisplayChange("block")}
+                title="Block (vertical stack)"
                 className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
                   containerDisplay === "block"
                     ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200/80"
