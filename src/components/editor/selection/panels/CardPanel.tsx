@@ -41,13 +41,6 @@ const SHADOW_OPTIONS = SHADOW_PRESETS.map((value) => ({
   label: value === "none" ? "None" : value.toUpperCase(),
 }));
 
-const POSITION_OPTIONS = [
-  { value: "top", label: "Top (Full)" },
-  { value: "left", label: "Left (Split)" },
-  { value: "right", label: "Right (Split)" },
-  { value: "bottom", label: "Bottom (Full)" },
-];
-
 const LAYOUT_OPTIONS = [
   { value: "vertical", label: "Stacked" },
   { value: "horizontal-left", label: "Media Left" },
@@ -222,18 +215,6 @@ export function CardPanel({
         ) : (
           <>
             {/* No Media - Add Media Options */}
-            <span className="text-[11px] font-bold text-slate-700 shrink-0">Add to Card:</span>
-
-            {/* Position Choice */}
-            <Segmented
-              label="Position"
-              value={mediaPosition}
-              options={POSITION_OPTIONS}
-              onChange={(val) => setMediaPosition(val as "top" | "bottom")}
-            />
-
-            <Divider />
-
             {/* Add Image Button */}
             <button
               type="button"
