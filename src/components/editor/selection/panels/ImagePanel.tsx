@@ -5,21 +5,12 @@ import { Upload, Video, Image as ImageIcon, Link as LinkIcon } from "lucide-reac
 import { Youtube } from "../YouTubeIcon";
 
 import { ApiError, uploadMedia } from "@/lib/api-client";
-import type { AspectRatio, ImageProps, ObjectFit, ShadowPreset } from "@/lib/editor/element-resolver";
+import type { ImageProps, ObjectFit, ShadowPreset } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { ColorField, Divider, Field, PxField, RangeField, Segmented, SelectField, TextField } from "./fields";
+import { ColorField, Divider, Field, PxField, RangeField, Segmented, TextField } from "./fields";
 
 /** Mirrors the server's ceiling so the answer arrives before the upload does. */
 const MAX_MEDIA_BYTES = 30 * 1024 * 1024;
-
-const RATIOS: ReadonlyArray<{ value: AspectRatio; label: string }> = [
-  { value: "auto", label: "Auto" },
-  { value: "1 / 1", label: "1:1" },
-  { value: "4 / 3", label: "4:3" },
-  { value: "3 / 2", label: "3:2" },
-  { value: "16 / 9", label: "16:9" },
-  { value: "21 / 9", label: "21:9" },
-];
 
 const FITS: ReadonlyArray<{ value: ObjectFit; label: string; title: string }> = [
   { value: "cover", label: "Cover", title: "Fill the frame, cropping if needed" },
@@ -174,10 +165,9 @@ export function ImagePanel({ tab, props, onChange, onReplaceMedia }: ExtendedIma
     );
   }
 
-  // layout & ratio
+  // fit & radius
   return (
     <>
-      <SelectField label="Aspect ratio" value={props.aspectRatio || "auto"} options={RATIOS} onChange={(aspectRatio) => onChange({ aspectRatio })} />
       <Segmented label="Fit" value={props.objectFit || "cover"} options={FITS} onChange={(objectFit) => onChange({ objectFit })} />
       <PxField label="Radius" value={props.radius || "0px"} max={64} onChange={(radius) => onChange({ radius })} />
     </>

@@ -81,7 +81,7 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
     badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
     tabs: [
       { id: "media", label: "Media" },
-      { id: "layout", label: "Ratio & Fit" },
+      { id: "layout", label: "Fit & Radius" },
       { id: "style", label: "Style & Link" },
     ],
     deleteLabel: "this image",
