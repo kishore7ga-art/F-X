@@ -2508,8 +2508,10 @@ export function EditorStudio({
         elementSelection.selection.type !== "text" &&
         elementSelection.selection.type !== "card" &&
         elementSelection.selection.type !== "container" &&
-        elementSelection.selection.type !== "image" ? (
-          /* Non-text element (button, video, icon): its own toolbar, same dock. Text, Heading, Card, Container, & Image are edited via floating toolbar directly on canvas */
+        elementSelection.selection.type !== "image" &&
+        elementSelection.selection.type !== "video" &&
+        elementSelection.selection.type !== "youtube" ? (
+          /* Non-text element (button, icon, logo, plus): its own toolbar, same dock. Text, Heading, Card, Container, Image, Video, & YouTube are edited via floating toolbar directly on canvas */
           <ElementToolbar
             key={elementSelection.selection.selectedId}
             selection={elementSelection.selection}

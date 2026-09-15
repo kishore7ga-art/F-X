@@ -33,17 +33,22 @@ import {
   Minus,
   Layers,
   Square,
+  Play,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { Youtube } from "./YouTubeIcon";
 import { uploadMedia, ApiError } from "@/lib/api-client";
 
 import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
-import type {
-  ElementPropsByType,
-  HeadingLevel,
-  LeafType,
-  TextAlign,
-  TextTransform,
+import {
+  extractYouTubeVideoId,
+  type ElementPropsByType,
+  type HeadingLevel,
+  type LeafType,
+  type TextAlign,
+  type TextTransform,
 } from "@/lib/editor/element-resolver";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
 
@@ -231,6 +236,18 @@ export function SelectionHighlight({
   const [showImageFitPopover, setShowImageFitPopover] = useState(false);
   const [imageUploadStatus, setImageUploadStatus] = useState<string | null>(null);
 
+  // Video specific popover states
+  const videoFileInputRef = useRef<HTMLInputElement | null>(null);
+  const posterFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showVideoMediaPopover, setShowVideoMediaPopover] = useState(false);
+  const [showVideoPlaybackPopover, setShowVideoPlaybackPopover] = useState(false);
+  const [videoUploadStatus, setVideoUploadStatus] = useState<string | null>(null);
+  const [posterUploadStatus, setPosterUploadStatus] = useState<string | null>(null);
+
+  // YouTube specific popover states
+  const [showYoutubeMediaPopover, setShowYoutubeMediaPopover] = useState(false);
+  const [showYoutubePlaybackPopover, setShowYoutubePlaybackPopover] = useState(false);
+
   useEffect(() => {
     let frame = 0;
     let observed: HTMLElement | null = null;
@@ -288,6 +305,10 @@ export function SelectionHighlight({
       setShowCardMediaPopover(false);
       setShowImageMediaPopover(false);
       setShowImageFitPopover(false);
+      setShowVideoMediaPopover(false);
+      setShowVideoPlaybackPopover(false);
+      setShowYoutubeMediaPopover(false);
+      setShowYoutubePlaybackPopover(false);
     };
     window.addEventListener("pointerdown", handleOutside);
     window.addEventListener("mousedown", handleOutside);
@@ -736,6 +757,173 @@ export function SelectionHighlight({
       setShowImageMediaPopover(false);
     } catch (err) {
       setImageUploadStatus(err instanceof ApiError ? err.message : "Upload failed");
+    }
+  };
+
+  // Video-specific props & live mutation handlers
+  const videoSrc = meta.src || (activeElement instanceof HTMLVideoElement ? activeElement.src : activeElement?.querySelector("video")?.getAttribute("src") || "");
+  const videoPoster = meta.poster || (activeElement instanceof HTMLVideoElement ? activeElement.poster : activeElement?.querySelector("video")?.getAttribute("poster") || "");
+  const videoFit = (meta.objectFit || "cover") as "cover" | "contain" | "fill";
+  const videoRadius = meta.radius || "0px";
+  const videoAutoplay = Boolean(meta.autoplay);
+  const videoMuted = Boolean(meta.muted);
+  const videoLoop = Boolean(meta.loop);
+  const videoControls = meta.controls !== undefined ? Boolean(meta.controls) : true;
+  const videoPlaysInline = Boolean(meta.playsInline);
+
+  const handleVideoSrcChange = (src: string) => {
+    const el = resolveElement();
+    if (el) {
+      if (el instanceof HTMLVideoElement) {
+        el.src = src;
+      } else {
+        const vid = el.querySelector("video");
+        if (vid) vid.src = src;
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { src } as any);
+    }
+  };
+
+  const handleVideoPosterChange = (poster: string) => {
+    const el = resolveElement();
+    if (el) {
+      if (el instanceof HTMLVideoElement) {
+        el.poster = poster;
+      } else {
+        const vid = el.querySelector("video");
+        if (vid) vid.poster = poster;
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { poster } as any);
+    }
+  };
+
+  const handleVideoFileUpload = async (file: File | undefined) => {
+    if (!file) return;
+    setVideoUploadStatus(`Uploading ${file.name}…`);
+    try {
+      const { url } = await uploadMedia(file);
+      handleVideoSrcChange(url);
+      setVideoUploadStatus(null);
+      setShowVideoMediaPopover(false);
+    } catch (err) {
+      setVideoUploadStatus(err instanceof ApiError ? err.message : "Upload failed");
+    }
+  };
+
+  const handlePosterFileUpload = async (file: File | undefined) => {
+    if (!file) return;
+    setPosterUploadStatus(`Uploading poster…`);
+    try {
+      const { url } = await uploadMedia(file);
+      handleVideoPosterChange(url);
+      setPosterUploadStatus(null);
+    } catch (err) {
+      setPosterUploadStatus(err instanceof ApiError ? err.message : "Upload failed");
+    }
+  };
+
+  const handleVideoFitChange = (fit: "cover" | "contain" | "fill") => {
+    const el = resolveElement();
+    if (el) {
+      if (el instanceof HTMLVideoElement) {
+        el.style.setProperty("object-fit", fit, "important");
+      } else {
+        const vid = el.querySelector("video");
+        if (vid) vid.style.setProperty("object-fit", fit, "important");
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { objectFit: fit } as any);
+    }
+  };
+
+  const handleVideoRadiusChange = (rad: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("border-radius", rad, "important");
+      const vid = el.querySelector("video");
+      if (vid) vid.style.setProperty("border-radius", rad, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { radius: rad } as any);
+    }
+  };
+
+  const handleVideoPlaybackToggle = (prop: "autoplay" | "muted" | "loop" | "controls" | "playsInline", value: boolean) => {
+    const el = resolveElement();
+    const vid = el instanceof HTMLVideoElement ? el : el?.querySelector("video");
+    if (vid) {
+      if (prop === "autoplay") {
+        vid.autoplay = value;
+        if (value) vid.muted = true;
+      } else if (prop === "muted") {
+        vid.muted = value;
+      } else if (prop === "loop") {
+        vid.loop = value;
+      } else if (prop === "controls") {
+        vid.controls = value;
+      } else if (prop === "playsInline") {
+        vid.playsInline = value;
+      }
+      el?.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      if (prop === "autoplay" && value) {
+        onUpdateProps(selectedId, { autoplay: true, muted: true } as any);
+      } else {
+        onUpdateProps(selectedId, { [prop]: value } as any);
+      }
+    }
+  };
+
+  // YouTube-specific props & live mutation handlers
+  const youtubeUrl = meta.url || (meta.videoId ? `https://www.youtube.com/watch?v=${meta.videoId}` : "");
+  const youtubeVideoId = meta.videoId || extractYouTubeVideoId(youtubeUrl);
+  const isYoutubeValid = Boolean(youtubeVideoId);
+  const youtubeRadius = meta.radius || "0px";
+  const youtubeAutoplay = Boolean(meta.autoplay);
+  const youtubeMuted = Boolean(meta.muted);
+  const youtubeLoop = Boolean(meta.loop);
+  const youtubeControls = meta.controls !== undefined ? Boolean(meta.controls) : true;
+
+  const handleYoutubeUrlChange = (rawUrl: string) => {
+    const trimmed = rawUrl.trim();
+    const id = extractYouTubeVideoId(trimmed);
+    if (id && selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { url: trimmed, videoId: id } as any);
+    } else if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { url: trimmed } as any);
+    }
+  };
+
+  const handleYoutubeRadiusChange = (rad: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("border-radius", rad, "important");
+      const iframe = el.querySelector("iframe");
+      if (iframe) iframe.style.setProperty("border-radius", rad, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { radius: rad } as any);
+    }
+  };
+
+  const handleYoutubePlaybackToggle = (prop: "autoplay" | "muted" | "loop" | "controls", value: boolean) => {
+    if (selectedId && onUpdateProps) {
+      if (prop === "autoplay" && value) {
+        onUpdateProps(selectedId, { autoplay: true, muted: true } as any);
+      } else {
+        onUpdateProps(selectedId, { [prop]: value } as any);
+      }
     }
   };
 
@@ -2157,6 +2345,607 @@ export function SelectionHighlight({
                     onDelete();
                   }}
                   title="Delete Image"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : null}
+
+        {/* 6. Video Element Floating Pop Toolbar */}
+        {effectiveType === "video" ? (
+          <>
+            {/* 1. Video Source / Replace Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowVideoMediaPopover(!showVideoMediaPopover);
+                  setShowVideoPlaybackPopover(false);
+                }}
+                title="Video Source"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showVideoMediaPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <VideoIcon className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                <span>Video Source</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showVideoMediaPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Media Type Switcher */}
+                  {onReplaceMedia && (
+                    <>
+                      <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Media Type</div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReplaceMedia("image");
+                            setShowVideoMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                          Image
+                        </button>
+                        <span className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-slate-900 text-white shadow-xs">
+                          <VideoIcon className="w-3.5 h-3.5 text-cyan-400" />
+                          Video
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReplaceMedia("youtube");
+                            setShowVideoMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <Youtube className="w-3.5 h-3.5 text-rose-600" />
+                          YouTube
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Upload MP4 button */}
+                  <button
+                    type="button"
+                    onClick={() => videoFileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900 text-white hover:bg-slate-800 transition cursor-pointer shadow-xs"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload MP4 Video
+                  </button>
+                  <input
+                    ref={videoFileInputRef}
+                    type="file"
+                    accept="video/mp4,video/webm,video/ogg"
+                    className="hidden"
+                    onChange={(e) => {
+                      void handleVideoFileUpload(e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+
+                  {/* Video URL Input */}
+                  <div className="flex flex-col gap-1 pt-1.5 border-t border-slate-100">
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Video URL</div>
+                    <input
+                      type="url"
+                      defaultValue={videoSrc}
+                      placeholder="Paste MP4 / WebM URL…"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleVideoSrcChange((e.target as HTMLInputElement).value);
+                          setShowVideoMediaPopover(false);
+                        }
+                      }}
+                      onBlur={(e) => handleVideoSrcChange(e.target.value)}
+                      className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  {/* Poster Image */}
+                  <div className="flex flex-col gap-1 pt-1.5 border-t border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Poster Image</span>
+                      <button
+                        type="button"
+                        onClick={() => posterFileInputRef.current?.click()}
+                        className="text-[10px] font-semibold text-cyan-600 hover:text-cyan-700 transition cursor-pointer"
+                      >
+                        Upload
+                      </button>
+                      <input
+                        ref={posterFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          void handlePosterFileUpload(e.target.files?.[0]);
+                          e.target.value = "";
+                        }}
+                      />
+                    </div>
+                    <input
+                      type="url"
+                      defaultValue={videoPoster}
+                      placeholder="Poster image URL (optional)"
+                      onBlur={(e) => handleVideoPosterChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleVideoPosterChange((e.target as HTMLInputElement).value);
+                      }}
+                      className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+
+                  {(videoUploadStatus || posterUploadStatus) && (
+                    <div className="text-[10px] font-semibold text-slate-500 text-center">
+                      {videoUploadStatus || posterUploadStatus}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Playback & Style Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowVideoPlaybackPopover(!showVideoPlaybackPopover);
+                  setShowVideoMediaPopover(false);
+                }}
+                title="Playback & Style"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showVideoPlaybackPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <Play className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Playback & Style</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showVideoPlaybackPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Playback Toggles */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Playback</div>
+                    <div className="grid grid-cols-2 gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => handleVideoPlaybackToggle("autoplay", !videoAutoplay)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          videoAutoplay ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Autoplay</span>
+                        <span className={`w-2 h-2 rounded-full ${videoAutoplay ? "bg-cyan-500" : "bg-slate-300"}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleVideoPlaybackToggle("muted", !videoMuted)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          videoMuted ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Muted</span>
+                        <span className={`w-2 h-2 rounded-full ${videoMuted ? "bg-cyan-500" : "bg-slate-300"}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleVideoPlaybackToggle("loop", !videoLoop)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          videoLoop ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Loop</span>
+                        <span className={`w-2 h-2 rounded-full ${videoLoop ? "bg-cyan-500" : "bg-slate-300"}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleVideoPlaybackToggle("controls", !videoControls)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          videoControls ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Controls</span>
+                        <span className={`w-2 h-2 rounded-full ${videoControls ? "bg-cyan-500" : "bg-slate-300"}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Object Fit */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Fit</div>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {(["cover", "contain", "fill"] as const).map((fit) => (
+                        <button
+                          key={fit}
+                          type="button"
+                          onClick={() => handleVideoFitChange(fit)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold capitalize text-center transition cursor-pointer ${
+                            videoFit === fit
+                              ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                          }`}
+                        >
+                          {fit}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Corner Radius */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+                      <span>Corner Radius</span>
+                      <span className="font-mono text-slate-600 font-semibold">{videoRadius}</span>
+                    </div>
+                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                        <button
+                          key={rad}
+                          type="button"
+                          onClick={() => handleVideoRadiusChange(rad)}
+                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
+                            videoRadius === rad
+                              ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                          }`}
+                        >
+                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* Common Actions */}
+            <div className="flex items-center gap-0.5">
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicate Video"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveUp && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp();
+                  }}
+                  title="Move Video Up"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown();
+                  }}
+                  title="Move Video Down"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete Video"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : null}
+
+        {/* 7. YouTube Element Floating Pop Toolbar */}
+        {effectiveType === "youtube" ? (
+          <>
+            {/* 1. YouTube Source / Replace Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowYoutubeMediaPopover(!showYoutubeMediaPopover);
+                  setShowYoutubePlaybackPopover(false);
+                }}
+                title="YouTube Source"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showYoutubeMediaPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <Youtube className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>YouTube Source</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showYoutubeMediaPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 z-[100000] w-72 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Media Type Switcher */}
+                  {onReplaceMedia && (
+                    <>
+                      <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Media Type</div>
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReplaceMedia("image");
+                            setShowYoutubeMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+                          Image
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onReplaceMedia("video");
+                            setShowYoutubeMediaPopover(false);
+                          }}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-semibold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 transition cursor-pointer"
+                        >
+                          <VideoIcon className="w-3.5 h-3.5 text-cyan-600" />
+                          Video
+                        </button>
+                        <span className="flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10.5px] font-bold bg-slate-900 text-white shadow-xs">
+                          <Youtube className="w-3.5 h-3.5 text-rose-400" />
+                          YouTube
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* YouTube URL Input */}
+                  <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-100">
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">YouTube URL</div>
+                    <input
+                      type="url"
+                      defaultValue={youtubeUrl}
+                      placeholder="https://www.youtube.com/watch?v=…"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleYoutubeUrlChange((e.target as HTMLInputElement).value);
+                          setShowYoutubeMediaPopover(false);
+                        }
+                      }}
+                      onBlur={(e) => handleYoutubeUrlChange(e.target.value)}
+                      className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10.5px] font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-rose-400"
+                    />
+
+                    <div className="flex items-center justify-between pt-1">
+                      {isYoutubeValid ? (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Valid ID: {youtubeVideoId}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                          <AlertCircle className="h-3 w-3" />
+                          Invalid URL
+                        </span>
+                      )}
+
+                      {youtubeVideoId && (
+                        <a
+                          href={`https://www.youtube.com/watch?v=${youtubeVideoId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[10.5px] font-bold text-slate-500 hover:text-rose-600 transition"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Watch
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Playback & Style Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowYoutubePlaybackPopover(!showYoutubePlaybackPopover);
+                  setShowYoutubeMediaPopover(false);
+                }}
+                title="Playback & Style"
+                className={`h-8 flex items-center gap-1.5 px-2.5 rounded-xl border text-[11.5px] font-medium transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  showYoutubePlaybackPopover
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+                }`}
+              >
+                <Play className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span>Playback & Style</span>
+                <ChevronDown className="w-3 h-3 opacity-50 shrink-0" />
+              </button>
+
+              {showYoutubePlaybackPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {/* Playback Toggles */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Playback</div>
+                    <div className="grid grid-cols-2 gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => handleYoutubePlaybackToggle("autoplay", !youtubeAutoplay)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          youtubeAutoplay ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Autoplay</span>
+                        <span className={`w-2 h-2 rounded-full ${youtubeAutoplay ? "bg-rose-500" : "bg-slate-300"}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleYoutubePlaybackToggle("muted", !youtubeMuted)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          youtubeMuted ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Muted</span>
+                        <span className={`w-2 h-2 rounded-full ${youtubeMuted ? "bg-rose-500" : "bg-slate-300"}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleYoutubePlaybackToggle("loop", !youtubeLoop)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          youtubeLoop ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Loop</span>
+                        <span className={`w-2 h-2 rounded-full ${youtubeLoop ? "bg-rose-500" : "bg-slate-300"}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleYoutubePlaybackToggle("controls", !youtubeControls)}
+                        className={`px-2 py-1.5 rounded-lg text-[10.5px] font-semibold text-left flex items-center justify-between transition cursor-pointer ${
+                          youtubeControls ? "bg-white text-slate-900 shadow-xs border border-slate-200" : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        <span>Controls</span>
+                        <span className={`w-2 h-2 rounded-full ${youtubeControls ? "bg-rose-500" : "bg-slate-300"}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Corner Radius */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center justify-between">
+                      <span>Corner Radius</span>
+                      <span className="font-mono text-slate-600 font-semibold">{youtubeRadius}</span>
+                    </div>
+                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                        <button
+                          key={rad}
+                          type="button"
+                          onClick={() => handleYoutubeRadiusChange(rad)}
+                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
+                            youtubeRadius === rad
+                              ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
+                              : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                          }`}
+                        >
+                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* Common Actions */}
+            <div className="flex items-center gap-0.5">
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicate YouTube Video"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveUp && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp();
+                  }}
+                  title="Move YouTube Video Up"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown();
+                  }}
+                  title="Move YouTube Video Down"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete YouTube Video"
                   className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
