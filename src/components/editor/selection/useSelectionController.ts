@@ -57,7 +57,7 @@ import {
 import { sanitizeCleanDom } from "@/components/editor/canvas/useCanvaInteractions";
 
 /** Anything under one of these is editor chrome, and a click there is not "outside". */
-const CHROME_SELECTOR = '[data-xite-toolbar], [role="dialog"], .section-toolbar, [data-xite-canvas-chrome], [data-xite-context-menu]';
+const CHROME_SELECTOR = '[data-xite-toolbar], [data-xite-floating-toolbar], [role="dialog"], .section-toolbar, [data-xite-canvas-chrome], [data-xite-context-menu]';
 
 const COMMIT_DELAY_MS = 250;
 

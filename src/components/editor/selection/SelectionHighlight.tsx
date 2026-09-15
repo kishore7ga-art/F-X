@@ -230,9 +230,18 @@ export function SelectionHighlight({
     };
   }, [resolveElement, revision]);
 
-  // Close submenus on outside click
+  // Close submenus on genuine outside click
   useEffect(() => {
-    const handleOutside = () => {
+    const handleOutside = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.closest("[data-xite-floating-toolbar]") ||
+          target.closest("[data-xite-toolbar]") ||
+          target.closest(".xite-floating-popover"))
+      ) {
+        return;
+      }
       setShowColorPopover(false);
       setShowFontPopover(false);
       setShowTagPopover(false);
@@ -240,7 +249,11 @@ export function SelectionHighlight({
       setShowSpacingPopover(false);
     };
     window.addEventListener("pointerdown", handleOutside);
-    return () => window.removeEventListener("pointerdown", handleOutside);
+    window.addEventListener("mousedown", handleOutside);
+    return () => {
+      window.removeEventListener("pointerdown", handleOutside);
+      window.removeEventListener("mousedown", handleOutside);
+    };
   }, []);
 
   const activeElement = resolveElement();
@@ -404,12 +417,9 @@ export function SelectionHighlight({
       {/* 2. Floating Contextual Toolbar Directly Attached to the Top Edge */}
       <div
         data-xite-floating-toolbar=""
+        data-xite-toolbar=""
         onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => {
-          // Prevent losing focus / contentEditable selection
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+        onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         className={`fixed z-[99999] pointer-events-auto flex items-center gap-1 bg-slate-900/95 text-slate-100 backdrop-blur-md border border-slate-700/90 shadow-2xl rounded-xl p-1 text-xs select-none transition-all duration-75`}
         style={{
@@ -423,7 +433,8 @@ export function SelectionHighlight({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowTagPopover(!showTagPopover);
                   setShowFontPopover(false);
                   setShowColorPopover(false);
@@ -431,20 +442,27 @@ export function SelectionHighlight({
                   setShowSpacingPopover(false);
                 }}
                 title="Change semantic tag (H1-H6, P)"
-                className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-black uppercase text-pink-400 hover:text-pink-300 border border-slate-700 transition"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-black uppercase text-pink-400 hover:text-pink-300 border border-slate-700 transition cursor-pointer"
               >
                 <span>{currentLevel.toUpperCase()}</span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
 
               {showTagPopover && (
-                <div className="absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[100px]">
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[100px]"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
                   {HEADING_TAGS.map((t) => (
                     <button
                       key={t}
                       type="button"
-                      onClick={() => handleTagChange(t)}
-                      className={`flex items-center justify-between px-2.5 py-1 rounded text-[11px] font-bold text-left transition ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTagChange(t);
+                      }}
+                      className={`flex items-center justify-between px-2.5 py-1 rounded text-[11px] font-bold text-left transition cursor-pointer ${
                         currentLevel === t
                           ? "bg-pink-600 text-white"
                           : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -462,7 +480,8 @@ export function SelectionHighlight({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowFontPopover(!showFontPopover);
                   setShowTagPopover(false);
                   setShowColorPopover(false);
@@ -470,7 +489,7 @@ export function SelectionHighlight({
                   setShowSpacingPopover(false);
                 }}
                 title="Font Family"
-                className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-200 border border-slate-700 transition max-w-[110px] truncate"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-200 border border-slate-700 transition max-w-[110px] truncate cursor-pointer"
               >
                 <Type className="w-3 h-3 text-slate-400 shrink-0" />
                 <span className="truncate">
@@ -480,13 +499,20 @@ export function SelectionHighlight({
               </button>
 
               {showFontPopover && (
-                <div className="absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[130px]">
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[130px]"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
                   {FONT_OPTIONS.map((font) => (
                     <button
                       key={font.value}
                       type="button"
-                      onClick={() => handleFontFamilyChange(font.value)}
-                      className={`px-2 py-1 rounded text-[11px] font-medium text-left transition ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFontFamilyChange(font.value);
+                      }}
+                      className={`px-2 py-1 rounded text-[11px] font-medium text-left transition cursor-pointer ${
                         currentFontFamily === font.value
                           ? "bg-blue-600 text-white"
                           : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -505,42 +531,56 @@ export function SelectionHighlight({
             <div className="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5 relative">
               <button
                 type="button"
-                onClick={() => handleFontSizeChange(-2)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFontSizeChange(-2);
+                }}
                 title="Decrease font size"
-                className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 text-xs font-bold transition"
+                className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 text-xs font-bold transition cursor-pointer"
               >
                 −
               </button>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowSizePopover(!showSizePopover);
                   setShowTagPopover(false);
                   setShowFontPopover(false);
                   setShowColorPopover(false);
                   setShowSpacingPopover(false);
                 }}
-                className="px-1 text-[11px] font-mono font-bold text-slate-200 min-w-[28px] text-center hover:text-white transition"
+                className="px-1 text-[11px] font-mono font-bold text-slate-200 min-w-[28px] text-center hover:text-white transition cursor-pointer"
               >
                 {parsedFontSize}
               </button>
               <button
                 type="button"
-                onClick={() => handleFontSizeChange(2)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFontSizeChange(2);
+                }}
                 title="Increase font size"
-                className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 text-xs font-bold transition"
+                className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 text-xs font-bold transition cursor-pointer"
               >
                 +
               </button>
 
               {showSizePopover && (
-                <div className="absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl grid grid-cols-3 gap-0.5 z-[100000] w-48">
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl grid grid-cols-3 gap-0.5 z-[100000] w-48"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
                   {FONT_SIZES.map((s) => (
                     <button
                       key={s.value}
                       type="button"
-                      onClick={() => handleSelectExactSize(s.value)}
-                      className={`px-1.5 py-1 rounded text-[10px] font-mono font-bold text-center transition ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectExactSize(s.value);
+                      }}
+                      className={`px-1.5 py-1 rounded text-[10px] font-mono font-bold text-center transition cursor-pointer ${
                         rawFontSize === s.value
                           ? "bg-blue-600 text-white"
                           : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -558,9 +598,12 @@ export function SelectionHighlight({
             {/* Formatting: Bold (B), Italic (I), Underline (U), Reset */}
             <button
               type="button"
-              onClick={handleToggleBold}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleBold();
+              }}
               title="Bold"
-              className={`p-1.5 rounded-lg transition ${
+              className={`p-1.5 rounded-lg transition cursor-pointer ${
                 isBold
                   ? "bg-pink-600 text-white shadow-xs font-black"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -571,36 +614,48 @@ export function SelectionHighlight({
 
             <button
               type="button"
-              onClick={handleToggleItalic}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleItalic();
+              }}
               title="Italic"
-              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition"
+              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
             >
               <Italic className="w-3.5 h-3.5" />
             </button>
 
             <button
               type="button"
-              onClick={handleToggleUnderline}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleUnderline();
+              }}
               title="Underline"
-              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition"
+              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
             >
               <Underline className="w-3.5 h-3.5" />
             </button>
 
             <button
               type="button"
-              onClick={handleResetFormat}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleResetFormat();
+              }}
               title="Reset formatting"
-              className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition"
+              className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
 
             <button
               type="button"
-              onClick={handleCycleCase}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCycleCase();
+              }}
               title={`Case: ${currentTransform} (Click to toggle)`}
-              className={`px-1.5 py-1 rounded-lg text-[10.5px] font-bold tracking-tight transition ${
+              className={`px-1.5 py-1 rounded-lg text-[10.5px] font-bold tracking-tight transition cursor-pointer ${
                 currentTransform !== "none"
                   ? "bg-purple-600 text-white"
                   : "text-slate-300 hover:bg-slate-800 hover:text-white"
@@ -617,7 +672,8 @@ export function SelectionHighlight({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowColorPopover(!showColorPopover);
                   setShowFontPopover(false);
                   setShowTagPopover(false);
@@ -625,7 +681,7 @@ export function SelectionHighlight({
                   setShowSpacingPopover(false);
                 }}
                 title="Text Color"
-                className="p-1 rounded-lg hover:bg-slate-800 flex items-center gap-1 border border-slate-700 transition"
+                className="p-1 rounded-lg hover:bg-slate-800 flex items-center gap-1 border border-slate-700 transition cursor-pointer"
               >
                 <span
                   className="w-4 h-4 rounded-full border border-white/40 shadow-xs"
@@ -634,7 +690,11 @@ export function SelectionHighlight({
               </button>
 
               {showColorPopover && (
-                <div className="absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-44">
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-44"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Colors
                   </div>
@@ -643,11 +703,12 @@ export function SelectionHighlight({
                       <button
                         key={hex}
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleColorChange(hex);
                           setShowColorPopover(false);
                         }}
-                        className="w-5 h-5 rounded-full border border-white/20 hover:scale-110 transition shadow-xs"
+                        className="w-5 h-5 rounded-full border border-white/20 hover:scale-110 transition shadow-xs cursor-pointer"
                         style={{ background: hex }}
                       />
                     ))}
@@ -676,9 +737,12 @@ export function SelectionHighlight({
             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-lg p-0.5 border border-slate-700">
               <button
                 type="button"
-                onClick={() => handleAlignChange("left")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAlignChange("left");
+                }}
                 title="Align Left"
-                className={`p-1 rounded transition ${
+                className={`p-1 rounded transition cursor-pointer ${
                   currentAlign === "left"
                     ? "bg-blue-600 text-white"
                     : "text-slate-400 hover:text-white"
@@ -688,9 +752,12 @@ export function SelectionHighlight({
               </button>
               <button
                 type="button"
-                onClick={() => handleAlignChange("center")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAlignChange("center");
+                }}
                 title="Align Center"
-                className={`p-1 rounded transition ${
+                className={`p-1 rounded transition cursor-pointer ${
                   currentAlign === "center"
                     ? "bg-blue-600 text-white"
                     : "text-slate-400 hover:text-white"
@@ -700,9 +767,12 @@ export function SelectionHighlight({
               </button>
               <button
                 type="button"
-                onClick={() => handleAlignChange("right")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAlignChange("right");
+                }}
                 title="Align Right"
-                className={`p-1 rounded transition ${
+                className={`p-1 rounded transition cursor-pointer ${
                   currentAlign === "right"
                     ? "bg-blue-600 text-white"
                     : "text-slate-400 hover:text-white"
@@ -712,9 +782,12 @@ export function SelectionHighlight({
               </button>
               <button
                 type="button"
-                onClick={() => handleAlignChange("justify")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAlignChange("justify");
+                }}
                 title="Align Justify"
-                className={`p-1 rounded transition ${
+                className={`p-1 rounded transition cursor-pointer ${
                   currentAlign === "justify"
                     ? "bg-blue-600 text-white"
                     : "text-slate-400 hover:text-white"
@@ -728,7 +801,8 @@ export function SelectionHighlight({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowSpacingPopover(!showSpacingPopover);
                   setShowColorPopover(false);
                   setShowFontPopover(false);
@@ -736,13 +810,17 @@ export function SelectionHighlight({
                   setShowSizePopover(false);
                 }}
                 title="Line height & Letter spacing"
-                className="px-1.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 transition"
+                className="px-1.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 transition cursor-pointer"
               >
                 Line / Spacing ▾
               </button>
 
               {showSpacingPopover && (
-                <div className="absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-48">
+                <div
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-48"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
                   <div>
                     <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                       Line Height
@@ -752,8 +830,11 @@ export function SelectionHighlight({
                         <button
                           key={lh.value}
                           type="button"
-                          onClick={() => handleLineHeightChange(lh.value)}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition ${
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLineHeightChange(lh.value);
+                          }}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition cursor-pointer ${
                             currentLineHeight === lh.value
                               ? "bg-blue-600 text-white"
                               : "text-slate-300 hover:bg-slate-800"
@@ -774,8 +855,11 @@ export function SelectionHighlight({
                         <button
                           key={ls.value}
                           type="button"
-                          onClick={() => handleLetterSpacingChange(ls.value)}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition ${
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLetterSpacingChange(ls.value);
+                          }}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition cursor-pointer ${
                             currentLetterSpacing === ls.value
                               ? "bg-blue-600 text-white"
                               : "text-slate-300 hover:bg-slate-800"
@@ -796,7 +880,10 @@ export function SelectionHighlight({
             {isEditingText ? (
               <button
                 type="button"
-                onClick={onFinishEditing}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFinishEditing?.();
+                }}
                 title="Finish editing text"
                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold text-[10.5px] transition cursor-pointer shadow-xs"
               >
@@ -806,7 +893,10 @@ export function SelectionHighlight({
             ) : onEditText ? (
               <button
                 type="button"
-                onClick={onEditText}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditText();
+                }}
                 title="Edit text content (Double-click)"
                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-600/20 text-pink-300 hover:bg-pink-600 hover:text-white border border-pink-500/30 text-[10.5px] font-bold transition cursor-pointer"
               >
@@ -822,7 +912,10 @@ export function SelectionHighlight({
           {onDuplicate && (
             <button
               type="button"
-              onClick={onDuplicate}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate();
+              }}
               title="Duplicate element"
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             >
@@ -832,7 +925,10 @@ export function SelectionHighlight({
           {onMoveUp && (
             <button
               type="button"
-              onClick={onMoveUp}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveUp();
+              }}
               title="Move element up"
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             >
@@ -842,7 +938,10 @@ export function SelectionHighlight({
           {onMoveDown && (
             <button
               type="button"
-              onClick={onMoveDown}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveDown();
+              }}
               title="Move element down"
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             >
@@ -852,7 +951,10 @@ export function SelectionHighlight({
           {onDelete && (
             <button
               type="button"
-              onClick={onDelete}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
               title="Delete element"
               className="p-1.5 rounded-lg text-red-400 hover:text-red-200 hover:bg-red-950/60 transition cursor-pointer"
             >
@@ -862,7 +964,10 @@ export function SelectionHighlight({
           {onClose && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               title="Deselect (Esc)"
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer ml-0.5"
             >
