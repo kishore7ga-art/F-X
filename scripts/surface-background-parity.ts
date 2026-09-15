@@ -98,6 +98,7 @@ const run = async () => {
       themeCss: themeStylesheet("html"),
       themeId: THEME,
     }),
+    { waitUntil: "domcontentloaded" },
   );
   const adminOut = await admin.evaluate(() => {
     const sec = document.querySelector("#biryani") as HTMLElement;
