@@ -53,7 +53,8 @@ function isPlatformHost(host: string): boolean {
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
-  const host = parseHost(request.headers.get("host"));
+  const rawHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const host = parseHost(rawHost);
 
   // Platform routes and framework internals are never a tenant's site, whatever
   // host they arrive on. Checked before any host handling so a forged header
