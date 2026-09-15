@@ -1,22 +1,44 @@
 "use client";
 
 /**
- * The outline around the selected element, drawn over the canvas rather than
- * on the element.
+ * The interactive outline and floating toolbar around the selected element.
  *
- * Nothing is written to the element itself — no attribute, no inline outline —
- * because the section's code is read back out of the DOM on every commit, and
- * the sanitiser that strips editor marks from that read also clears `outline`,
- * `box-shadow` and `border-radius` on anything it finds marked. A card whose
- * shadow was just set would lose it on the same commit. So the highlight is a
- * fixed box that follows the element's rect and touches nothing.
- *
- * The element is resolved here, not passed in: it is re-looked-up on every
- * measure, so a canvas rebuild between two frames is invisible to it.
+ * Renders directly over the canvas bounding box, providing contextual
+ * text formatting (tags, fonts, sizes, colors, alignment, styles) right
+ * on the element where the user is working.
  */
 
-import { useEffect, useState } from "react";
-import type { ElementType } from "@/lib/editor/selection-store";
+import { useEffect, useState, useRef, useCallback } from "react";
+import {
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  Copy,
+  ArrowUp,
+  ArrowDown,
+  Trash2,
+  X,
+  Edit3,
+  ChevronDown,
+  Type,
+  Palette,
+  Sparkles,
+} from "lucide-react";
+
+import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
+import type {
+  ElementPropsByType,
+  HeadingLevel,
+  HeadingProps,
+  LeafType,
+  TextAlign,
+  TextProps,
+  TextTransform,
+} from "@/lib/editor/element-resolver";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
 
 const RING: Record<Exclude<ElementType, "section">, string> = {
@@ -34,16 +56,74 @@ const RING: Record<Exclude<ElementType, "section">, string> = {
   generic: "#64748b",
 };
 
-interface SelectionHighlightProps {
+const FONT_OPTIONS = [
+  { value: "", label: "Default Font" },
+  { value: "'Inter', sans-serif", label: "Inter" },
+  { value: "'Outfit', sans-serif", label: "Outfit" },
+  { value: "'Plus Jakarta Sans', sans-serif", label: "Plus Jakarta" },
+  { value: "'Playfair Display', serif", label: "Playfair" },
+  { value: "Georgia, serif", label: "Georgia" },
+  { value: "ui-monospace, monospace", label: "Monospace" },
+];
+
+const PRESET_COLORS = [
+  "#ffffff",
+  "#000000",
+  "#0f172a",
+  "#334155",
+  "#64748b",
+  "#94a3b8",
+  "#f43f5e",
+  "#ec4899",
+  "#d946ef",
+  "#8b5cf6",
+  "#6366f1",
+  "#3b82f6",
+  "#06b6d4",
+  "#10b981",
+  "#f59e0b",
+  "#ea580c",
+  "#ef4444",
+];
+
+const HEADING_TAGS: HeadingLevel[] = ["h1", "h2", "h3", "h4", "h5", "h6"];
+
+export interface SelectionHighlightProps {
   type: ElementType | null;
   /** Looks up the live node for the selection; null when there is none. */
   resolveElement: () => HTMLElement | null;
   /** Changes whenever the selection or the canvas content does, to re-measure. */
   revision: string;
+  selection?: SelectionState;
+  onUpdateProps?: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
+  onChangeHeadingLevel?: (level: HeadingLevel) => void;
+  onDuplicate?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onDelete?: () => void;
+  onEditText?: () => void;
+  onClose?: () => void;
 }
 
-export function SelectionHighlight({ type, resolveElement, revision }: SelectionHighlightProps) {
+export function SelectionHighlight({
+  type,
+  resolveElement,
+  revision,
+  selection,
+  onUpdateProps,
+  onChangeHeadingLevel,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+  onEditText,
+  onClose,
+}: SelectionHighlightProps) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [showColorPopover, setShowColorPopover] = useState(false);
+  const [showFontPopover, setShowFontPopover] = useState(false);
+  const [showTagPopover, setShowTagPopover] = useState(false);
+  const colorPickerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let frame = 0;
@@ -80,33 +160,437 @@ export function SelectionHighlight({ type, resolveElement, revision }: Selection
     };
   }, [resolveElement, revision]);
 
+  // Close submenus on outside click
+  useEffect(() => {
+    const handleOutside = () => {
+      setShowColorPopover(false);
+      setShowFontPopover(false);
+      setShowTagPopover(false);
+    };
+    window.addEventListener("pointerdown", handleOutside);
+    return () => window.removeEventListener("pointerdown", handleOutside);
+  }, []);
+
   if (!rect || !type || type === "section") return null;
+
   const colour = RING[type] || "#6366f1";
   const label = TOOLBAR_CONFIG[type]?.badge || "Element";
-  const isNearTop = rect.top < 24;
+  const isNearTop = rect.top < 52;
+  const isTextLike = type === "heading" || type === "text";
+
+  const selectedId = selection?.selectedId;
+  const meta = (selection?.meta ?? {}) as Record<string, any>;
+
+  // Current props extraction
+  const currentColor = meta.color || (type === "heading" ? "#0f172a" : "#334155");
+  const rawFontSize = String(meta.fontSize || (type === "heading" ? "32px" : "16px"));
+  const parsedFontSize = parseInt(rawFontSize, 10) || (type === "heading" ? 32 : 16);
+  const currentFontFamily = meta.fontFamily || "";
+  const currentWeight = String(meta.fontWeight || (type === "heading" ? "700" : "400"));
+  const isBold = parseInt(currentWeight, 10) >= 600 || currentWeight === "bold";
+  const currentAlign = (meta.textAlign || "left") as TextAlign;
+  const currentTransform = (meta.textTransform || "none") as TextTransform;
+  const currentLevel = (meta.level || (type === "heading" ? "h2" : "p")) as HeadingLevel;
+
+  // Handlers
+  const handleColorChange = (hex: string) => {
+    if (selectedId && onUpdateProps && type) {
+      onUpdateProps(selectedId, { color: hex } as any);
+    }
+  };
+
+  const handleFontSizeChange = (delta: number) => {
+    if (selectedId && onUpdateProps && type) {
+      const nextSize = Math.max(10, Math.min(120, parsedFontSize + delta));
+      onUpdateProps(selectedId, { fontSize: `${nextSize}px` } as any);
+    }
+  };
+
+  const handleFontFamilyChange = (font: string) => {
+    if (selectedId && onUpdateProps && type) {
+      onUpdateProps(selectedId, { fontFamily: font } as any);
+    }
+    setShowFontPopover(false);
+  };
+
+  const handleToggleBold = () => {
+    if (selectedId && onUpdateProps && type) {
+      const nextWeight = isBold ? "400" : "700";
+      onUpdateProps(selectedId, { fontWeight: nextWeight } as any);
+    }
+  };
+
+  const handleCycleCase = () => {
+    if (selectedId && onUpdateProps && type) {
+      const order: TextTransform[] = ["none", "uppercase", "capitalize"];
+      const nextIdx = (order.indexOf(currentTransform) + 1) % order.length;
+      onUpdateProps(selectedId, { textTransform: order[nextIdx] } as any);
+    }
+  };
+
+  const handleAlignChange = (align: TextAlign) => {
+    if (selectedId && onUpdateProps && type) {
+      onUpdateProps(selectedId, { textAlign: align } as any);
+    }
+  };
+
+  const handleTagChange = (tag: HeadingLevel) => {
+    if (type === "heading" && onChangeHeadingLevel) {
+      onChangeHeadingLevel(tag);
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { level: tag } as any);
+    }
+    setShowTagPopover(false);
+  };
+
+  // Compute horizontal positioning so toolbar is never clipped offscreen
+  const toolbarLeft = Math.max(12, Math.min(rect.left, window.innerWidth - 620));
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed z-[9998] transition-all duration-75"
-      style={{
-        top: rect.top - 2,
-        left: rect.left - 2,
-        width: rect.width + 4,
-        height: rect.height + 4,
-        border: `2px solid ${colour}`,
-        borderRadius: 6,
-        boxShadow: `0 0 0 3px ${colour}33`,
-      }}
-    >
-      <span
-        className={`absolute ${
-          isNearTop ? "top-1 left-1" : "-top-5 left-0"
-        } rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs`}
-        style={{ background: colour }}
+    <>
+      {/* 1. Bounding Outline Box */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed z-[9998] transition-all duration-75"
+        style={{
+          top: rect.top - 2,
+          left: rect.left - 2,
+          width: rect.width + 4,
+          height: rect.height + 4,
+          border: `2px solid ${colour}`,
+          borderRadius: 6,
+          boxShadow: `0 0 0 3px ${colour}33`,
+        }}
       >
-        {label}
-      </span>
-    </div>
+        {/* Badge */}
+        <span
+          className={`absolute ${
+            isNearTop ? "top-1 left-1" : "-top-5 left-0"
+          } rounded px-1.5 py-0.5 text-[9.5px] font-black uppercase tracking-wider text-white shadow-xs select-none`}
+          style={{ background: colour }}
+        >
+          {label}
+        </span>
+      </div>
+
+      {/* 2. Floating Contextual Toolbar Directly Attached to the Top Edge */}
+      <div
+        data-xite-floating-toolbar=""
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        className={`fixed z-[99999] pointer-events-auto flex items-center gap-1 bg-slate-900/95 text-slate-100 backdrop-blur-md border border-slate-700/90 shadow-2xl rounded-xl p-1 text-xs select-none transition-all duration-75`}
+        style={{
+          top: isNearTop ? `${rect.bottom + 8}px` : `${Math.max(6, rect.top - 46)}px`,
+          left: `${toolbarLeft}px`,
+        }}
+      >
+        {isTextLike ? (
+          <>
+            {/* Tag / Heading Level Selector */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowTagPopover(!showTagPopover);
+                  setShowFontPopover(false);
+                  setShowColorPopover(false);
+                }}
+                title="Change semantic tag (H1-H6, P)"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-black uppercase text-pink-400 hover:text-pink-300 border border-slate-700 transition"
+              >
+                <span>{currentLevel.toUpperCase()}</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+
+              {showTagPopover && (
+                <div className="absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[100px]">
+                  {HEADING_TAGS.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleTagChange(t)}
+                      className={`flex items-center justify-between px-2.5 py-1 rounded text-[11px] font-bold text-left transition ${
+                        currentLevel === t
+                          ? "bg-pink-600 text-white"
+                          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      }`}
+                    >
+                      <span>{t.toUpperCase()}</span>
+                      <span className="text-[9px] opacity-60">Heading {t.slice(1)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Font Family Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFontPopover(!showFontPopover);
+                  setShowTagPopover(false);
+                  setShowColorPopover(false);
+                }}
+                title="Font Family"
+                className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-200 border border-slate-700 transition max-w-[110px] truncate"
+              >
+                <Type className="w-3 h-3 text-slate-400 shrink-0" />
+                <span className="truncate">
+                  {FONT_OPTIONS.find((f) => f.value === currentFontFamily)?.label || "Font"}
+                </span>
+                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+              </button>
+
+              {showFontPopover && (
+                <div className="absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[130px]">
+                  {FONT_OPTIONS.map((font) => (
+                    <button
+                      key={font.value}
+                      type="button"
+                      onClick={() => handleFontFamilyChange(font.value)}
+                      className={`px-2 py-1 rounded text-[11px] font-medium text-left transition ${
+                        currentFontFamily === font.value
+                          ? "bg-blue-600 text-white"
+                          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      }`}
+                    >
+                      {font.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
+
+            {/* Font Size Stepper */}
+            <div className="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5">
+              <button
+                type="button"
+                onClick={() => handleFontSizeChange(-2)}
+                title="Decrease font size"
+                className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 text-xs font-bold transition"
+              >
+                −
+              </button>
+              <span className="px-1 text-[11px] font-mono font-bold text-slate-200 min-w-[28px] text-center">
+                {parsedFontSize}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleFontSizeChange(2)}
+                title="Increase font size"
+                className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-700 text-xs font-bold transition"
+              >
+                +
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
+
+            {/* Formatting: Bold & Case */}
+            <button
+              type="button"
+              onClick={handleToggleBold}
+              title="Bold"
+              className={`p-1.5 rounded-lg transition ${
+                isBold
+                  ? "bg-pink-600 text-white shadow-xs font-black"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <Bold className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCycleCase}
+              title={`Case: ${currentTransform} (Click to toggle)`}
+              className={`px-1.5 py-1 rounded-lg text-[10.5px] font-bold tracking-tight transition ${
+                currentTransform !== "none"
+                  ? "bg-purple-600 text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              {currentTransform === "uppercase"
+                ? "AA"
+                : currentTransform === "capitalize"
+                ? "Ab"
+                : "Aa"}
+            </button>
+
+            {/* Text Color Swatch & Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowColorPopover(!showColorPopover);
+                  setShowFontPopover(false);
+                  setShowTagPopover(false);
+                }}
+                title="Text Color"
+                className="p-1 rounded-lg hover:bg-slate-800 flex items-center gap-1 border border-slate-700 transition"
+              >
+                <span
+                  className="w-4 h-4 rounded-full border border-white/40 shadow-xs"
+                  style={{ background: currentColor }}
+                />
+              </button>
+
+              {showColorPopover && (
+                <div className="absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-44">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Colors
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {PRESET_COLORS.map((hex) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => {
+                          handleColorChange(hex);
+                          setShowColorPopover(false);
+                        }}
+                        className="w-5 h-5 rounded-full border border-white/20 hover:scale-110 transition shadow-xs"
+                        style={{ background: hex }}
+                      />
+                    ))}
+                  </div>
+                  <div className="pt-1 border-t border-slate-800 flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={currentColor.startsWith("#") ? currentColor : "#ffffff"}
+                      onChange={(e) => handleColorChange(e.target.value)}
+                      className="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={currentColor}
+                      onChange={(e) => handleColorChange(e.target.value)}
+                      className="flex-1 px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-[10px] font-mono text-white uppercase focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
+
+            {/* Alignment Icons */}
+            <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-lg p-0.5 border border-slate-700">
+              <button
+                type="button"
+                onClick={() => handleAlignChange("left")}
+                title="Align Left"
+                className={`p-1 rounded transition ${
+                  currentAlign === "left"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <AlignLeft className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAlignChange("center")}
+                title="Align Center"
+                className={`p-1 rounded transition ${
+                  currentAlign === "center"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <AlignCenter className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAlignChange("right")}
+                title="Align Right"
+                className={`p-1 rounded transition ${
+                  currentAlign === "right"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <AlignRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
+
+            {/* Direct Edit Text Trigger */}
+            {onEditText && (
+              <button
+                type="button"
+                onClick={onEditText}
+                title="Edit text content (Double-click)"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-600/20 text-pink-300 hover:bg-pink-600 hover:text-white border border-pink-500/30 text-[10.5px] font-bold transition cursor-pointer"
+              >
+                <Edit3 className="w-3 h-3" />
+                <span>Edit</span>
+              </button>
+            )}
+          </>
+        ) : null}
+
+        {/* Quick Operations: Duplicate, Move, Delete */}
+        <div className="flex items-center gap-0.5 pl-1">
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={onDuplicate}
+              title="Duplicate element"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onMoveUp && (
+            <button
+              type="button"
+              onClick={onMoveUp}
+              title="Move element up"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onMoveDown && (
+            <button
+              type="button"
+              onClick={onMoveDown}
+              title="Move element down"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              title="Delete element"
+              className="p-1.5 rounded-lg text-red-400 hover:text-red-200 hover:bg-red-950/60 transition cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="Deselect (Esc)"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer ml-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
+

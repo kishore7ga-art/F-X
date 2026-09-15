@@ -2000,6 +2000,23 @@ export function EditorStudio({
         revision={`${elementSelection.selection.selectedId ?? ""}|${
           sections.find((s) => s.id === elementSelection.selection.sectionId)?.code ?? ""
         }`}
+        selection={elementSelection.selection}
+        onUpdateProps={elementSelection.updateElementProps}
+        onChangeHeadingLevel={elementSelection.changeHeadingLevel}
+        onDuplicate={elementSelection.duplicateElement}
+        onMoveUp={() => elementSelection.moveElement("up")}
+        onMoveDown={() => elementSelection.moveElement("down")}
+        onDelete={elementSelection.deleteElement}
+        onClose={elementSelection.clearSelection}
+        onEditText={() => {
+          if (elementSelection.selection.type === "text" || elementSelection.selection.type === "heading") {
+            const secIdx = activeSectionIndex;
+            if (secIdx !== null && sections[secIdx]) {
+              const el = elementSelection.resolveSelectedElement();
+              if (el) inPlaceEditor.activateTextEditing(el, secIdx);
+            }
+          }
+        }}
       />
 
       <ContextMenu
@@ -2502,8 +2519,8 @@ export function EditorStudio({
         When no element or section is selected, it displays the global EditorToolbar.
       */}
       {!isSettingsOpen && !isDrawerOpen && (
-        elementSelection.selection.selectedId ? (
-          /* A card, button, image or text inside a section: its own toolbar, same dock. */
+        elementSelection.selection.selectedId && elementSelection.selection.type !== "heading" && elementSelection.selection.type !== "text" ? (
+          /* Non-text element (container, card, button, image, video, icon): its own toolbar, same dock. Text & Heading are edited via the floating toolbar directly on the element */
           <ElementToolbar
             key={elementSelection.selection.selectedId}
             selection={elementSelection.selection}
