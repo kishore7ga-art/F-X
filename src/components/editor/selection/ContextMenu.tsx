@@ -1,7 +1,21 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import { Copy, Trash2, ArrowUp, ArrowDown, Layers, Edit3, X, Video, Image as ImageIcon, Star } from "lucide-react";
+import {
+  Copy,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Layers,
+  Edit3,
+  X,
+  Video,
+  Image as ImageIcon,
+  Star,
+  Type,
+  AlignLeft,
+  Square,
+} from "lucide-react";
 import { Youtube } from "./YouTubeIcon";
 import type { ElementType, SelectionAncestor } from "@/lib/editor/selection-store";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
@@ -21,8 +35,13 @@ export interface ContextMenuProps {
   onMoveDown?: () => void;
   onDelete?: () => void;
   onSelectAncestor?: (path: string, type: ElementType) => void;
-  onAddMediaToCard?: (mediaType: "image" | "video" | "youtube") => void;
+  onAddMediaToCard?: (
+    mediaType: "image" | "video" | "youtube",
+    initialProps?: Record<string, unknown>,
+    position?: "top" | "bottom" | "left" | "right",
+  ) => void;
   onRemoveMediaFromCard?: () => void;
+  onInsertChildIntoCard?: (childType: "heading" | "text" | "button") => void;
 }
 
 export function ContextMenu({
@@ -42,6 +61,7 @@ export function ContextMenu({
   onSelectAncestor,
   onAddMediaToCard,
   onRemoveMediaFromCard,
+  onInsertChildIntoCard,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -127,45 +147,103 @@ export function ContextMenu({
           </button>
         )}
 
-        {/* Card Media Actions */}
-        {elementType === "card" && onAddMediaToCard && (
+        {/* Card Media & Child Actions */}
+        {elementType === "card" && (
           <>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onAddMediaToCard("image");
-                onClose();
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-emerald-700"
-            >
-              <ImageIcon className="h-3.5 w-3.5 text-emerald-500" />
-              <span>Add Image to Card</span>
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onAddMediaToCard("video");
-                onClose();
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-cyan-700"
-            >
-              <Video className="h-3.5 w-3.5 text-cyan-500" />
-              <span>Add Video to Card</span>
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                onAddMediaToCard("youtube");
-                onClose();
-              }}
-              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-rose-700"
-            >
-              <Youtube className="h-3.5 w-3.5 text-rose-500" />
-              <span>Add YouTube to Card</span>
-            </button>
+            {onAddMediaToCard && (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onAddMediaToCard("image", undefined, "left");
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-emerald-700"
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>Add Image (Split Left)</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onAddMediaToCard("image", undefined, "top");
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-emerald-700"
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>Add Image (Top)</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onAddMediaToCard("video", undefined, "left");
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-cyan-700"
+                >
+                  <Video className="h-3.5 w-3.5 text-cyan-500" />
+                  <span>Add Video to Card</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onAddMediaToCard("youtube", undefined, "top");
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-rose-700"
+                >
+                  <Youtube className="h-3.5 w-3.5 text-rose-500" />
+                  <span>Add YouTube to Card</span>
+                </button>
+              </>
+            )}
+
+            {onInsertChildIntoCard && (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onInsertChildIntoCard("heading");
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-pink-700"
+                >
+                  <Type className="h-3.5 w-3.5 text-pink-500" />
+                  <span>Add Heading to Card</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onInsertChildIntoCard("text");
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-amber-700"
+                >
+                  <AlignLeft className="h-3.5 w-3.5 text-amber-500" />
+                  <span>Add Paragraph to Card</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onInsertChildIntoCard("button");
+                    onClose();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-indigo-700"
+                >
+                  <Square className="h-3.5 w-3.5 text-indigo-500" />
+                  <span>Add Button to Card</span>
+                </button>
+              </>
+            )}
+
             {onRemoveMediaFromCard && (
               <button
                 type="button"

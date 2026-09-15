@@ -2016,6 +2016,7 @@ export function EditorStudio({
         onReplacePlus={elementSelection.replacePlusWith}
         onAddMediaToCard={elementSelection.addMediaToCard}
         onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
+        onInsertChildIntoCard={elementSelection.insertChildIntoCard}
         onDuplicate={elementSelection.duplicateElement}
         onMoveUp={() => elementSelection.moveElement("up")}
         onMoveDown={() => elementSelection.moveElement("down")}
@@ -2495,6 +2496,7 @@ export function EditorStudio({
             onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
             onSelectChildMedia={elementSelection.selectCardMedia}
             onSelectParentCard={elementSelection.selectParentCard}
+            onInsertChildIntoCard={elementSelection.insertChildIntoCard}
             onDuplicate={elementSelection.duplicateElement}
             onMoveUp={() => elementSelection.moveElement("up")}
             onMoveDown={() => elementSelection.moveElement("down")}

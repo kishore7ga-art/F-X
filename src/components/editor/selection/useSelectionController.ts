@@ -27,12 +27,14 @@ import {
   ensureElementKey,
   findCardMediaElement,
   getAncestorHierarchy,
+  insertChildIntoCardDom,
   insertMediaIntoCardDom,
   moveElementDom,
   parseElementId,
   pathOf,
   readElementProps,
   removeMediaFromCardDom,
+  type CardMediaPosition,
   replaceImageWithVideoDom,
   replaceImageWithYouTubeDom,
   replacePlusWithElementDom,
@@ -118,8 +120,10 @@ export interface SelectionController {
   addMediaToCard: (
     mediaType: "image" | "video" | "youtube",
     initialProps?: Record<string, unknown>,
-    position?: "top" | "bottom",
+    position?: CardMediaPosition,
   ) => void;
+  /** Inserts a child element (heading, text, button) inside the selected card */
+  insertChildIntoCard: (childType: "heading" | "text" | "button") => void;
   /** Removes any media inside the selected card */
   removeMediaFromCard: () => void;
   /** Selects the child media element of the currently selected card */
@@ -617,7 +621,7 @@ export function useSelectionController({
     (
       mediaType: "image" | "video" | "youtube",
       initialProps?: Record<string, unknown>,
-      position: "top" | "bottom" = "top",
+      position: CardMediaPosition = "top",
     ) => {
       const state = selectionStore.getState();
       if (!state.selectedId || !state.sectionId) return;
@@ -631,6 +635,43 @@ export function useSelectionController({
 
       const freshProps = readElementProps("card", element);
       selectionStore.updateElementProps(state.selectedId, freshProps as unknown as Record<string, unknown>);
+    },
+    [resolveSelected, flushCommit, writeSectionNow],
+  );
+
+  const insertChildIntoCard = useCallback(
+    (childType: "heading" | "text" | "button") => {
+      const state = selectionStore.getState();
+      if (!state.selectedId || !state.sectionId) return;
+      const element = resolveSelected(state);
+      if (!element) return;
+      flushCommit();
+
+      const newChild = insertChildIntoCardDom(element, childType);
+      const sectionId = state.sectionId;
+      writeSectionNow(sectionId);
+
+      // Select the newly inserted child so the user can immediately edit it
+      const box = canvasBoxFor(sectionId);
+      if (box) {
+        const hit = resolveTarget(newChild, box);
+        if (hit) {
+          const id = elementId(sectionId, hit.path);
+          const ancestors = getAncestorHierarchy(
+            hit.element,
+            box,
+            sectionId,
+            sectionsRef.current.find((s) => s.id === sectionId)?.title || "Section",
+          );
+          const meta = {
+            ...readElementProps(hit.type, hit.element),
+            tag: hit.element.tagName.toLowerCase(),
+            cardPath: hit.cardPath,
+            containerPath: hit.containerPath,
+          };
+          selectionStore.selectElement(id, hit.type, sectionId, meta, ancestors);
+        }
+      }
     },
     [resolveSelected, flushCommit, writeSectionNow],
   );
@@ -705,6 +746,7 @@ export function useSelectionController({
     replacePlusWith,
     changeIcon,
     addMediaToCard,
+    insertChildIntoCard,
     removeMediaFromCard,
     selectCardMedia,
     selectParentCard,

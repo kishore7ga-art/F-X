@@ -32,6 +32,9 @@ import { applyLinkTarget } from "./link-target";
 /* ── Props, per type ─────────────────────────────────────────────────────── */
 
 export type ShadowPreset = "none" | "sm" | "md" | "lg" | "xl";
+export type CardLayout = "vertical" | "horizontal-left" | "horizontal-right";
+export type CardMediaWidth = "compact" | "1/4" | "1/3" | "1/2";
+export type CardAlign = "start" | "center" | "end";
 
 export interface CardProps {
   background: string;
@@ -45,6 +48,9 @@ export interface CardProps {
   mediaType?: "image" | "video" | "youtube" | null;
   mediaSrc?: string;
   mediaPath?: string | null;
+  layout?: CardLayout;
+  mediaWidth?: CardMediaWidth;
+  align?: CardAlign;
 }
 
 export type ButtonVariant = "solid" | "outline" | "ghost";
@@ -817,6 +823,50 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
           mediaSrc = mediaEl.getAttribute("src") ?? "";
         }
       }
+      const cls = classText(el);
+      const isRow =
+        cls.includes("flex-row") ||
+        (cls.includes("flex") && !cls.includes("flex-col") && !cls.includes("flex-col-reverse")) ||
+        (style.display === "flex" &&
+          (style.flexDirection.includes("row") || !style.flexDirection.includes("column")));
+      const isRowReverse =
+        cls.includes("flex-row-reverse") ||
+        (style.display === "flex" && style.flexDirection.includes("row-reverse"));
+
+      let layout: CardLayout = "vertical";
+      if (isRowReverse) {
+        layout = "horizontal-right";
+      } else if (isRow) {
+        layout = "horizontal-left";
+      }
+
+      let mediaWidth: CardMediaWidth = "1/3";
+      if (mediaEl) {
+        const mediaWrapper =
+          mediaEl.closest<HTMLElement>(".card-media, .image-wrapper, .media-slot") || mediaEl;
+        const mediaCls = classText(mediaWrapper);
+        if (mediaCls.includes("w-1/4") || mediaCls.includes("sm:w-1/4") || mediaCls.includes("25%")) {
+          mediaWidth = "1/4";
+        } else if (mediaCls.includes("w-1/2") || mediaCls.includes("sm:w-1/2") || mediaCls.includes("50%")) {
+          mediaWidth = "1/2";
+        } else if (
+          mediaCls.includes("130px") ||
+          mediaCls.includes("120px") ||
+          mediaCls.includes("140px") ||
+          mediaCls.includes("w-28") ||
+          mediaCls.includes("w-32")
+        ) {
+          mediaWidth = "compact";
+        }
+      }
+
+      let align: CardAlign = "center";
+      if (cls.includes("items-start") || (style.alignItems && style.alignItems.includes("start"))) {
+        align = "start";
+      } else if (cls.includes("items-end") || (style.alignItems && style.alignItems.includes("end"))) {
+        align = "end";
+      }
+
       const props: CardProps = {
         background: hexFromValue(el.style.backgroundColor || style.backgroundColor, "#ffffff"),
         radius: el.style.borderRadius || style.borderRadius || "0px",
@@ -828,6 +878,9 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         hasMedia: Boolean(mediaEl),
         mediaType,
         mediaSrc,
+        layout,
+        mediaWidth,
+        align,
       };
       return props as ElementPropsByType[T];
     }
@@ -1091,6 +1144,15 @@ function applyCard(el: HTMLElement, p: Partial<CardProps>): void {
   }
   set(el, "padding", p.padding);
   set(el, "margin", p.margin);
+
+  if (p.layout !== undefined || p.mediaWidth !== undefined || p.align !== undefined) {
+    applyCardLayoutDom(
+      el,
+      p.layout ?? (p.mediaWidth || p.align ? "horizontal-left" : "vertical"),
+      p.mediaWidth,
+      p.align,
+    );
+  }
 }
 
 function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
@@ -1710,18 +1772,151 @@ export function createCardYouTubeDom(props?: Partial<YouTubeProps>): HTMLElement
   return wrapper;
 }
 
+export type CardMediaPosition = "top" | "bottom" | "left" | "right";
+
+/**
+ * Configures a Card's layout structure:
+ * - "vertical": Stacked elements (default)
+ * - "horizontal-left": Small / compact split card (Media on Left, Content on Right)
+ * - "horizontal-right": Small / compact split card (Media on Right, Content on Left)
+ */
+export function applyCardLayoutDom(
+  card: HTMLElement,
+  layout: CardLayout,
+  mediaWidth: CardMediaWidth = "1/3",
+  align: CardAlign = "center",
+): void {
+  const mediaEl = findCardMediaElement(card);
+  const mediaWrapper = mediaEl
+    ? (mediaEl.closest<HTMLElement>(".card-media, .image-wrapper, .media-slot, [data-xite-youtube]") || mediaEl)
+    : null;
+
+  if (layout === "vertical") {
+    card.classList.remove(
+      "flex-row",
+      "flex-row-reverse",
+      "sm:flex-row",
+      "sm:flex-row-reverse",
+    );
+    card.classList.add("flex", "flex-col");
+    set(card, "display", "flex");
+    set(card, "flex-direction", "column");
+    set(card, "align-items", align === "start" ? "flex-start" : align === "end" ? "flex-end" : "stretch");
+
+    if (mediaWrapper) {
+      mediaWrapper.classList.remove("sm:w-1/4", "sm:w-1/3", "sm:w-1/2", "sm:w-[130px]", "shrink-0");
+      mediaWrapper.classList.add("w-full");
+      set(mediaWrapper, "width", "100%");
+      set(mediaWrapper, "max-width", "100%");
+      set(mediaWrapper, "flex-shrink", "0");
+      if (mediaEl && (mediaEl.tagName === "IMG" || mediaEl.tagName === "VIDEO")) {
+        set(mediaEl, "aspect-ratio", "16 / 9");
+      }
+    }
+    return;
+  }
+
+  // Horizontal layout (horizontal-left or horizontal-right)
+  const isRight = layout === "horizontal-right";
+  card.classList.remove("flex-col", "flex-col-reverse");
+  card.classList.add("flex", "flex-col", "sm:flex-row", "gap-4");
+  if (isRight) {
+    card.classList.remove("sm:flex-row");
+    card.classList.add("sm:flex-row-reverse");
+  } else {
+    card.classList.remove("sm:flex-row-reverse");
+    card.classList.add("sm:flex-row");
+  }
+
+  set(card, "display", "flex");
+  set(card, "flex-direction", isRight ? "row-reverse" : "row");
+  set(card, "align-items", align === "start" ? "flex-start" : align === "end" ? "flex-end" : "center");
+  set(card, "gap", "1rem");
+
+  // Format media sizing
+  if (mediaWrapper) {
+    mediaWrapper.classList.remove("w-full", "sm:w-1/4", "sm:w-1/3", "sm:w-1/2", "sm:w-[130px]");
+    mediaWrapper.classList.add("shrink-0");
+
+    if (mediaWidth === "compact") {
+      mediaWrapper.classList.add("w-full", "sm:w-[130px]");
+      set(mediaWrapper, "width", "130px");
+      set(mediaWrapper, "max-width", "130px");
+      set(mediaWrapper, "flex-shrink", "0");
+      if (mediaEl) {
+        set(mediaEl, "aspect-ratio", "1 / 1");
+        set(mediaEl, "object-fit", "cover");
+      }
+    } else if (mediaWidth === "1/4") {
+      mediaWrapper.classList.add("w-full", "sm:w-1/4");
+      set(mediaWrapper, "width", "25%");
+      set(mediaWrapper, "flex-shrink", "0");
+      if (mediaEl) {
+        set(mediaEl, "aspect-ratio", "4 / 3");
+        set(mediaEl, "object-fit", "cover");
+      }
+    } else if (mediaWidth === "1/2") {
+      mediaWrapper.classList.add("w-full", "sm:w-1/2");
+      set(mediaWrapper, "width", "50%");
+      set(mediaWrapper, "flex-shrink", "0");
+      if (mediaEl) {
+        set(mediaEl, "aspect-ratio", "16 / 9");
+        set(mediaEl, "object-fit", "cover");
+      }
+    } else {
+      // 1/3 default
+      mediaWrapper.classList.add("w-full", "sm:w-1/3");
+      set(mediaWrapper, "width", "33.333%");
+      set(mediaWrapper, "flex-shrink", "0");
+      if (mediaEl) {
+        set(mediaEl, "aspect-ratio", "4 / 3");
+        set(mediaEl, "object-fit", "cover");
+      }
+    }
+  }
+
+  // Ensure content container exists so text doesn't fragment
+  const contentWrapper = card.querySelector<HTMLElement>(".card-content");
+  if (contentWrapper) {
+    contentWrapper.classList.add("flex-1", "min-w-0");
+    set(contentWrapper, "flex", "1 1 0%");
+    set(contentWrapper, "min-width", "0");
+  } else {
+    // Gather all non-media child elements
+    const nonMedia = Array.from(card.children).filter(
+      (c) => c !== mediaWrapper && c !== mediaEl && !c.contains(mediaEl || c),
+    ) as HTMLElement[];
+
+    if (nonMedia.length > 0) {
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "card-content flex-1 min-w-0 space-y-1";
+      set(contentDiv, "flex", "1 1 0%");
+      set(contentDiv, "min-width", "0");
+
+      const ref = nonMedia[0];
+      card.insertBefore(contentDiv, ref);
+      for (const child of nonMedia) {
+        contentDiv.appendChild(child);
+      }
+    }
+  }
+}
+
 /**
  * Inserts or replaces an Image, Video, or YouTube embed inside a card element.
+ * Supports compact split cards (left/right) and stacked cards (top/bottom).
  * Preserves the card's existing text, buttons, and layout structure.
  */
 export function insertMediaIntoCardDom(
   card: HTMLElement,
   mediaType: "image" | "video" | "youtube",
   props?: Record<string, unknown>,
-  position: "top" | "bottom" = "top",
+  position: CardMediaPosition = "top",
 ): HTMLElement {
   const existingMedia = findCardMediaElement(card);
   let newEl: HTMLElement;
+
+  const isHorizontal = position === "left" || position === "right";
 
   if (mediaType === "video") {
     newEl = createCardVideoDom(props as Partial<VideoProps>);
@@ -1731,20 +1926,38 @@ export function insertMediaIntoCardDom(
     newEl = createCardImageDom(props as Partial<ImageProps>);
   }
 
+  if (isHorizontal) {
+    newEl.className = "w-full sm:w-[130px] shrink-0 aspect-square object-cover rounded-lg";
+    set(newEl, "width", "130px");
+    set(newEl, "aspect-ratio", "1 / 1");
+    set(newEl, "object-fit", "cover");
+  }
+
   if (existingMedia) {
-    // If the existing media is wrapped in a dedicated wrapper, replace that wrapper
     const wrapper = existingMedia.closest<HTMLElement>(
       ".image-wrapper, .video-wrapper, .youtube-wrapper, [data-xite-youtube]",
     );
     const targetToReplace = wrapper && wrapper !== card && card.contains(wrapper) ? wrapper : existingMedia;
     targetToReplace.replaceWith(newEl);
+    if (isHorizontal) {
+      applyCardLayoutDom(card, position === "right" ? "horizontal-right" : "horizontal-left", "compact");
+    }
+    return newEl;
+  }
+
+  if (isHorizontal) {
+    if (card.firstChild) {
+      card.insertBefore(newEl, card.firstChild);
+    } else {
+      card.appendChild(newEl);
+    }
+    applyCardLayoutDom(card, position === "right" ? "horizontal-right" : "horizontal-left", "compact");
     return newEl;
   }
 
   if (position === "bottom") {
     card.appendChild(newEl);
   } else {
-    // Insert at top of card (before first element)
     if (card.firstChild) {
       card.insertBefore(newEl, card.firstChild);
     } else {
@@ -1767,7 +1980,48 @@ export function removeMediaFromCardDom(card: HTMLElement): boolean {
   );
   const targetToRemove = wrapper && wrapper !== card && card.contains(wrapper) ? wrapper : existingMedia;
   targetToRemove.remove();
+
+  // If card had horizontal layout and content wrapper, ensure content wrapper expands cleanly
+  const contentWrapper = card.querySelector<HTMLElement>(".card-content");
+  if (contentWrapper) {
+    contentWrapper.classList.add("w-full");
+    set(contentWrapper, "width", "100%");
+  }
+
   return true;
+}
+
+/**
+ * Inserts a child element (heading, text paragraph, or button) into a card.
+ * If the card has a dedicated content container (.card-content), it appends inside it,
+ * keeping horizontal split cards properly structured.
+ */
+export function insertChildIntoCardDom(
+  card: HTMLElement,
+  childType: "heading" | "text" | "button",
+): HTMLElement {
+  const contentContainer = card.querySelector<HTMLElement>(".card-content") || card;
+
+  let newEl: HTMLElement;
+  if (childType === "heading") {
+    newEl = document.createElement("h3");
+    newEl.className = "text-lg font-bold text-slate-900 tracking-tight mb-1";
+    newEl.textContent = "New Heading";
+  } else if (childType === "button") {
+    newEl = document.createElement("a");
+    newEl.setAttribute("href", "#");
+    newEl.setAttribute("data-xite-variant", "solid");
+    newEl.className =
+      "inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-xs shadow-xs hover:bg-blue-700 transition";
+    newEl.textContent = "Learn More";
+  } else {
+    newEl = document.createElement("p");
+    newEl.className = "text-sm text-slate-600 leading-relaxed mb-2";
+    newEl.textContent = "Add your description or supporting details here.";
+  }
+
+  contentContainer.appendChild(newEl);
+  return newEl;
 }
 
 export const ELEMENT_TYPE_LABEL: Record<ElementType, string> = {

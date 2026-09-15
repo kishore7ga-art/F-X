@@ -73,11 +73,12 @@ export interface ElementToolbarProps {
   onAddMediaToCard?: (
     mediaType: "image" | "video" | "youtube",
     initialProps?: Record<string, unknown>,
-    position?: "top" | "bottom",
+    position?: "top" | "bottom" | "left" | "right",
   ) => void;
   onRemoveMediaFromCard?: () => void;
   onSelectChildMedia?: () => void;
   onSelectParentCard?: () => void;
+  onInsertChildIntoCard?: (childType: "heading" | "text" | "button") => void;
   /** Back: clears the element selection, which returns to the section's toolbar. */
   onClose: () => void;
   onDelete: () => void;
@@ -121,6 +122,7 @@ export function ElementToolbar({
   onRemoveMediaFromCard,
   onSelectChildMedia,
   onSelectParentCard,
+  onInsertChildIntoCard,
   onClose,
   onDelete,
   onUndo,
@@ -155,6 +157,7 @@ export function ElementToolbar({
             onAddMedia={onAddMediaToCard}
             onRemoveMedia={onRemoveMediaFromCard}
             onSelectChildMedia={onSelectChildMedia}
+            onInsertChild={onInsertChildIntoCard}
           />
         );
       case "button":

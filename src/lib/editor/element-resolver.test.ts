@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  applyCardLayoutDom,
   buildYouTubeEmbedUrl,
   classify,
   elementId,
@@ -11,6 +12,7 @@ import {
   findImageElement,
   findYouTubeElement,
   findVideoElement,
+  insertChildIntoCardDom,
   insertMediaIntoCardDom,
   parseElementId,
   removeMediaFromCardDom,
@@ -187,6 +189,25 @@ describe("findImageElement & media resolution", () => {
     const node: any = {
       tagName: tag.toUpperCase(),
       className: nodeAttrs.class || "",
+      classList: {
+        add(...classes: string[]) {
+          const current = (node.className || "").split(/\s+/).filter(Boolean);
+          for (const c of classes) {
+            if (!current.includes(c)) current.push(c);
+          }
+          node.className = current.join(" ");
+          nodeAttrs.class = node.className;
+        },
+        remove(...classes: string[]) {
+          const current = (node.className || "").split(/\s+/).filter(Boolean);
+          const filtered = current.filter((c) => !classes.includes(c));
+          node.className = filtered.join(" ");
+          nodeAttrs.class = node.className;
+        },
+        contains(c: string) {
+          return (node.className || "").split(/\s+/).includes(c);
+        },
+      },
       style: {
         backgroundImage: nodeAttrs["data-bg"] ? `url(${nodeAttrs["data-bg"]})` : "none",
         position: nodeAttrs["data-position"] || "static",
@@ -242,11 +263,19 @@ describe("findImageElement & media resolution", () => {
         return false;
       },
       appendChild(child: any) {
+        if (child.parentElement) {
+          const pIdx = child.parentElement.children.indexOf(child);
+          if (pIdx >= 0) child.parentElement.children.splice(pIdx, 1);
+        }
         child.parentElement = this;
         this.children.push(child);
         return child;
       },
       insertBefore(newChild: any, refChild: any) {
+        if (newChild.parentElement) {
+          const pIdx = newChild.parentElement.children.indexOf(newChild);
+          if (pIdx >= 0) newChild.parentElement.children.splice(pIdx, 1);
+        }
         const idx = this.children.indexOf(refChild);
         newChild.parentElement = this;
         if (idx >= 0) {
@@ -413,6 +442,71 @@ describe("findImageElement & media resolution", () => {
     assert.equal(card.children[0], title);
     assert.equal(card.children[1], button);
     assert.equal(findCardMediaElement(card), null);
+  });
+
+  it("inserts media into small card with horizontal split layout (Media Left, Content Right)", () => {
+    const card = createMockNode("div", { class: "card p-4 rounded-xl" });
+    const heading = card.appendChild(createMockNode("h3", {}, "Graduate"));
+    const paragraph = card.appendChild(createMockNode("p", {}, "Explore our graduate programs."));
+
+    const img = insertMediaIntoCardDom(card, "image", { src: "https://example.com/grad.jpg" }, "left");
+
+    assert.equal(card.children[0], img);
+    assert.ok(card.classList.contains("sm:flex-row"));
+    assert.equal(img.tagName, "IMG");
+
+    // Content was wrapped in card-content container
+    const content = card.querySelector(".card-content");
+    assert.ok(content !== null);
+    assert.equal(content.children.length, 2);
+    assert.equal(content.children[0], heading);
+    assert.equal(content.children[1], paragraph);
+  });
+
+  it("inserts child elements (heading, text, button) into card", () => {
+    const card = createMockNode("div", { class: "card" });
+
+    const heading = insertChildIntoCardDom(card, "heading");
+    const text = insertChildIntoCardDom(card, "text");
+    const button = insertChildIntoCardDom(card, "button");
+
+    assert.equal(card.children.length, 3);
+    assert.equal(heading.tagName, "H3");
+    assert.equal(text.tagName, "P");
+    assert.equal(button.tagName, "A");
+    assert.equal(button.getAttribute("href"), "#");
+  });
+
+  it("applies layout modifications to card (vertical, horizontal-left, horizontal-right)", () => {
+    const card = createMockNode("div", { class: "card" });
+    const img = card.appendChild(createMockNode("img", { src: "thumb.jpg" }));
+    const title = card.appendChild(createMockNode("h3", {}, "Undergraduate"));
+
+    applyCardLayoutDom(card, "horizontal-left", "compact", "center");
+    assert.ok(card.classList.contains("sm:flex-row"));
+
+    applyCardLayoutDom(card, "horizontal-right", "1/2", "start");
+    assert.ok(card.classList.contains("sm:flex-row-reverse"));
+
+    applyCardLayoutDom(card, "vertical", "1/3", "center");
+    assert.ok(card.classList.contains("flex-col"));
+    assert.ok(!card.classList.contains("sm:flex-row"));
+    assert.ok(!card.classList.contains("sm:flex-row-reverse"));
+  });
+
+  it("removes media from a split card without breaking the heading and paragraph description", () => {
+    const card = createMockNode("div", { class: "card flex sm:flex-row" });
+    const img = card.appendChild(createMockNode("img", { src: "photo.jpg" }));
+    const content = card.appendChild(createMockNode("div", { class: "card-content flex-1" }));
+    const heading = content.appendChild(createMockNode("h3", {}, "Graduate Studies"));
+    const desc = content.appendChild(createMockNode("p", {}, "Detailed description here."));
+
+    const removed = removeMediaFromCardDom(card);
+    assert.equal(removed, true);
+    assert.equal(findCardMediaElement(card), null);
+    assert.equal(content.children.length, 2);
+    assert.equal(content.children[0], heading);
+    assert.equal(content.children[1], desc);
   });
 });
 

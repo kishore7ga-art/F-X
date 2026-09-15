@@ -8,6 +8,9 @@ import {
   Trash2,
   Plus,
   Layers,
+  Type,
+  AlignLeft,
+  Square,
 } from "lucide-react";
 import { Youtube } from "../YouTubeIcon";
 
@@ -26,10 +29,11 @@ export interface ExtendedCardPanelProps extends PanelProps<CardProps> {
   onAddMedia?: (
     mediaType: "image" | "video" | "youtube",
     initialProps?: Record<string, unknown>,
-    position?: "top" | "bottom",
+    position?: "top" | "bottom" | "left" | "right",
   ) => void;
   onRemoveMedia?: () => void;
   onSelectChildMedia?: () => void;
+  onInsertChild?: (childType: "heading" | "text" | "button") => void;
 }
 
 const SHADOW_OPTIONS = SHADOW_PRESETS.map((value) => ({
@@ -38,8 +42,29 @@ const SHADOW_OPTIONS = SHADOW_PRESETS.map((value) => ({
 }));
 
 const POSITION_OPTIONS = [
-  { value: "top", label: "Top of Card" },
-  { value: "bottom", label: "Bottom of Card" },
+  { value: "top", label: "Top (Full)" },
+  { value: "left", label: "Left (Split)" },
+  { value: "right", label: "Right (Split)" },
+  { value: "bottom", label: "Bottom (Full)" },
+];
+
+const LAYOUT_OPTIONS = [
+  { value: "vertical", label: "Stacked" },
+  { value: "horizontal-left", label: "Media Left" },
+  { value: "horizontal-right", label: "Media Right" },
+];
+
+const MEDIA_WIDTH_OPTIONS = [
+  { value: "compact", label: "Compact (130px)" },
+  { value: "1/4", label: "25% (1/4)" },
+  { value: "1/3", label: "33% (1/3)" },
+  { value: "1/2", label: "50% (1/2)" },
+];
+
+const ALIGN_OPTIONS = [
+  { value: "start", label: "Top" },
+  { value: "center", label: "Center" },
+  { value: "end", label: "Bottom" },
 ];
 
 const MAX_MEDIA_BYTES = 30 * 1024 * 1024;
@@ -51,10 +76,11 @@ export function CardPanel({
   onAddMedia,
   onRemoveMedia,
   onSelectChildMedia,
+  onInsertChild,
 }: ExtendedCardPanelProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [mediaPosition, setMediaPosition] = useState<"top" | "bottom">("top");
+  const [mediaPosition, setMediaPosition] = useState<"top" | "bottom" | "left" | "right">("top");
   const [customUrl, setCustomUrl] = useState<string>("");
 
   const handleFileUpload = async (file: File | undefined) => {
@@ -277,6 +303,43 @@ export function CardPanel({
           </>
         )}
 
+        {/* Child Elements insertion into Card */}
+        {onInsertChild && (
+          <>
+            <Divider />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Add:</span>
+              <button
+                type="button"
+                onClick={() => onInsertChild("heading")}
+                title="Add a heading to this card"
+                className="flex items-center gap-1 rounded-full border border-pink-200 bg-pink-50/70 hover:bg-pink-100 text-pink-700 px-2.5 py-1 text-[10.5px] font-bold transition cursor-pointer shadow-2xs shrink-0"
+              >
+                <Type className="h-3 w-3 text-pink-500" />
+                + Heading
+              </button>
+              <button
+                type="button"
+                onClick={() => onInsertChild("text")}
+                title="Add a paragraph to this card"
+                className="flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50/70 hover:bg-amber-100 text-amber-700 px-2.5 py-1 text-[10.5px] font-bold transition cursor-pointer shadow-2xs shrink-0"
+              >
+                <AlignLeft className="h-3 w-3 text-amber-500" />
+                + Text
+              </button>
+              <button
+                type="button"
+                onClick={() => onInsertChild("button")}
+                title="Add a button to this card"
+                className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 text-[10.5px] font-bold transition cursor-pointer shadow-2xs shrink-0"
+              >
+                <Square className="h-3 w-3 text-indigo-500" />
+                + Button
+              </button>
+            </div>
+          </>
+        )}
+
         <input
           ref={fileInputRef}
           type="file"
@@ -290,6 +353,38 @@ export function CardPanel({
 
         {status && (
           <span className="text-[10px] font-semibold text-slate-500 whitespace-nowrap">{status}</span>
+        )}
+      </div>
+    );
+  }
+
+  if (tab === "layout") {
+    return (
+      <div className="flex items-center gap-3 flex-wrap">
+        <Segmented
+          label="Card Layout"
+          value={props.layout || "vertical"}
+          options={LAYOUT_OPTIONS}
+          onChange={(val) => onChange({ layout: val as "vertical" | "horizontal-left" | "horizontal-right" })}
+        />
+
+        {(props.layout === "horizontal-left" || props.layout === "horizontal-right" || props.hasMedia) && (
+          <>
+            <Divider />
+            <Segmented
+              label="Media Sizing"
+              value={props.mediaWidth || "1/3"}
+              options={MEDIA_WIDTH_OPTIONS}
+              onChange={(val) => onChange({ mediaWidth: val as "compact" | "1/4" | "1/3" | "1/2" })}
+            />
+            <Divider />
+            <Segmented
+              label="Align Content"
+              value={props.align || "center"}
+              options={ALIGN_OPTIONS}
+              onChange={(val) => onChange({ align: val as "start" | "center" | "end" })}
+            />
+          </>
         )}
       </div>
     );
