@@ -1,14 +1,9 @@
 "use client";
 
-import type { ButtonProps, ButtonSize, ButtonVariant } from "@/lib/editor/element-resolver";
+import type { ButtonProps, ButtonSize } from "@/lib/editor/element-resolver";
+import { calculateOppositeContrast } from "@/lib/editor-themes";
 import type { PanelProps } from "./CardPanel";
 import { ColorField, Divider, Field, PxField, Segmented, TextField, Toggle } from "./fields";
-
-const VARIANTS: ReadonlyArray<{ value: ButtonVariant; label: string; title: string }> = [
-  { value: "solid", label: "Solid", title: "Filled with the accent colour" },
-  { value: "outline", label: "Outline", title: "Accent border, transparent fill" },
-  { value: "ghost", label: "Ghost", title: "Text only, no fill or border" },
-];
 
 const SIZES: ReadonlyArray<{ value: ButtonSize; label: string }> = [
   { value: "sm", label: "S" },
@@ -17,16 +12,13 @@ const SIZES: ReadonlyArray<{ value: ButtonSize; label: string }> = [
 ];
 
 export function ButtonPanel({ props, onChange }: PanelProps<ButtonProps>) {
+  const handleFillChange = (background: string) => {
+    const textColor = calculateOppositeContrast(background).textColor;
+    onChange({ background, textColor });
+  };
+
   return (
     <>
-      <Field label="Label">
-        <TextField
-          value={props.text ?? ""}
-          placeholder="Button text"
-          onCommit={(text) => onChange({ text })}
-          width="w-[120px]"
-        />
-      </Field>
       <Field label="Link">
         <TextField
           value={props.href}
@@ -42,12 +34,16 @@ export function ButtonPanel({ props, onChange }: PanelProps<ButtonProps>) {
         onChange={(newTab) => onChange({ newTab })}
       />
       <Divider />
-      <Segmented label="Style" value={props.variant} options={VARIANTS} onChange={(variant) => onChange({ variant })} />
       <Segmented label="Size" value={props.size} options={SIZES} onChange={(size) => onChange({ size })} />
       <Divider />
-      <ColorField label={props.variant === "solid" ? "Fill" : "Accent"} value={props.background} fallback="#2563eb" onChange={(background) => onChange({ background })} />
-      <ColorField label="Text" value={props.textColor} fallback="#ffffff" onChange={(textColor) => onChange({ textColor })} />
-      <PxField label="Radius" value={props.radius} max={40} onChange={(radius) => onChange({ radius })} />
+      <ColorField
+        label="Fill"
+        value={props.background}
+        fallback="#2563eb"
+        onChange={handleFillChange}
+      />
+      <PxField label="Radius" value={props.radius} max={50} onChange={(radius) => onChange({ radius })} />
     </>
   );
 }
+

@@ -26,6 +26,7 @@
 
 import { hexFromValue } from "@/lib/sections/section-edit";
 import { ELEMENT_KEY_ATTR } from "@/lib/sections/section-managed-css";
+import { calculateOppositeContrast } from "@/lib/editor-themes";
 import type { ElementType, SelectionAncestor } from "./selection-store";
 import { applyLinkTarget } from "./link-target";
 
@@ -1224,6 +1225,8 @@ function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
     if (variant === "solid") {
       set(el, "background-color", colour);
       set(el, "border", "2px solid transparent");
+      const autoTextColor = calculateOppositeContrast(colour).textColor;
+      set(el, "color", p.textColor ?? autoTextColor);
     } else if (variant === "outline") {
       set(el, "background-color", "transparent");
       set(el, "border", `2px solid ${colour}`);
@@ -1233,8 +1236,9 @@ function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
       set(el, "border", "2px solid transparent");
       set(el, "color", p.textColor ?? colour);
     }
+  } else if (p.textColor !== undefined) {
+    set(el, "color", p.textColor);
   }
-  set(el, "color", p.textColor);
 
   if (p.size !== undefined) {
     el.setAttribute("data-xite-size", p.size);
