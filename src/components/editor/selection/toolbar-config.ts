@@ -37,11 +37,7 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
   container: {
     badge: "Container",
     badgeClass: "bg-blue-50 text-blue-700 border-blue-200/60",
-    tabs: [
-      { id: "layout", label: "Layout & Direction" },
-      { id: "style", label: "Background & Border" },
-      { id: "spacing", label: "Spacing & Width" },
-    ],
+    tabs: [],
     deleteLabel: "this container",
   },
   card: {
