@@ -25,11 +25,14 @@ import {
   duplicateElementDom,
   elementId,
   ensureElementKey,
+  findCardMediaElement,
   getAncestorHierarchy,
+  insertMediaIntoCardDom,
   moveElementDom,
   parseElementId,
   pathOf,
   readElementProps,
+  removeMediaFromCardDom,
   replaceImageWithVideoDom,
   replaceImageWithYouTubeDom,
   replacePlusWithElementDom,
@@ -111,6 +114,18 @@ export interface SelectionController {
   moveElement: (direction: "up" | "down") => void;
   /** Changes a heading element's semantic tag (h1-h6). */
   changeHeadingLevel: (level: HeadingLevel) => void;
+  /** Inserts or replaces an Image, Video, or YouTube embed inside the selected card */
+  addMediaToCard: (
+    mediaType: "image" | "video" | "youtube",
+    initialProps?: Record<string, unknown>,
+    position?: "top" | "bottom",
+  ) => void;
+  /** Removes any media inside the selected card */
+  removeMediaFromCard: () => void;
+  /** Selects the child media element of the currently selected card */
+  selectCardMedia: () => boolean;
+  /** Selects the parent card of the currently selected element */
+  selectParentCard: () => boolean;
   /** Selects an ancestor in the element hierarchy (Container, Card, Section). */
   selectAncestor: (path: string, type: ElementType) => void;
   clearSelection: () => void;
@@ -598,6 +613,85 @@ export function useSelectionController({
     [resolveSelected, flushCommit, writeSectionNow],
   );
 
+  const addMediaToCard = useCallback(
+    (
+      mediaType: "image" | "video" | "youtube",
+      initialProps?: Record<string, unknown>,
+      position: "top" | "bottom" = "top",
+    ) => {
+      const state = selectionStore.getState();
+      if (!state.selectedId || !state.sectionId) return;
+      const element = resolveSelected(state);
+      if (!element) return;
+      flushCommit();
+
+      insertMediaIntoCardDom(element, mediaType, initialProps, position);
+      const sectionId = state.sectionId;
+      writeSectionNow(sectionId);
+
+      const freshProps = readElementProps("card", element);
+      selectionStore.updateElementProps(state.selectedId, freshProps as unknown as Record<string, unknown>);
+    },
+    [resolveSelected, flushCommit, writeSectionNow],
+  );
+
+  const removeMediaFromCard = useCallback(() => {
+    const state = selectionStore.getState();
+    if (!state.selectedId || !state.sectionId) return;
+    const element = resolveSelected(state);
+    if (!element) return;
+    flushCommit();
+
+    const removed = removeMediaFromCardDom(element);
+    if (removed) {
+      writeSectionNow(state.sectionId);
+      const freshProps = readElementProps("card", element);
+      selectionStore.updateElementProps(state.selectedId, freshProps as unknown as Record<string, unknown>);
+    }
+  }, [resolveSelected, flushCommit, writeSectionNow]);
+
+  const selectCardMedia = useCallback((): boolean => {
+    const state = selectionStore.getState();
+    if (!state.selectedId || !state.sectionId) return false;
+    const element = resolveSelected(state);
+    if (!element) return false;
+
+    const mediaEl = findCardMediaElement(element);
+    if (!mediaEl) return false;
+
+    const box = canvasBoxFor(state.sectionId);
+    if (!box) return false;
+
+    const hit = resolveTarget(mediaEl, box);
+    if (!hit) return false;
+
+    flushCommit();
+    const id = elementId(state.sectionId, hit.path);
+    const ancestors = getAncestorHierarchy(
+      hit.element,
+      box,
+      state.sectionId,
+      sectionsRef.current.find((s) => s.id === state.sectionId)?.title || "Section",
+    );
+    const meta = {
+      ...readElementProps(hit.type, hit.element),
+      tag: hit.element.tagName.toLowerCase(),
+      cardPath: hit.cardPath,
+      containerPath: hit.containerPath,
+    };
+    selectionStore.selectElement(id, hit.type, state.sectionId, meta, ancestors);
+    return true;
+  }, [resolveSelected, flushCommit]);
+
+  const selectParentCard = useCallback((): boolean => {
+    const state = selectionStore.getState();
+    const meta = state.meta as Record<string, unknown> | undefined;
+    const cardPath = (meta?.cardPath as string) || null;
+    if (!cardPath || !state.sectionId) return false;
+    selectAncestor(cardPath, "card");
+    return true;
+  }, [selectAncestor]);
+
   return {
     selection,
     contextMenu,
@@ -610,6 +704,10 @@ export function useSelectionController({
     replaceMedia,
     replacePlusWith,
     changeIcon,
+    addMediaToCard,
+    removeMediaFromCard,
+    selectCardMedia,
+    selectParentCard,
     deleteElement,
     duplicateElement,
     moveElement,

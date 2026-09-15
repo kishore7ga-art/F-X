@@ -41,6 +41,10 @@ export interface CardProps {
   borderColor: string;
   padding: string;
   margin: string;
+  hasMedia?: boolean;
+  mediaType?: "image" | "video" | "youtube" | null;
+  mediaSrc?: string;
+  mediaPath?: string | null;
 }
 
 export type ButtonVariant = "solid" | "outline" | "ghost";
@@ -778,10 +782,41 @@ function buttonVariant(el: HTMLElement): ButtonVariant {
   return "ghost";
 }
 
+export function findCardMediaElement(card: HTMLElement): HTMLElement | null {
+  const yt = card.querySelector<HTMLElement>(
+    "iframe[src*='youtube'], iframe[src*='youtu.be'], [data-xite-youtube], [data-youtube], .youtube-wrapper",
+  );
+  if (yt) return yt;
+  const vid = card.querySelector<HTMLElement>("video, [data-xite-video], [data-video]");
+  if (vid) return vid;
+  const img = card.querySelector<HTMLElement>("img, [data-xite-image], [data-image]");
+  if (img) return img;
+  return null;
+}
+
 export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): ElementPropsByType[T] {
   const style = window.getComputedStyle(el);
   switch (type) {
     case "card": {
+      const mediaEl = findCardMediaElement(el);
+      let mediaType: "image" | "video" | "youtube" | null = null;
+      let mediaSrc = "";
+      if (mediaEl) {
+        if (
+          mediaEl.tagName === "IFRAME" ||
+          mediaEl.hasAttribute("data-xite-youtube") ||
+          (mediaEl.getAttribute("src") ?? "").includes("youtube")
+        ) {
+          mediaType = "youtube";
+          mediaSrc = mediaEl.getAttribute("src") ?? "";
+        } else if (mediaEl.tagName === "VIDEO" || mediaEl.hasAttribute("data-xite-video")) {
+          mediaType = "video";
+          mediaSrc = mediaEl.getAttribute("src") ?? (mediaEl.querySelector("source")?.getAttribute("src") ?? "");
+        } else {
+          mediaType = "image";
+          mediaSrc = mediaEl.getAttribute("src") ?? "";
+        }
+      }
       const props: CardProps = {
         background: hexFromValue(el.style.backgroundColor || style.backgroundColor, "#ffffff"),
         radius: el.style.borderRadius || style.borderRadius || "0px",
@@ -790,6 +825,9 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         borderColor: hexFromValue(el.style.borderColor || style.borderColor, "#e2e8f0"),
         padding: el.style.padding || style.padding || "0px",
         margin: el.style.margin || style.margin || "0px",
+        hasMedia: Boolean(mediaEl),
+        mediaType,
+        mediaSrc,
       };
       return props as ElementPropsByType[T];
     }
@@ -1577,6 +1615,159 @@ export function replacePlusWithElementDom(
     default:
       return replaceVideoWithImageDom(element, props as Partial<ImageProps>);
   }
+}
+
+/**
+ * Creates an Image element configured for card layout.
+ */
+export function createCardImageDom(props?: Partial<ImageProps>): HTMLElement {
+  const img = document.createElement("img");
+  const src =
+    props?.src ||
+    "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1200&q=80";
+  img.setAttribute("src", src);
+  img.setAttribute("alt", props?.alt || "Card image");
+  img.setAttribute("data-xite-image", "true");
+  img.className = "w-full aspect-video object-cover rounded-lg mb-4";
+  set(img, "width", "100%");
+  set(img, "max-width", "100%");
+  set(img, "aspect-ratio", props?.aspectRatio || "16 / 9");
+  set(img, "object-fit", props?.objectFit || "cover");
+  set(img, "border-radius", props?.radius || "8px");
+  set(img, "display", "block");
+  return img;
+}
+
+/**
+ * Creates an HTML5 Video element configured for card layout.
+ */
+export function createCardVideoDom(props?: Partial<VideoProps>): HTMLElement {
+  const video = document.createElement("video");
+  const src =
+    props?.src ||
+    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+  video.setAttribute("src", src);
+  video.setAttribute("controls", "");
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  video.setAttribute("data-xite-video", "true");
+  if (props?.autoplay) video.setAttribute("autoplay", "");
+  if (props?.muted ?? true) video.setAttribute("muted", "");
+  if (props?.loop ?? true) video.setAttribute("loop", "");
+  if (props?.poster) video.setAttribute("poster", props.poster);
+
+  video.className = "w-full aspect-video object-cover rounded-lg mb-4";
+  set(video, "width", "100%");
+  set(video, "max-width", "100%");
+  set(video, "aspect-ratio", props?.aspectRatio || "16 / 9");
+  set(video, "object-fit", props?.objectFit || "cover");
+  set(video, "border-radius", props?.radius || "8px");
+  set(video, "display", "block");
+  return video;
+}
+
+/**
+ * Creates a responsive YouTube embed wrapper configured for card layout.
+ */
+export function createCardYouTubeDom(props?: Partial<YouTubeProps>): HTMLElement {
+  const videoId =
+    props?.videoId || (props?.url ? extractYouTubeVideoId(props.url) : null) || "dQw4w9WgXcQ";
+  const embedUrl = buildYouTubeEmbedUrl(videoId, {
+    autoplay: props?.autoplay,
+    muted: props?.muted,
+    loop: props?.loop,
+    controls: props?.controls,
+  });
+
+  const wrapper = document.createElement("div");
+  wrapper.setAttribute("data-xite-youtube", "true");
+  wrapper.setAttribute("data-youtube-id", videoId);
+  wrapper.className = "relative w-full aspect-video rounded-lg overflow-hidden mb-4";
+  set(wrapper, "width", "100%");
+  set(wrapper, "aspect-ratio", props?.aspectRatio || "16 / 9");
+  set(wrapper, "border-radius", props?.radius || "8px");
+  set(wrapper, "position", "relative");
+  set(wrapper, "overflow", "hidden");
+
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("src", embedUrl);
+  iframe.setAttribute("title", "YouTube video player");
+  iframe.setAttribute("frameborder", "0");
+  iframe.setAttribute(
+    "allow",
+    "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+  );
+  iframe.setAttribute("allowfullscreen", "");
+  iframe.setAttribute("loading", "lazy");
+  set(iframe, "position", "absolute");
+  set(iframe, "inset", "0");
+  set(iframe, "width", "100%");
+  set(iframe, "height", "100%");
+  set(iframe, "border", "0");
+  set(iframe, "border-radius", props?.radius || "8px");
+
+  wrapper.appendChild(iframe);
+  return wrapper;
+}
+
+/**
+ * Inserts or replaces an Image, Video, or YouTube embed inside a card element.
+ * Preserves the card's existing text, buttons, and layout structure.
+ */
+export function insertMediaIntoCardDom(
+  card: HTMLElement,
+  mediaType: "image" | "video" | "youtube",
+  props?: Record<string, unknown>,
+  position: "top" | "bottom" = "top",
+): HTMLElement {
+  const existingMedia = findCardMediaElement(card);
+  let newEl: HTMLElement;
+
+  if (mediaType === "video") {
+    newEl = createCardVideoDom(props as Partial<VideoProps>);
+  } else if (mediaType === "youtube") {
+    newEl = createCardYouTubeDom(props as Partial<YouTubeProps>);
+  } else {
+    newEl = createCardImageDom(props as Partial<ImageProps>);
+  }
+
+  if (existingMedia) {
+    // If the existing media is wrapped in a dedicated wrapper, replace that wrapper
+    const wrapper = existingMedia.closest<HTMLElement>(
+      ".image-wrapper, .video-wrapper, .youtube-wrapper, [data-xite-youtube]",
+    );
+    const targetToReplace = wrapper && wrapper !== card && card.contains(wrapper) ? wrapper : existingMedia;
+    targetToReplace.replaceWith(newEl);
+    return newEl;
+  }
+
+  if (position === "bottom") {
+    card.appendChild(newEl);
+  } else {
+    // Insert at top of card (before first element)
+    if (card.firstChild) {
+      card.insertBefore(newEl, card.firstChild);
+    } else {
+      card.appendChild(newEl);
+    }
+  }
+
+  return newEl;
+}
+
+/**
+ * Removes any image, video, or YouTube embed currently inside the card.
+ */
+export function removeMediaFromCardDom(card: HTMLElement): boolean {
+  const existingMedia = findCardMediaElement(card);
+  if (!existingMedia) return false;
+
+  const wrapper = existingMedia.closest<HTMLElement>(
+    ".image-wrapper, .video-wrapper, .youtube-wrapper, [data-xite-youtube]",
+  );
+  const targetToRemove = wrapper && wrapper !== card && card.contains(wrapper) ? wrapper : existingMedia;
+  targetToRemove.remove();
+  return true;
 }
 
 export const ELEMENT_TYPE_LABEL: Record<ElementType, string> = {

@@ -7,10 +7,13 @@ import {
   elementId,
   ELEMENT_TYPE_LABEL,
   extractYouTubeVideoId,
+  findCardMediaElement,
   findImageElement,
   findYouTubeElement,
   findVideoElement,
+  insertMediaIntoCardDom,
   parseElementId,
+  removeMediaFromCardDom,
 } from "./element-resolver";
 
 describe("element ids", () => {
@@ -180,21 +183,35 @@ describe("findImageElement & media resolution", () => {
   }
 
   function createMockNode(tag: string, attrs: Record<string, string> = {}, text = ""): any {
+    const nodeAttrs = { ...attrs };
     const node: any = {
       tagName: tag.toUpperCase(),
-      className: attrs.class || "",
+      className: nodeAttrs.class || "",
       style: {
-        backgroundImage: attrs["data-bg"] ? `url(${attrs["data-bg"]})` : "none",
-        position: attrs["data-position"] || "static",
+        backgroundImage: nodeAttrs["data-bg"] ? `url(${nodeAttrs["data-bg"]})` : "none",
+        position: nodeAttrs["data-position"] || "static",
+        setProperty(prop: string, val: string) {
+          (this as any)[prop] = val;
+        },
+        removeProperty(prop: string) {
+          delete (this as any)[prop];
+        },
       },
       textContent: text,
       children: [],
       parentElement: null,
+      get firstChild() {
+        return this.children[0] ?? null;
+      },
       hasAttribute(name: string) {
-        return name in attrs;
+        return name in nodeAttrs;
       },
       getAttribute(name: string) {
-        return attrs[name] ?? null;
+        return nodeAttrs[name] ?? null;
+      },
+      setAttribute(name: string, val: string) {
+        nodeAttrs[name] = val;
+        if (name === "class") node.className = val;
       },
       closest(selector: string) {
         let cur: any = this;
@@ -229,8 +246,45 @@ describe("findImageElement & media resolution", () => {
         this.children.push(child);
         return child;
       },
+      insertBefore(newChild: any, refChild: any) {
+        const idx = this.children.indexOf(refChild);
+        newChild.parentElement = this;
+        if (idx >= 0) {
+          this.children.splice(idx, 0, newChild);
+        } else {
+          this.children.push(newChild);
+        }
+        return newChild;
+      },
+      replaceWith(newEl: any) {
+        if (this.parentElement) {
+          const idx = this.parentElement.children.indexOf(this);
+          if (idx >= 0) {
+            newEl.parentElement = this.parentElement;
+            this.parentElement.children[idx] = newEl;
+          }
+        }
+      },
+      remove() {
+        if (this.parentElement) {
+          const idx = this.parentElement.children.indexOf(this);
+          if (idx >= 0) {
+            this.parentElement.children.splice(idx, 1);
+            this.parentElement = null;
+          }
+        }
+      },
     };
     return node;
+  }
+
+  // Ensure global document exists for Node test environment
+  if (typeof (globalThis as any).document === "undefined") {
+    (globalThis as any).document = {
+      createElement(tagName: string) {
+        return createMockNode(tagName);
+      },
+    };
   }
 
   it("resolves a direct <img> element", () => {
@@ -286,6 +340,79 @@ describe("findImageElement & media resolution", () => {
     const video = root.appendChild(createMockNode("video", { src: "tour.mp4" }));
 
     assert.equal(findVideoElement(video, root), video);
+  });
+
+  it("finds card media element (img, video, youtube)", () => {
+    const cardEmpty = createMockNode("div", { class: "card" });
+    assert.equal(findCardMediaElement(cardEmpty), null);
+
+    const cardWithImg = createMockNode("div", { class: "card" });
+    const img = cardWithImg.appendChild(createMockNode("img", { src: "hero.jpg" }));
+    cardWithImg.appendChild(createMockNode("h3", {}, "Title"));
+    assert.equal(findCardMediaElement(cardWithImg), img);
+
+    const cardWithVid = createMockNode("div", { class: "card" });
+    const vid = cardWithVid.appendChild(createMockNode("video", { src: "clip.mp4" }));
+    assert.equal(findCardMediaElement(cardWithVid), vid);
+
+    const cardWithYt = createMockNode("div", { class: "card" });
+    const yt = cardWithYt.appendChild(createMockNode("iframe", { src: "https://www.youtube.com/embed/dQw4w9WgXcQ" }));
+    assert.equal(findCardMediaElement(cardWithYt), yt);
+  });
+
+  it("inserts image into card preserving existing content", () => {
+    const card = createMockNode("div", { class: "card" });
+    const heading = card.appendChild(createMockNode("h3", {}, "Course Title"));
+    const paragraph = card.appendChild(createMockNode("p", {}, "Course description here."));
+
+    const insertedImg = insertMediaIntoCardDom(card, "image", { src: "https://example.com/course.jpg" }, "top");
+
+    assert.equal(card.children.length, 3);
+    assert.equal(card.children[0], insertedImg);
+    assert.equal(card.children[1], heading);
+    assert.equal(card.children[2], paragraph);
+    assert.equal(insertedImg.tagName, "IMG");
+    assert.equal(insertedImg.getAttribute("src"), "https://example.com/course.jpg");
+  });
+
+  it("inserts video into card at bottom preserving existing content", () => {
+    const card = createMockNode("div", { class: "card" });
+    const heading = card.appendChild(createMockNode("h3", {}, "Lab Tour"));
+
+    const insertedVid = insertMediaIntoCardDom(card, "video", { src: "https://example.com/lab.mp4" }, "bottom");
+
+    assert.equal(card.children.length, 2);
+    assert.equal(card.children[0], heading);
+    assert.equal(card.children[1], insertedVid);
+    assert.equal(insertedVid.tagName, "VIDEO");
+    assert.equal(insertedVid.getAttribute("src"), "https://example.com/lab.mp4");
+  });
+
+  it("replaces existing media in card when new media is added", () => {
+    const card = createMockNode("div", { class: "card" });
+    const img = card.appendChild(createMockNode("img", { src: "old.jpg" }));
+    const text = card.appendChild(createMockNode("p", {}, "Content"));
+
+    const newVid = insertMediaIntoCardDom(card, "video", { src: "new.mp4" });
+
+    assert.equal(card.children.length, 2);
+    assert.equal(card.children[0], newVid);
+    assert.equal(card.children[1], text);
+    assert.equal(newVid.tagName, "VIDEO");
+  });
+
+  it("removes media from card cleanly preserving remaining elements", () => {
+    const card = createMockNode("div", { class: "card" });
+    const img = card.appendChild(createMockNode("img", { src: "photo.jpg" }));
+    const title = card.appendChild(createMockNode("h3", {}, "Event"));
+    const button = card.appendChild(createMockNode("button", {}, "Register"));
+
+    const removed = removeMediaFromCardDom(card);
+    assert.equal(removed, true);
+    assert.equal(card.children.length, 2);
+    assert.equal(card.children[0], title);
+    assert.equal(card.children[1], button);
+    assert.equal(findCardMediaElement(card), null);
   });
 });
 

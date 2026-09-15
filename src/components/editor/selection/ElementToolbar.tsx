@@ -70,6 +70,14 @@ export interface ElementToolbarProps {
   onDuplicate?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onAddMediaToCard?: (
+    mediaType: "image" | "video" | "youtube",
+    initialProps?: Record<string, unknown>,
+    position?: "top" | "bottom",
+  ) => void;
+  onRemoveMediaFromCard?: () => void;
+  onSelectChildMedia?: () => void;
+  onSelectParentCard?: () => void;
   /** Back: clears the element selection, which returns to the section's toolbar. */
   onClose: () => void;
   onDelete: () => void;
@@ -109,6 +117,10 @@ export function ElementToolbar({
   onDuplicate,
   onMoveUp,
   onMoveDown,
+  onAddMediaToCard,
+  onRemoveMediaFromCard,
+  onSelectChildMedia,
+  onSelectParentCard,
   onClose,
   onDelete,
   onUndo,
@@ -135,7 +147,16 @@ export function ElementToolbar({
   const panel = (() => {
     switch (type) {
       case "card":
-        return <CardPanel tab={tab} props={meta as unknown as CardProps} onChange={(p) => onChange<"card">(id, p)} />;
+        return (
+          <CardPanel
+            tab={tab}
+            props={meta as unknown as CardProps}
+            onChange={(p) => onChange<"card">(id, p)}
+            onAddMedia={onAddMediaToCard}
+            onRemoveMedia={onRemoveMediaFromCard}
+            onSelectChildMedia={onSelectChildMedia}
+          />
+        );
       case "button":
         return <ButtonPanel tab={tab} props={meta as unknown as ButtonProps} onChange={(p) => onChange<"button">(id, p)} />;
       case "image":
@@ -276,6 +297,17 @@ export function ElementToolbar({
               {config.badge}
             </span>
             {tag && <span className="font-mono text-slate-400 text-[10px]">&lt;{tag}&gt;</span>}
+
+            {type !== "card" && Boolean(meta.cardPath) && onSelectParentCard ? (
+              <button
+                type="button"
+                onClick={onSelectParentCard}
+                title="Select parent card"
+                className="flex items-center gap-1 rounded bg-violet-50 text-violet-700 border border-violet-200 px-1.5 py-0.5 text-[9.5px] font-bold hover:bg-violet-100 transition cursor-pointer shrink-0"
+              >
+                Card ↖
+              </button>
+            ) : null}
           </div>
 
           {/* Quick action buttons: Duplicate, Move Up, Move Down */}

@@ -48,6 +48,7 @@ export const TOOLBAR_CONFIG: Record<ElementType, ToolbarTypeConfig> = {
     badge: "Card",
     badgeClass: "bg-violet-50 text-violet-700 border-violet-200/60",
     tabs: [
+      { id: "media", label: "Media" },
       { id: "style", label: "Background & Shape" },
       { id: "border", label: "Border" },
       { id: "spacing", label: "Margin & Padding" },

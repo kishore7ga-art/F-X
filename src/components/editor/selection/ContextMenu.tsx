@@ -21,6 +21,8 @@ export interface ContextMenuProps {
   onMoveDown?: () => void;
   onDelete?: () => void;
   onSelectAncestor?: (path: string, type: ElementType) => void;
+  onAddMediaToCard?: (mediaType: "image" | "video" | "youtube") => void;
+  onRemoveMediaFromCard?: () => void;
 }
 
 export function ContextMenu({
@@ -38,6 +40,8 @@ export function ContextMenu({
   onMoveDown,
   onDelete,
   onSelectAncestor,
+  onAddMediaToCard,
+  onRemoveMediaFromCard,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -121,6 +125,62 @@ export function ContextMenu({
             <Edit3 className="h-3.5 w-3.5 text-indigo-500" />
             <span>Edit {config.badge.toLowerCase()} settings</span>
           </button>
+        )}
+
+        {/* Card Media Actions */}
+        {elementType === "card" && onAddMediaToCard && (
+          <>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onAddMediaToCard("image");
+                onClose();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-emerald-700"
+            >
+              <ImageIcon className="h-3.5 w-3.5 text-emerald-500" />
+              <span>Add Image to Card</span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onAddMediaToCard("video");
+                onClose();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-cyan-700"
+            >
+              <Video className="h-3.5 w-3.5 text-cyan-500" />
+              <span>Add Video to Card</span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onAddMediaToCard("youtube");
+                onClose();
+              }}
+              className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer text-rose-700"
+            >
+              <Youtube className="h-3.5 w-3.5 text-rose-500" />
+              <span>Add YouTube to Card</span>
+            </button>
+            {onRemoveMediaFromCard && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onRemoveMediaFromCard();
+                  onClose();
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-rose-50 hover:text-rose-900 transition text-left cursor-pointer text-rose-600"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-rose-500" />
+                <span>Remove Card Media</span>
+              </button>
+            )}
+          </>
         )}
 
         {/* Media Replacement Quick Actions */}
