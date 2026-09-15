@@ -166,6 +166,10 @@ export interface HeadingProps {
   margin: string;
   fontFamily?: string;
   textTransform?: TextTransform;
+  width?: string;
+  height?: string;
+  position?: string;
+  transform?: string;
 }
 
 export interface TextProps {
@@ -178,6 +182,10 @@ export interface TextProps {
   margin: string;
   fontFamily?: string;
   textTransform?: TextTransform;
+  width?: string;
+  height?: string;
+  position?: string;
+  transform?: string;
 }
 
 export interface ContainerProps {
@@ -1028,6 +1036,10 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         margin: el.style.margin || style.margin || "0px",
         fontFamily: el.style.fontFamily || style.fontFamily || "",
         textTransform: ((el.style.textTransform || style.textTransform || "none") as TextTransform),
+        width: el.style.width || "",
+        height: el.style.height || "",
+        position: el.style.position || "",
+        transform: el.style.transform || "",
       };
       return props as ElementPropsByType[T];
     }
@@ -1042,6 +1054,10 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         margin: el.style.margin || style.margin || "0px",
         fontFamily: el.style.fontFamily || style.fontFamily || "",
         textTransform: ((el.style.textTransform || style.textTransform || "none") as TextTransform),
+        width: el.style.width || "",
+        height: el.style.height || "",
+        position: el.style.position || "",
+        transform: el.style.transform || "",
       };
       return props as ElementPropsByType[T];
     }
@@ -1492,6 +1508,10 @@ function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
   set(el, "margin", p.margin);
   if (p.fontFamily !== undefined) set(el, "font-family", p.fontFamily);
   if (p.textTransform !== undefined) set(el, "text-transform", p.textTransform);
+  if (p.width !== undefined) set(el, "width", p.width);
+  if (p.height !== undefined) set(el, "height", p.height);
+  if (p.position !== undefined) set(el, "position", p.position);
+  if (p.transform !== undefined) set(el, "transform", p.transform);
 }
 
 function applyText(el: HTMLElement, p: Partial<TextProps>): void {
@@ -1504,6 +1524,10 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "margin", p.margin);
   if (p.fontFamily !== undefined) set(el, "font-family", p.fontFamily);
   if (p.textTransform !== undefined) set(el, "text-transform", p.textTransform);
+  if (p.width !== undefined) set(el, "width", p.width);
+  if (p.height !== undefined) set(el, "height", p.height);
+  if (p.position !== undefined) set(el, "position", p.position);
+  if (p.transform !== undefined) set(el, "transform", p.transform);
 }
 
 function applyContainer(el: HTMLElement, p: Partial<ContainerProps>): void {

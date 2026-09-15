@@ -588,6 +588,12 @@ export function SelectionHighlight({
       window.removeEventListener("pointerup", onPointerUp);
       setIsRepositioning(false);
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (selectedId && onUpdateProps && effectiveType) {
+        onUpdateProps(selectedId, {
+          position: el.style.position || "relative",
+          transform: el.style.transform,
+        } as any);
+      }
     };
 
     window.addEventListener("pointermove", onPointerMove);

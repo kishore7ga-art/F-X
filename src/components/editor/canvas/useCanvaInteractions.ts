@@ -177,12 +177,8 @@ export function sanitizeCleanDom(node: HTMLElement): string {
     htmlEl.classList.remove("xite-text-editing");
     htmlEl.style.outline = "";
     htmlEl.style.outlineOffset = "";
-    htmlEl.style.borderRadius = "";
-    htmlEl.style.boxShadow = "";
     htmlEl.style.cursor = "";
     htmlEl.style.userSelect = "";
-    htmlEl.style.transform = "";
-    htmlEl.style.zIndex = "";
     (htmlEl.style as any).webkitUserSelect = "";
   });
 
