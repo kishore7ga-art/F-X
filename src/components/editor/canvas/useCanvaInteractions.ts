@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { SnapGuide, DistanceBadge } from "@/stores/useVisualCanvasStore";
+import type { HeadingLevel } from "@/lib/editor/element-resolver";
+import { changeHeadingTagDom } from "@/lib/editor/element-resolver";
 import { recomposeSectionCode } from "@/lib/section-runtime";
 import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 
@@ -658,6 +660,13 @@ export function useCanvaInteractions({
       finishInlineTextEditing(false);
     }
 
+    // Single-click on text elements: immediately activate inline text editing
+    const textTarget = findTextEditableElement(target);
+    if (textTarget) {
+      activateTextEditing(textTarget, sectionIndex, e);
+      return;
+    }
+
     // Normal single-click selects the element without activating inline text editing
     const rect = target.getBoundingClientRect();
     setSelectedElement({
@@ -667,7 +676,7 @@ export function useCanvaInteractions({
       element: target,
       sectionIndex,
     });
-  }, [isEditingTarget, finishInlineTextEditing, onSelectButton]);
+  }, [isEditingTarget, finishInlineTextEditing, onSelectButton, findTextEditableElement, activateTextEditing]);
 
   /**
    * Double-click: activates inline text editing strictly on text elements (headlines, paragraphs, button text, spans).
@@ -1417,6 +1426,45 @@ export function useCanvaInteractions({
     syncCurrentElementCode();
   }, [syncCurrentElementCode]);
 
+  /**
+   * Mutates the semantic tag (h1-h6) of the active heading live on the canvas
+   */
+  const changeHeadingTag = useCallback((newTag: HeadingLevel) => {
+    let el = activeEditingElemRef.current;
+    if (!el && selectedElement?.element) {
+      const textTarget = findTextEditableElement(selectedElement.element);
+      if (textTarget) {
+        el = textTarget;
+      }
+    }
+    if (!el) return;
+
+    const newHeading = changeHeadingTagDom(el, newTag);
+    if (activeEditingElemRef.current === el) {
+      activeEditingElemRef.current = newHeading;
+      newHeading.classList.add("xite-text-editing");
+      newHeading.setAttribute("contenteditable", "true");
+      newHeading.contentEditable = "true";
+      newHeading.style.outline = "2px solid #3b82f6";
+      newHeading.style.outlineOffset = "3px";
+      newHeading.style.borderRadius = "4px";
+      newHeading.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.25)";
+      newHeading.style.cursor = "text";
+      newHeading.style.caretColor = "#2563eb";
+      newHeading.focus();
+    }
+    if (selectedElement?.element === el) {
+      setSelectedElement({
+        ...selectedElement,
+        tag: newTag,
+        element: newHeading,
+        rect: newHeading.getBoundingClientRect(),
+      });
+    }
+    newHeading.dispatchEvent(new Event("input", { bubbles: true }));
+    syncCurrentElementCode();
+  }, [selectedElement, syncCurrentElementCode]);
+
   return {
     selectedElement,
     hoveredRect,
@@ -1433,6 +1481,7 @@ export function useCanvaInteractions({
     activeLetterSpacing,
     applyTextSpacing,
     applyTextFormat,
+    changeHeadingTag,
     activateTextEditing,
     activeEditingElement: activeEditingElemRef.current,
     isDragging,

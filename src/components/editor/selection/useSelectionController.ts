@@ -354,9 +354,12 @@ export function useSelectionController({
 
       selectionStore.selectElement(id, hit.type, section.id, meta, ancestors);
       onElementSelected?.(sectionIndex);
+      if (hit.type === "text" || hit.type === "heading") {
+        onTextHit?.(hit.element, sectionIndex);
+      }
       return true;
     },
-    [clearSelection, closeContextMenu, flushCommit, onElementSelected],
+    [clearSelection, closeContextMenu, flushCommit, onElementSelected, onTextHit],
   );
 
   const handleElementDoubleClick = useCallback(
@@ -454,12 +457,29 @@ export function useSelectionController({
   const changeHeadingLevel = useCallback(
     (level: HeadingLevel) => {
       const state = selectionStore.getState();
-      if (!state.selectedId || !state.sectionId || state.type !== "heading") return;
+      if (!state.sectionId) return;
       const element = resolveSelected(state);
       if (!element) return;
       flushCommit();
-      changeHeadingTagDom(element, level);
+      const newHeading = changeHeadingTagDom(element, level);
       const sectionId = state.sectionId;
+      const box = canvasBoxFor(sectionId);
+      if (box) {
+        const newPath = pathOf(newHeading, box);
+        const newId = elementId(sectionId, newPath);
+        const ancestors = getAncestorHierarchy(
+          newHeading,
+          box,
+          sectionId,
+          sectionsRef.current.find((s) => s.id === sectionId)?.title || "Section",
+        );
+        const meta = {
+          ...readElementProps("heading", newHeading),
+          tag: level,
+          level: level,
+        };
+        selectionStore.selectElement(newId, "heading", sectionId, meta, ancestors);
+      }
       writeSectionNow(sectionId);
     },
     [resolveSelected, flushCommit, writeSectionNow],
