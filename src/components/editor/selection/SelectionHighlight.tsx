@@ -286,6 +286,11 @@ export function SelectionHighlight({
   // Handlers that work seamlessly in both selection mode and contentEditable mode
   const handleColorChange = (hex: string) => {
     if (onApplyTextColor) onApplyTextColor(hex);
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.color = hex;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { color: hex } as any);
     }
@@ -295,6 +300,11 @@ export function SelectionHighlight({
     const nextSize = Math.max(10, Math.min(140, parsedFontSize + delta));
     const sizeStr = `${nextSize}px`;
     if (onApplyFontSize) onApplyFontSize(sizeStr);
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.fontSize = sizeStr;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontSize: sizeStr } as any);
     }
@@ -302,6 +312,11 @@ export function SelectionHighlight({
 
   const handleSelectExactSize = (sizeStr: string) => {
     if (onApplyFontSize) onApplyFontSize(sizeStr);
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.fontSize = sizeStr;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontSize: sizeStr } as any);
     }
@@ -310,6 +325,11 @@ export function SelectionHighlight({
 
   const handleFontFamilyChange = (font: string) => {
     if (onApplyFontFamily) onApplyFontFamily(font);
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.fontFamily = font;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontFamily: font } as any);
     }
@@ -318,22 +338,50 @@ export function SelectionHighlight({
 
   const handleToggleBold = () => {
     if (onApplyTextFormat) onApplyTextFormat("bold");
+    const nextWeight = isBold ? "400" : "700";
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.fontWeight = nextWeight;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
-      const nextWeight = isBold ? "400" : "700";
       onUpdateProps(selectedId, { fontWeight: nextWeight } as any);
     }
   };
 
   const handleToggleItalic = () => {
     if (onApplyTextFormat) onApplyTextFormat("italic");
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.fontStyle = activeEl.style.fontStyle === "italic" ? "normal" : "italic";
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
   };
 
   const handleToggleUnderline = () => {
     if (onApplyTextFormat) onApplyTextFormat("underline");
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.textDecoration = activeEl.style.textDecoration === "underline" ? "none" : "underline";
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
   };
 
   const handleResetFormat = () => {
     if (onApplyTextFormat) onApplyTextFormat("removeFormat");
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.fontWeight = "";
+      activeEl.style.fontStyle = "";
+      activeEl.style.textDecoration = "";
+      activeEl.style.fontFamily = "";
+      activeEl.style.fontSize = "";
+      activeEl.style.textAlign = "";
+      activeEl.style.textTransform = "";
+      activeEl.style.lineHeight = "";
+      activeEl.style.letterSpacing = "";
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, {
         fontWeight: "400",
@@ -347,23 +395,47 @@ export function SelectionHighlight({
   };
 
   const handleCycleCase = () => {
+    const order: TextTransform[] = ["none", "uppercase", "capitalize"];
+    const nextIdx = (order.indexOf(currentTransform) + 1) % order.length;
+    const nextCase = order[nextIdx];
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.textTransform = nextCase;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
-      const order: TextTransform[] = ["none", "uppercase", "capitalize"];
-      const nextIdx = (order.indexOf(currentTransform) + 1) % order.length;
-      onUpdateProps(selectedId, { textTransform: order[nextIdx] } as any);
+      onUpdateProps(selectedId, { textTransform: nextCase } as any);
     }
   };
 
   const handleAlignChange = (align: TextAlign) => {
     if (onApplyTextAlign) onApplyTextAlign(align);
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.textAlign = align;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { textAlign: align } as any);
     }
   };
 
   const handleTagChange = (tag: HeadingLevel) => {
-    if (effectiveType === "heading" && onChangeHeadingLevel) {
+    if (onChangeHeadingLevel) {
       onChangeHeadingLevel(tag);
+    }
+    const activeEl = resolveElement();
+    if (activeEl && activeEl.tagName.toLowerCase() !== tag.toLowerCase()) {
+      const newHeading = document.createElement(tag);
+      for (let i = 0; i < activeEl.attributes.length; i++) {
+        const attr = activeEl.attributes[i]!;
+        newHeading.setAttribute(attr.name, attr.value);
+      }
+      while (activeEl.firstChild) {
+        newHeading.appendChild(activeEl.firstChild);
+      }
+      activeEl.replaceWith(newHeading);
+      newHeading.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { level: tag } as any);
@@ -373,6 +445,11 @@ export function SelectionHighlight({
 
   const handleLineHeightChange = (val: string) => {
     if (onApplyTextSpacing) onApplyTextSpacing("lineHeight", val);
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.lineHeight = val;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { lineHeight: val } as any);
     }
@@ -380,6 +457,11 @@ export function SelectionHighlight({
 
   const handleLetterSpacingChange = (val: string) => {
     if (onApplyTextSpacing) onApplyTextSpacing("letterSpacing", val);
+    const activeEl = resolveElement();
+    if (activeEl) {
+      activeEl.style.letterSpacing = val;
+      activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { letterSpacing: val } as any);
     }
@@ -946,35 +1028,6 @@ export function SelectionHighlight({
                 </div>
               )}
             </div>
-
-            {/* 7. Direct Edit / Done Text Trigger */}
-            {isEditingText ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onFinishEditing?.();
-                }}
-                title="Finish editing text"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-[10.5px] transition cursor-pointer shadow-xs ml-0.5"
-              >
-                <Check className="w-3 h-3" />
-                <span>Done</span>
-              </button>
-            ) : onEditText ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditText();
-                }}
-                title="Edit text content (Double-click)"
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10.5px] font-bold border border-slate-200/80 transition cursor-pointer ml-0.5"
-              >
-                <Edit3 className="w-3 h-3 text-slate-500" />
-                <span>Edit</span>
-              </button>
-            ) : null}
           </>
         ) : null}
 
