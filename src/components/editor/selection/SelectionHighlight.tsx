@@ -28,6 +28,7 @@ import {
   ChevronDown,
   Type,
   Palette,
+  MoreHorizontal,
 } from "lucide-react";
 
 import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
@@ -193,7 +194,7 @@ export function SelectionHighlight({
   const [showFontPopover, setShowFontPopover] = useState(false);
   const [showTagPopover, setShowTagPopover] = useState(false);
   const [showSizePopover, setShowSizePopover] = useState(false);
-  const [showSpacingPopover, setShowSpacingPopover] = useState(false);
+  const [showMorePopover, setShowMorePopover] = useState(false);
 
   useEffect(() => {
     let frame = 0;
@@ -246,7 +247,7 @@ export function SelectionHighlight({
       setShowFontPopover(false);
       setShowTagPopover(false);
       setShowSizePopover(false);
-      setShowSpacingPopover(false);
+      setShowMorePopover(false);
     };
     window.addEventListener("pointerdown", handleOutside);
     window.addEventListener("mousedown", handleOutside);
@@ -385,7 +386,7 @@ export function SelectionHighlight({
   };
 
   // Compute horizontal positioning so toolbar is never clipped offscreen
-  const toolbarLeft = Math.max(12, Math.min(rect.left, window.innerWidth - 720));
+  const toolbarLeft = Math.max(12, Math.min(rect.left, window.innerWidth - 600));
 
   return (
     <>
@@ -414,14 +415,14 @@ export function SelectionHighlight({
         </span>
       </div>
 
-      {/* 2. Floating Contextual Toolbar Directly Attached to the Top Edge */}
+      {/* 2. Floating Contextual Toolbar - Ultra Clean Layout */}
       <div
         data-xite-floating-toolbar=""
         data-xite-toolbar=""
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        className={`fixed z-[99999] pointer-events-auto flex items-center gap-1 bg-slate-900/95 text-slate-100 backdrop-blur-md border border-slate-700/90 shadow-2xl rounded-xl p-1 text-xs select-none transition-all duration-75`}
+        className={`fixed z-[99999] pointer-events-auto flex items-center gap-1.5 bg-slate-900/95 text-slate-100 backdrop-blur-md border border-slate-700/90 shadow-2xl rounded-xl p-1 text-xs select-none transition-all duration-75`}
         style={{
           top: isNearTop ? `${rect.bottom + 8}px` : `${Math.max(6, rect.top - 46)}px`,
           left: `${toolbarLeft}px`,
@@ -429,7 +430,7 @@ export function SelectionHighlight({
       >
         {isTextLike ? (
           <>
-            {/* Tag / Heading Level Selector */}
+            {/* 1. Tag / Heading Level Selector */}
             <div className="relative">
               <button
                 type="button"
@@ -439,7 +440,7 @@ export function SelectionHighlight({
                   setShowFontPopover(false);
                   setShowColorPopover(false);
                   setShowSizePopover(false);
-                  setShowSpacingPopover(false);
+                  setShowMorePopover(false);
                 }}
                 title="Change semantic tag (H1-H6, P)"
                 className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-black uppercase text-pink-400 hover:text-pink-300 border border-slate-700 transition cursor-pointer"
@@ -476,7 +477,7 @@ export function SelectionHighlight({
               )}
             </div>
 
-            {/* Font Family Dropdown */}
+            {/* 2. Font Family Dropdown */}
             <div className="relative">
               <button
                 type="button"
@@ -486,7 +487,7 @@ export function SelectionHighlight({
                   setShowTagPopover(false);
                   setShowColorPopover(false);
                   setShowSizePopover(false);
-                  setShowSpacingPopover(false);
+                  setShowMorePopover(false);
                 }}
                 title="Font Family"
                 className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-200 border border-slate-700 transition max-w-[110px] truncate cursor-pointer"
@@ -525,9 +526,7 @@ export function SelectionHighlight({
               )}
             </div>
 
-            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
-
-            {/* Font Size Stepper & Dropdown */}
+            {/* 3. Font Size Stepper & Dropdown */}
             <div className="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5 relative">
               <button
                 type="button"
@@ -548,9 +547,9 @@ export function SelectionHighlight({
                   setShowTagPopover(false);
                   setShowFontPopover(false);
                   setShowColorPopover(false);
-                  setShowSpacingPopover(false);
+                  setShowMorePopover(false);
                 }}
-                className="px-1 text-[11px] font-mono font-bold text-slate-200 min-w-[28px] text-center hover:text-white transition cursor-pointer"
+                className="px-1.5 text-[11px] font-mono font-bold text-slate-200 min-w-[28px] text-center hover:text-white transition cursor-pointer"
               >
                 {parsedFontSize}
               </button>
@@ -593,9 +592,7 @@ export function SelectionHighlight({
               )}
             </div>
 
-            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
-
-            {/* Formatting: Bold (B), Italic (I), Underline (U), Reset */}
+            {/* 4. Bold (B) */}
             <button
               type="button"
               onClick={(e) => {
@@ -612,63 +609,7 @@ export function SelectionHighlight({
               <Bold className="w-3.5 h-3.5" />
             </button>
 
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleItalic();
-              }}
-              title="Italic"
-              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
-            >
-              <Italic className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleUnderline();
-              }}
-              title="Underline"
-              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition cursor-pointer"
-            >
-              <Underline className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleResetFormat();
-              }}
-              title="Reset formatting"
-              className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCycleCase();
-              }}
-              title={`Case: ${currentTransform} (Click to toggle)`}
-              className={`px-1.5 py-1 rounded-lg text-[10.5px] font-bold tracking-tight transition cursor-pointer ${
-                currentTransform !== "none"
-                  ? "bg-purple-600 text-white"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white"
-              }`}
-            >
-              {currentTransform === "uppercase"
-                ? "AA"
-                : currentTransform === "capitalize"
-                ? "Ab"
-                : "Aa"}
-            </button>
-
-            {/* Text Color Swatch & Popover */}
+            {/* 5. Text Color Swatch & Popover */}
             <div className="relative">
               <button
                 type="button"
@@ -678,7 +619,7 @@ export function SelectionHighlight({
                   setShowFontPopover(false);
                   setShowTagPopover(false);
                   setShowSizePopover(false);
-                  setShowSpacingPopover(false);
+                  setShowMorePopover(false);
                 }}
                 title="Text Color"
                 className="p-1 rounded-lg hover:bg-slate-800 flex items-center gap-1 border border-slate-700 transition cursor-pointer"
@@ -731,101 +672,171 @@ export function SelectionHighlight({
               )}
             </div>
 
-            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
-
-            {/* Alignment Icons */}
-            <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-lg p-0.5 border border-slate-700">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAlignChange("left");
-                }}
-                title="Align Left"
-                className={`p-1 rounded transition cursor-pointer ${
-                  currentAlign === "left"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <AlignLeft className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAlignChange("center");
-                }}
-                title="Align Center"
-                className={`p-1 rounded transition cursor-pointer ${
-                  currentAlign === "center"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <AlignCenter className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAlignChange("right");
-                }}
-                title="Align Right"
-                className={`p-1 rounded transition cursor-pointer ${
-                  currentAlign === "right"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <AlignRight className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAlignChange("justify");
-                }}
-                title="Align Justify"
-                className={`p-1 rounded transition cursor-pointer ${
-                  currentAlign === "justify"
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <AlignJustify className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Line & Spacing Menu */}
+            {/* 6. More Options Popover Button (All Other Options As Pop) */}
             <div className="relative">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowSpacingPopover(!showSpacingPopover);
+                  setShowMorePopover(!showMorePopover);
                   setShowColorPopover(false);
                   setShowFontPopover(false);
                   setShowTagPopover(false);
                   setShowSizePopover(false);
                 }}
-                title="Line height & Letter spacing"
-                className="px-1.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 transition cursor-pointer"
+                title="More text formatting & alignment options"
+                className={`p-1.5 rounded-lg border border-slate-700 transition cursor-pointer flex items-center gap-1 ${
+                  showMorePopover
+                    ? "bg-blue-600 text-white border-blue-500"
+                    : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+                }`}
               >
-                Line / Spacing ▾
+                <MoreHorizontal className="w-3.5 h-3.5" />
               </button>
 
-              {showSpacingPopover && (
+              {/* All Other Options Popover Menu */}
+              {showMorePopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-48"
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-2 bg-slate-900/98 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2.5 z-[100000] w-64 text-slate-200"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
+                  {/* Style Row: Italic, Underline, Reset, Case */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Text Style
+                    </div>
+                    <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleItalic();
+                        }}
+                        title="Italic"
+                        className="p-1 rounded text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer flex-1 flex justify-center"
+                      >
+                        <Italic className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleUnderline();
+                        }}
+                        title="Underline"
+                        className="p-1 rounded text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer flex-1 flex justify-center"
+                      >
+                        <Underline className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleResetFormat();
+                        }}
+                        title="Reset formatting"
+                        className="p-1 rounded text-slate-400 hover:bg-slate-700 hover:text-white transition cursor-pointer flex-1 flex justify-center"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCycleCase();
+                        }}
+                        title={`Case: ${currentTransform}`}
+                        className={`px-2 py-0.5 rounded text-[10.5px] font-bold transition cursor-pointer flex-1 text-center ${
+                          currentTransform !== "none"
+                            ? "bg-purple-600 text-white"
+                            : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                        }`}
+                      >
+                        {currentTransform === "uppercase"
+                          ? "AA"
+                          : currentTransform === "capitalize"
+                          ? "Ab"
+                          : "Aa"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Alignment Row */}
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Alignment
+                    </div>
+                    <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-lg border border-slate-700">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAlignChange("left");
+                        }}
+                        title="Align Left"
+                        className={`p-1 rounded transition cursor-pointer flex-1 flex justify-center ${
+                          currentAlign === "left"
+                            ? "bg-blue-600 text-white"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <AlignLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAlignChange("center");
+                        }}
+                        title="Align Center"
+                        className={`p-1 rounded transition cursor-pointer flex-1 flex justify-center ${
+                          currentAlign === "center"
+                            ? "bg-blue-600 text-white"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <AlignCenter className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAlignChange("right");
+                        }}
+                        title="Align Right"
+                        className={`p-1 rounded transition cursor-pointer flex-1 flex justify-center ${
+                          currentAlign === "right"
+                            ? "bg-blue-600 text-white"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <AlignRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAlignChange("justify");
+                        }}
+                        title="Align Justify"
+                        className={`p-1 rounded transition cursor-pointer flex-1 flex justify-center ${
+                          currentAlign === "justify"
+                            ? "bg-blue-600 text-white"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <AlignJustify className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Line Height */}
                   <div>
                     <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                       Line Height
                     </div>
-                    <div className="grid grid-cols-2 gap-1">
+                    <div className="grid grid-cols-3 gap-1">
                       {LINE_HEIGHTS.map((lh) => (
                         <button
                           key={lh.value}
@@ -834,7 +845,7 @@ export function SelectionHighlight({
                             e.stopPropagation();
                             handleLineHeightChange(lh.value);
                           }}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition cursor-pointer ${
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-center transition cursor-pointer ${
                             currentLineHeight === lh.value
                               ? "bg-blue-600 text-white"
                               : "text-slate-300 hover:bg-slate-800"
@@ -846,11 +857,12 @@ export function SelectionHighlight({
                     </div>
                   </div>
 
-                  <div className="pt-1.5 border-t border-slate-800">
+                  {/* Letter Spacing */}
+                  <div>
                     <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                       Letter Spacing
                     </div>
-                    <div className="grid grid-cols-2 gap-1">
+                    <div className="grid grid-cols-3 gap-1">
                       {LETTER_SPACINGS.map((ls) => (
                         <button
                           key={ls.value}
@@ -859,7 +871,7 @@ export function SelectionHighlight({
                             e.stopPropagation();
                             handleLetterSpacingChange(ls.value);
                           }}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition cursor-pointer ${
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-center transition cursor-pointer ${
                             currentLetterSpacing === ls.value
                               ? "bg-blue-600 text-white"
                               : "text-slate-300 hover:bg-slate-800"
@@ -870,13 +882,69 @@ export function SelectionHighlight({
                       ))}
                     </div>
                   </div>
+
+                  {/* Element Actions */}
+                  <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-1">
+                    {onDuplicate && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDuplicate();
+                        }}
+                        title="Duplicate element"
+                        className="flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-300 hover:text-white transition cursor-pointer"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>Duplicate</span>
+                      </button>
+                    )}
+                    {onMoveUp && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveUp();
+                        }}
+                        title="Move Up"
+                        className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {onMoveDown && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onMoveDown();
+                        }}
+                        title="Move Down"
+                        className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete();
+                        }}
+                        title="Delete element"
+                        className="flex items-center gap-1 px-2 py-1 rounded bg-red-950/60 hover:bg-red-900/80 text-[10px] font-bold text-red-300 hover:text-red-200 transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
-
-            {/* Direct Edit / Done Text Trigger */}
+            {/* 7. Direct Edit / Done Text Trigger */}
             {isEditingText ? (
               <button
                 type="button"
@@ -885,7 +953,7 @@ export function SelectionHighlight({
                   onFinishEditing?.();
                 }}
                 title="Finish editing text"
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold text-[10.5px] transition cursor-pointer shadow-xs"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold text-[10.5px] transition cursor-pointer shadow-xs ml-1"
               >
                 <Check className="w-3 h-3" />
                 <span>Done</span>
@@ -898,7 +966,7 @@ export function SelectionHighlight({
                   onEditText();
                 }}
                 title="Edit text content (Double-click)"
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-pink-600/20 text-pink-300 hover:bg-pink-600 hover:text-white border border-pink-500/30 text-[10.5px] font-bold transition cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-pink-600/20 text-pink-300 hover:bg-pink-600 hover:text-white border border-pink-500/30 text-[10.5px] font-bold transition cursor-pointer ml-1"
               >
                 <Edit3 className="w-3 h-3" />
                 <span>Edit</span>
@@ -907,77 +975,21 @@ export function SelectionHighlight({
           </>
         ) : null}
 
-        {/* Quick Operations: Duplicate, Move, Delete */}
-        <div className="flex items-center gap-0.5 pl-1">
-          {onDuplicate && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDuplicate();
-              }}
-              title="Duplicate element"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
-          )}
-          {onMoveUp && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMoveUp();
-              }}
-              title="Move element up"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-            >
-              <ArrowUp className="w-3.5 h-3.5" />
-            </button>
-          )}
-          {onMoveDown && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMoveDown();
-              }}
-              title="Move element down"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
-            >
-              <ArrowDown className="w-3.5 h-3.5" />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              title="Delete element"
-              className="p-1.5 rounded-lg text-red-400 hover:text-red-200 hover:bg-red-950/60 transition cursor-pointer"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-          {onClose && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              title="Deselect (Esc)"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer ml-0.5"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+        {/* Close Button */}
+        {onClose && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            title="Deselect (Esc)"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer ml-0.5"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </>
   );
 }
-
-
