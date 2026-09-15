@@ -1868,7 +1868,7 @@ export function EditorStudio({
   const resolvedToolbarSectionIndex =
     customToolbarState.sectionIndex !== null ? customToolbarState.sectionIndex : activeSectionIndex;
   const isSectionPanelOpen =
-    (customToolbarState.isOpen || inPlaceEditor.isEditingText) && resolvedToolbarSectionIndex !== null;
+    customToolbarState.isOpen && resolvedToolbarSectionIndex !== null;
   const customToolbarSection =
     resolvedToolbarSectionIndex !== null ? sections[resolvedToolbarSectionIndex] ?? null : null;
 
