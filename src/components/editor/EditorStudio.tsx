@@ -90,7 +90,6 @@ import { UserProfileMenu } from "./UserProfileMenu";
 import { useSelectionController } from "./selection/useSelectionController";
 import { ElementToolbar } from "./selection/ElementToolbar";
 import { SelectionHighlight } from "./selection/SelectionHighlight";
-import { ContextMenu } from "./selection/ContextMenu";
 import { colorToHex, findTextEditableElement, sanitizeCleanDom } from "./canvas/useCanvaInteractions";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
@@ -2048,53 +2047,6 @@ export function EditorStudio({
         onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
         onSelectChildMedia={elementSelection.selectCardMedia}
         onInsertChildIntoCard={elementSelection.insertChildIntoCard}
-      />
-
-      <ContextMenu
-        isOpen={elementSelection.contextMenu.isOpen}
-        position={elementSelection.contextMenu.position}
-        elementType={elementSelection.selection.type}
-        elementId={elementSelection.selection.selectedId}
-        elementMeta={elementSelection.selection.meta}
-        tag={typeof elementSelection.selection.meta?.tag === "string" ? elementSelection.selection.meta.tag : undefined}
-        ancestors={elementSelection.selection.ancestors}
-        onClose={elementSelection.closeContextMenu}
-        onEdit={() => {
-          elementSelection.closeContextMenu();
-          if (elementSelection.selection.type === "text" || elementSelection.selection.type === "heading") {
-            const secIdx = activeSectionIndex;
-            if (secIdx !== null && sections[secIdx]) {
-              const secContainer = document.querySelectorAll(".section-wrapper-container")[secIdx] as HTMLElement;
-              if (secContainer) {
-                const textTarget = secContainer.querySelector("h1, h2, h3, h4, h5, h6, p") as HTMLElement | null;
-                if (textTarget) inPlaceEditor.activateTextEditing(textTarget, secIdx);
-              }
-            }
-          }
-        }}
-        onUpdateProps={(props) => {
-          if (elementSelection.selection.selectedId) {
-            elementSelection.updateElementProps(elementSelection.selection.selectedId as any, props as any);
-          }
-        }}
-        onChangeHeadingLevel={elementSelection.changeHeadingLevel}
-        onChangeIcon={elementSelection.changeIcon}
-        onReplaceMedia={elementSelection.replaceMedia}
-        onReplacePlus={elementSelection.replacePlusWith}
-        onAddMediaToCard={elementSelection.addMediaToCard}
-        onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
-        onInsertChildIntoCard={elementSelection.insertChildIntoCard}
-        onDuplicate={elementSelection.duplicateElement}
-        onMoveUp={() => elementSelection.moveElement("up")}
-        onMoveDown={() => elementSelection.moveElement("down")}
-        onDelete={elementSelection.deleteElement}
-        onSelectAncestor={elementSelection.selectAncestor}
-        onSwapVariant={() => handleSwapVariant(1)}
-        onDuplicateSection={handleDuplicateSection}
-        onMoveSectionUp={handleMoveUp}
-        onMoveSectionDown={handleMoveDown}
-        onDeleteSection={handleDeleteSection}
-        onPatchSection={handleSectionPatch}
       />
 
       <main
