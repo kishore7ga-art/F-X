@@ -471,6 +471,15 @@ export function SelectionHighlight({
     }
   };
 
+  // Automatically ensure text elements never have fixed overflowing height
+  useEffect(() => {
+    const el = resolveElement();
+    if (el && isTextLike && el.style.height && el.style.height !== "auto") {
+      el.style.height = "auto";
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }, [resolveElement, isTextLike, revision]);
+
   // Direct Interactive Resize Controller (8-directional resize handles)
   const handleResizeStart = (
     direction: "e" | "w" | "s" | "n" | "se" | "sw" | "ne" | "nw",
@@ -485,6 +494,8 @@ export function SelectionHighlight({
     const startY = e.clientY;
     const origWidth = el.offsetWidth;
     const origHeight = el.offsetHeight;
+    const computedFontSize = parseFloat(window.getComputedStyle(el).fontSize) || 32;
+
     setIsResizing(true);
     setLiveDimensions({ width: origWidth, height: origHeight });
 
@@ -492,26 +503,35 @@ export function SelectionHighlight({
       const deltaX = moveEv.clientX - startX;
       const deltaY = moveEv.clientY - startY;
       let newW = origWidth;
-      let newH = origHeight;
 
-      if (direction.includes("e")) {
-        newW = Math.max(60, origWidth + deltaX);
+      if (direction === "e" || direction === "w") {
+        // Horizontal text width resizing (text wraps cleanly inside box without height constraint)
+        if (direction === "e") {
+          newW = Math.max(80, origWidth + deltaX);
+        } else {
+          newW = Math.max(80, origWidth - deltaX);
+        }
         el.style.width = `${newW}px`;
         el.style.maxWidth = "100%";
-      } else if (direction.includes("w")) {
-        newW = Math.max(60, origWidth - deltaX);
+        el.style.height = "auto";
+      } else if (direction === "s" || direction === "n") {
+        // Vertical dragging on text: scales font size smoothly so text fills space without overflowing
+        const scaleFactor = 1 + (direction === "s" ? deltaY : -deltaY) / Math.max(80, origHeight);
+        const newFontSize = Math.max(12, Math.min(140, Math.round(computedFontSize * scaleFactor)));
+        el.style.fontSize = `${newFontSize}px`;
+        el.style.height = "auto";
+      } else {
+        // Corner dragging (proportional width & text scale)
+        const scaleFactor = 1 + deltaX / Math.max(100, origWidth);
+        newW = Math.max(80, origWidth + deltaX);
         el.style.width = `${newW}px`;
+        el.style.maxWidth = "100%";
+        const newFontSize = Math.max(12, Math.min(140, Math.round(computedFontSize * scaleFactor)));
+        el.style.fontSize = `${newFontSize}px`;
+        el.style.height = "auto";
       }
 
-      if (direction.includes("s")) {
-        newH = Math.max(24, origHeight + deltaY);
-        el.style.height = `${newH}px`;
-      } else if (direction.includes("n")) {
-        newH = Math.max(24, origHeight - deltaY);
-        el.style.height = `${newH}px`;
-      }
-
-      setLiveDimensions({ width: Math.round(newW), height: Math.round(newH) });
+      setLiveDimensions({ width: Math.round(el.offsetWidth), height: Math.round(el.offsetHeight) });
     };
 
     const onPointerUp = () => {
@@ -519,11 +539,12 @@ export function SelectionHighlight({
       window.removeEventListener("pointerup", onPointerUp);
       setIsResizing(false);
       setLiveDimensions(null);
+      el.style.height = "auto";
       el.dispatchEvent(new Event("input", { bubbles: true }));
       if (selectedId && onUpdateProps && effectiveType) {
         onUpdateProps(selectedId, {
           width: el.style.width,
-          height: el.style.height,
+          fontSize: el.style.fontSize,
         } as any);
       }
     };
