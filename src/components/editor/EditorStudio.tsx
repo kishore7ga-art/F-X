@@ -2505,8 +2505,9 @@ export function EditorStudio({
         elementSelection.selection.selectedId &&
         elementSelection.selection.type !== "heading" &&
         elementSelection.selection.type !== "text" &&
-        elementSelection.selection.type !== "card" ? (
-          /* Non-text element (container, button, image, video, icon): its own toolbar, same dock. Text, Heading, & Card are edited via floating toolbar directly on canvas */
+        elementSelection.selection.type !== "card" &&
+        elementSelection.selection.type !== "container" ? (
+          /* Non-text element (button, image, video, icon): its own toolbar, same dock. Text, Heading, Card, & Container are edited via floating toolbar directly on canvas */
           <ElementToolbar
             key={elementSelection.selection.selectedId}
             selection={elementSelection.selection}

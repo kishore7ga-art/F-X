@@ -30,6 +30,7 @@ import {
   Video as VideoIcon,
   Upload,
   Plus,
+  Minus,
   Layers,
   Square,
 } from "lucide-react";
@@ -595,6 +596,46 @@ export function SelectionHighlight({
     }
     setCardCustomUrl("");
     setShowCardMediaPopover(false);
+  };
+
+  // Container-specific props & live mutation handlers
+  const containerGap = meta.gap || "16px";
+  const containerGapNum = parseInt(containerGap, 10) || 0;
+  const containerDisplay = meta.display === "block" ? "block" : "grid";
+
+  const handleContainerDisplayChange = (disp: "grid" | "block") => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("display", disp, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { display: disp } as any);
+    }
+  };
+
+  const handleContainerGapStep = (delta: number) => {
+    const next = Math.max(0, containerGapNum + delta);
+    const gapStr = `${next}px`;
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("gap", gapStr, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { gap: gapStr } as any);
+    }
+  };
+
+  const handleContainerGapInput = (val: string) => {
+    const el = resolveElement();
+    if (el) {
+      el.style.setProperty("gap", val, "important");
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (selectedId && onUpdateProps) {
+      onUpdateProps(selectedId, { gap: val } as any);
+    }
   };
 
   // Compute horizontal positioning so toolbar is anchored at the END (right side) of the element
@@ -1631,6 +1672,126 @@ export function SelectionHighlight({
                     onDelete();
                   }}
                   title="Delete Card"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </>
+        ) : effectiveType === "container" ? (
+          <>
+            {/* 1. Display Selector (Grid, Block) - Flex removed per request */}
+            <div className="flex items-center bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 gap-0.5">
+              <span className="px-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Display
+              </span>
+              <button
+                type="button"
+                onClick={() => handleContainerDisplayChange("grid")}
+                className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                  containerDisplay === "grid"
+                    ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                }`}
+              >
+                Grid
+              </button>
+              <button
+                type="button"
+                onClick={() => handleContainerDisplayChange("block")}
+                className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                  containerDisplay === "block"
+                    ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                }`}
+              >
+                Block
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* 2. Gap Stepper with Increment & Decrement */}
+            <div className="flex items-center bg-slate-50 px-2 py-0.5 rounded-xl border border-slate-200/80 gap-1.5 h-8">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gap</span>
+              <div className="flex items-center bg-white border border-slate-200 rounded-lg overflow-hidden shadow-xs h-6.5">
+                <button
+                  type="button"
+                  onClick={() => handleContainerGapStep(-4)}
+                  title="Decrease Gap (-4px)"
+                  className="px-2 h-full hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer border-r border-slate-100 flex items-center justify-center"
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+                <input
+                  type="text"
+                  value={containerGap}
+                  onChange={(e) => handleContainerGapInput(e.target.value)}
+                  className="w-[48px] text-center text-[11px] font-mono font-semibold text-slate-800 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleContainerGapStep(4)}
+                  title="Increase Gap (+4px)"
+                  className="px-2 h-full hover:bg-slate-100 text-slate-600 font-bold text-xs transition cursor-pointer border-l border-slate-100 flex items-center justify-center"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* 3. Actions: Duplicate, Move Up, Move Down, Delete */}
+            <div className="flex items-center gap-0.5">
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicate Container"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveUp && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp();
+                  }}
+                  title="Move Container Up"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onMoveDown && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown();
+                  }}
+                  title="Move Container Down"
+                  className="h-8 w-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  title="Delete Container"
                   className="h-8 w-8 flex items-center justify-center rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 transition cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
