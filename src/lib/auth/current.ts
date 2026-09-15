@@ -83,7 +83,7 @@ export async function getCurrentCollege(targetSubdomain?: string): Promise<Curre
      */
     if (error instanceof ServerApiError && error.status !== 401) {
       console.error(`[auth] could not resolve college: ${error.message}`);
-      throw new BackendUnavailableError(error.message);
+      return null;
     }
   }
 
