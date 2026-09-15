@@ -3,9 +3,9 @@
 /**
  * The interactive outline and floating toolbar around the selected element.
  *
- * Renders directly over the canvas bounding box, providing contextual
- * text formatting (tags, fonts, sizes, colors, alignment, styles) right
- * on the element where the user is working.
+ * Renders directly over the canvas bounding box, providing all contextual
+ * text formatting (tags, fonts, sizes, line height, letter spacing, colors,
+ * alignment, styles, reset) right on the element where the user is working.
  */
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -13,6 +13,7 @@ import {
   Bold,
   Italic,
   Underline,
+  RotateCcw,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -23,20 +24,18 @@ import {
   Trash2,
   X,
   Edit3,
+  Check,
   ChevronDown,
   Type,
   Palette,
-  Sparkles,
 } from "lucide-react";
 
 import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
 import type {
   ElementPropsByType,
   HeadingLevel,
-  HeadingProps,
   LeafType,
   TextAlign,
-  TextProps,
   TextTransform,
 } from "@/lib/editor/element-resolver";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
@@ -88,6 +87,46 @@ const PRESET_COLORS = [
 
 const HEADING_TAGS: HeadingLevel[] = ["h1", "h2", "h3", "h4", "h5", "h6"];
 
+const FONT_SIZES = [
+  { value: "", label: "Auto Size" },
+  { value: "12px", label: "12px" },
+  { value: "14px", label: "14px" },
+  { value: "16px", label: "16px" },
+  { value: "18px", label: "18px" },
+  { value: "20px", label: "20px" },
+  { value: "24px", label: "24px" },
+  { value: "28px", label: "28px" },
+  { value: "32px", label: "32px" },
+  { value: "36px", label: "36px" },
+  { value: "40px", label: "40px" },
+  { value: "48px", label: "48px" },
+  { value: "56px", label: "56px" },
+  { value: "64px", label: "64px" },
+  { value: "72px", label: "72px" },
+  { value: "80px", label: "80px" },
+  { value: "96px", label: "96px" },
+];
+
+const LINE_HEIGHTS = [
+  { value: "", label: "Auto" },
+  { value: "1.0", label: "1.0 Compact" },
+  { value: "1.2", label: "1.2 Tight" },
+  { value: "1.4", label: "1.4 Normal" },
+  { value: "1.6", label: "1.6 Relaxed" },
+  { value: "1.8", label: "1.8 Loose" },
+  { value: "2.0", label: "2.0 Double" },
+];
+
+const LETTER_SPACINGS = [
+  { value: "", label: "Normal" },
+  { value: "-0.05em", label: "Tighter" },
+  { value: "-0.02em", label: "Tight" },
+  { value: "0.02em", label: "Wide" },
+  { value: "0.05em", label: "Wider" },
+  { value: "0.1em", label: "Widest" },
+  { value: "0.2em", label: "Spaced" },
+];
+
 export interface SelectionHighlightProps {
   type: ElementType | null;
   /** Looks up the live node for the selection; null when there is none. */
@@ -95,6 +134,7 @@ export interface SelectionHighlightProps {
   /** Changes whenever the selection or the canvas content does, to re-measure. */
   revision: string;
   selection?: SelectionState;
+  isEditingText?: boolean;
   onUpdateProps?: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
   onChangeHeadingLevel?: (level: HeadingLevel) => void;
   onDuplicate?: () => void;
@@ -102,7 +142,22 @@ export interface SelectionHighlightProps {
   onMoveDown?: () => void;
   onDelete?: () => void;
   onEditText?: () => void;
+  onFinishEditing?: () => void;
   onClose?: () => void;
+
+  // Direct formatting actions from inPlaceEditor
+  activeTextColor?: string;
+  onApplyTextColor?: (hex: string) => void;
+  onApplyTextFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
+  activeFontFamily?: string;
+  onApplyFontFamily?: (font: string) => void;
+  activeFontSize?: string;
+  onApplyFontSize?: (size: string) => void;
+  activeTextAlign?: string;
+  onApplyTextAlign?: (align: "left" | "center" | "right" | "justify") => void;
+  activeLineHeight?: string;
+  activeLetterSpacing?: string;
+  onApplyTextSpacing?: (prop: "lineHeight" | "letterSpacing", value: string) => void;
 }
 
 export function SelectionHighlight({
@@ -110,6 +165,7 @@ export function SelectionHighlight({
   resolveElement,
   revision,
   selection,
+  isEditingText = false,
   onUpdateProps,
   onChangeHeadingLevel,
   onDuplicate,
@@ -117,13 +173,27 @@ export function SelectionHighlight({
   onMoveDown,
   onDelete,
   onEditText,
+  onFinishEditing,
   onClose,
+  activeTextColor,
+  onApplyTextColor,
+  onApplyTextFormat,
+  activeFontFamily,
+  onApplyFontFamily,
+  activeFontSize,
+  onApplyFontSize,
+  activeTextAlign,
+  onApplyTextAlign,
+  activeLineHeight,
+  activeLetterSpacing,
+  onApplyTextSpacing,
 }: SelectionHighlightProps) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [showColorPopover, setShowColorPopover] = useState(false);
   const [showFontPopover, setShowFontPopover] = useState(false);
   const [showTagPopover, setShowTagPopover] = useState(false);
-  const colorPickerInputRef = useRef<HTMLInputElement>(null);
+  const [showSizePopover, setShowSizePopover] = useState(false);
+  const [showSpacingPopover, setShowSpacingPopover] = useState(false);
 
   useEffect(() => {
     let frame = 0;
@@ -166,62 +236,104 @@ export function SelectionHighlight({
       setShowColorPopover(false);
       setShowFontPopover(false);
       setShowTagPopover(false);
+      setShowSizePopover(false);
+      setShowSpacingPopover(false);
     };
     window.addEventListener("pointerdown", handleOutside);
     return () => window.removeEventListener("pointerdown", handleOutside);
   }, []);
 
-  if (!rect || !type || type === "section") return null;
+  const activeElement = resolveElement();
+  const effectiveType = type || (activeElement?.tagName.toLowerCase().startsWith("h") ? "heading" : activeElement ? "text" : null);
 
-  const colour = RING[type] || "#6366f1";
-  const label = TOOLBAR_CONFIG[type]?.badge || "Element";
+  if (!rect || !effectiveType || effectiveType === "section") return null;
+
+  const colour = RING[effectiveType] || "#6366f1";
+  const label = TOOLBAR_CONFIG[effectiveType]?.badge || (effectiveType === "heading" ? "Heading" : "Text");
   const isNearTop = rect.top < 52;
-  const isTextLike = type === "heading" || type === "text";
+  const isTextLike = effectiveType === "heading" || effectiveType === "text";
 
   const selectedId = selection?.selectedId;
   const meta = (selection?.meta ?? {}) as Record<string, any>;
 
-  // Current props extraction
-  const currentColor = meta.color || (type === "heading" ? "#0f172a" : "#334155");
-  const rawFontSize = String(meta.fontSize || (type === "heading" ? "32px" : "16px"));
-  const parsedFontSize = parseInt(rawFontSize, 10) || (type === "heading" ? 32 : 16);
-  const currentFontFamily = meta.fontFamily || "";
-  const currentWeight = String(meta.fontWeight || (type === "heading" ? "700" : "400"));
+  // Current props extraction with live inPlaceEditor fallback
+  const currentColor = activeTextColor || meta.color || (effectiveType === "heading" ? "#0f172a" : "#334155");
+  const rawFontSize = activeFontSize || String(meta.fontSize || (effectiveType === "heading" ? "32px" : "16px"));
+  const parsedFontSize = parseInt(rawFontSize, 10) || (effectiveType === "heading" ? 32 : 16);
+  const currentFontFamily = activeFontFamily || meta.fontFamily || "";
+  const currentWeight = String(meta.fontWeight || (effectiveType === "heading" ? "700" : "400"));
   const isBold = parseInt(currentWeight, 10) >= 600 || currentWeight === "bold";
-  const currentAlign = (meta.textAlign || "left") as TextAlign;
+  const currentAlign = (activeTextAlign || meta.textAlign || "left") as TextAlign;
   const currentTransform = (meta.textTransform || "none") as TextTransform;
-  const currentLevel = (meta.level || (type === "heading" ? "h2" : "p")) as HeadingLevel;
+  const currentLevel = (meta.level || (effectiveType === "heading" ? "h2" : "p")) as HeadingLevel;
+  const currentLineHeight = activeLineHeight || meta.lineHeight || "";
+  const currentLetterSpacing = activeLetterSpacing || meta.letterSpacing || "";
 
-  // Handlers
+  // Handlers that work seamlessly in both selection mode and contentEditable mode
   const handleColorChange = (hex: string) => {
-    if (selectedId && onUpdateProps && type) {
+    if (onApplyTextColor) onApplyTextColor(hex);
+    if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { color: hex } as any);
     }
   };
 
   const handleFontSizeChange = (delta: number) => {
-    if (selectedId && onUpdateProps && type) {
-      const nextSize = Math.max(10, Math.min(120, parsedFontSize + delta));
-      onUpdateProps(selectedId, { fontSize: `${nextSize}px` } as any);
+    const nextSize = Math.max(10, Math.min(140, parsedFontSize + delta));
+    const sizeStr = `${nextSize}px`;
+    if (onApplyFontSize) onApplyFontSize(sizeStr);
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, { fontSize: sizeStr } as any);
     }
   };
 
+  const handleSelectExactSize = (sizeStr: string) => {
+    if (onApplyFontSize) onApplyFontSize(sizeStr);
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, { fontSize: sizeStr } as any);
+    }
+    setShowSizePopover(false);
+  };
+
   const handleFontFamilyChange = (font: string) => {
-    if (selectedId && onUpdateProps && type) {
+    if (onApplyFontFamily) onApplyFontFamily(font);
+    if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontFamily: font } as any);
     }
     setShowFontPopover(false);
   };
 
   const handleToggleBold = () => {
-    if (selectedId && onUpdateProps && type) {
+    if (onApplyTextFormat) onApplyTextFormat("bold");
+    if (selectedId && onUpdateProps && effectiveType) {
       const nextWeight = isBold ? "400" : "700";
       onUpdateProps(selectedId, { fontWeight: nextWeight } as any);
     }
   };
 
+  const handleToggleItalic = () => {
+    if (onApplyTextFormat) onApplyTextFormat("italic");
+  };
+
+  const handleToggleUnderline = () => {
+    if (onApplyTextFormat) onApplyTextFormat("underline");
+  };
+
+  const handleResetFormat = () => {
+    if (onApplyTextFormat) onApplyTextFormat("removeFormat");
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, {
+        fontWeight: "400",
+        fontFamily: "",
+        textAlign: "left",
+        textTransform: "none",
+        lineHeight: "",
+        letterSpacing: "",
+      } as any);
+    }
+  };
+
   const handleCycleCase = () => {
-    if (selectedId && onUpdateProps && type) {
+    if (selectedId && onUpdateProps && effectiveType) {
       const order: TextTransform[] = ["none", "uppercase", "capitalize"];
       const nextIdx = (order.indexOf(currentTransform) + 1) % order.length;
       onUpdateProps(selectedId, { textTransform: order[nextIdx] } as any);
@@ -229,13 +341,14 @@ export function SelectionHighlight({
   };
 
   const handleAlignChange = (align: TextAlign) => {
-    if (selectedId && onUpdateProps && type) {
+    if (onApplyTextAlign) onApplyTextAlign(align);
+    if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { textAlign: align } as any);
     }
   };
 
   const handleTagChange = (tag: HeadingLevel) => {
-    if (type === "heading" && onChangeHeadingLevel) {
+    if (effectiveType === "heading" && onChangeHeadingLevel) {
       onChangeHeadingLevel(tag);
     }
     if (selectedId && onUpdateProps) {
@@ -244,8 +357,22 @@ export function SelectionHighlight({
     setShowTagPopover(false);
   };
 
+  const handleLineHeightChange = (val: string) => {
+    if (onApplyTextSpacing) onApplyTextSpacing("lineHeight", val);
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, { lineHeight: val } as any);
+    }
+  };
+
+  const handleLetterSpacingChange = (val: string) => {
+    if (onApplyTextSpacing) onApplyTextSpacing("letterSpacing", val);
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, { letterSpacing: val } as any);
+    }
+  };
+
   // Compute horizontal positioning so toolbar is never clipped offscreen
-  const toolbarLeft = Math.max(12, Math.min(rect.left, window.innerWidth - 620));
+  const toolbarLeft = Math.max(12, Math.min(rect.left, window.innerWidth - 720));
 
   return (
     <>
@@ -278,7 +405,11 @@ export function SelectionHighlight({
       <div
         data-xite-floating-toolbar=""
         onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          // Prevent losing focus / contentEditable selection
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         onPointerDown={(e) => e.stopPropagation()}
         className={`fixed z-[99999] pointer-events-auto flex items-center gap-1 bg-slate-900/95 text-slate-100 backdrop-blur-md border border-slate-700/90 shadow-2xl rounded-xl p-1 text-xs select-none transition-all duration-75`}
         style={{
@@ -296,6 +427,8 @@ export function SelectionHighlight({
                   setShowTagPopover(!showTagPopover);
                   setShowFontPopover(false);
                   setShowColorPopover(false);
+                  setShowSizePopover(false);
+                  setShowSpacingPopover(false);
                 }}
                 title="Change semantic tag (H1-H6, P)"
                 className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-black uppercase text-pink-400 hover:text-pink-300 border border-slate-700 transition"
@@ -333,6 +466,8 @@ export function SelectionHighlight({
                   setShowFontPopover(!showFontPopover);
                   setShowTagPopover(false);
                   setShowColorPopover(false);
+                  setShowSizePopover(false);
+                  setShowSpacingPopover(false);
                 }}
                 title="Font Family"
                 className="flex items-center gap-1 rounded-lg px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-200 border border-slate-700 transition max-w-[110px] truncate"
@@ -366,8 +501,8 @@ export function SelectionHighlight({
 
             <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
 
-            {/* Font Size Stepper */}
-            <div className="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5">
+            {/* Font Size Stepper & Dropdown */}
+            <div className="flex items-center bg-slate-800 rounded-lg border border-slate-700 p-0.5 relative">
               <button
                 type="button"
                 onClick={() => handleFontSizeChange(-2)}
@@ -376,9 +511,19 @@ export function SelectionHighlight({
               >
                 −
               </button>
-              <span className="px-1 text-[11px] font-mono font-bold text-slate-200 min-w-[28px] text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSizePopover(!showSizePopover);
+                  setShowTagPopover(false);
+                  setShowFontPopover(false);
+                  setShowColorPopover(false);
+                  setShowSpacingPopover(false);
+                }}
+                className="px-1 text-[11px] font-mono font-bold text-slate-200 min-w-[28px] text-center hover:text-white transition"
+              >
                 {parsedFontSize}
-              </span>
+              </button>
               <button
                 type="button"
                 onClick={() => handleFontSizeChange(2)}
@@ -387,11 +532,30 @@ export function SelectionHighlight({
               >
                 +
               </button>
+
+              {showSizePopover && (
+                <div className="absolute top-full left-0 mt-1.5 p-1 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl grid grid-cols-3 gap-0.5 z-[100000] w-48">
+                  {FONT_SIZES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => handleSelectExactSize(s.value)}
+                      className={`px-1.5 py-1 rounded text-[10px] font-mono font-bold text-center transition ${
+                        rawFontSize === s.value
+                          ? "bg-blue-600 text-white"
+                          : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
 
-            {/* Formatting: Bold & Case */}
+            {/* Formatting: Bold (B), Italic (I), Underline (U), Reset */}
             <button
               type="button"
               onClick={handleToggleBold}
@@ -403,6 +567,33 @@ export function SelectionHighlight({
               }`}
             >
               <Bold className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleItalic}
+              title="Italic"
+              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition"
+            >
+              <Italic className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleUnderline}
+              title="Underline"
+              className="p-1.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition"
+            >
+              <Underline className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleResetFormat}
+              title="Reset formatting"
+              className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
 
             <button
@@ -430,6 +621,8 @@ export function SelectionHighlight({
                   setShowColorPopover(!showColorPopover);
                   setShowFontPopover(false);
                   setShowTagPopover(false);
+                  setShowSizePopover(false);
+                  setShowSpacingPopover(false);
                 }}
                 title="Text Color"
                 className="p-1 rounded-lg hover:bg-slate-800 flex items-center gap-1 border border-slate-700 transition"
@@ -517,12 +710,100 @@ export function SelectionHighlight({
               >
                 <AlignRight className="w-3 h-3" />
               </button>
+              <button
+                type="button"
+                onClick={() => handleAlignChange("justify")}
+                title="Align Justify"
+                className={`p-1 rounded transition ${
+                  currentAlign === "justify"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <AlignJustify className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Line & Spacing Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSpacingPopover(!showSpacingPopover);
+                  setShowColorPopover(false);
+                  setShowFontPopover(false);
+                  setShowTagPopover(false);
+                  setShowSizePopover(false);
+                }}
+                title="Line height & Letter spacing"
+                className="px-1.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 transition"
+              >
+                Line / Spacing ▾
+              </button>
+
+              {showSpacingPopover && (
+                <div className="absolute top-full left-0 mt-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col gap-2 z-[100000] w-48">
+                  <div>
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Line Height
+                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {LINE_HEIGHTS.map((lh) => (
+                        <button
+                          key={lh.value}
+                          type="button"
+                          onClick={() => handleLineHeightChange(lh.value)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition ${
+                            currentLineHeight === lh.value
+                              ? "bg-blue-600 text-white"
+                              : "text-slate-300 hover:bg-slate-800"
+                          }`}
+                        >
+                          {lh.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-1.5 border-t border-slate-800">
+                    <div className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      Letter Spacing
+                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                      {LETTER_SPACINGS.map((ls) => (
+                        <button
+                          key={ls.value}
+                          type="button"
+                          onClick={() => handleLetterSpacingChange(ls.value)}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-medium text-left transition ${
+                            currentLetterSpacing === ls.value
+                              ? "bg-blue-600 text-white"
+                              : "text-slate-300 hover:bg-slate-800"
+                          }`}
+                        >
+                          {ls.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="w-px h-4 bg-slate-700/80 mx-0.5" />
 
-            {/* Direct Edit Text Trigger */}
-            {onEditText && (
+            {/* Direct Edit / Done Text Trigger */}
+            {isEditingText ? (
+              <button
+                type="button"
+                onClick={onFinishEditing}
+                title="Finish editing text"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 font-bold text-[10.5px] transition cursor-pointer shadow-xs"
+              >
+                <Check className="w-3 h-3" />
+                <span>Done</span>
+              </button>
+            ) : onEditText ? (
               <button
                 type="button"
                 onClick={onEditText}
@@ -532,7 +813,7 @@ export function SelectionHighlight({
                 <Edit3 className="w-3 h-3" />
                 <span>Edit</span>
               </button>
-            )}
+            ) : null}
           </>
         ) : null}
 
@@ -593,4 +874,5 @@ export function SelectionHighlight({
     </>
   );
 }
+
 

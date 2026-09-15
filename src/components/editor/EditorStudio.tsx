@@ -1995,12 +1995,23 @@ export function EditorStudio({
       )}
 
       <SelectionHighlight
-        type={elementSelection.selection.type}
-        resolveElement={elementSelection.resolveSelectedElement}
-        revision={`${elementSelection.selection.selectedId ?? ""}|${
+        type={
+          inPlaceEditor.isEditingText
+            ? inPlaceEditor.activeEditingElement?.tagName.toLowerCase().startsWith("h")
+              ? "heading"
+              : "text"
+            : elementSelection.selection.type
+        }
+        resolveElement={() =>
+          inPlaceEditor.isEditingText && inPlaceEditor.activeEditingElement
+            ? inPlaceEditor.activeEditingElement
+            : elementSelection.resolveSelectedElement()
+        }
+        revision={`${inPlaceEditor.isEditingText ? "editing" : ""}|${elementSelection.selection.selectedId ?? ""}|${
           sections.find((s) => s.id === elementSelection.selection.sectionId)?.code ?? ""
         }`}
         selection={elementSelection.selection}
+        isEditingText={inPlaceEditor.isEditingText}
         onUpdateProps={elementSelection.updateElementProps}
         onChangeHeadingLevel={elementSelection.changeHeadingLevel}
         onDuplicate={elementSelection.duplicateElement}
@@ -2017,6 +2028,19 @@ export function EditorStudio({
             }
           }
         }}
+        onFinishEditing={() => inPlaceEditor.finishInlineTextEditing(true)}
+        activeTextColor={inPlaceEditor.activeTextColor}
+        onApplyTextColor={inPlaceEditor.applyTextColor}
+        onApplyTextFormat={inPlaceEditor.applyTextFormat}
+        activeFontFamily={inPlaceEditor.activeFontFamily}
+        onApplyFontFamily={inPlaceEditor.applyFontFamily}
+        activeFontSize={inPlaceEditor.activeFontSize}
+        onApplyFontSize={inPlaceEditor.applyFontSize}
+        activeTextAlign={inPlaceEditor.activeTextAlign}
+        onApplyTextAlign={inPlaceEditor.applyTextAlign}
+        activeLineHeight={inPlaceEditor.activeLineHeight}
+        activeLetterSpacing={inPlaceEditor.activeLetterSpacing}
+        onApplyTextSpacing={inPlaceEditor.applyTextSpacing}
       />
 
       <ContextMenu
@@ -2552,36 +2576,6 @@ export function EditorStudio({
             canRedo={editor.canRedo}
             saveStatus={editor.saveStatus}
             saveError={editor.saveError}
-          />
-        ) : inPlaceEditor.isEditingText && customToolbarSection ? (
-          /* Text being typed in: the text toolbar. The section toolbar edits the section only. */
-          <InlineTextToolbar
-            sectionTitle={customToolbarSection.title || "Section"}
-            device={sectionDevice}
-            dockPosition={dockPosition}
-            onDeviceChange={handleSectionDeviceChange}
-            onClose={() => {
-              inPlaceEditor.finishInlineTextEditing(false);
-              closeCustomToolbar();
-            }}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-            colorValue={inPlaceEditor.activeTextColor}
-            onApplyColor={inPlaceEditor.applyTextColor}
-            onApplyFormat={inPlaceEditor.applyTextFormat}
-            fontFamilyValue={inPlaceEditor.activeFontFamily}
-            onApplyFontFamily={inPlaceEditor.applyFontFamily}
-            fontSizeValue={inPlaceEditor.activeFontSize}
-            onApplyFontSize={inPlaceEditor.applyFontSize}
-            textAlignValue={inPlaceEditor.activeTextAlign}
-            onApplyTextAlign={inPlaceEditor.applyTextAlign}
-            lineHeightValue={inPlaceEditor.activeLineHeight}
-            letterSpacingValue={inPlaceEditor.activeLetterSpacing}
-            onApplyTextSpacing={inPlaceEditor.applyTextSpacing}
           />
         ) : isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
           <SectionToolbar
