@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { SnapGuide, DistanceBadge } from "@/stores/useVisualCanvasStore";
-import type { HeadingLevel } from "@/lib/editor/element-resolver";
 import { recomposeSectionCode } from "@/lib/section-runtime";
 import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 
@@ -177,8 +176,12 @@ export function sanitizeCleanDom(node: HTMLElement): string {
     htmlEl.classList.remove("xite-text-editing");
     htmlEl.style.outline = "";
     htmlEl.style.outlineOffset = "";
+    htmlEl.style.borderRadius = "";
+    htmlEl.style.boxShadow = "";
     htmlEl.style.cursor = "";
     htmlEl.style.userSelect = "";
+    htmlEl.style.transform = "";
+    htmlEl.style.zIndex = "";
     (htmlEl.style as any).webkitUserSelect = "";
   });
 
@@ -655,14 +658,7 @@ export function useCanvaInteractions({
       finishInlineTextEditing(false);
     }
 
-    // Single-click on text elements: immediately activate inline text editing
-    const textTarget = findTextEditableElement(target);
-    if (textTarget) {
-      activateTextEditing(textTarget, sectionIndex, e);
-      return;
-    }
-
-    // Normal single-click on other elements selects the element
+    // Normal single-click selects the element without activating inline text editing
     const rect = target.getBoundingClientRect();
     setSelectedElement({
       tag: target.tagName.toLowerCase(),
@@ -671,7 +667,7 @@ export function useCanvaInteractions({
       element: target,
       sectionIndex,
     });
-  }, [isEditingTarget, finishInlineTextEditing, onSelectButton, findTextEditableElement, activateTextEditing]);
+  }, [isEditingTarget, finishInlineTextEditing, onSelectButton]);
 
   /**
    * Double-click: activates inline text editing strictly on text elements (headlines, paragraphs, button text, spans).
@@ -1421,50 +1417,6 @@ export function useCanvaInteractions({
     syncCurrentElementCode();
   }, [syncCurrentElementCode]);
 
-  /**
-   * Changes the HTML tag of the active text element (e.g. H1 to H4, P to H2)
-   */
-  const changeHeadingTag = useCallback((newTag: HeadingLevel | "p") => {
-    let el = activeEditingElemRef.current;
-    if (!el && selectedElement?.element) {
-      const textTarget = findTextEditableElement(selectedElement.element);
-      if (textTarget) {
-        el = textTarget;
-      }
-    }
-    if (!el) return;
-
-    if (el.tagName.toLowerCase() === newTag.toLowerCase()) return;
-
-    const newHeading = document.createElement(newTag);
-    for (let i = 0; i < el.attributes.length; i++) {
-      const attr = el.attributes[i]!;
-      newHeading.setAttribute(attr.name, attr.value);
-    }
-    while (el.firstChild) {
-      newHeading.appendChild(el.firstChild);
-    }
-    el.replaceWith(newHeading);
-
-    if (activeEditingElemRef.current === el) {
-      activeEditingElemRef.current = newHeading;
-      newHeading.setAttribute("contenteditable", "true");
-      newHeading.focus();
-    }
-    if (selectedElement?.element === el) {
-      setSelectedElement({
-        ...selectedElement,
-        tag: newTag.toLowerCase(),
-        label: getElementLabel(newHeading),
-        element: newHeading,
-        rect: newHeading.getBoundingClientRect(),
-      });
-    }
-
-    newHeading.dispatchEvent(new Event("input", { bubbles: true }));
-    syncCurrentElementCode();
-  }, [selectedElement, syncCurrentElementCode]);
-
   return {
     selectedElement,
     hoveredRect,
@@ -1481,7 +1433,6 @@ export function useCanvaInteractions({
     activeLetterSpacing,
     applyTextSpacing,
     applyTextFormat,
-    changeHeadingTag,
     activateTextEditing,
     activeEditingElement: activeEditingElemRef.current,
     isDragging,

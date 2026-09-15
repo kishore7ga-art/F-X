@@ -2013,10 +2013,7 @@ export function EditorStudio({
         selection={elementSelection.selection}
         isEditingText={inPlaceEditor.isEditingText}
         onUpdateProps={elementSelection.updateElementProps}
-        onChangeHeadingLevel={(level) => {
-          inPlaceEditor.changeHeadingTag(level);
-          elementSelection.changeHeadingLevel(level);
-        }}
+        onChangeHeadingLevel={elementSelection.changeHeadingLevel}
         onDuplicate={elementSelection.duplicateElement}
         onMoveUp={() => elementSelection.moveElement("up")}
         onMoveDown={() => elementSelection.moveElement("down")}
