@@ -222,6 +222,7 @@ export function SelectionHighlight({
   onApplyTextSpacing,
 }: SelectionHighlightProps) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
   const [showColorPopover, setShowColorPopover] = useState(false);
   const [showFontPopover, setShowFontPopover] = useState(false);
   const [showTagPopover, setShowTagPopover] = useState(false);
@@ -1039,8 +1040,19 @@ export function SelectionHighlight({
     }
   };
 
-  // Compute horizontal positioning so toolbar is anchored at the END (right side) of the element
-  const toolbarRight = Math.max(420, Math.min(rect.right, window.innerWidth - 12));
+  // Toolbar positioning: strictly clamp within viewport boundaries [12px, window.innerWidth - toolbarWidth - 12px]
+  const toolbarWidth = toolbarRef.current?.offsetWidth || 440;
+  const toolbarHeight = toolbarRef.current?.offsetHeight || 44;
+  const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1200;
+  const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 800;
+
+  // Horizontal position: align with rect.left, clamped within viewport so it NEVER gets cut off
+  const toolbarLeft = Math.max(12, Math.min(rect.left, viewportWidth - toolbarWidth - 12));
+
+  // Vertical position: prefer placing above element; if too close to viewport top (< 56px), place below element
+  const isTooCloseToTop = rect.top < toolbarHeight + 16;
+  const idealTop = isTooCloseToTop ? rect.bottom + 8 : rect.top - toolbarHeight - 8;
+  const toolbarTop = Math.max(8, Math.min(idealTop, viewportHeight - toolbarHeight - 8));
 
   return (
     <>
@@ -1069,18 +1081,18 @@ export function SelectionHighlight({
         </span>
       </div>
 
-      {/* 2. Floating Contextual Toolbar - Modern Sleek Pill UI */}
+      {/* 2. Floating Contextual Toolbar - Modern Sleek Pill UI with auto viewport containment */}
       <div
+        ref={toolbarRef}
         data-xite-floating-toolbar=""
         data-xite-toolbar=""
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        className="fixed z-[99999] pointer-events-auto flex items-center gap-1 bg-white/95 text-slate-700 backdrop-blur-md border border-slate-200/90 shadow-[0_10px_35px_-4px_rgba(0,0,0,0.18),0_4px_12px_-2px_rgba(0,0,0,0.08)] rounded-2xl p-1.5 text-xs select-none transition-all duration-75"
+        className="fixed z-[99999] pointer-events-auto flex items-center gap-1 bg-white/95 text-slate-700 backdrop-blur-md border border-slate-200/90 shadow-[0_10px_35px_-4px_rgba(0,0,0,0.18),0_4px_12px_-2px_rgba(0,0,0,0.08)] rounded-2xl p-1.5 text-xs select-none transition-all duration-75 max-w-[calc(100vw-24px)]"
         style={{
-          top: isNearTop ? `${rect.bottom + 8}px` : `${Math.max(6, rect.top - 46)}px`,
-          left: `${toolbarRight}px`,
-          transform: "translateX(-100%)",
+          top: `${toolbarTop}px`,
+          left: `${toolbarLeft}px`,
         }}
       >
         {isTextLike ? (
@@ -2363,7 +2375,7 @@ export function SelectionHighlight({
 
               {showImageFitPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
+                  className="xite-floating-popover absolute top-full right-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
@@ -2646,7 +2658,7 @@ export function SelectionHighlight({
 
               {showVideoPlaybackPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
+                  className="xite-floating-popover absolute top-full right-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
@@ -2940,7 +2952,7 @@ export function SelectionHighlight({
 
               {showYoutubePlaybackPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
+                  className="xite-floating-popover absolute top-full right-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-3 z-[100000] w-64 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
@@ -3254,7 +3266,7 @@ export function SelectionHighlight({
 
               {showButtonRadiusPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2 z-[100000] w-60 text-slate-800"
+                  className="xite-floating-popover absolute top-full right-0 mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-[0_16px_36px_-6px_rgba(0,0,0,0.16),0_6px_16px_-4px_rgba(0,0,0,0.08)] flex flex-col gap-2 z-[100000] w-60 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
