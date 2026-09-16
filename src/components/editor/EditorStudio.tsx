@@ -1885,6 +1885,15 @@ export function EditorStudio({
     [headerSectionId],
   );
 
+  /** Whether the section following the header is a hero/content section that can be overlaid */
+  const isHeroSectionFollowingHeader = useMemo(() => {
+    if (sections.length < 2) return false;
+    const second = sections[1];
+    if (!second) return false;
+    const cat = second.category || resolveCategory({ title: second.title, code: second.code });
+    return cat === "hero" || second.title.toLowerCase().includes("hero") || (cat !== "navbar" && cat !== "footer");
+  }, [sections]);
+
   const resolvedToolbarSectionIndex =
     customToolbarState.sectionIndex !== null ? customToolbarState.sectionIndex : activeSectionIndex;
   const isSectionPanelOpen =
@@ -2056,8 +2065,8 @@ export function EditorStudio({
 
 
       {/* Main Studio Canvas Workspace */}
-      {/* The header's overlay toggle, outside the canvas frame so it covers nothing in it. */}
-      {sections.length > 1 && headerSection && (
+      {/* The header's overlay toggle, small and outside the section, only for header and hero section */}
+      {sections.length > 1 && headerSection && isHeroSectionFollowingHeader && (
         <HeaderOverlayDropZone
           isOverlaid={isHeaderOverlaid(headerSection)}
           onToggleOverlay={(enable) => {

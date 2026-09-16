@@ -14,21 +14,15 @@ interface HeaderOverlayDropZoneProps {
   heroTitle?: string;
 }
 
-const GAP = 12;
-const BUTTON_WIDTH = 132;
+const GAP = 8;
+const BUTTON_WIDTH = 76;
 
 /**
  * The overlay toggle, beside the header section — outside the canvas.
  *
- * It used to sit inside the header's top-right corner, which put it on top of
- * whatever the header keeps there: usually its call-to-action button. And it
- * cannot simply hang off the wrapper's edge, because the canvas frame is
- * `overflow: hidden` (and scaled), so anything past the edge is clipped.
- *
- * So it is rendered outside the canvas altogether, fixed to the viewport, and
- * follows the header wrapper's rect — to its right when there is room, to its
- * left when the canvas fills the pane. The same measuring pattern as the
- * selection highlight: rAF on scroll and resize, ResizeObserver on the wrapper.
+ * Rendered outside the canvas frame so it stays cleanly out of the section's
+ * content (and avoids covering the header CTA), while staying close to the
+ * header and hero sections.
  */
 export function HeaderOverlayDropZone({
   isOverlaid,
@@ -60,7 +54,7 @@ export function HeaderOverlayDropZone({
       const rect = header.getBoundingClientRect();
       const roomRight = window.innerWidth - rect.right - GAP;
       const left = roomRight >= BUTTON_WIDTH ? rect.right + GAP : Math.max(GAP, rect.left - GAP - BUTTON_WIDTH);
-      setPos({ top: rect.top, left });
+      setPos({ top: rect.top + 6, left });
     };
     const schedule = () => {
       if (frame === 0) frame = window.requestAnimationFrame(measure);
@@ -82,10 +76,12 @@ export function HeaderOverlayDropZone({
 
   return (
     <div
-      className="fixed z-[9997] select-none"
+      className="fixed z-[9997] select-none pointer-events-auto"
       style={{ top: pos.top, left: pos.left, width: BUTTON_WIDTH }}
       data-xite-canvas-chrome=""
       onMouseDownCapture={(e) => e.stopPropagation()}
+      onPointerDownCapture={(e) => e.stopPropagation()}
+      onClickCapture={(e) => e.stopPropagation()}
     >
       <button
         type="button"
@@ -94,10 +90,10 @@ export function HeaderOverlayDropZone({
           e.stopPropagation();
           onToggleOverlay(!isOverlaid);
         }}
-        className={`flex w-full items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold leading-none shadow-md backdrop-blur-md transition-all duration-150 cursor-pointer ${
+        className={`flex w-full items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10.5px] font-bold shadow-xs backdrop-blur-md transition-all duration-150 cursor-pointer ${
           isOverlaid
-            ? "bg-slate-900/95 border-cyan-500/60 text-cyan-200 hover:bg-red-950/90 hover:border-red-500/60 hover:text-red-200"
-            : "bg-white/95 border-slate-200 text-slate-800 hover:border-indigo-500 hover:text-indigo-600"
+            ? "bg-slate-900/95 border-cyan-500/60 text-cyan-300 hover:bg-red-950/90 hover:border-red-500/60 hover:text-red-200"
+            : "bg-white/95 border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
         }`}
         title={
           isOverlaid
@@ -105,8 +101,8 @@ export function HeaderOverlayDropZone({
             : `Overlay ${headerTitle} on top of ${heroTitle}.`
         }
       >
-        {isOverlaid ? <X className="h-3.5 w-3.5" /> : <Layers className="h-3.5 w-3.5" />}
-        <span>{isOverlaid ? "Remove overlay" : "Overlay"}</span>
+        {isOverlaid ? <X className="h-3 w-3 shrink-0" /> : <Layers className="h-3 w-3 shrink-0" />}
+        <span className="truncate">{isOverlaid ? "Overlaid" : "Overlay"}</span>
       </button>
     </div>
   );
