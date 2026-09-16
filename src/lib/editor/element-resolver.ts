@@ -1610,7 +1610,7 @@ export function duplicateElementDom(element: HTMLElement): HTMLElement {
   const isCardEl = elCls.includes("card") || element.hasAttribute("data-card") || (element.children.length >= 2 && !STRUCTURAL_TAGS.has(tag) && (parentCls.includes("grid") || parentCls.includes("cards") || parentCls.includes("col-")));
   const isImageEl = tag === "img" || tag === "picture" || tag === "figure" || elCls.includes("image") || elCls.includes("avatar");
 
-  // 3. Auto-fit and auto-adjust parent layout depending on element type
+  // 3. Auto-fit and auto-adjust parent layout depending on element and container structure
   if (isButtonEl) {
     // Buttons: Ensure parent is a flex row with clean wrapping and proper button gap
     const isParentFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
@@ -1631,77 +1631,75 @@ export function duplicateElementDom(element: HTMLElement): HTMLElement {
       }
     }
 
-    // Ensure buttons don't have rigid 100% widths unless full-width block was intended
     clone.style.setProperty("flex", "0 0 auto", "important");
     element.style.setProperty("flex", "0 0 auto", "important");
-  } else if (isCardEl || parentCls.includes("grid") || (parentComputed?.display.includes("grid") && parent.children.length >= 2)) {
-    // Cards or Grid items: Auto-adjust grid / flex columns to auto-fit and balance seamlessly
-    const isGrid = parentComputed?.display.includes("grid") || parentCls.includes("grid");
-    const isFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
+  } else {
+    const siblings = Array.from(parent.children) as HTMLElement[];
+    const childCount = siblings.length;
+    const isParentVertical =
+      parentTag === "ul" ||
+      parentTag === "ol" ||
+      parentCls.includes("flex-col") ||
+      parentComputed?.flexDirection === "column" ||
+      parentCls.includes("space-y-") ||
+      parentCls.includes("stack");
 
-    if (isGrid || (!isFlex && parent.children.length >= 2 && !STRUCTURAL_TAGS.has(parentTag))) {
+    const isParentGrid =
+      parentComputed?.display.includes("grid") ||
+      parentCls.includes("grid") ||
+      /\bgrid-cols-\d+\b/.test(parent.className);
+
+    const isParentFlexRow =
+      (parentComputed?.display.includes("flex") || parentCls.includes("flex")) &&
+      !isParentVertical;
+
+    if (isParentVertical) {
+      // Vertical list / column item: Maintain vertical flow with clean spacing
+      clone.style.setProperty("max-width", "100%", "important");
+      clone.style.setProperty("box-sizing", "border-box", "important");
+    } else if (isParentGrid || (childCount >= 2 && !STRUCTURAL_TAGS.has(parentTag) && !isParentFlexRow)) {
+      // Grid container / column row: dynamically adjust grid columns to fit all children evenly
+      const dynamicCols = childCount <= 6 ? childCount : Math.min(childCount, 12);
+
+      // Update any existing Tailwind grid-cols classes on parent
+      if (/\bgrid-cols-\d+\b/.test(parent.className)) {
+        parent.className = parent.className
+          .replace(/\bgrid-cols-\d+\b/g, `grid-cols-${dynamicCols}`)
+          .replace(/\b(?:sm|md|lg|xl|2xl):grid-cols-\d+\b/g, (m) => `${m.split(":")[0]}:grid-cols-${dynamicCols}`);
+      }
+
       parent.style.setProperty("display", "grid", "important");
-      parent.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", "important");
-      parent.style.setProperty("gap", parent.style.gap || "24px", "important");
+      parent.style.setProperty("grid-template-columns", `repeat(${dynamicCols}, minmax(0, 1fr))`, "important");
+      parent.style.setProperty("gap", parent.style.gap || (parentComputed?.gap && parentComputed.gap !== "normal" && parentComputed.gap !== "0px" ? parentComputed.gap : "24px"), "important");
       parent.style.setProperty("width", "100%", "important");
       parent.style.setProperty("box-sizing", "border-box", "important");
+      parent.style.setProperty("align-items", "start", "important");
 
-      // Auto-fit all sibling cards
-      const allCards = Array.from(parent.children) as HTMLElement[];
-      for (const c of allCards) {
-        c.style.setProperty("min-width", "0", "important");
-        c.style.setProperty("width", "100%", "important");
-        c.style.setProperty("box-sizing", "border-box", "important");
+      for (const sib of siblings) {
+        sib.style.setProperty("min-width", "0", "important");
+        sib.style.setProperty("width", "100%", "important");
+        sib.style.setProperty("max-width", "100%", "important");
+        sib.style.setProperty("box-sizing", "border-box", "important");
       }
-    } else if (isFlex) {
-      parent.style.setProperty("flex-wrap", "wrap", "important");
-      parent.style.setProperty("gap", parent.style.gap || "24px", "important");
-      parent.style.setProperty("justify-content", "center", "important");
+    } else if (isParentFlexRow) {
+      // Flex row: distribute all children evenly across the row
+      parent.style.setProperty("display", "flex", "important");
+      parent.style.setProperty("flex-direction", "row", "important");
+      parent.style.setProperty("gap", parent.style.gap || (parentComputed?.gap && parentComputed.gap !== "normal" && parentComputed.gap !== "0px" ? parentComputed.gap : "24px"), "important");
       parent.style.setProperty("width", "100%", "important");
+      parent.style.setProperty("box-sizing", "border-box", "important");
+      parent.style.setProperty("align-items", "start", "important");
 
-      const allCards = Array.from(parent.children) as HTMLElement[];
-      for (const c of allCards) {
-        c.style.setProperty("flex", "1 1 280px", "important");
-        c.style.setProperty("max-width", "100%", "important");
-        c.style.setProperty("min-width", "0", "important");
-        c.style.setProperty("box-sizing", "border-box", "important");
+      for (const sib of siblings) {
+        sib.style.setProperty("flex", "1 1 0%", "important");
+        sib.style.setProperty("min-width", "0", "important");
+        sib.style.setProperty("max-width", "100%", "important");
+        sib.style.setProperty("box-sizing", "border-box", "important");
       }
+    } else {
+      clone.style.setProperty("max-width", "100%", "important");
+      clone.style.setProperty("box-sizing", "border-box", "important");
     }
-  } else if (isImageEl) {
-    // Images: Ensure container wraps cleanly and images scale responsively
-    const isFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
-    const isGrid = parentComputed?.display.includes("grid") || parentCls.includes("grid");
-
-    if (isFlex) {
-      parent.style.setProperty("flex-wrap", "wrap", "important");
-      if (!parent.style.gap && (!parentComputed || parentComputed.gap === "0px" || parentComputed.gap === "normal")) {
-        parent.style.setProperty("gap", "16px", "important");
-      }
-    } else if (isGrid) {
-      parent.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", "important");
-      if (!parent.style.gap) {
-        parent.style.setProperty("gap", "16px", "important");
-      }
-    }
-    clone.style.setProperty("max-width", "100%", "important");
-  } else {
-    // Generic containers / columns / items:
-    const isFlex = parentComputed?.display.includes("flex") || parentCls.includes("flex");
-    const isGrid = parentComputed?.display.includes("grid") || parentCls.includes("grid");
-
-    if (isFlex) {
-      parent.style.setProperty("flex-wrap", "wrap", "important");
-      if (!parent.style.gap && (!parentComputed || parentComputed.gap === "0px" || parentComputed.gap === "normal")) {
-        parent.style.setProperty("gap", "16px", "important");
-      }
-    } else if (isGrid) {
-      parent.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", "important");
-      if (!parent.style.gap) {
-        parent.style.setProperty("gap", "16px", "important");
-      }
-    }
-    clone.style.setProperty("max-width", "100%", "important");
-    clone.style.setProperty("box-sizing", "border-box", "important");
   }
 
   return clone;
