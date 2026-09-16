@@ -52,9 +52,15 @@ export function HeaderOverlayDropZone({
         observed = header;
       }
       const rect = header.getBoundingClientRect();
+      const roomLeft = rect.left - GAP;
       const roomRight = window.innerWidth - rect.right - GAP;
-      const left = roomRight >= BUTTON_WIDTH ? rect.right + GAP : Math.max(GAP, rect.left - GAP - BUTTON_WIDTH);
-      setPos({ top: rect.top + 6, left });
+      const left =
+        roomLeft >= BUTTON_WIDTH
+          ? rect.left - GAP - BUTTON_WIDTH
+          : roomRight >= BUTTON_WIDTH
+          ? rect.right + GAP
+          : Math.max(GAP, rect.left + GAP);
+      setPos({ top: rect.top + 8, left });
     };
     const schedule = () => {
       if (frame === 0) frame = window.requestAnimationFrame(measure);
