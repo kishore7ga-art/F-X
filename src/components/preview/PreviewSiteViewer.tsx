@@ -421,7 +421,11 @@ export function PreviewSiteViewer({
               zIndex: 10,
             }),
           }}
-          className="w-full relative transition-all group section-wrapper-container"
+          className={`w-full relative transition-all group section-wrapper-container ${
+            isOverlaid
+              ? "[&_.section-canvas-box]:!bg-transparent [&_.section-canvas-box>header]:!bg-transparent [&_.section-canvas-box>nav]:!bg-transparent [&_.section-canvas-box>div]:!bg-transparent"
+              : ""
+          }`}
           dangerouslySetInnerHTML={{ __html: tokenizeSectionHtml(sectionCanvasHtml(sec.code, sec.id)) }}
         />
       );

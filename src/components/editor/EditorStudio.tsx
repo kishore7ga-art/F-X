@@ -2264,7 +2264,11 @@ export function EditorStudio({
                           zIndex: 10,
                         }),
                       }}
-                      className="w-full relative transition-all group section-wrapper-container cursor-default"
+                      className={`w-full relative transition-all group section-wrapper-container cursor-default ${
+                        isOverlaid
+                          ? "[&_.section-canvas-box]:!bg-transparent [&_.section-canvas-box>header]:!bg-transparent [&_.section-canvas-box>nav]:!bg-transparent [&_.section-canvas-box>div]:!bg-transparent"
+                          : ""
+                      }`}
                     >
                       <SectionContent
                         code={sec.code}

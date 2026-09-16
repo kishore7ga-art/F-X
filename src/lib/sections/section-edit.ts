@@ -1035,6 +1035,8 @@ export function toggleHeaderOverlay<T extends EditableSection>(
   let styles = parseManagedStyles(parts.headCss);
   const rootKey = keys[0] || Object.keys(styles)[0] || "e1";
 
+  let updatedBody = body;
+
   if (nextState) {
     styles = setManagedProperty(styles, rootKey, "desktop", "--x-header-overlay", "hero");
     styles = setManagedProperty(styles, rootKey, "desktop", "position", "absolute");
@@ -1045,6 +1047,31 @@ export function toggleHeaderOverlay<T extends EditableSection>(
     styles = setManagedProperty(styles, rootKey, "desktop", "z-index", "50");
     styles = setManagedProperty(styles, rootKey, "desktop", "background-color", "transparent");
     styles = setManagedProperty(styles, rootKey, "desktop", "background", "transparent");
+
+    // Clear opaque background from inline style on header/nav element
+    updatedBody = updatedBody.replace(
+      /(<(?:header|nav|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i,
+      (_match, pre, quote, styleContent) => {
+        let sc = styleContent;
+        if (/background(?:-color)?\s*:\s*[^;]+/i.test(sc)) {
+          sc = sc.replace(/background(?:-color)?\s*:\s*[^;]+/gi, "background: transparent; background-color: transparent");
+        } else {
+          sc = `${sc}; background: transparent; background-color: transparent;`;
+        }
+        return `${pre}${sc}${quote}`;
+      },
+    );
+    // Replace solid Tailwind bg classes on root header/nav with bg-transparent
+    updatedBody = updatedBody.replace(
+      /(<(?:header|nav|div)[^>]*\s+class=(["']))([\s\S]*?)(\2)/i,
+      (_match, pre, quote, classContent) => {
+        let cc = classContent.replace(/\bbg-(?:white|black|slate-\d+|gray-\d+|zinc-\d+|neutral-\d+|\[#[0-9a-fA-F]+\])\b/g, "bg-transparent");
+        if (!cc.includes("bg-transparent")) {
+          cc = `${cc} bg-transparent`;
+        }
+        return `${pre}${cc}${quote}`;
+      },
+    );
   } else {
     const targetKeys = new Set([rootKey, ...Object.keys(styles)]);
     targetKeys.forEach((k) => {
@@ -1063,7 +1090,7 @@ export function toggleHeaderOverlay<T extends EditableSection>(
   const nextCode = joinSectionCode({
     ...parts,
     headCss: writeManagedRegion(parts.headCss, styles),
-    bodyHtml: body,
+    bodyHtml: updatedBody,
   });
 
   return {
