@@ -90,6 +90,11 @@ import { UserProfileMenu } from "./UserProfileMenu";
 import { useSelectionController } from "./selection/useSelectionController";
 import { ElementToolbar } from "./selection/ElementToolbar";
 import { SelectionHighlight } from "./selection/SelectionHighlight";
+import { ContextMenu } from "./selection/ContextMenu";
+import { buildSectionSchema } from "@/lib/sections/section-schema";
+import { applyControl } from "@/lib/sections/section-edit";
+import { splitSectionCode } from "@/lib/sections/section-managed-css";
+import type { SectionCategory } from "@/lib/sections/section-capabilities";
 import { colorToHex, findTextEditableElement, sanitizeCleanDom } from "./canvas/useCanvaInteractions";
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
@@ -1941,6 +1946,63 @@ export function EditorStudio({
     [customToolbarState.sectionIndex, activeSectionIndex, setSectionsWithHistory],
   );
 
+  const handleContextMenuPatchSection = useCallback(
+    (patch: Record<string, unknown>) => {
+      const targetIndex = activeSectionIndex;
+      if (targetIndex === null || !sections[targetIndex]) return;
+
+      const secObj = sections[targetIndex];
+      if (patch.backgroundColor !== undefined) {
+        const hex = patch.backgroundColor as string;
+        try {
+          const schema = buildSectionSchema({
+            code: secObj.code,
+            category: (secObj.category || "custom") as SectionCategory,
+          });
+          const bgGroup = schema.groups.find((g) => g.id === "background");
+          const bgColorControl = bgGroup?.controls.find((c) => c.id === "bg-color" || c.id === "color");
+          if (bgColorControl) {
+            const result = applyControl(
+              { code: secObj.code, title: secObj.title, category: secObj.category || "custom" },
+              bgColorControl,
+              sectionDevice,
+              hex,
+            );
+            if (result?.code) {
+              setSectionsWithHistory((prev) =>
+                prev.map((s, idx) => (idx === targetIndex ? { ...s, code: result.code! } : s)),
+              );
+              return;
+            }
+          }
+        } catch {}
+
+        // Fallback: update background-color in markup
+        try {
+          const parts = splitSectionCode(secObj.code);
+          let updatedBody = parts.bodyHtml;
+          updatedBody = updatedBody.replace(
+            /(<(?:header|section|footer|main|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i,
+            (_match, pre, quote, styleContent) => {
+              let sc = styleContent;
+              if (/background(?:-color)?\s*:\s*[^;]+/i.test(sc)) {
+                sc = sc.replace(/background(?:-color)?\s*:\s*[^;]+/gi, `background-color: ${hex}`);
+              } else {
+                sc = `${sc}; background-color: ${hex};`;
+              }
+              return `${pre}${sc}${quote}`;
+            },
+          );
+          const nextCode = recomposeSectionCode(secObj.code, updatedBody);
+          setSectionsWithHistory((prev) =>
+            prev.map((s, idx) => (idx === targetIndex ? { ...s, code: nextCode } : s)),
+          );
+        } catch {}
+      }
+    },
+    [activeSectionIndex, sections, sectionDevice, setSectionsWithHistory],
+  );
+
   /** Escape dismisses active inline text edit, button toolbar, custom edit toolbar, or clears selection. */
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -2048,6 +2110,53 @@ export function EditorStudio({
         onSelectChildMedia={elementSelection.selectCardMedia}
         onInsertChildIntoCard={elementSelection.insertChildIntoCard}
         onReplaceMedia={elementSelection.replaceMedia}
+      />
+
+      <ContextMenu
+        isOpen={elementSelection.contextMenu.isOpen}
+        position={elementSelection.contextMenu.position}
+        elementType={elementSelection.selection.type}
+        elementId={elementSelection.selection.selectedId}
+        tag={elementSelection.selection.meta?.tag as string | undefined}
+        elementMeta={elementSelection.selection.meta ?? {}}
+        ancestors={elementSelection.selection.ancestors}
+        onClose={elementSelection.closeContextMenu}
+        onEdit={() => {
+          const el = elementSelection.resolveSelectedElement();
+          if (el && activeSectionIndex !== null) {
+            inPlaceEditor.activateTextEditing(el, activeSectionIndex);
+          }
+        }}
+        onUpdateProps={(props) => {
+          if (elementSelection.selection.selectedId) {
+            elementSelection.updateElementProps(elementSelection.selection.selectedId, props as any);
+          }
+        }}
+        onChangeHeadingLevel={(level) => {
+          inPlaceEditor.changeHeadingTag?.(level);
+          elementSelection.changeHeadingLevel(level);
+        }}
+        onChangeIcon={elementSelection.changeIcon}
+        onReplaceMedia={elementSelection.replaceMedia}
+        onDuplicate={elementSelection.duplicateElement}
+        onMoveUp={() => elementSelection.moveElement("up")}
+        onMoveDown={() => elementSelection.moveElement("down")}
+        onDelete={elementSelection.deleteElement}
+        onSelectAncestor={elementSelection.selectAncestor}
+        onAddMediaToCard={elementSelection.addMediaToCard}
+        onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
+        onInsertChildIntoCard={elementSelection.insertChildIntoCard}
+        onSwapVariant={() => handleSwapVariant(1)}
+        onDuplicateSection={handleDuplicateSection}
+        onMoveSectionUp={handleMoveUp}
+        onMoveSectionDown={handleMoveDown}
+        onDeleteSection={handleDeleteSection}
+        onPatchSection={handleContextMenuPatchSection}
+        onOpenSectionToolbar={() => {
+          if (activeSectionIndex !== null) {
+            openCustomToolbar(activeSectionIndex);
+          }
+        }}
       />
 
       <main

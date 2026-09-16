@@ -300,7 +300,10 @@ export function useSelectionController({
         selectionStore.selectElement(id, "section", section.id, meta, [
           { id: section.id, label: section.title || secAny.category || "Section", type: "section", path: "" },
         ]);
-        closeContextMenu();
+        setContextMenu({
+          isOpen: true,
+          position: { x: event.clientX, y: event.clientY },
+        });
         onElementSelected?.(sectionIndex);
         return true;
       }
@@ -315,11 +318,14 @@ export function useSelectionController({
       };
 
       selectionStore.selectElement(id, hit.type, section.id, meta, ancestors);
-      closeContextMenu();
+      setContextMenu({
+        isOpen: true,
+        position: { x: event.clientX, y: event.clientY },
+      });
       onElementSelected?.(sectionIndex);
       return true;
     },
-    [clearSelection, closeContextMenu, flushCommit, onElementSelected],
+    [clearSelection, flushCommit, onElementSelected],
   );
 
   const handleElementSelect = useCallback(

@@ -85,6 +85,7 @@ export interface ContextMenuProps {
   onMoveSectionDown?: () => void;
   onDeleteSection?: () => void;
   onPatchSection?: (patch: Record<string, unknown>) => void;
+  onOpenSectionToolbar?: () => void;
 }
 
 export function ContextMenu({
@@ -116,6 +117,7 @@ export function ContextMenu({
   onMoveSectionDown,
   onDeleteSection,
   onPatchSection,
+  onOpenSectionToolbar,
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
@@ -1058,17 +1060,32 @@ export function ContextMenu({
 
         {/* ── Section Layout Category ── */}
         {elementType === "section" && (
-          <button
-            type="button"
-            onClick={() => setActiveSubmenu(activeSubmenu === "section-layout" ? null : "section-layout")}
-            className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer"
-          >
-            <div className="flex items-center gap-2">
-              <Layout className="h-3.5 w-3.5 text-cyan-500" />
-              <span>Section Layout</span>
-            </div>
-            <ChevronRight className="h-3 w-3 text-slate-400" />
-          </button>
+          <>
+            {onOpenSectionToolbar && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenSectionToolbar();
+                  onClose();
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer"
+              >
+                <Palette className="h-3.5 w-3.5 text-blue-500" />
+                <span>Open Section Background Settings</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setActiveSubmenu(activeSubmenu === "section-layout" ? null : "section-layout")}
+              className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <Layout className="h-3.5 w-3.5 text-cyan-500" />
+                <span>Section Layout</span>
+              </div>
+              <ChevronRight className="h-3 w-3 text-slate-400" />
+            </button>
+          </>
         )}
 
         {/* ── Style (Background, Radius, Shadow) Category ── */}

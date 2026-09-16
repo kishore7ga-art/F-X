@@ -2,7 +2,7 @@
 
 import type { ContainerProps } from "@/lib/editor/element-resolver";
 import type { PanelProps } from "./CardPanel";
-import { Divider, Field, Segmented } from "./fields";
+import { ColorField, Divider, Field, PxField, Segmented } from "./fields";
 import { Minus, Plus } from "lucide-react";
 
 const DISPLAY_OPTIONS = [
@@ -31,13 +31,36 @@ const JUSTIFY_OPTIONS = [
   { value: "space-around", label: "Around" },
 ];
 
-export function ContainerPanel({ props, onChange }: PanelProps<ContainerProps>) {
+export function ContainerPanel({ tab, props, onChange }: PanelProps<ContainerProps>) {
   const currentGapNum = parseInt(props.gap || "16px", 10) || 0;
 
   const handleGapStep = (delta: number) => {
     const next = Math.max(0, currentGapNum + delta);
     onChange({ gap: `${next}px` });
   };
+
+  if (tab === "style") {
+    return (
+      <>
+        <ColorField
+          label="Background"
+          value={props.background || ""}
+          allowEmpty
+          onChange={(background) => onChange({ background })}
+        />
+        <PxField
+          label="Corner Radius"
+          value={props.radius || "0px"}
+          onChange={(radius) => onChange({ radius })}
+        />
+        <PxField
+          label="Padding"
+          value={props.padding || "0px"}
+          onChange={(padding) => onChange({ padding })}
+        />
+      </>
+    );
+  }
 
   return (
     <>
