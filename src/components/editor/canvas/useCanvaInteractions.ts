@@ -1251,7 +1251,15 @@ export function useCanvaInteractions({
         savedRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
     } else {
-      el.style.fontFamily = fontFamily;
+      if (fontFamily) {
+        el.style.setProperty("font-family", fontFamily, "important");
+      } else {
+        el.style.removeProperty("font-family");
+      }
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        if (fontFamily) child.style.setProperty("font-family", fontFamily, "important");
+        else child.style.removeProperty("font-family");
+      });
     }
 
     el.dispatchEvent(new Event("input", { bubbles: true }));

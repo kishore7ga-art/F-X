@@ -44,8 +44,8 @@ import { uploadMedia, ApiError } from "@/lib/api-client";
 import { calculateOppositeContrast } from "@/lib/editor-themes";
 import { hexFromValue } from "@/lib/sections/section-edit";
 
-import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
 import {
+  changeHeadingTagDom,
   extractYouTubeVideoId,
   getEffectiveElementBackground,
   BUTTON_SIZE_PADDING,
@@ -57,6 +57,7 @@ import {
   type TextAlign,
   type TextTransform,
 } from "@/lib/editor/element-resolver";
+import type { ElementType, SelectionState } from "@/lib/editor/selection-store";
 import { TOOLBAR_CONFIG } from "./toolbar-config";
 
 const RING: Record<Exclude<ElementType, "section">, string> = {
@@ -83,6 +84,17 @@ const FONT_OPTIONS = [
   { value: "Georgia, serif", label: "Georgia" },
   { value: "ui-monospace, monospace", label: "Monospace" },
 ];
+
+export function matchFontOption(fontVal: string | null | undefined) {
+  if (!fontVal) return FONT_OPTIONS[0]!;
+  const clean = fontVal.toLowerCase().replace(/['"]/g, "").trim();
+  const found = FONT_OPTIONS.find((f) => {
+    if (!f.value) return false;
+    const fClean = f.value.toLowerCase().replace(/['"]/g, "").trim();
+    return clean === fClean || clean.includes(fClean) || fClean.includes(clean) || clean.startsWith(fClean.split(",")[0]!.trim());
+  });
+  return found || { value: fontVal, label: fontVal.split(",")[0]!.replace(/['"]/g, "").trim() };
+}
 
 const PRESET_COLORS = [
   "#000000",
@@ -374,12 +386,15 @@ export function SelectionHighlight({
   const currentColor = activeTextColor || meta.color || rawElementColor;
   const rawFontSize = activeFontSize || String(meta.fontSize || (effectiveType === "heading" ? "32px" : "16px"));
   const parsedFontSize = parseInt(rawFontSize, 10) || (effectiveType === "heading" ? 32 : 16);
-  const currentFontFamily = activeFontFamily || meta.fontFamily || "";
+  const rawElementFont = activeElement ? activeElement.style.fontFamily || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontFamily : "") : "";
+  const currentFontFamily = activeFontFamily || meta.fontFamily || rawElementFont || "";
+  const selectedFontOption = matchFontOption(currentFontFamily);
   const currentWeight = String(meta.fontWeight || (effectiveType === "heading" ? "700" : "400"));
   const isBold = parseInt(currentWeight, 10) >= 600 || currentWeight === "bold";
   const currentAlign = (activeTextAlign || meta.textAlign || "left") as TextAlign;
   const currentTransform = (meta.textTransform || "none") as TextTransform;
-  const currentLevel = (meta.level || (effectiveType === "heading" ? "h2" : "p")) as HeadingLevel;
+  const activeTag = (activeElement?.tagName.toLowerCase() || "") as HeadingLevel;
+  const currentLevel = (HEADING_TAGS.includes(activeTag) ? activeTag : (meta.level || (effectiveType === "heading" ? "h2" : "p"))) as HeadingLevel;
   const currentLineHeight = activeLineHeight || meta.lineHeight || "";
   const currentLetterSpacing = activeLetterSpacing || meta.letterSpacing || "";
 
@@ -436,6 +451,10 @@ export function SelectionHighlight({
       } else {
         el.style.removeProperty("font-family");
       }
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        if (font) child.style.setProperty("font-family", font, "important");
+        else child.style.removeProperty("font-family");
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyFontFamily) onApplyFontFamily(font);
@@ -533,11 +552,13 @@ export function SelectionHighlight({
   };
 
   const handleTagChange = (tag: HeadingLevel) => {
+    const el = resolveElement();
+    if (el) {
+      const newHeading = changeHeadingTagDom(el, tag);
+      newHeading.dispatchEvent(new Event("input", { bubbles: true }));
+    }
     if (onChangeHeadingLevel) {
       onChangeHeadingLevel(tag);
-    }
-    if (selectedId && onUpdateProps) {
-      onUpdateProps(selectedId, { level: tag } as any);
     }
     setShowTagPopover(false);
   };
@@ -1376,7 +1397,7 @@ export function SelectionHighlight({
               >
                 <Type className="w-3 h-3 text-slate-400 shrink-0" />
                 <span className="truncate">
-                  {FONT_OPTIONS.find((f) => f.value === currentFontFamily)?.label || "Font"}
+                  {selectedFontOption.label || "Font"}
                 </span>
                 <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
@@ -1396,7 +1417,7 @@ export function SelectionHighlight({
                         handleFontFamilyChange(font.value);
                       }}
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-medium text-left transition cursor-pointer ${
-                        currentFontFamily === font.value
+                        selectedFontOption.value === font.value || (!font.value && !selectedFontOption.value)
                           ? "bg-blue-50 text-blue-600 font-bold"
                           : "text-slate-700 hover:bg-slate-100"
                       }`}

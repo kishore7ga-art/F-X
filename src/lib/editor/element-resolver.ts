@@ -1513,7 +1513,14 @@ function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
   set(el, "margin", p.margin);
-  if (p.fontFamily !== undefined) set(el, "font-family", p.fontFamily);
+  if (p.fontFamily !== undefined) {
+    set(el, "font-family", p.fontFamily);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "font-family", p.fontFamily);
+      });
+    }
+  }
   if (p.textTransform !== undefined) set(el, "text-transform", p.textTransform);
 }
 
@@ -1525,7 +1532,14 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
   set(el, "margin", p.margin);
-  if (p.fontFamily !== undefined) set(el, "font-family", p.fontFamily);
+  if (p.fontFamily !== undefined) {
+    set(el, "font-family", p.fontFamily);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "font-family", p.fontFamily);
+      });
+    }
+  }
   if (p.textTransform !== undefined) set(el, "text-transform", p.textTransform);
 }
 
