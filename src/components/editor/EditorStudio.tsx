@@ -2170,7 +2170,10 @@ export function EditorStudio({
                         }
 
                         setActiveSectionIndex(idx);
-                        elementSelection.handleElementSelect(target, idx);
+                        const hit = elementSelection.handleElementSelect(target, idx);
+                        if (!hit) {
+                          openCustomToolbar(idx);
+                        }
                         inPlaceEditor.handleElementClick(target, idx, e);
                       }}
                       onClick={(e) => {

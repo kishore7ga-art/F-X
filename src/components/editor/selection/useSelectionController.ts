@@ -331,7 +331,19 @@ export function useSelectionController({
       const box = canvasBoxFor(section.id);
       const hit = box ? resolveTarget(target, box) : null;
       if (!box || !hit) {
-        clearSelection();
+        const id = section.id;
+        const secAny = section as unknown as { id: string; title?: string; category?: string; variant?: string; background?: string };
+        const meta = {
+          tag: "section",
+          title: section.title,
+          category: secAny.category,
+          variant: secAny.variant,
+          background: secAny.background,
+        };
+        selectionStore.selectElement(id, "section", section.id, meta, [
+          { id: section.id, label: section.title || secAny.category || "Section", type: "section", path: "" },
+        ]);
+        closeContextMenu();
         return false;
       }
 
@@ -353,7 +365,7 @@ export function useSelectionController({
       }
       return true;
     },
-    [clearSelection, closeContextMenu, flushCommit, onElementSelected, onTextHit],
+    [closeContextMenu, flushCommit, onElementSelected, onTextHit],
   );
 
   const handleElementDoubleClick = useCallback(
