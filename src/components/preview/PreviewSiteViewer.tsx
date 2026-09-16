@@ -419,7 +419,6 @@ export function PreviewSiteViewer({
             } : {
               position: "relative",
               zIndex: 10,
-              ...(isFollowsOverlaidHeader ? { paddingTop: "85px" } : null),
             }),
           }}
           className="w-full relative transition-all group section-wrapper-container"

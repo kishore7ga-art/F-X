@@ -1043,6 +1043,8 @@ export function toggleHeaderOverlay<T extends EditableSection>(
     styles = setManagedProperty(styles, rootKey, "desktop", "right", "0px");
     styles = setManagedProperty(styles, rootKey, "desktop", "width", "100%");
     styles = setManagedProperty(styles, rootKey, "desktop", "z-index", "50");
+    styles = setManagedProperty(styles, rootKey, "desktop", "background-color", "transparent");
+    styles = setManagedProperty(styles, rootKey, "desktop", "background", "transparent");
   } else {
     const targetKeys = new Set([rootKey, ...Object.keys(styles)]);
     targetKeys.forEach((k) => {
@@ -1053,6 +1055,8 @@ export function toggleHeaderOverlay<T extends EditableSection>(
       styles = setManagedProperty(styles, k, "desktop", "right", null);
       styles = setManagedProperty(styles, k, "desktop", "width", null);
       styles = setManagedProperty(styles, k, "desktop", "z-index", null);
+      styles = setManagedProperty(styles, k, "desktop", "background-color", null);
+      styles = setManagedProperty(styles, k, "desktop", "background", null);
     });
   }
 
