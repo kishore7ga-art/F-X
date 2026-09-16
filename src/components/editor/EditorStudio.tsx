@@ -93,7 +93,6 @@ import { UserProfileMenu } from "./UserProfileMenu";
 import { useSelectionController } from "./selection/useSelectionController";
 import { ElementToolbar } from "./selection/ElementToolbar";
 import { SelectionHighlight } from "./selection/SelectionHighlight";
-import { ContextMenu } from "./selection/ContextMenu";
 import { buildSectionSchema } from "@/lib/sections/section-schema";
 import { applyControl } from "@/lib/sections/section-edit";
 import { splitSectionCode } from "@/lib/sections/section-managed-css";
@@ -1490,14 +1489,6 @@ export function EditorStudio({
      * the element controller's. Two legacy modals keep their targets: the logo
      * (it can apply one picture to every logo on the page) and the map iframe.
      */
-    const isMapElement =
-      (target.tagName === "IFRAME" || target.closest("iframe") !== null) &&
-      !target.closest("[data-xite-youtube], [data-youtube], [data-youtube-id]") &&
-      !(target as HTMLIFrameElement).src?.includes("youtube");
-    if (!isMapElement && elementSelection.handleContextMenu(e, sectionIndex)) {
-      return;
-    }
-
     // Select and highlight this specific section
     setActiveSectionIndex(sectionIndex);
 
@@ -2134,54 +2125,6 @@ export function EditorStudio({
         onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
         onSelectChildMedia={elementSelection.selectCardMedia}
         onInsertChildIntoCard={elementSelection.insertChildIntoCard}
-        onReplaceMedia={elementSelection.replaceMedia}
-      />
-
-      <ContextMenu
-        isOpen={elementSelection.contextMenu.isOpen}
-        position={elementSelection.contextMenu.position}
-        elementType={elementSelection.selection.type}
-        elementId={elementSelection.selection.selectedId}
-        tag={elementSelection.selection.meta?.tag as string | undefined}
-        elementMeta={elementSelection.selection.meta ?? {}}
-        ancestors={elementSelection.selection.ancestors}
-        onClose={elementSelection.closeContextMenu}
-        onEdit={() => {
-          const el = elementSelection.resolveSelectedElement();
-          if (el && activeSectionIndex !== null) {
-            inPlaceEditor.activateTextEditing(el, activeSectionIndex);
-          }
-        }}
-        onUpdateProps={(props) => {
-          if (elementSelection.selection.selectedId) {
-            elementSelection.updateElementProps(elementSelection.selection.selectedId, props as any);
-          }
-        }}
-        onChangeHeadingLevel={(level) => {
-          inPlaceEditor.changeHeadingTag?.(level);
-          elementSelection.changeHeadingLevel(level);
-        }}
-        onChangeIcon={elementSelection.changeIcon}
-        onReplaceMedia={elementSelection.replaceMedia}
-        onDuplicate={elementSelection.duplicateElement}
-        onMoveUp={() => elementSelection.moveElement("up")}
-        onMoveDown={() => elementSelection.moveElement("down")}
-        onDelete={elementSelection.deleteElement}
-        onSelectAncestor={elementSelection.selectAncestor}
-        onAddMediaToCard={elementSelection.addMediaToCard}
-        onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
-        onInsertChildIntoCard={elementSelection.insertChildIntoCard}
-        onSwapVariant={() => handleSwapVariant(1)}
-        onDuplicateSection={handleDuplicateSection}
-        onMoveSectionUp={handleMoveUp}
-        onMoveSectionDown={handleMoveDown}
-        onDeleteSection={handleDeleteSection}
-        onPatchSection={handleContextMenuPatchSection}
-        onOpenSectionToolbar={() => {
-          if (activeSectionIndex !== null) {
-            openCustomToolbar(activeSectionIndex);
-          }
-        }}
       />
 
       <main

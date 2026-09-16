@@ -270,62 +270,11 @@ export function useSelectionController({
   }, [flushCommit, closeContextMenu]);
 
   const handleContextMenu = useCallback(
-    (event: React.MouseEvent, sectionIndex: number): boolean => {
-      const section = sectionsRef.current[sectionIndex];
-      const target = event.target as HTMLElement | null;
-      if (!section || !target) return false;
-      if (target.closest(CHROME_SELECTOR)) return false;
-
-      const box = canvasBoxFor(section.id);
-      const hit = box ? resolveTarget(target, box) : null;
-      if (!box) {
-        clearSelection();
-        return false;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      flushCommit();
-
-      if (!hit) {
-        const id = section.id;
-        const secAny = section as unknown as { id: string; title?: string; category?: string; variant?: string; background?: string };
-        const meta = {
-          tag: "section",
-          title: section.title,
-          category: secAny.category,
-          variant: secAny.variant,
-          background: secAny.background,
-        };
-        selectionStore.selectElement(id, "section", section.id, meta, [
-          { id: section.id, label: section.title || secAny.category || "Section", type: "section", path: "" },
-        ]);
-        setContextMenu({
-          isOpen: true,
-          position: { x: event.clientX, y: event.clientY },
-        });
-        onElementSelected?.(sectionIndex);
-        return true;
-      }
-
-      const id = elementId(section.id, hit.path);
-      const ancestors = getAncestorHierarchy(hit.element, box, section.id, section.title);
-      const meta = {
-        ...readElementProps(hit.type, hit.element),
-        tag: hit.element.tagName.toLowerCase(),
-        cardPath: hit.cardPath,
-        containerPath: hit.containerPath,
-      };
-
-      selectionStore.selectElement(id, hit.type, section.id, meta, ancestors);
-      setContextMenu({
-        isOpen: true,
-        position: { x: event.clientX, y: event.clientY },
-      });
-      onElementSelected?.(sectionIndex);
-      return true;
+    (_event: React.MouseEvent, _sectionIndex: number): boolean => {
+      // Element context menu popup is disabled in favor of the floating toolbar and section/container controls
+      return false;
     },
-    [clearSelection, flushCommit, onElementSelected],
+    [],
   );
 
   const handleElementSelect = useCallback(
