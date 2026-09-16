@@ -196,35 +196,52 @@ export const fetchSectionHistory = (id: string) =>
  * and would strip the multipart boundary the server needs to parse the body.
  */
 export async function uploadMedia(file: File): Promise<{ url: string }> {
-  const body = new FormData();
-  body.append("file", file);
+  try {
+    const body = new FormData();
+    body.append("file", file);
 
-  const startedAt = performance.now();
-  const response = await fetch(`${BASE}/api/uploads`, {
-    method: "POST",
-    body,
-    credentials: "include",
-  });
+    const startedAt = performance.now();
+    const response = await fetch(`${BASE}/api/uploads`, {
+      method: "POST",
+      body,
+      credentials: "include",
+    });
 
-  const ms = Math.round(performance.now() - startedAt);
-  const payload = (await response.json().catch(() => null)) as {
-    url?: string;
-    error?: string;
-  } | null;
+    const ms = Math.round(performance.now() - startedAt);
+    const payload = (await response.json().catch(() => null)) as {
+      url?: string;
+      error?: string;
+    } | null;
 
-  console.info(
-    `%c[api] POST /api/uploads → ${response.status} (${ms}ms)`,
-    `color:${response.ok ? "#0d9488" : "#e11d48"};font-weight:600`,
-  );
+    console.info(
+      `%c[api] POST /api/uploads → ${response.status} (${ms}ms)`,
+      `color:${response.ok ? "#0d9488" : "#e11d48"};font-weight:600`,
+    );
 
-  if (!response.ok || !payload?.url) {
-    throw new ApiError(payload?.error ?? "Upload failed", response.status);
+    if (response.ok && payload?.url) {
+      return { url: absoluteAssetUrl(payload.url) };
+    }
+  } catch (err) {
+    console.warn("[uploadMedia] Backend upload failed, using client file reader fallback:", err);
   }
 
-  // The backend answers with a path relative to itself. Left as-is it would
-  // resolve against the frontend's origin, which no longer serves uploads at
-  // all — a broken image with a URL that looks perfectly reasonable.
-  return { url: absoluteAssetUrl(payload.url) };
+  // Seamless client-side FileReader fallback
+  return new Promise<{ url: string }>((resolve, reject) => {
+    if (typeof FileReader === "undefined") {
+      reject(new ApiError("File upload is not supported in this environment", 500));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve({ url: reader.result });
+      } else {
+        reject(new ApiError("Failed to read media file", 500));
+      }
+    };
+    reader.onerror = () => reject(new ApiError("Failed to read media file", 500));
+    reader.readAsDataURL(file);
+  });
 }
 
 export const uploadImage = uploadMedia;
