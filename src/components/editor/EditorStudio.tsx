@@ -2240,42 +2240,10 @@ export function EditorStudio({
                           }
                         }
 
-                        // Allow testing menu bar links and buttons without hijacking with the toolbar
-                        const link = target.closest("a");
-                        if (link && !inPlaceEditor.isEditingText) {
-                          const href = link.getAttribute("href") || "";
-                          if (href.startsWith("#")) {
-                            const anchor = href.slice(1).trim().toLowerCase();
-                            if (anchor) {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              // Smoothly scroll to matching section by id, category, or title
-                              const targetSec =
-                                document.getElementById(anchor) ||
-                                document.querySelector(`[id*="${anchor}"]`) ||
-                                sections.map((s, i) => ({ s, i })).find(({ s }) => {
-                                  const cat = (s.category || "").toLowerCase();
-                                  const tit = (s.title || "").toLowerCase();
-                                  return cat.includes(anchor) || tit.includes(anchor);
-                                });
-
-                              if (targetSec && "i" in targetSec) {
-                                const secDom = document.querySelector(`[data-xite-section="${targetSec.s.id}"]`);
-                                secDom?.scrollIntoView({ behavior: "smooth", block: "start" });
-                              } else if (targetSec && "scrollIntoView" in targetSec) {
-                                (targetSec as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
-                              }
-                              return;
-                            }
-                          } else if (href.startsWith("/") || href.startsWith("./")) {
-                            const slug = canonicalSlug(href);
-                            if (slug && editor.pages.some((p) => canonicalSlug(p.slug) === slug)) {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              editor.selectPage(slug);
-                              return;
-                            }
-                          }
+                        // Prevent navigation inside editor canvas so buttons and links can be selected & edited directly
+                        const linkOrBtn = target.closest("a, button, [role='button'], form");
+                        if (linkOrBtn) {
+                          e.preventDefault();
                         }
 
                         setActiveSectionIndex(idx);
