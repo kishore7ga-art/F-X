@@ -28,6 +28,8 @@ import {
   Footprints,
   Megaphone,
   HelpCircle,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { EditorToolbar } from "./EditorToolbar";
 import { useSectionRuntime } from "@/hooks/useSectionRuntime";
@@ -52,6 +54,7 @@ import {
 } from "@/lib/editor-api";
 import {
   moveSection,
+  canMove,
   insertSection,
   sectionFromTemplate,
   swapVariant,
@@ -1824,11 +1827,11 @@ export function EditorStudio({
    * `sections.length` and refused to move index 1 upward on any page — including
    * pages with no navbar at all, where index 0 is ordinary content.
    */
-  const moveActiveSection = useCallback(
-    (direction: 1 | -1) => {
-      if (activeSectionIndex === null) return;
+  const moveSectionByIndex = useCallback(
+    (targetIndex: number, direction: 1 | -1) => {
+      if (targetIndex < 0 || targetIndex >= sections.length) return;
 
-      const next = moveSection(sections, activeSectionIndex, direction);
+      const next = moveSection(sections, targetIndex, direction);
       if (next === sections) {
         setSwapNotice(
           direction === -1
@@ -1840,10 +1843,19 @@ export function EditorStudio({
 
       const pageId = editor.activePage.id;
       setSectionsWithHistory(() => next);
-      setActiveSectionIndex(activeSectionIndex + direction);
+      setActiveSectionIndex(targetIndex + direction);
       void editor.persistOrder(pageId, next.map((sec) => sec.id));
+      showToastNotification?.(`Section moved ${direction === -1 ? "up" : "down"}`);
     },
-    [activeSectionIndex, sections, editor, setSectionsWithHistory, setActiveSectionIndex],
+    [sections, editor, setSectionsWithHistory, setActiveSectionIndex, showToastNotification],
+  );
+
+  const moveActiveSection = useCallback(
+    (direction: 1 | -1) => {
+      if (activeSectionIndex === null) return;
+      moveSectionByIndex(activeSectionIndex, direction);
+    },
+    [activeSectionIndex, moveSectionByIndex],
   );
 
   const handleMoveUp = useCallback(() => moveActiveSection(-1), [moveActiveSection]);
@@ -2299,6 +2311,43 @@ export function EditorStudio({
                         isEditing={inPlaceEditor.isEditingSection(sec.id)}
                         canvasHtml={canvasHtml}
                       />
+
+                      {/* Right-side Section Reorder Quick Action Controls (Up / Down) */}
+                      {sections.length > 1 && !isHeader && (
+                        <div
+                          data-xite-canvas-chrome=""
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="absolute top-3 right-3 z-30 flex items-center bg-white/95 text-slate-700 backdrop-blur-md border border-slate-200/90 shadow-[0_2px_12px_rgba(0,0,0,0.08)] rounded-xl p-0.5 transition-all duration-150 select-none opacity-80 hover:opacity-100 group-hover:opacity-100 pointer-events-auto"
+                        >
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSectionByIndex(idx, -1);
+                            }}
+                            disabled={!canMove(sections, idx, -1)}
+                            title="Move Section Up"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 disabled:opacity-25 disabled:cursor-not-allowed transition text-slate-700 hover:text-slate-900 cursor-pointer"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5 stroke-[2]" />
+                          </button>
+                          <div className="w-px h-3.5 bg-slate-200" />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSectionByIndex(idx, 1);
+                            }}
+                            disabled={!canMove(sections, idx, 1)}
+                            title="Move Section Down"
+                            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 disabled:opacity-25 disabled:cursor-not-allowed transition text-slate-700 hover:text-slate-900 cursor-pointer"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5 stroke-[2]" />
+                          </button>
+                        </div>
+                      )}
 
                       {/* This section occupies space and shows nothing */}
                       {emptySectionIds.has(sec.id) && (
