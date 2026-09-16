@@ -388,6 +388,10 @@ export function useCanvaInteractions({
           target.closest('[role="dialog"]') ||
           target.closest('.section-toolbar') ||
           target.closest('[data-xite-toolbar]') ||
+          target.closest('[data-xite-floating-toolbar]') ||
+          target.closest('[data-xite-context-menu]') ||
+          target.closest('[data-xite-canvas-chrome]') ||
+          target.closest('.xite-floating-popover') ||
           target.closest('select') ||
           target.closest('input'))
       ) {
@@ -606,6 +610,10 @@ export function useCanvaInteractions({
               active.closest('[role="dialog"]') ||
               active.closest('.section-toolbar') ||
               active.closest('[data-xite-toolbar]') ||
+              active.closest('[data-xite-floating-toolbar]') ||
+              active.closest('[data-xite-context-menu]') ||
+              active.closest('[data-xite-canvas-chrome]') ||
+              active.closest('.xite-floating-popover') ||
               active.tagName === "SELECT" ||
               active.tagName === "INPUT" ||
               active.tagName === "BUTTON")

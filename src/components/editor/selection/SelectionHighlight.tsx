@@ -313,6 +313,8 @@ export function SelectionHighlight({
         target &&
         (target.closest("[data-xite-floating-toolbar]") ||
           target.closest("[data-xite-toolbar]") ||
+          target.closest("[data-xite-context-menu]") ||
+          target.closest(".section-toolbar") ||
           target.closest(".xite-floating-popover"))
       ) {
         return;

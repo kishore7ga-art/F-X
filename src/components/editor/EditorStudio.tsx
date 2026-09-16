@@ -1145,7 +1145,11 @@ export function EditorStudio({
         const isInsideSectionToolbar =
           target.closest('[role="dialog"]') !== null ||
           target.closest('.section-toolbar') !== null ||
-          target.closest('[data-xite-toolbar]') !== null;
+          target.closest('[data-xite-toolbar]') !== null ||
+          target.closest('[data-xite-floating-toolbar]') !== null ||
+          target.closest('[data-xite-context-menu]') !== null ||
+          target.closest('[data-xite-canvas-chrome]') !== null ||
+          target.closest('.xite-floating-popover') !== null;
 
         if (isInsideSectionToolbar) {
           return;
