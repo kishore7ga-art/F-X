@@ -1510,11 +1510,11 @@ export function SelectionHighlight({
 
               {showTagPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[135px]"
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[56px]"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  {ALL_TEXT_TAGS.map(({ tag: t, label, sub }) => (
+                  {ALL_TEXT_TAGS.map(({ tag: t, label }) => (
                     <button
                       key={t}
                       type="button"
@@ -1522,14 +1522,13 @@ export function SelectionHighlight({
                         e.stopPropagation();
                         handleTagChange(t);
                       }}
-                      className={`flex items-center justify-between gap-3 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-left transition cursor-pointer ${
+                      className={`flex items-center justify-center px-3 py-1.5 rounded-lg text-[11.5px] font-bold text-center transition cursor-pointer ${
                         currentLevel.toLowerCase() === t.toLowerCase()
-                          ? "bg-pink-50 text-pink-600 font-bold"
+                          ? "bg-pink-50 text-pink-600 font-extrabold"
                           : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
                       <span className="font-bold">{label}</span>
-                      <span className="text-[9px] opacity-60 font-normal">{sub}</span>
                     </button>
                   ))}
                 </div>
