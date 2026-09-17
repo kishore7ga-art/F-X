@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { AddSectionButton } from "@/components/ui/AddSectionButton";
-import { ApiError, uploadImage } from "@/lib/api-client";
 import {
   Layout,
   X,
@@ -102,9 +101,6 @@ import { colorToHex, findTextEditableElement, sanitizeCleanDom } from "./canvas/
 
 /** The canvas element that stands in for `<body>` — the same scope the published site uses. */
 const EDITOR_CANVAS_SCOPE = ".xite-site-canvas";
-
-/** The server's own upload ceiling, so the answer arrives before the upload does. */
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /**
  * A section, as the editor holds it.
@@ -630,24 +626,6 @@ export function EditorStudio({
     },
   });
 
-  // Right-Click Image, Logo & Background Editor Modal State
-  const [imagePopup, setImagePopup] = useState<{
-    x: number;
-    y: number;
-    sectionIndex: number;
-    targetElement: HTMLElement;
-    targetType: "logo" | "image";
-    logoText: string;
-    bgColor: string;
-    imageUrl: string;
-    originalUrl: string;
-    linkUrl: string;
-    applyAllLogos: boolean;
-    activeTab: "logo" | "image" | "style";
-    objectFit: "cover" | "contain" | "fill";
-    borderRadius: string;
-  } | null>(null);
-
   // Right-Click Map & Location Editor Modal State
   const [mapPopup, setMapPopup] = useState<{
     sectionIndex: number;
@@ -655,16 +633,6 @@ export function EditorStudio({
     directionsUrl: string;
     locationName: string;
   } | null>(null);
-
-  // Backward compatibility alias for legacy logoPopup state access
-  const logoPopup = imagePopup;
-  const setLogoPopup = (val: any) => {
-    if (!val) {
-      setImagePopup(null);
-      return;
-    }
-    setImagePopup((prev) => (prev ? { ...prev, ...val } : val));
-  };
 
   /**
    * Dedicated Context Menu / Custom Multi-Edit Toolbar State.
@@ -770,7 +738,6 @@ export function EditorStudio({
       if (inPlaceEditor.isEditingText) inPlaceEditor.finishInlineTextEditing(false);
       setActiveSectionIndex(sectionIndex);
       closeCustomToolbar();
-      setImagePopup(null);
       setMapPopup(null);
     },
     // Right-click on text edits it in place — the same as a double-click —
@@ -778,7 +745,6 @@ export function EditorStudio({
     onTextHit: (element, sectionIndex) => {
       const textTarget = findTextEditableElement(element);
       if (!textTarget) return false;
-      setImagePopup(null);
       setMapPopup(null);
       setActiveSectionIndex(sectionIndex);
       inPlaceEditor.activateTextEditing(textTarget, sectionIndex);
@@ -1202,228 +1168,6 @@ export function EditorStudio({
     inPlaceEditor,
   ]);
 
-  // Smoothly scroll canvas viewport to top Navbar header section
-  const handleJumpToNavbarLogo = () => {
-    if (typeof document === "undefined") return;
-    const headerSection = document.querySelector("header") || document.querySelector(".section-wrapper-container");
-    if (headerSection) {
-      headerSection.scrollIntoView({ behavior: "smooth", block: "center" });
-      headerSection.classList.add("ring-4", "ring-amber-400");
-      setTimeout(() => {
-        headerSection.classList.remove("ring-4", "ring-amber-400");
-      }, 2000);
-      showToastNotification("🚀 Navigated to Header Navbar Logo!");
-    } else {
-      showToastNotification("Header Navbar section not found on canvas!");
-    }
-  };
-
-
-
-  // Real-time image live update & auto-save handler
-  const handleUpdateAndSaveImage = (newParams: Partial<NonNullable<typeof imagePopup>>) => {
-    if (!imagePopup) return;
-
-    const updatedPopup = { ...imagePopup, ...newParams };
-    setImagePopup(updatedPopup);
-
-    const { sectionIndex, targetElement, targetType } = updatedPopup;
-    const originalUrl = (imagePopup.originalUrl || "").trim();
-    const finalImageUrl = (updatedPopup.imageUrl || "").trim();
-    const finalLogoText = (updatedPopup.logoText || "").trim();
-    const finalBgColor = updatedPopup.bgColor;
-    const finalLinkUrl = (updatedPopup.linkUrl || "").trim();
-    const finalObjectFit = updatedPopup.objectFit || "cover";
-    const finalBorderRadius = updatedPopup.borderRadius || "10px";
-
-    // 1. Live DOM manipulation for immediate visual feedback on screen
-    if (targetType === "logo") {
-      if (finalImageUrl) {
-        if (targetElement.tagName === "IMG") {
-          (targetElement as HTMLImageElement).src = finalImageUrl;
-          targetElement.style.objectFit = finalObjectFit;
-          targetElement.style.borderRadius = finalBorderRadius;
-        } else {
-          targetElement.innerHTML = `<img src="${finalImageUrl}" alt="Logo" data-logo="true" style="height: 38px; width: 38px; object-fit: ${finalObjectFit}; border-radius: ${finalBorderRadius}; cursor: pointer;" />`;
-        }
-      } else if (finalLogoText) {
-        if (targetElement.tagName === "IMG") {
-          const parent = targetElement.parentElement;
-          if (parent) {
-            parent.innerHTML = `<span style="font-size: 16px; font-weight: 900; color: #ffffff; background: ${finalBgColor}; padding: 6px 12px; border-radius: ${finalBorderRadius}; display: inline-block;">${finalLogoText}</span>`;
-          }
-        } else {
-          targetElement.innerText = finalLogoText;
-          targetElement.style.backgroundColor = finalBgColor;
-        }
-      }
-    } else {
-      if (targetElement.tagName === "IMG") {
-        (targetElement as HTMLImageElement).src = finalImageUrl;
-        targetElement.style.objectFit = finalObjectFit;
-        targetElement.style.borderRadius = finalBorderRadius;
-      } else {
-        targetElement.style.backgroundImage = `url("${finalImageUrl}")`;
-        targetElement.style.backgroundSize = "cover";
-      }
-    }
-
-    // Update Logo Link destination if set
-    if (finalLinkUrl) {
-      let anchorParent: HTMLElement | null = targetElement;
-      while (anchorParent && anchorParent.tagName !== "A" && anchorParent !== document.body) {
-        anchorParent = anchorParent.parentElement;
-      }
-      if (anchorParent && anchorParent.tagName === "A") {
-        anchorParent.setAttribute("href", finalLinkUrl);
-      }
-    }
-
-    // 2. Clone section container DOM to extract exact updated section HTML code with 100% precision
-    const container = targetElement.closest(".section-wrapper-container") as HTMLElement;
-
-    setSectionsWithHistory((prevSections) => {
-      return prevSections.map((sec, idx) => {
-        let newCode = sec.code;
-
-        // Bulk apply all logos across page
-        if (targetType === "logo" && updatedPopup.applyAllLogos && finalImageUrl) {
-          newCode = newCode.replace(/(<img[^>]*data-logo="true"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-          newCode = newCode.replace(/(<img[^>]*alt="[^"]*Emblem[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-          newCode = newCode.replace(/(<img[^>]*class="[^"]*logo[^"]*"[^>]*src=")[^"]*(")/gi, `$1${finalImageUrl}$2`);
-          return { ...sec, code: cleanCanvasWrapperFromCode(newCode) };
-        }
-
-        // Update target section HTML
-        if (idx === sectionIndex && container) {
-          const clone = container.cloneNode(true) as HTMLElement;
-
-          // Remove editor badges or outline artifacts
-          const badges = clone.querySelectorAll(".pointer-events-none");
-          badges.forEach((b) => b.remove());
-          resetInteractiveState(clone);
-
-          const editables = clone.querySelectorAll("[contenteditable]");
-          editables.forEach((el) => {
-            el.removeAttribute("contenteditable");
-            (el as HTMLElement).style.outline = "";
-            (el as HTMLElement).style.outlineOffset = "";
-            (el as HTMLElement).style.borderRadius = "";
-          });
-
-          // Match exact target element by tag and index position
-          if (targetElement.tagName === "IMG") {
-            const containerImgs = Array.from(container.querySelectorAll("img"));
-            const targetImgIndex = containerImgs.indexOf(targetElement as HTMLImageElement);
-            const cloneImgs = clone.querySelectorAll("img");
-
-            if (targetImgIndex >= 0 && cloneImgs[targetImgIndex]) {
-              const targetCloneImg = cloneImgs[targetImgIndex]!;
-              if (finalImageUrl) targetCloneImg.src = finalImageUrl;
-              targetCloneImg.style.objectFit = finalObjectFit;
-              targetCloneImg.style.borderRadius = finalBorderRadius;
-            } else if (originalUrl && clone.innerHTML.includes(originalUrl)) {
-              clone.innerHTML = clone.innerHTML.replaceAll(originalUrl, finalImageUrl);
-            }
-          } else if (targetType === "logo") {
-            if (finalImageUrl) {
-              const logoElem = clone.querySelector('img[data-logo="true"]') || clone.querySelector('img.logo') || clone.querySelector('img');
-              if (logoElem) {
-                (logoElem as HTMLImageElement).src = finalImageUrl;
-                (logoElem as HTMLElement).style.objectFit = finalObjectFit;
-                (logoElem as HTMLElement).style.borderRadius = finalBorderRadius;
-              }
-            }
-          }
-
-          // Update logo link URL on container clone if set
-          if (finalLinkUrl) {
-            const logoLink = clone.querySelector('a[href]') || clone.querySelector('a');
-            if (logoLink) logoLink.setAttribute("href", finalLinkUrl);
-          }
-
-          const extractedCode = cleanCanvasWrapperFromCode(clone.innerHTML);
-          if (extractedCode) return { ...sec, code: recomposeSectionCode(sec.code, extractedCode) };
-        }
-
-        // Direct string replacement fallback if container element not found
-        if (idx === sectionIndex && originalUrl && finalImageUrl && newCode.includes(originalUrl)) {
-          newCode = newCode.replaceAll(originalUrl, finalImageUrl);
-          return { ...sec, code: recomposeSectionCode(sec.code, cleanCanvasWrapperFromCode(newCode)) };
-        }
-
-        return sec;
-      });
-    });
-
-    showToastNotification("⚡ Image & Logo updated & auto-saved!");
-  };
-
-  /**
-   * A picture the tenant chose, uploaded and referenced by URL.
-   *
-   * ── What this replaces ────────────────────────────────────────────────
-   *
-   * A `FileReader.readAsDataURL`, whose result went straight into the
-   * section's markup. The image was never uploaded: `uploadImage` in
-   * `api-client.ts` existed, worked, and had no caller anywhere in the
-   * codebase, so `POST /api/uploads` was never called by anything — along with
-   * the Docker volume behind it, the UUID filenames, and the sandbox CSP on
-   * the way back out.
-   *
-   * What went into the database instead was the entire file, base64-encoded,
-   * inline in the section HTML. That is about 1.37x the file's size, and it is
-   * stored inside `websiteConfig` — a subdocument of the college document,
-   * which also carries `publishedConfig`, and which MongoDB will not allow past
-   * 16MB. Four or five photographs and a tenant's saves start failing outright,
-   * with their work in the browser and nowhere else. Nothing warned about it:
-   * the backend's sanitiser permits `data:` on `<img>` deliberately, for the
-   * small inline thumbnails sections legitimately carry.
-   *
-   * Short of that ceiling it was still paid for on every request — the bytes
-   * ship inside the HTML, so they are re-sent to every visitor on every page
-   * load and can never be cached separately.
-   *
-   * ── The checks ────────────────────────────────────────────────────────
-   *
-   * Both mirror the server's, which is the real boundary; these exist so the
-   * answer arrives before a slow upload rather than after it.
-   */
-  const handleImageFile = useCallback(
-    async (file: File) => {
-      if (!file.type.startsWith("image/")) {
-        setSwapNotice("That file is not an image.");
-        return;
-      }
-      if (file.size > MAX_IMAGE_BYTES) {
-        const mb = (file.size / 1024 / 1024).toFixed(1);
-        setSwapNotice(`That image is ${mb}MB. The limit is 5MB.`);
-        return;
-      }
-
-      setSwapNotice(`Uploading ${file.name}…`);
-      try {
-        const { url } = await uploadImage(file);
-        handleUpdateAndSaveImage({ imageUrl: url });
-        setSwapNotice("Image updated.");
-      } catch (error) {
-        /**
-         * Said out loud, and the old image left alone.
-         *
-         * The section keeps the picture it had rather than being handed a
-         * broken one, and the tenant is told why — an upload that fails
-         * silently is indistinguishable from one that is still going.
-         */
-        setSwapNotice(
-          error instanceof ApiError
-            ? `Could not upload that image: ${error.message}`
-            : "Could not upload that image. Check your connection and try again.",
-        );
-      }
-    },
-    [handleUpdateAndSaveImage],
-  );
-
   // Auto-Update & Save Map Location, iFrame Embed, and Directions Link
   const handleUpdateAndSaveMap = (newParams: Partial<NonNullable<typeof mapPopup>>) => {
     if (!mapPopup) return;
@@ -1529,80 +1273,6 @@ export function EditorStudio({
       });
       return;
     }
-
-    let currElem: HTMLElement | null = target;
-    let targetType: "logo" | "image" | null = null;
-    let imageUrl = "";
-    let logoText = "";
-    let bgColor = "#2563eb";
-    let linkUrl = "";
-    let objectFit: "cover" | "contain" | "fill" = "cover";
-    let borderRadius = "10px";
-
-    while (currElem && currElem !== e.currentTarget) {
-      const tagName = currElem.tagName;
-      const cls = (currElem.className || "").toString().toLowerCase();
-      const isDataLogo = currElem.getAttribute("data-logo") === "true";
-      const compStyle = window.getComputedStyle(currElem);
-
-      if (currElem.tagName === "A" || currElem.getAttribute("href")) {
-        linkUrl = currElem.getAttribute("href") || "";
-      }
-
-      if (tagName === "IMG") {
-        imageUrl = (currElem as HTMLImageElement).src || currElem.getAttribute("src") || "";
-        if (isDataLogo || cls.includes("logo") || currElem.parentElement?.className?.toLowerCase().includes("logo")) {
-          targetType = "logo";
-        } else {
-          targetType = "image";
-        }
-        objectFit = (compStyle.objectFit as any) || "cover";
-        borderRadius = compStyle.borderRadius || "10px";
-        break;
-      } else if (isDataLogo || cls.includes("logo") || (currElem.innerText && currElem.innerText.trim().length <= 4 && (currElem.innerText.includes("AU") || currElem.innerText.includes("🎓") || currElem.innerText.includes("MEC")))) {
-        targetType = "logo";
-        logoText = currElem.innerText?.trim() || "LOGO";
-        const imgChild = currElem.querySelector("img");
-        if (imgChild) {
-          imageUrl = imgChild.src;
-        }
-        bgColor = compStyle.backgroundColor !== "rgba(0, 0, 0, 0)" ? compStyle.backgroundColor : "#2563eb";
-        break;
-      }
-      currElem = currElem.parentElement;
-    }
-
-    // Open Image & Logo Customizer Modal if Image/Logo detected
-    if (targetType && currElem) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const mouseX = Math.min(e.clientX, window.innerWidth - 480);
-      const mouseY = Math.min(e.clientY, window.innerHeight - 480);
-
-      setImagePopup({
-        x: Math.max(10, mouseX),
-        y: Math.max(10, mouseY),
-        sectionIndex,
-        targetElement: currElem,
-        targetType,
-        logoText: logoText || "AU",
-        bgColor,
-        imageUrl: imageUrl || "https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=120&auto=format&fit=crop&q=80",
-        originalUrl: imageUrl,
-        linkUrl: linkUrl || "/home",
-        applyAllLogos: targetType === "logo",
-        activeTab: targetType === "logo" ? "logo" : "image",
-        objectFit,
-        borderRadius,
-      });
-      return;
-    }
-  };
-
-  const handleSaveLogo = (newText: string, newBgColor: string, newImageUrl: string) => {
-    handleUpdateAndSaveImage({ logoText: newText, bgColor: newBgColor, imageUrl: newImageUrl });
-    setImagePopup(null);
   };
 
   /**
@@ -2678,178 +2348,6 @@ export function EditorStudio({
       )}
 
 
-
-      {/* 🎨 Streamlined Auto Right-Click Context-Aware Customizer Modal (Sleek Black & White Theme) */}
-      {imagePopup && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999999,
-            backgroundColor: "rgba(0, 0, 0, 0.85)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
-          onClick={() => setImagePopup(null)}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "460px",
-              backgroundColor: "#000000",
-              border: "1px solid #27272a",
-              borderRadius: "24px",
-              padding: "24px 28px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.95)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-              color: "#ffffff",
-              fontFamily: "system-ui, -apple-system, sans-serif",
-              boxSizing: "border-box",
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="cursor-default text-xs"
-          >
-            {/* Modal Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", borderBottom: "1px solid #27272a", paddingBottom: "14px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    borderRadius: "50%",
-                    backgroundColor: "#ffffff",
-                    boxShadow: "0 0 10px rgba(255, 255, 255, 0.8)",
-                  }}
-                />
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <h3 style={{ fontSize: "16px", fontWeight: 900, margin: 0, color: "#ffffff", letterSpacing: "-0.01em" }}>
-                      {imagePopup.targetType === "logo" ? "Edit Logo & Branding" : "Edit Image"}
-                    </h3>
-                    <span style={{ fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "9999px", backgroundColor: "#18181b", color: "#a1a1aa", border: "1px solid #27272a", textTransform: "uppercase" }}>
-                      AUTO-{imagePopup.targetType}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: "11px", color: "#71717a", margin: "2px 0 0 0" }}>
-                    Changes apply immediately & auto-save automatically ⚡
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setImagePopup(null)}
-                style={{ backgroundColor: "transparent", border: "none", color: "#a1a1aa", fontSize: "14px", fontWeight: 900, cursor: "pointer", padding: "4px 8px", borderRadius: "8px" }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Target Navigation Bar ("NAV TO THE LOGOS") - ONLY Shown for Logo Target */}
-            {imagePopup.targetType === "logo" && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "#09090b", padding: "10px 14px", borderRadius: "14px", border: "1px solid #27272a" }}>
-                <span style={{ fontSize: "12px", fontWeight: 800, color: "#a1a1aa", display: "flex", alignItems: "center", gap: "6px" }}>
-                  🎯 Target Navigation:
-                </span>
-                <button
-                  onClick={handleJumpToNavbarLogo}
-                  style={{ backgroundColor: "#18181b", color: "#ffffff", border: "1px solid #3f3f46", borderRadius: "10px", padding: "6px 14px", fontSize: "11px", fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
-                >
-                  🚀 Nav to Navbar Logo
-                </button>
-              </div>
-            )}
-
-            {/* Streamlined Direct Inputs Body */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              
-              {/* 1. File Upload from Device */}
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  {imagePopup.targetType === "logo" ? "Upload Logo Image File" : "Upload Image File from Device"}
-                </label>
-                <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", height: "44px", backgroundColor: "#09090b", border: "1px dashed #3f3f46", borderRadius: "12px", color: "#ffffff", fontSize: "13px", fontWeight: 800, cursor: "pointer", transition: "all 0.15s ease" }}>
-                  <span>📁 Select Image File from Device</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      // Clear it, so choosing the same file twice fires again.
-                      e.target.value = "";
-                      if (file) void handleImageFile(file);
-                    }}
-                  />
-                </label>
-              </div>
-
-              {/* 2. Custom Image / Background / Logo URL Input */}
-              <div>
-                <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                  {imagePopup.targetType === "logo" ? "Logo Image URL" : "Image URL"}
-                </label>
-                <input
-                  type="text"
-                  value={imagePopup.imageUrl}
-                  onChange={(e) => handleUpdateAndSaveImage({ imageUrl: e.target.value })}
-                  placeholder="https://images.unsplash.com/your-image.jpg"
-                  style={{ width: "100%", height: "42px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
-
-              {/* 3. Logo Specific Destination Link & Sync Toggle */}
-              {imagePopup.targetType === "logo" && (
-                <>
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: 800, color: "#a1a1aa", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
-                      Logo Navigation Destination (URL / Link)
-                    </label>
-                    <input
-                      type="text"
-                      value={imagePopup.linkUrl}
-                      onChange={(e) => handleUpdateAndSaveImage({ linkUrl: e.target.value })}
-                      placeholder="/home or https://yourcollege.edu.in"
-                      style={{ width: "100%", height: "42px", backgroundColor: "#09090b", border: "1px solid #27272a", borderRadius: "12px", padding: "0 14px", color: "#ffffff", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
-                    />
-                  </div>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#09090b", padding: "10px 14px", borderRadius: "12px", border: "1px solid #27272a", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={imagePopup.applyAllLogos}
-                      onChange={(e) => handleUpdateAndSaveImage({ applyAllLogos: e.target.checked })}
-                      style={{ width: "16px", height: "16px", accentColor: "#ffffff", cursor: "pointer" }}
-                    />
-                    <span style={{ fontSize: "12px", fontWeight: 800, color: "#ffffff" }}>
-                      ⚡ Apply logo change to ALL header navbars across site
-                    </span>
-                  </label>
-                </>
-              )}
-
-            </div>
-
-            {/* Footer Action Buttons */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", paddingTop: "14px", borderTop: "1px solid #27272a" }}>
-              <SaveStatusLine status={editor.saveStatus} error={editor.saveError} />
-              <button
-                onClick={() => setImagePopup(null)}
-                style={{ height: "40px", padding: "0 22px", borderRadius: "12px", backgroundColor: "#ffffff", color: "#000000", fontWeight: 900, border: "none", cursor: "pointer", fontSize: "13px", boxShadow: "0 4px 12px rgba(255,255,255,0.15)" }}
-              >
-                Close Modal ✕
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 📍 Sleek Black & White Map Location & Navigation Customizer Modal */}
       {mapPopup && (
