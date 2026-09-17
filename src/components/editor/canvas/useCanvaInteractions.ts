@@ -1322,6 +1322,9 @@ export function useCanvaInteractions({
       } catch {}
     } else {
       el.style.fontSize = fontSize;
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        child.style.fontSize = fontSize;
+      });
     }
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -1417,21 +1420,41 @@ export function useCanvaInteractions({
       if (command === "bold") {
         const currentWeight = window.getComputedStyle(el).fontWeight;
         const isBold = currentWeight === "bold" || parseInt(currentWeight, 10) >= 700;
-        el.style.fontWeight = isBold ? "normal" : "bold";
+        const nextWeight = isBold ? "normal" : "bold";
+        el.style.fontWeight = nextWeight;
+        el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+          child.style.fontWeight = nextWeight;
+        });
       } else if (command === "italic") {
         const currentStyle = window.getComputedStyle(el).fontStyle;
-        el.style.fontStyle = currentStyle === "italic" ? "normal" : "italic";
+        const nextStyle = currentStyle === "italic" ? "normal" : "italic";
+        el.style.fontStyle = nextStyle;
+        el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+          child.style.fontStyle = nextStyle;
+        });
       } else if (command === "underline") {
         const currentDec = window.getComputedStyle(el).textDecoration;
-        el.style.textDecoration = currentDec.includes("underline") ? "none" : "underline";
+        const nextDec = currentDec.includes("underline") ? "none" : "underline";
+        el.style.textDecoration = nextDec;
+        el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+          child.style.textDecoration = nextDec;
+        });
       } else if (command === "removeFormat") {
-        el.style.fontWeight = "";
-        el.style.fontStyle = "";
-        el.style.textDecoration = "";
-        el.style.color = "";
-        el.style.fontFamily = "";
-        el.style.fontSize = "";
-        el.style.textAlign = "";
+        const clearStyles = (target: HTMLElement) => {
+          target.removeAttribute("data-xite-user-color");
+          target.style.fontWeight = "";
+          target.style.fontStyle = "";
+          target.style.textDecoration = "";
+          target.style.color = "";
+          target.style.fontFamily = "";
+          target.style.fontSize = "";
+          target.style.textAlign = "";
+          target.style.lineHeight = "";
+          target.style.letterSpacing = "";
+          target.style.textTransform = "";
+        };
+        clearStyles(el);
+        el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach(clearStyles);
         try {
           document.execCommand("removeFormat", false);
         } catch {}

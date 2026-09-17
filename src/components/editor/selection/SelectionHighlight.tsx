@@ -730,17 +730,32 @@ export function SelectionHighlight({
           sel.addRange(targetRange);
         } catch {}
       }
+      let applied = false;
       try {
+        if (!el.isContentEditable) el.contentEditable = "true";
         document.execCommand("styleWithCSS", false, "true");
-        document.execCommand("fontName", false, font);
+        applied = document.execCommand("fontName", false, font);
       } catch {}
       el.querySelectorAll("font[face]").forEach((fontEl) => {
         const span = document.createElement("span");
         span.style.fontFamily = fontEl.getAttribute("face") || font;
         span.innerHTML = fontEl.innerHTML;
         fontEl.replaceWith(span);
+        applied = true;
       });
-      if (sel && sel.rangeCount > 0) {
+      if (!applied && targetRange) {
+        try {
+          const span = document.createElement("span");
+          span.style.fontFamily = font;
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+      } else if (sel && sel.rangeCount > 0) {
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -780,10 +795,24 @@ export function SelectionHighlight({
           sel.addRange(targetRange);
         } catch {}
       }
+      let applied = false;
       try {
-        document.execCommand("bold", false);
+        if (!el.isContentEditable) el.contentEditable = "true";
+        applied = document.execCommand("bold", false);
       } catch {}
-      if (sel && sel.rangeCount > 0) {
+      if (!applied && targetRange) {
+        try {
+          const span = document.createElement("span");
+          span.style.fontWeight = isBold ? "normal" : "bold";
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+      } else if (sel && sel.rangeCount > 0) {
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -817,10 +846,24 @@ export function SelectionHighlight({
           sel.addRange(targetRange);
         } catch {}
       }
+      let applied = false;
       try {
-        document.execCommand("italic", false);
+        if (!el.isContentEditable) el.contentEditable = "true";
+        applied = document.execCommand("italic", false);
       } catch {}
-      if (sel && sel.rangeCount > 0) {
+      if (!applied && targetRange) {
+        try {
+          const span = document.createElement("span");
+          span.style.fontStyle = isItalic ? "normal" : "italic";
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+      } else if (sel && sel.rangeCount > 0) {
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -854,10 +897,24 @@ export function SelectionHighlight({
           sel.addRange(targetRange);
         } catch {}
       }
+      let applied = false;
       try {
-        document.execCommand("underline", false);
+        if (!el.isContentEditable) el.contentEditable = "true";
+        applied = document.execCommand("underline", false);
       } catch {}
-      if (sel && sel.rangeCount > 0) {
+      if (!applied && targetRange) {
+        try {
+          const span = document.createElement("span");
+          span.style.textDecoration = isUnderline ? "none" : "underline";
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+      } else if (sel && sel.rangeCount > 0) {
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -939,6 +996,31 @@ export function SelectionHighlight({
     const nextIdx = (order.indexOf(currentTransform) + 1) % order.length;
     const nextCase = order[nextIdx] || "none";
     if (el) {
+      const targetRange = getActiveTextRange(el);
+      const sel = window.getSelection();
+
+      if (targetRange) {
+        if (sel) {
+          try {
+            sel.removeAllRanges();
+            sel.addRange(targetRange);
+          } catch {}
+        }
+        const span = document.createElement("span");
+        span.style.textTransform = nextCase === "none" ? "none" : nextCase;
+        try {
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
+      }
+
       el.style.setProperty("text-transform", nextCase === "none" ? "none" : nextCase, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
@@ -983,6 +1065,33 @@ export function SelectionHighlight({
   const handleLineHeightChange = (val: string) => {
     const el = resolveElement();
     if (el) {
+      const targetRange = getActiveTextRange(el);
+      const sel = window.getSelection();
+
+      if (targetRange && val) {
+        if (sel) {
+          try {
+            sel.removeAllRanges();
+            sel.addRange(targetRange);
+          } catch {}
+        }
+        const span = document.createElement("span");
+        span.style.lineHeight = val;
+        span.style.display = "inline-block";
+        try {
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        if (onApplyTextSpacing) onApplyTextSpacing("lineHeight", val);
+        return;
+      }
+
       if (val) el.style.setProperty("line-height", val, "important");
       else el.style.removeProperty("line-height");
       el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -996,6 +1105,32 @@ export function SelectionHighlight({
   const handleLetterSpacingChange = (val: string) => {
     const el = resolveElement();
     if (el) {
+      const targetRange = getActiveTextRange(el);
+      const sel = window.getSelection();
+
+      if (targetRange && val) {
+        if (sel) {
+          try {
+            sel.removeAllRanges();
+            sel.addRange(targetRange);
+          } catch {}
+        }
+        const span = document.createElement("span");
+        span.style.letterSpacing = val;
+        try {
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        if (onApplyTextSpacing) onApplyTextSpacing("letterSpacing", val);
+        return;
+      }
+
       if (val) el.style.setProperty("letter-spacing", val, "important");
       else el.style.removeProperty("letter-spacing");
       el.dispatchEvent(new Event("input", { bubbles: true }));
