@@ -730,8 +730,10 @@ describe("findImageElement & media resolution", () => {
 
       const tagEl = transformSelectedRangeToTag(mockRange, "h1", container);
       assert.ok(tagEl);
-      assert.equal(tagEl.tagName, "H1");
+      assert.equal(tagEl.tagName, "SPAN");
       assert.equal(tagEl.getAttribute("data-xite-heading-tag"), "h1");
+      assert.equal(tagEl.getAttribute("role"), "heading");
+      assert.equal(tagEl.getAttribute("aria-level"), "1");
       assert.equal(tagEl.style.display, "inline");
       assert.equal((tagEl.style as any)["font-weight"], "800");
       // Verify hard container boundary is strictly preserved
@@ -763,7 +765,8 @@ describe("findImageElement & media resolution", () => {
 
         const res = transformSelectedRangeToTag(mockRange, tag, parentDiv);
         assert.ok(res, `Failed for tag: ${tag}`);
-        assert.equal(res.tagName, tag.toUpperCase());
+        const expectedTag = ["code", "span", "strong"].includes(tag) ? tag.toUpperCase() : "SPAN";
+        assert.equal(res.tagName, expectedTag);
         assert.equal(res.getAttribute("data-xite-heading-tag"), tag.toLowerCase());
         assert.equal(res.style.display, "inline");
         // Ensure parent container hierarchy is 100% maintained
@@ -819,7 +822,7 @@ describe("findImageElement & media resolution", () => {
 
       const tagEl = applyRangeHeadingTagDom(mockRange, h1, "p");
       assert.ok(tagEl);
-      assert.equal(tagEl.tagName, "P");
+      assert.equal(tagEl.tagName, "SPAN");
       assert.equal(tagEl.getAttribute("data-xite-heading-tag"), "p");
       assert.equal(h1.parentElement, parentDiv);
     });

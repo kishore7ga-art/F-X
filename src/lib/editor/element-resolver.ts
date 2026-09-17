@@ -1970,6 +1970,11 @@ export function isPartialTextSelection(range: Range | null, element: HTMLElement
   return false;
 }
 
+export const INLINE_FORMATTING_TAGS = new Set([
+  "span", "strong", "em", "b", "i", "u", "s", "code", "mark", "small",
+  "sub", "sup", "label", "abbr", "cite", "dfn", "kbd", "time", "var", "q"
+]);
+
 /**
  * Generic Range-Based Tag Transformation Engine.
  *
@@ -2071,7 +2076,11 @@ export function transformSelectedRangeToTag(
       },
     };
 
-  const tagEl = doc.createElement(normalizedTag);
+  // Block tags (H1-H6, P, BLOCKQUOTE, PRE, DIV) must use inline <span> with semantic data attributes and ARIA roles
+  // when applied to partial text ranges, so HTML remains valid W3C standard and browser parsers never split the parent element.
+  const createTagName = INLINE_FORMATTING_TAGS.has(normalizedTag) ? normalizedTag : "span";
+  const tagEl = doc.createElement(createTagName);
+
   if (styleDefaults?.twClasses && styleDefaults.twClasses.length > 0) {
     tagEl.className = styleDefaults.twClasses.join(" ");
   }
@@ -2089,6 +2098,12 @@ export function transformSelectedRangeToTag(
   }
   if (tagEl.setAttribute) {
     tagEl.setAttribute("data-xite-heading-tag", normalizedTag);
+    if (/^h[1-6]$/i.test(normalizedTag)) {
+      tagEl.setAttribute("role", "heading");
+      tagEl.setAttribute("aria-level", normalizedTag.replace(/^h/i, ""));
+    } else if (normalizedTag === "blockquote") {
+      tagEl.setAttribute("role", "blockquote");
+    }
   }
 
   try {

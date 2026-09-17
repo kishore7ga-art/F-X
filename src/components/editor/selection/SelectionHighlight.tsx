@@ -1057,30 +1057,30 @@ export function SelectionHighlight({
   };
 
   const handleTagChange = (tag: HeadingLevel | "p") => {
+    const el = resolveElement();
+    if (el) {
+      const targetRange = getActiveTextRange(el);
+      if (targetRange && isPartialTextSelection(targetRange, el)) {
+        const tagEl = applyRangeHeadingTagDom(targetRange, el, tag);
+        if (tagEl) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        }
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        onCommitDom?.(el);
+        setShowTagPopover(false);
+        return;
+      }
+    }
+
     if (onChangeHeadingLevel) {
       onChangeHeadingLevel(tag);
-    } else {
-      const el = resolveElement();
-      if (el) {
-        const targetRange = getActiveTextRange(el);
-        if (targetRange && isPartialTextSelection(targetRange, el)) {
-          const tagEl = applyRangeHeadingTagDom(targetRange, el, tag);
-          if (tagEl) {
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0) {
-              savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
-            }
-          }
-          el.dispatchEvent(new Event("input", { bubbles: true }));
-          onCommitDom?.(el);
-          setShowTagPopover(false);
-          return;
-        }
-
-        const newHeading = changeHeadingTagDom(el, tag);
-        newHeading.dispatchEvent(new Event("input", { bubbles: true }));
-        onCommitDom?.(newHeading);
-      }
+    } else if (el) {
+      const newHeading = changeHeadingTagDom(el, tag);
+      newHeading.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(newHeading);
     }
     if (selectedId && onUpdateProps && effectiveType) {
       const styleDefaults = TAG_DEFAULT_STYLES[tag] || TAG_DEFAULT_STYLES.h2;
