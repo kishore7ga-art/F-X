@@ -19,7 +19,16 @@ import {
   parseElementId,
   removeMediaFromCardDom,
 } from "./element-resolver";
-import { ALL_TEXT_TAGS, matchFontOption } from "../../components/editor/selection/SelectionHighlight";
+import {
+  ALL_TEXT_TAGS,
+  matchFontOption,
+  RADIUS_OPTIONS,
+  BUTTON_RADIUS_OPTIONS,
+  PADDING_OPTIONS,
+  BUTTON_SIZES,
+  matchRadiusOption,
+  matchPaddingOption,
+} from "../../components/editor/selection/SelectionHighlight";
 import { FONT_SIZE_OPTIONS } from "../../components/editor/TextColorSettingsControl";
 
 describe("element ids", () => {
@@ -699,6 +708,70 @@ describe("findImageElement & media resolution", () => {
       assert.equal(p.style["text-align"], "justify");
       assert.equal(p.style["line-height"], "1.6");
       assert.equal(p.style["letter-spacing"], "-0.01em");
+    });
+
+    it("provides clean Small, Normal, Max segmented options for radius, padding, and button sizes", () => {
+      // Radius options: None, Small, Normal, Max
+      assert.deepEqual(
+        RADIUS_OPTIONS.map((r) => r.label),
+        ["None", "Small", "Normal", "Max"]
+      );
+      assert.deepEqual(
+        RADIUS_OPTIONS.map((r) => r.value),
+        ["0px", "8px", "16px", "9999px"]
+      );
+
+      // Button Radius options
+      assert.deepEqual(
+        BUTTON_RADIUS_OPTIONS.map((r) => r.label),
+        ["None", "Small", "Normal", "Max"]
+      );
+      assert.deepEqual(
+        BUTTON_RADIUS_OPTIONS.map((r) => r.value),
+        ["0px", "6px", "12px", "50px"]
+      );
+
+      // Padding options: None, Small, Normal, Max
+      assert.deepEqual(
+        PADDING_OPTIONS.map((p) => p.label),
+        ["None", "Small", "Normal", "Max"]
+      );
+
+      // Button sizes: Small, Normal, Max
+      assert.deepEqual(
+        BUTTON_SIZES.map((s) => s.label),
+        ["Small", "Normal", "Max"]
+      );
+      assert.deepEqual(
+        BUTTON_SIZES.map((s) => s.key),
+        ["sm", "md", "lg"]
+      );
+    });
+
+    it("matches radius and padding options reliably", () => {
+      // Standard elements radius
+      assert.equal(matchRadiusOption("0px"), "0px");
+      assert.equal(matchRadiusOption("none"), "0px");
+      assert.equal(matchRadiusOption(""), "0px");
+      assert.equal(matchRadiusOption("8px"), "8px");
+      assert.equal(matchRadiusOption("12px"), "8px");
+      assert.equal(matchRadiusOption("16px"), "16px");
+      assert.equal(matchRadiusOption("24px"), "16px");
+      assert.equal(matchRadiusOption("9999px"), "9999px");
+      assert.equal(matchRadiusOption("full"), "9999px");
+
+      // Button radius
+      assert.equal(matchRadiusOption("0px", true), "0px");
+      assert.equal(matchRadiusOption("6px", true), "6px");
+      assert.equal(matchRadiusOption("12px", true), "12px");
+      assert.equal(matchRadiusOption("50px", true), "50px");
+
+      // Padding
+      assert.equal(matchPaddingOption("0px"), "0px");
+      assert.equal(matchPaddingOption("8px"), "8px");
+      assert.equal(matchPaddingOption("16px"), "16px");
+      assert.equal(matchPaddingOption("32px"), "32px");
+      assert.equal(matchPaddingOption("48px"), "32px");
     });
   });
 });

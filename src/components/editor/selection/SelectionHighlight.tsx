@@ -169,6 +169,60 @@ const LETTER_SPACINGS = [
   { value: "0.2em", label: "Spaced" },
 ];
 
+export const RADIUS_OPTIONS = [
+  { label: "None", value: "0px" },
+  { label: "Small", value: "8px" },
+  { label: "Normal", value: "16px" },
+  { label: "Max", value: "9999px" },
+] as const;
+
+export const BUTTON_RADIUS_OPTIONS = [
+  { label: "None", value: "0px" },
+  { label: "Small", value: "6px" },
+  { label: "Normal", value: "12px" },
+  { label: "Max", value: "50px" },
+] as const;
+
+export const PADDING_OPTIONS = [
+  { label: "None", value: "0px" },
+  { label: "Small", value: "8px" },
+  { label: "Normal", value: "16px" },
+  { label: "Max", value: "32px" },
+] as const;
+
+export const BUTTON_SIZES: ReadonlyArray<{ key: ButtonSize; label: string }> = [
+  { key: "sm", label: "Small" },
+  { key: "md", label: "Normal" },
+  { key: "lg", label: "Max" },
+];
+
+export function matchRadiusOption(val: string | null | undefined, isButton = false): string {
+  if (!val) return "0px";
+  const str = String(val).trim().toLowerCase();
+  if (str === "0" || str === "0px" || str === "none") return "0px";
+  if (str.includes("full") || str.includes("9999") || str.includes("pill")) return isButton ? "50px" : "9999px";
+  const num = parseInt(str, 10);
+  if (isNaN(num) || num <= 0) return "0px";
+  if (isButton) {
+    if (num >= 30) return "50px";
+    if (num >= 10) return "12px";
+    return "6px";
+  }
+  if (num >= 40) return "9999px";
+  if (num >= 14) return "16px";
+  return "8px";
+}
+
+export function matchPaddingOption(val: string | null | undefined): string {
+  if (!val) return "0px";
+  const str = String(val).trim().toLowerCase();
+  const num = parseInt(str, 10);
+  if (isNaN(num) || num <= 0 || str === "0" || str === "0px" || str === "none") return "0px";
+  if (num >= 24) return "32px";
+  if (num >= 12) return "16px";
+  return "8px";
+}
+
 export interface SelectionHighlightProps {
   type: ElementType | null;
   /** Looks up the live node for the selection; null when there is none. */
@@ -2079,19 +2133,19 @@ export function SelectionHighlight({
                       <span>Corner Radius</span>
                       <span className="font-mono text-slate-600 font-semibold">{cardRadius}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {RADIUS_OPTIONS.map((opt) => (
                         <button
-                          key={rad}
+                          key={opt.value}
                           type="button"
-                          onClick={() => handleCardRadiusChange(rad)}
-                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                            cardRadius === rad
+                          onClick={() => handleCardRadiusChange(opt.value)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                            matchRadiusOption(cardRadius) === opt.value
                               ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                               : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
@@ -2617,19 +2671,19 @@ export function SelectionHighlight({
                       <span>Corner Radius</span>
                       <span className="font-mono text-slate-600 font-semibold">{containerRadius}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {RADIUS_OPTIONS.map((opt) => (
                         <button
-                          key={rad}
+                          key={opt.value}
                           type="button"
-                          onClick={() => handleContainerRadiusChange(rad)}
-                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                            containerRadius === rad
+                          onClick={() => handleContainerRadiusChange(opt.value)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                            matchRadiusOption(containerRadius) === opt.value
                               ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                               : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
@@ -2641,19 +2695,19 @@ export function SelectionHighlight({
                       <span>Padding</span>
                       <span className="font-mono text-slate-600 font-semibold">{containerPadding}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                      {["0px", "8px", "16px", "24px", "32px", "48px"].map((pad) => (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {PADDING_OPTIONS.map((opt) => (
                         <button
-                          key={pad}
+                          key={opt.value}
                           type="button"
-                          onClick={() => handleContainerPaddingChange(pad)}
-                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                            containerPadding === pad
+                          onClick={() => handleContainerPaddingChange(opt.value)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                            matchPaddingOption(containerPadding) === opt.value
                               ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                               : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {pad.replace("px", "")}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
@@ -2960,19 +3014,19 @@ export function SelectionHighlight({
                       <span>Corner Radius</span>
                       <span className="font-mono text-slate-600 font-semibold">{imageRadius}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {RADIUS_OPTIONS.map((opt) => (
                         <button
-                          key={rad}
+                          key={opt.value}
                           type="button"
-                          onClick={() => handleImageRadiusChange(rad)}
-                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                            imageRadius === rad
+                          onClick={() => handleImageRadiusChange(opt.value)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                            matchRadiusOption(imageRadius) === opt.value
                               ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                               : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
@@ -3288,19 +3342,19 @@ export function SelectionHighlight({
                       <span>Corner Radius</span>
                       <span className="font-mono text-slate-600 font-semibold">{videoRadius}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {RADIUS_OPTIONS.map((opt) => (
                         <button
-                          key={rad}
+                          key={opt.value}
                           type="button"
-                          onClick={() => handleVideoRadiusChange(rad)}
-                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                            videoRadius === rad
+                          onClick={() => handleVideoRadiusChange(opt.value)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                            matchRadiusOption(videoRadius) === opt.value
                               ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                               : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
@@ -3561,19 +3615,19 @@ export function SelectionHighlight({
                       <span>Corner Radius</span>
                       <span className="font-mono text-slate-600 font-semibold">{youtubeRadius}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {RADIUS_OPTIONS.map((opt) => (
                         <button
-                          key={rad}
+                          key={opt.value}
                           type="button"
-                          onClick={() => handleYoutubeRadiusChange(rad)}
-                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                            youtubeRadius === rad
+                          onClick={() => handleYoutubeRadiusChange(opt.value)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                            matchRadiusOption(youtubeRadius) === opt.value
                               ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                               : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                          {opt.label}
                         </button>
                       ))}
                     </div>
@@ -3707,20 +3761,20 @@ export function SelectionHighlight({
               )}
             </div>
 
-            {/* 2. Size Selector (S, M, L) */}
+            {/* 2. Size Selector (Small, Normal, Max) */}
             <div className="flex items-center bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/80 gap-0.5">
-              {(["sm", "md", "lg"] as const).map((sz) => (
+              {BUTTON_SIZES.map(({ key, label }) => (
                 <button
-                  key={sz}
+                  key={key}
                   type="button"
-                  onClick={() => handleButtonSizeChange(sz)}
-                  className={`h-7 w-7 rounded-lg text-[11px] font-semibold uppercase flex items-center justify-center transition cursor-pointer ${
-                    buttonSize === sz
+                  onClick={() => handleButtonSizeChange(key)}
+                  className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold flex items-center justify-center transition cursor-pointer ${
+                    buttonSize === key
                       ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200/80"
                       : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                   }`}
                 >
-                  {sz}
+                  {label}
                 </button>
               ))}
             </div>
@@ -3826,22 +3880,22 @@ export function SelectionHighlight({
                     <span>Corner Radius</span>
                     <span className="font-mono text-slate-600 font-semibold">{buttonRadius}</span>
                   </div>
-                  <div className="grid grid-cols-5 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                    {["0px", "8px", "16px", "24px", "50px"].map((rad) => (
+                  <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                    {BUTTON_RADIUS_OPTIONS.map((opt) => (
                       <button
-                        key={rad}
+                        key={opt.value}
                         type="button"
                         onClick={() => {
-                          handleButtonRadiusChange(rad);
+                          handleButtonRadiusChange(opt.value);
                           setShowButtonRadiusPopover(false);
                         }}
-                        className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                          buttonRadius === rad
+                        className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                          matchRadiusOption(buttonRadius, true) === opt.value
                             ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                             : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                         }`}
                       >
-                        {rad === "50px" ? "Full" : rad.replace("px", "")}
+                        {opt.label}
                       </button>
                     ))}
                   </div>
@@ -4098,19 +4152,19 @@ export function SelectionHighlight({
                       <span>Corner Radius</span>
                       <span className="font-mono text-slate-600 font-semibold">{genericRadius}</span>
                     </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
-                      {["0px", "8px", "12px", "16px", "24px", "9999px"].map((rad) => (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200/60">
+                      {RADIUS_OPTIONS.map((opt) => (
                         <button
-                          key={rad}
+                          key={opt.value}
                           type="button"
-                          onClick={() => handleGenericRadiusChange(rad)}
-                          className={`py-1 rounded-lg text-[10px] font-mono font-semibold text-center transition cursor-pointer ${
-                            genericRadius === rad
+                          onClick={() => handleGenericRadiusChange(opt.value)}
+                          className={`py-1 rounded-lg text-[10.5px] font-semibold text-center transition cursor-pointer ${
+                            matchRadiusOption(genericRadius) === opt.value
                               ? "bg-white text-slate-900 shadow-xs font-bold border border-slate-200"
                               : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                           }`}
                         >
-                          {rad === "9999px" ? "Full" : rad.replace("px", "")}
+                          {opt.label}
                         </button>
                       ))}
                     </div>

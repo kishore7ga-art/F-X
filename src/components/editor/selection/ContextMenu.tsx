@@ -491,13 +491,12 @@ export function ContextMenu({
               <div className="font-bold text-[10.5px] uppercase tracking-wider text-slate-400 mb-1 px-1">
                 Border Radius
               </div>
-              <div className="grid grid-cols-3 gap-1">
+              <div className="grid grid-cols-4 gap-1">
                 {[
-                  { label: "None (0)", val: "0px" },
-                  { label: "Small (8px)", val: "8px" },
-                  { label: "Medium (16px)", val: "16px" },
-                  { label: "Large (24px)", val: "24px" },
-                  { label: "Pill / Full", val: "9999px" },
+                  { label: "None", val: "0px" },
+                  { label: "Small", val: "8px" },
+                  { label: "Normal", val: "16px" },
+                  { label: "Max", val: "9999px" },
                 ].map((r) => (
                   <button
                     key={r.val}
@@ -506,10 +505,10 @@ export function ContextMenu({
                       applyProp("borderRadius", r.val);
                       onClose();
                     }}
-                    className={`px-1.5 py-1 rounded border text-[10px] font-medium cursor-pointer text-center ${
+                    className={`px-1.5 py-1 rounded border text-[10.5px] font-semibold cursor-pointer text-center ${
                       elementMeta.borderRadius === r.val
-                        ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                        : "border-slate-200 hover:bg-slate-50"
+                        ? "border-indigo-600 bg-indigo-50 text-indigo-700 font-bold"
+                        : "border-slate-200 hover:bg-slate-50 text-slate-600"
                     }`}
                   >
                     {r.label}
