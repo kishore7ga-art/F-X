@@ -605,7 +605,6 @@ export function SelectionHighlight({
       });
 
       el.dispatchEvent(new Event("input", { bubbles: true }));
-      if (onApplyTextColor) onApplyTextColor(hex);
       return;
     }
 
@@ -653,7 +652,6 @@ export function SelectionHighlight({
         }
       } catch {}
       el.dispatchEvent(new Event("input", { bubbles: true }));
-      if (onApplyFontSize) onApplyFontSize(sizeStr);
       return;
     }
 
@@ -694,7 +692,6 @@ export function SelectionHighlight({
         }
       } catch {}
       el.dispatchEvent(new Event("input", { bubbles: true }));
-      if (onApplyFontSize) onApplyFontSize(sizeStr);
       setShowSizePopover(false);
       return;
     }
@@ -759,7 +756,6 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
-      if (onApplyFontFamily) onApplyFontFamily(font);
       setShowFontPopover(false);
       return;
     }
@@ -816,7 +812,6 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
-      if (onApplyTextFormat) onApplyTextFormat("bold");
       return;
     }
 
@@ -867,7 +862,6 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
-      if (onApplyTextFormat) onApplyTextFormat("italic");
       return;
     }
 
@@ -918,7 +912,6 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
-      if (onApplyTextFormat) onApplyTextFormat("underline");
       return;
     }
 
@@ -952,7 +945,6 @@ export function SelectionHighlight({
           document.execCommand("removeFormat", false);
         } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
-        if (onApplyTextFormat) onApplyTextFormat("removeFormat");
         return;
       }
 
@@ -1088,7 +1080,6 @@ export function SelectionHighlight({
           }
         } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
-        if (onApplyTextSpacing) onApplyTextSpacing("lineHeight", val);
         return;
       }
 
@@ -1127,7 +1118,6 @@ export function SelectionHighlight({
           }
         } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
-        if (onApplyTextSpacing) onApplyTextSpacing("letterSpacing", val);
         return;
       }
 

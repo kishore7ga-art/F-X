@@ -534,17 +534,19 @@ export function useCanvaInteractions({
     element.style.userSelect = "text";
     (element.style as any).webkitUserSelect = "text";
 
-    // Focus element
-    element.focus();
-
-    // In double-click: select the element's text so the user can immediately type to replace or edit
+    // In double-click: select the element's text so the user can immediately type to replace or edit (only if no existing range selection)
     try {
       const sel = window.getSelection();
       if (sel) {
-        const range = document.createRange();
-        range.selectNodeContents(element);
-        sel.removeAllRanges();
-        sel.addRange(range);
+        const hasExistingSelection = sel.rangeCount > 0 &&
+          !sel.getRangeAt(0).collapsed &&
+          element.contains(sel.getRangeAt(0).commonAncestorContainer);
+        if (!hasExistingSelection) {
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
       }
     } catch {}
 
@@ -1088,7 +1090,6 @@ export function useCanvaInteractions({
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);
       if (textTarget) {
-        activateTextEditing(textTarget, selectedElement.sectionIndex);
         el = textTarget;
       }
     }
@@ -1190,7 +1191,7 @@ export function useCanvaInteractions({
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode]);
 
   /**
    * Applies font family to the selected text range or entire active text element
@@ -1202,7 +1203,6 @@ export function useCanvaInteractions({
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);
       if (textTarget) {
-        activateTextEditing(textTarget, selectedElement.sectionIndex);
         el = textTarget;
       }
     }
@@ -1264,7 +1264,7 @@ export function useCanvaInteractions({
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode]);
 
   /**
    * Applies font size to the selected text range or entire active text element
@@ -1276,7 +1276,6 @@ export function useCanvaInteractions({
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);
       if (textTarget) {
-        activateTextEditing(textTarget, selectedElement.sectionIndex);
         el = textTarget;
       }
     }
@@ -1329,7 +1328,7 @@ export function useCanvaInteractions({
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode]);
 
   /**
    * Applies text alignment (left, center, right, justify) to the active text block
@@ -1341,7 +1340,6 @@ export function useCanvaInteractions({
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);
       if (textTarget) {
-        activateTextEditing(textTarget, selectedElement.sectionIndex);
         el = textTarget;
       }
     }
@@ -1350,7 +1348,7 @@ export function useCanvaInteractions({
     el.style.textAlign = align;
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode]);
 
   /**
    * Line height and letter spacing are properties of the block, not of a run
@@ -1364,7 +1362,6 @@ export function useCanvaInteractions({
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);
       if (textTarget) {
-        activateTextEditing(textTarget, selectedElement.sectionIndex);
         el = textTarget;
       }
     }
@@ -1373,7 +1370,7 @@ export function useCanvaInteractions({
     el.style[prop] = value;
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, activateTextEditing, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode]);
 
   /**
    * Applies rich text formatting commands (bold, italic, underline, removeFormat)
