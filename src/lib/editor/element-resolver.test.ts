@@ -5,6 +5,7 @@ import {
   applyCardLayoutDom,
   applyElementProps,
   buildYouTubeEmbedUrl,
+  changeHeadingTagDom,
   classify,
   elementId,
   ELEMENT_TYPE_LABEL,
@@ -18,6 +19,8 @@ import {
   parseElementId,
   removeMediaFromCardDom,
 } from "./element-resolver";
+import { ALL_TEXT_TAGS, matchFontOption } from "../../components/editor/selection/SelectionHighlight";
+import { FONT_SIZE_OPTIONS } from "../../components/editor/TextColorSettingsControl";
 
 describe("element ids", () => {
   it("round-trips a section id and a path", () => {
@@ -238,6 +241,25 @@ describe("findImageElement & media resolution", () => {
       removeAttribute(name: string) {
         delete nodeAttrs[name];
         if (name === "class") node.className = "";
+      },
+      get attributes() {
+        return Object.entries(nodeAttrs).map(([name, value]) => ({ name, value }));
+      },
+      querySelectorAll(selector: string) {
+        const results: any[] = [];
+        const cleanSel = selector.split(",").map((s) => s.trim().toLowerCase());
+        const traverse = (n: any) => {
+          for (const child of n.children) {
+            const t = child.tagName.toLowerCase();
+            const cls = (child.className || "").toLowerCase();
+            if (cleanSel.some((sel) => sel === t || (sel.startsWith(".") && cls.includes(sel.slice(1))))) {
+              results.push(child);
+            }
+            traverse(child);
+          }
+        };
+        traverse(this);
+        return results;
       },
       closest(selector: string) {
         let cur: any = this;
@@ -556,6 +578,128 @@ describe("findImageElement & media resolution", () => {
     const img = createMockNode("img", { src: "photo.jpg" });
     applyElementProps("image", img, { opacity: "0.8" });
     assert.equal(img.style["opacity"], "0.8");
+  });
+
+  describe("contextual text toolbar operations", () => {
+    it("exports ALL_TEXT_TAGS covering H1 through H6 and P", () => {
+      const tags = ALL_TEXT_TAGS.map((t) => t.tag);
+      assert.deepEqual(tags, ["h1", "h2", "h3", "h4", "h5", "h6", "p"]);
+      for (const item of ALL_TEXT_TAGS) {
+        assert.ok(item.label.length > 0);
+        assert.ok(item.sub.length > 0);
+      }
+    });
+
+    it("includes 74px and standard font sizes in FONT_SIZE_OPTIONS", () => {
+      const values = FONT_SIZE_OPTIONS.map((s) => s.value);
+      assert.ok(values.includes("74px"));
+      assert.ok(values.includes("16px"));
+      assert.ok(values.includes("32px"));
+      assert.ok(values.includes("48px"));
+      assert.ok(values.includes("96px"));
+    });
+
+    it("matches font family options cleanly and provides fallbacks", () => {
+      const inter = matchFontOption("'Inter', sans-serif");
+      assert.equal(inter.label, "Inter");
+
+      const outfit = matchFontOption("Outfit");
+      assert.equal(outfit.label, "Outfit");
+
+      const jakarta = matchFontOption("'Plus Jakarta Sans', sans-serif");
+      assert.equal(jakarta.label, "Plus Jakarta");
+
+      const playfair = matchFontOption("'Playfair Display', serif");
+      assert.equal(playfair.label, "Playfair");
+
+      const fallback = matchFontOption("CustomFont, serif");
+      assert.equal(fallback.label, "CustomFont");
+
+      const empty = matchFontOption("");
+      assert.equal(empty.label, "Default Font");
+    });
+
+    it("swaps heading and paragraph semantic tags via changeHeadingTagDom", () => {
+      const section = createMockNode("section");
+      const h5 = section.appendChild(
+        createMockNode("h5", { class: "font-bold text-slate-800", id: "hero-title" }, "Hero Heading")
+      );
+      const span = h5.appendChild(createMockNode("span", { class: "text-pink-500" }, "Highlight"));
+
+      // Change H5 to H2
+      const h2 = changeHeadingTagDom(h5, "h2");
+      assert.equal(h2.tagName, "H2");
+      assert.equal(h2.getAttribute("class"), "font-bold text-slate-800");
+      assert.equal(h2.getAttribute("id"), "hero-title");
+      assert.equal(h2.children.length, 1);
+      assert.equal(h2.children[0], span);
+      assert.equal(section.children[0], h2);
+
+      // Change H2 to P
+      const p = changeHeadingTagDom(h2, "p" as any);
+      assert.equal(p.tagName, "P");
+      assert.equal(p.getAttribute("class"), "font-bold text-slate-800");
+
+      // Same tag returns element unchanged
+      const same = changeHeadingTagDom(p, "p" as any);
+      assert.equal(same, p);
+    });
+
+    it("applies all text formatting toolbar properties (bold, italic, underline, font-size, color, align, line-height, letter-spacing)", () => {
+      const heading = createMockNode("h1", {}, "Main Title");
+      const subSpan = heading.appendChild(createMockNode("span", {}, "Sub text"));
+
+      applyElementProps("heading", heading, {
+        fontWeight: "bold",
+        fontStyle: "italic",
+        textDecoration: "underline",
+        fontSize: "74px",
+        color: "#ec4899",
+        fontFamily: "'Outfit', sans-serif",
+        textAlign: "center",
+        textTransform: "uppercase",
+        lineHeight: "1.2",
+        letterSpacing: "0.05em",
+      });
+
+      assert.equal(heading.style["font-weight"], "bold");
+      assert.equal(heading.style["font-style"], "italic");
+      assert.equal(heading.style["text-decoration"], "underline");
+      assert.equal(heading.style["font-size"], "74px");
+      assert.equal(heading.style["color"], "#ec4899");
+      assert.equal(heading.style["font-family"], "'Outfit', sans-serif");
+      assert.equal(heading.style["text-align"], "center");
+      assert.equal(heading.style["text-transform"], "uppercase");
+      assert.equal(heading.style["line-height"], "1.2");
+      assert.equal(heading.style["letter-spacing"], "0.05em");
+
+      // Check font family cascaded to nested span
+      assert.equal(subSpan.style["font-family"], "'Outfit', sans-serif");
+    });
+
+    it("applies text props to paragraph elements and handles reset properties", () => {
+      const p = createMockNode("p", {}, "Body paragraph");
+
+      applyElementProps("text", p, {
+        fontWeight: "400",
+        fontStyle: "normal",
+        textDecoration: "none",
+        fontSize: "18px",
+        color: "#0f172a",
+        textAlign: "justify",
+        lineHeight: "1.6",
+        letterSpacing: "-0.01em",
+      });
+
+      assert.equal(p.style["font-weight"], "400");
+      assert.equal(p.style["font-style"], "normal");
+      assert.equal(p.style["text-decoration"], "none");
+      assert.equal(p.style["font-size"], "18px");
+      assert.equal(p.style["color"], "#0f172a");
+      assert.equal(p.style["text-align"], "justify");
+      assert.equal(p.style["line-height"], "1.6");
+      assert.equal(p.style["letter-spacing"], "-0.01em");
+    });
   });
 });
 

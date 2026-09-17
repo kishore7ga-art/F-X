@@ -78,6 +78,9 @@ export const FONT_SIZE_OPTIONS = [
   { label: "56px", value: "56px" },
   { label: "64px", value: "64px" },
   { label: "72px", value: "72px" },
+  { label: "74px", value: "74px" },
+  { label: "80px", value: "80px" },
+  { label: "96px", value: "96px" },
 ];
 
 export function SingleRowTextColorPanel({

@@ -118,6 +118,16 @@ const PRESET_COLORS = [
 
 const HEADING_TAGS: HeadingLevel[] = ["h1", "h2", "h3", "h4", "h5", "h6"];
 
+export const ALL_TEXT_TAGS: ReadonlyArray<{ tag: HeadingLevel | "p"; label: string; sub: string }> = [
+  { tag: "h1", label: "H1", sub: "Heading 1 (Main page title)" },
+  { tag: "h2", label: "H2", sub: "Heading 2 (Section title)" },
+  { tag: "h3", label: "H3", sub: "Heading 3 (Subsection title)" },
+  { tag: "h4", label: "H4", sub: "Heading 4 (Feature title)" },
+  { tag: "h5", label: "H5", sub: "Heading 5 (Small heading)" },
+  { tag: "h6", label: "H6", sub: "Heading 6 (Subtle heading)" },
+  { tag: "p", label: "P", sub: "Paragraph body text" },
+];
+
 const FONT_SIZES = [
   { value: "", label: "Auto Size" },
   { value: "12px", label: "12px" },
@@ -134,6 +144,7 @@ const FONT_SIZES = [
   { value: "56px", label: "56px" },
   { value: "64px", label: "64px" },
   { value: "72px", label: "72px" },
+  { value: "74px", label: "74px" },
   { value: "80px", label: "80px" },
   { value: "96px", label: "96px" },
 ];
@@ -377,26 +388,68 @@ export function SelectionHighlight({
 
   const effectiveBg = getEffectiveElementBackground(activeElement);
   const autoContrastColor = calculateOppositeContrast(effectiveBg).textColor;
-  const rawElementColor = activeElement?.style.color
-    ? hexFromValue(activeElement.style.color, autoContrastColor)
-    : autoContrastColor;
 
   // Current props extraction with live inPlaceEditor fallback:
-  // Auto-matches the background's high contrast color before the user sets an explicit color
+  // Reads live DOM computed styles when meta is not yet set
+  const rawElementColor = activeElement?.style.color
+    ? hexFromValue(activeElement.style.color, autoContrastColor)
+    : (activeElement && typeof window !== "undefined"
+        ? hexFromValue(window.getComputedStyle(activeElement).color, autoContrastColor)
+        : autoContrastColor);
   const currentColor = activeTextColor || meta.color || rawElementColor;
-  const rawFontSize = activeFontSize || String(meta.fontSize || (effectiveType === "heading" ? "32px" : "16px"));
-  const parsedFontSize = parseInt(rawFontSize, 10) || (effectiveType === "heading" ? 32 : 16);
-  const rawElementFont = activeElement ? activeElement.style.fontFamily || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontFamily : "") : "";
+
+  const rawElementFontSize = activeElement
+    ? (activeElement.style.fontSize || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontSize : ""))
+    : "";
+  const rawFontSize = activeFontSize || meta.fontSize || rawElementFontSize || (effectiveType === "heading" ? "32px" : "16px");
+  const parsedFontSize = parseInt(String(rawFontSize), 10) || (effectiveType === "heading" ? 32 : 16);
+
+  const rawElementFont = activeElement
+    ? (activeElement.style.fontFamily || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontFamily : ""))
+    : "";
   const currentFontFamily = activeFontFamily || meta.fontFamily || rawElementFont || "";
   const selectedFontOption = matchFontOption(currentFontFamily);
-  const currentWeight = String(meta.fontWeight || (effectiveType === "heading" ? "700" : "400"));
-  const isBold = parseInt(currentWeight, 10) >= 600 || currentWeight === "bold";
-  const currentAlign = (activeTextAlign || meta.textAlign || "left") as TextAlign;
-  const currentTransform = (meta.textTransform || "none") as TextTransform;
-  const activeTag = (activeElement?.tagName.toLowerCase() || "") as HeadingLevel;
-  const currentLevel = (HEADING_TAGS.includes(activeTag) ? activeTag : (meta.level || (effectiveType === "heading" ? "h2" : "p"))) as HeadingLevel;
-  const currentLineHeight = activeLineHeight || meta.lineHeight || "";
-  const currentLetterSpacing = activeLetterSpacing || meta.letterSpacing || "";
+
+  const rawElementWeight = activeElement
+    ? (activeElement.style.fontWeight || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontWeight : ""))
+    : "";
+  const currentWeight = String(meta.fontWeight || rawElementWeight || (effectiveType === "heading" ? "700" : "400"));
+  const isBold = parseInt(currentWeight, 10) >= 600 || currentWeight === "bold" || currentWeight === "bolder";
+
+  const rawElementStyle = activeElement
+    ? (activeElement.style.fontStyle || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontStyle : ""))
+    : "";
+  const isItalic = rawElementStyle === "italic" || meta.fontStyle === "italic";
+
+  const rawElementDec = activeElement
+    ? (activeElement.style.textDecoration || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).textDecoration : ""))
+    : "";
+  const isUnderline = rawElementDec.includes("underline") || (typeof meta.textDecoration === "string" && meta.textDecoration.includes("underline"));
+
+  const rawElementAlign = activeElement
+    ? (activeElement.style.textAlign || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).textAlign : ""))
+    : "";
+  const currentAlign = (activeTextAlign || meta.textAlign || rawElementAlign || "left") as TextAlign;
+
+  const rawElementTransform = activeElement
+    ? (activeElement.style.textTransform || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).textTransform : ""))
+    : "";
+  const currentTransform = (meta.textTransform || rawElementTransform || "none") as TextTransform;
+
+  const activeTag = activeElement?.tagName.toLowerCase() || "";
+  const currentLevel = (HEADING_TAGS.includes(activeTag as HeadingLevel) || activeTag === "p"
+    ? activeTag
+    : (meta.level || (effectiveType === "heading" ? "h2" : "p"))) as HeadingLevel | "p";
+
+  const rawElementLineHeight = activeElement
+    ? (activeElement.style.lineHeight || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).lineHeight : ""))
+    : "";
+  const currentLineHeight = activeLineHeight || meta.lineHeight || rawElementLineHeight || "";
+
+  const rawElementLetterSpacing = activeElement
+    ? (activeElement.style.letterSpacing || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).letterSpacing : ""))
+    : "";
+  const currentLetterSpacing = activeLetterSpacing || meta.letterSpacing || rawElementLetterSpacing || "";
 
   // Handlers that work seamlessly in both selection mode and contentEditable mode with instant live DOM reflection
   const handleColorChange = (hex: string) => {
@@ -404,6 +457,10 @@ export function SelectionHighlight({
     if (el) {
       el.setAttribute("data-xite-user-color", "true");
       el.style.setProperty("color", hex, "important");
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
+        child.setAttribute("data-xite-user-color", "true");
+        child.style.setProperty("color", hex, "important");
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyTextColor) onApplyTextColor(hex);
@@ -413,11 +470,14 @@ export function SelectionHighlight({
   };
 
   const handleFontSizeChange = (delta: number) => {
-    const nextSize = Math.max(10, Math.min(140, parsedFontSize + delta));
+    const nextSize = Math.max(8, Math.min(160, parsedFontSize + delta));
     const sizeStr = `${nextSize}px`;
     const el = resolveElement();
     if (el) {
       el.style.setProperty("font-size", sizeStr, "important");
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        child.style.setProperty("font-size", sizeStr, "important");
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyFontSize) onApplyFontSize(sizeStr);
@@ -434,6 +494,10 @@ export function SelectionHighlight({
       } else {
         el.style.removeProperty("font-size");
       }
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        if (sizeStr) child.style.setProperty("font-size", sizeStr, "important");
+        else child.style.removeProperty("font-size");
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyFontSize) onApplyFontSize(sizeStr);
@@ -469,6 +533,9 @@ export function SelectionHighlight({
     const nextWeight = isBold ? "400" : "700";
     if (el) {
       el.style.setProperty("font-weight", nextWeight, "important");
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        child.style.setProperty("font-weight", nextWeight, "important");
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyTextFormat) onApplyTextFormat("bold");
@@ -479,44 +546,65 @@ export function SelectionHighlight({
 
   const handleToggleItalic = () => {
     const el = resolveElement();
+    const nextStyle = isItalic ? "normal" : "italic";
     if (el) {
-      const currentStyle = window.getComputedStyle(el).fontStyle;
-      el.style.setProperty("font-style", currentStyle === "italic" ? "normal" : "italic", "important");
+      el.style.setProperty("font-style", nextStyle, "important");
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        child.style.setProperty("font-style", nextStyle, "important");
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyTextFormat) onApplyTextFormat("italic");
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, { fontStyle: nextStyle } as any);
+    }
   };
 
   const handleToggleUnderline = () => {
     const el = resolveElement();
+    const nextDec = isUnderline ? "none" : "underline";
     if (el) {
-      const currentDec = window.getComputedStyle(el).textDecoration;
-      el.style.setProperty("text-decoration", currentDec.includes("underline") ? "none" : "underline", "important");
+      el.style.setProperty("text-decoration", nextDec, "important");
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        child.style.setProperty("text-decoration", nextDec, "important");
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyTextFormat) onApplyTextFormat("underline");
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, { textDecoration: nextDec } as any);
+    }
   };
 
   const handleResetFormat = () => {
     const el = resolveElement();
     if (el) {
-      el.style.removeProperty("font-weight");
-      el.style.removeProperty("font-style");
-      el.style.removeProperty("text-decoration");
-      el.style.removeProperty("font-family");
-      el.style.removeProperty("font-size");
-      el.style.removeProperty("text-align");
-      el.style.removeProperty("text-transform");
-      el.style.removeProperty("line-height");
-      el.style.removeProperty("letter-spacing");
-      el.style.removeProperty("color");
+      const clearStyles = (target: HTMLElement) => {
+        target.removeAttribute("data-xite-user-color");
+        target.style.removeProperty("font-weight");
+        target.style.removeProperty("font-style");
+        target.style.removeProperty("text-decoration");
+        target.style.removeProperty("font-family");
+        target.style.removeProperty("font-size");
+        target.style.removeProperty("text-align");
+        target.style.removeProperty("text-transform");
+        target.style.removeProperty("line-height");
+        target.style.removeProperty("letter-spacing");
+        target.style.removeProperty("color");
+      };
+      clearStyles(el);
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach(clearStyles);
       el.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onApplyTextFormat) onApplyTextFormat("removeFormat");
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, {
         fontWeight: "400",
+        fontStyle: "normal",
+        textDecoration: "none",
         fontFamily: "",
+        fontSize: "",
+        color: "",
         textAlign: "left",
         textTransform: "none",
         lineHeight: "",
@@ -529,7 +617,7 @@ export function SelectionHighlight({
     const el = resolveElement();
     const order: TextTransform[] = ["none", "uppercase", "capitalize"];
     const nextIdx = (order.indexOf(currentTransform) + 1) % order.length;
-    const nextCase = order[nextIdx];
+    const nextCase = order[nextIdx] || "none";
     if (el) {
       el.style.setProperty("text-transform", nextCase === "none" ? "none" : nextCase, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -551,14 +639,14 @@ export function SelectionHighlight({
     }
   };
 
-  const handleTagChange = (tag: HeadingLevel) => {
+  const handleTagChange = (tag: HeadingLevel | "p") => {
     const el = resolveElement();
-    if (el) {
-      const newHeading = changeHeadingTagDom(el, tag);
+    if (el && el.tagName.toLowerCase() !== tag.toLowerCase()) {
+      const newHeading = changeHeadingTagDom(el, tag as HeadingLevel);
       newHeading.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onChangeHeadingLevel) {
-      onChangeHeadingLevel(tag);
+      onChangeHeadingLevel(tag as HeadingLevel);
     }
     setShowTagPopover(false);
   };
@@ -1346,7 +1434,11 @@ export function SelectionHighlight({
                   setShowMorePopover(false);
                 }}
                 title="Change semantic tag (H1-H6, P)"
-                className="flex items-center gap-1 rounded-xl px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-[11.5px] font-bold text-slate-800 border border-slate-200/80 transition cursor-pointer"
+                className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11.5px] font-bold border transition cursor-pointer ${
+                  showTagPopover
+                    ? "bg-pink-50 border-pink-200 text-pink-700 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200/80"
+                }`}
               >
                 <span className="font-extrabold text-pink-600">{currentLevel.toUpperCase()}</span>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
@@ -1354,11 +1446,11 @@ export function SelectionHighlight({
 
               {showTagPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[110px]"
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[135px]"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  {HEADING_TAGS.map((t) => (
+                  {ALL_TEXT_TAGS.map(({ tag: t, label, sub }) => (
                     <button
                       key={t}
                       type="button"
@@ -1366,14 +1458,14 @@ export function SelectionHighlight({
                         e.stopPropagation();
                         handleTagChange(t);
                       }}
-                      className={`flex items-center justify-between px-2.5 py-1 rounded-lg text-[11px] font-semibold text-left transition cursor-pointer ${
-                        currentLevel === t
+                      className={`flex items-center justify-between gap-3 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-left transition cursor-pointer ${
+                        currentLevel.toLowerCase() === t.toLowerCase()
                           ? "bg-pink-50 text-pink-600 font-bold"
                           : "text-slate-700 hover:bg-slate-100"
                       }`}
                     >
-                      <span>{t.toUpperCase()}</span>
-                      <span className="text-[9px] opacity-60">Heading {t.slice(1)}</span>
+                      <span className="font-bold">{label}</span>
+                      <span className="text-[9px] opacity-60 font-normal">{sub}</span>
                     </button>
                   ))}
                 </div>
@@ -1393,7 +1485,11 @@ export function SelectionHighlight({
                   setShowMorePopover(false);
                 }}
                 title="Font Family"
-                className="flex items-center gap-1 rounded-xl px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-[11.5px] font-medium text-slate-800 border border-slate-200/80 transition max-w-[120px] truncate cursor-pointer"
+                className={`flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11.5px] font-medium border transition max-w-[125px] truncate cursor-pointer ${
+                  showFontPopover
+                    ? "bg-blue-50 border-blue-200 text-blue-700 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200/80"
+                }`}
               >
                 <Type className="w-3 h-3 text-slate-400 shrink-0" />
                 <span className="truncate">
@@ -1404,7 +1500,7 @@ export function SelectionHighlight({
 
               {showFontPopover && (
                 <div
-                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[140px]"
+                  className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[150px]"
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
@@ -1452,6 +1548,7 @@ export function SelectionHighlight({
                   setShowColorPopover(false);
                   setShowMorePopover(false);
                 }}
+                title="Select exact font size"
                 className="px-1.5 text-[11px] font-mono font-bold text-slate-800 min-w-[28px] text-center hover:text-blue-600 transition cursor-pointer"
               >
                 {parsedFontSize}
@@ -1483,7 +1580,7 @@ export function SelectionHighlight({
                         handleSelectExactSize(s.value);
                       }}
                       className={`px-1.5 py-1 rounded-lg text-[10px] font-mono font-bold text-center transition cursor-pointer ${
-                        rawFontSize === s.value
+                        rawFontSize === s.value || `${parsedFontSize}px` === s.value
                           ? "bg-blue-50 text-blue-600 font-bold"
                           : "text-slate-700 hover:bg-slate-100"
                       }`}
@@ -1527,7 +1624,11 @@ export function SelectionHighlight({
                   setShowMorePopover(false);
                 }}
                 title="Text Color"
-                className="p-1 rounded-xl hover:bg-slate-100 flex items-center gap-1 border border-slate-200/80 transition cursor-pointer"
+                className={`p-1 rounded-xl flex items-center gap-1 border transition cursor-pointer ${
+                  showColorPopover
+                    ? "bg-blue-50 border-blue-200 shadow-xs"
+                    : "hover:bg-slate-100 border-slate-200/80"
+                }`}
               >
                 <span
                   className="w-4 h-4 rounded-full border border-slate-300 shadow-xs"
@@ -1590,10 +1691,10 @@ export function SelectionHighlight({
                   setShowSizePopover(false);
                 }}
                 title="More text formatting & alignment options"
-                className={`p-1.5 rounded-xl border border-slate-200/80 transition cursor-pointer flex items-center gap-1 ${
+                className={`p-1.5 rounded-xl border transition cursor-pointer flex items-center gap-1 ${
                   showMorePopover
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900"
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-200/80"
                 }`}
               >
                 <MoreHorizontal className="w-3.5 h-3.5" />
@@ -1619,7 +1720,11 @@ export function SelectionHighlight({
                           handleToggleItalic();
                         }}
                         title="Italic"
-                        className="p-1 rounded-lg text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-xs transition cursor-pointer flex-1 flex justify-center"
+                        className={`p-1 rounded-lg transition cursor-pointer flex-1 flex justify-center ${
+                          isItalic
+                            ? "bg-purple-50 text-purple-600 shadow-xs font-bold border border-purple-200"
+                            : "text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-xs"
+                        }`}
                       >
                         <Italic className="w-3.5 h-3.5" />
                       </button>
@@ -1630,7 +1735,11 @@ export function SelectionHighlight({
                           handleToggleUnderline();
                         }}
                         title="Underline"
-                        className="p-1 rounded-lg text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-xs transition cursor-pointer flex-1 flex justify-center"
+                        className={`p-1 rounded-lg transition cursor-pointer flex-1 flex justify-center ${
+                          isUnderline
+                            ? "bg-purple-50 text-purple-600 shadow-xs font-bold border border-purple-200"
+                            : "text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-xs"
+                        }`}
                       >
                         <Underline className="w-3.5 h-3.5" />
                       </button>
@@ -1682,7 +1791,7 @@ export function SelectionHighlight({
                         title="Align Left"
                         className={`p-1 rounded-lg transition cursor-pointer flex-1 flex justify-center ${
                           currentAlign === "left"
-                            ? "bg-white text-blue-600 shadow-xs font-bold"
+                            ? "bg-white text-blue-600 shadow-xs font-bold border border-blue-100"
                             : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
                         }`}
                       >
@@ -1697,7 +1806,7 @@ export function SelectionHighlight({
                         title="Align Center"
                         className={`p-1 rounded-lg transition cursor-pointer flex-1 flex justify-center ${
                           currentAlign === "center"
-                            ? "bg-white text-blue-600 shadow-xs font-bold"
+                            ? "bg-white text-blue-600 shadow-xs font-bold border border-blue-100"
                             : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
                         }`}
                       >
@@ -1712,7 +1821,7 @@ export function SelectionHighlight({
                         title="Align Right"
                         className={`p-1 rounded-lg transition cursor-pointer flex-1 flex justify-center ${
                           currentAlign === "right"
-                            ? "bg-white text-blue-600 shadow-xs font-bold"
+                            ? "bg-white text-blue-600 shadow-xs font-bold border border-blue-100"
                             : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
                         }`}
                       >
@@ -1727,7 +1836,7 @@ export function SelectionHighlight({
                         title="Align Justify"
                         className={`p-1 rounded-lg transition cursor-pointer flex-1 flex justify-center ${
                           currentAlign === "justify"
-                            ? "bg-white text-blue-600 shadow-xs font-bold"
+                            ? "bg-white text-blue-600 shadow-xs font-bold border border-blue-100"
                             : "text-slate-500 hover:text-slate-900 hover:bg-white/60"
                         }`}
                       >

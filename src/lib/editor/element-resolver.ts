@@ -161,6 +161,8 @@ export interface HeadingProps {
   color: string;
   fontSize: string;
   fontWeight: string;
+  fontStyle?: string;
+  textDecoration?: string;
   textAlign: TextAlign;
   lineHeight: string;
   letterSpacing: string;
@@ -173,6 +175,8 @@ export interface TextProps {
   color: string;
   fontSize: string;
   fontWeight: string;
+  fontStyle?: string;
+  textDecoration?: string;
   textAlign: TextAlign;
   lineHeight: string;
   letterSpacing: string;
@@ -1039,6 +1043,8 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         color: hexFromValue(rawColor, autoColor),
         fontSize: el.style.fontSize || style.fontSize || "24px",
         fontWeight: el.style.fontWeight || style.fontWeight || "700",
+        fontStyle: el.style.fontStyle || style.fontStyle || "normal",
+        textDecoration: el.style.textDecoration || style.textDecoration || "none",
         textAlign: ((el.style.textAlign || style.textAlign) as TextAlign) || "left",
         lineHeight: el.style.lineHeight || "",
         letterSpacing: el.style.letterSpacing || "",
@@ -1056,6 +1062,8 @@ export function readElementProps<T extends LeafType>(type: T, el: HTMLElement): 
         color: hexFromValue(rawColor, autoColor),
         fontSize: el.style.fontSize || style.fontSize || "16px",
         fontWeight: el.style.fontWeight || style.fontWeight || "400",
+        fontStyle: el.style.fontStyle || style.fontStyle || "normal",
+        textDecoration: el.style.textDecoration || style.textDecoration || "none",
         textAlign: ((el.style.textAlign || style.textAlign) as TextAlign) || "left",
         lineHeight: el.style.lineHeight || "",
         letterSpacing: el.style.letterSpacing || "",
@@ -1509,6 +1517,8 @@ function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
   set(el, "color", p.color);
   set(el, "font-size", p.fontSize);
   set(el, "font-weight", p.fontWeight);
+  if (p.fontStyle !== undefined) set(el, "font-style", p.fontStyle);
+  if (p.textDecoration !== undefined) set(el, "text-decoration", p.textDecoration);
   set(el, "text-align", p.textAlign);
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
@@ -1528,6 +1538,8 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "color", p.color);
   set(el, "font-size", p.fontSize);
   set(el, "font-weight", p.fontWeight);
+  if (p.fontStyle !== undefined) set(el, "font-style", p.fontStyle);
+  if (p.textDecoration !== undefined) set(el, "text-decoration", p.textDecoration);
   set(el, "text-align", p.textAlign);
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
