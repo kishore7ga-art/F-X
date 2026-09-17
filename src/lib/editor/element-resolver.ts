@@ -2165,6 +2165,231 @@ export function applyRangeHeadingTagDom(
   return transformSelectedRangeToTag(range, newTag, containerElement);
 }
 
+export interface InlineStyleOptions {
+  color?: string;
+  fontSize?: string;
+  fontFamily?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  textDecoration?: string;
+  textTransform?: string;
+  lineHeight?: string;
+  letterSpacing?: string;
+  backgroundColor?: string;
+  attributes?: Record<string, string>;
+  className?: string;
+}
+
+/**
+ * Generic DOM-Safe Range Inline Styling Engine.
+ * Applies any inline styles or attributes to ONLY the specified Range within an editorRoot boundary.
+ */
+export function applyRangeInlineStyleDom(
+  range: Range,
+  styles: InlineStyleOptions,
+  containerOrRoot?: HTMLElement | null
+): HTMLElement | null {
+  if (!range || range.collapsed) return null;
+
+  // 1. Identify closest editor / container boundary (hard boundary)
+  const anchorNode: HTMLElement | null =
+    range.commonAncestorContainer.nodeType === 1
+      ? (range.commonAncestorContainer as HTMLElement)
+      : (range.commonAncestorContainer.parentElement as HTMLElement | null);
+
+  const editorRoot =
+    (containerOrRoot && typeof containerOrRoot.contains === "function" ? containerOrRoot : null) ||
+    (anchorNode && typeof anchorNode.closest === "function"
+      ? anchorNode.closest<HTMLElement>(
+          ".editor-container, .editor-block, [data-editor-block], .section-wrapper-container, [data-section-id], .xite-site-canvas"
+        )
+      : null) ||
+    anchorNode?.parentElement ||
+    anchorNode ||
+    containerOrRoot;
+
+  if (!editorRoot) return null;
+
+  // 2. Validate that the Range strictly belongs to editorRoot
+  if (
+    typeof editorRoot.contains === "function" &&
+    !editorRoot.contains(range.commonAncestorContainer) &&
+    !range.commonAncestorContainer.contains(editorRoot)
+  ) {
+    return null;
+  }
+
+  // 3. Find the target formatting element enclosing the range, or fallback to editorRoot
+  let targetFormattingEl: HTMLElement = editorRoot;
+  let currentAncestor: any = range.commonAncestorContainer;
+  while (currentAncestor && currentAncestor !== editorRoot) {
+    if (
+      currentAncestor.tagName &&
+      /^(h[1-6]|p|blockquote|pre|code|span|strong|em|b|i|u|s|label|mark|small|sub|sup|div)$/i.test(
+        currentAncestor.tagName
+      )
+    ) {
+      targetFormattingEl = currentAncestor;
+      break;
+    }
+    currentAncestor = currentAncestor.parentNode || currentAncestor.parentElement;
+  }
+
+  // 4. Create the span element
+  const doc =
+    (typeof document !== "undefined"
+      ? document
+      : (editorRoot as any).ownerDocument || (targetFormattingEl as any).ownerDocument) || {
+      createElement(tag: string) {
+        const el: any = {
+          tagName: tag.toUpperCase(),
+          className: "",
+          style: {
+            setProperty(k: string, v: string) {
+              (this as any)[k] = v;
+            },
+            removeProperty(k: string) {
+              delete (this as any)[k];
+            },
+          },
+          setAttribute(k: string, v: string) {
+            (this as any)[k] = v;
+          },
+          getAttribute(k: string) {
+            return (this as any)[k];
+          },
+          removeAttribute(k: string) {
+            delete (this as any)[k];
+          },
+          children: [],
+          appendChild(c: any) {
+            this.children.push(c);
+            return c;
+          },
+        };
+        return el;
+      },
+    };
+
+  const span = doc.createElement("span");
+
+  if (styles.className) {
+    span.className = styles.className;
+  }
+
+  if (span.style?.setProperty) {
+    if (styles.color) {
+      span.style.setProperty("color", styles.color, "important");
+      span.setAttribute?.("data-xite-user-color", "true");
+    }
+    if (styles.fontSize) {
+      span.style.setProperty("font-size", styles.fontSize, "important");
+    }
+    if (styles.fontFamily) {
+      span.style.setProperty("font-family", styles.fontFamily, "important");
+    }
+    if (styles.fontWeight) {
+      span.style.setProperty("font-weight", styles.fontWeight, "important");
+    }
+    if (styles.fontStyle) {
+      span.style.setProperty("font-style", styles.fontStyle, "important");
+    }
+    if (styles.textDecoration) {
+      span.style.setProperty("text-decoration", styles.textDecoration, "important");
+    }
+    if (styles.textTransform) {
+      span.style.setProperty("text-transform", styles.textTransform, "important");
+    }
+    if (styles.lineHeight) {
+      span.style.setProperty("line-height", styles.lineHeight, "important");
+      span.style.setProperty("display", "inline-block", "important");
+    }
+    if (styles.letterSpacing) {
+      span.style.setProperty("letter-spacing", styles.letterSpacing, "important");
+    }
+    if (styles.backgroundColor) {
+      span.style.setProperty("background-color", styles.backgroundColor, "important");
+    }
+  }
+
+  if (styles.attributes && span.setAttribute) {
+    for (const [k, v] of Object.entries(styles.attributes)) {
+      span.setAttribute(k, v);
+    }
+  }
+
+  try {
+    const contents = range.extractContents();
+    span.appendChild(contents);
+    range.insertNode(span);
+
+    // Normalize text nodes in target formatting element / container
+    if (typeof targetFormattingEl.normalize === "function") {
+      targetFormattingEl.normalize();
+    } else if (typeof editorRoot.normalize === "function") {
+      editorRoot.normalize();
+    }
+
+    // Restore selection over the new span
+    if (typeof window !== "undefined") {
+      const sel = window.getSelection();
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          const newRange = document.createRange();
+          newRange.selectNodeContents(span);
+          sel.addRange(newRange);
+        } catch {}
+      }
+    }
+
+    return span;
+  } catch (err) {
+    console.error("[applyRangeInlineStyleDom] Failed to apply inline style:", err);
+    return null;
+  }
+}
+
+/**
+ * Clears inline formatting from a selected range without breaking DOM boundaries.
+ */
+export function clearRangeFormattingDom(
+  range: Range,
+  containerOrRoot?: HTMLElement | null
+): boolean {
+  if (!range || range.collapsed) return false;
+
+  try {
+    const contents = range.extractContents();
+
+    const cleanNode = (node: any) => {
+      if (!node) return;
+      if (node.nodeType === 1 || node.tagName) {
+        node.removeAttribute?.("style");
+        node.removeAttribute?.("data-xite-user-color");
+        node.removeAttribute?.("data-xite-heading-tag");
+      }
+      const children = node.children || node.childNodes;
+      if (children) {
+        for (const child of Array.from(children)) {
+          cleanNode(child);
+        }
+      }
+    };
+
+    cleanNode(contents);
+    range.insertNode(contents);
+
+    if (containerOrRoot && typeof containerOrRoot.normalize === "function") {
+      containerOrRoot.normalize();
+    }
+    return true;
+  } catch (err) {
+    console.error("[clearRangeFormattingDom] Failed to clear range formatting:", err);
+    return false;
+  }
+}
+
 /**
  * Replaces an image element (or container) with an HTML5 Video element in the DOM.
  */

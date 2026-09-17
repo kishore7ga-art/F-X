@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { SnapGuide, DistanceBadge } from "@/stores/useVisualCanvasStore";
-import type { HeadingLevel } from "@/lib/editor/element-resolver";
-import { changeHeadingTagDom, applyRangeHeadingTagDom, isPartialTextSelection } from "@/lib/editor/element-resolver";
+import {
+  changeHeadingTagDom,
+  applyRangeHeadingTagDom,
+  applyRangeInlineStyleDom,
+  clearRangeFormattingDom,
+  isPartialTextSelection,
+  type HeadingLevel,
+} from "@/lib/editor/element-resolver";
 import { recomposeSectionCode } from "@/lib/section-runtime";
 import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 
@@ -1081,7 +1087,7 @@ export function useCanvaInteractions({
   }, [isEditingText, onUpdateSectionCode, showToast, refreshSelectionRect]);
 
   /**
-   * Applies inline text color to currently selected text or sets typing color for next input
+   * Applies text color to selected range or typing cursor position
    */
   const applyTextColor = useCallback((hex: string) => {
     setActiveTextColor(hex);
@@ -1120,33 +1126,13 @@ export function useCanvaInteractions({
     const hasRangeSelection = targetRange !== null && !targetRange.collapsed && targetRange.toString().length > 0;
 
     if (hasRangeSelection && sel && targetRange) {
-      // 1. Specific text is highlighted (multi-color text support):
-      // Only the selected characters / word will receive this color!
-      try {
-        sel.removeAllRanges();
-        sel.addRange(targetRange);
-      } catch {}
-
-      try {
-        document.execCommand("styleWithCSS", false, "true");
-      } catch {}
-      try {
-        document.execCommand("foreColor", false, hex);
-      } catch {}
-
-      // Convert any legacy <font color="..."> elements to modern <span style="color: ...">
-      el.querySelectorAll("font[color]").forEach((font) => {
-        const span = document.createElement("span");
-        span.style.color = font.getAttribute("color") || hex;
-        span.innerHTML = font.innerHTML;
-        font.replaceWith(span);
-      });
-
-      if (sel.rangeCount > 0) {
-        savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+      const span = applyRangeInlineStyleDom(targetRange, { color: hex }, el);
+      if (span && sel) {
+        sel.selectAllChildren(span);
+        savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
       }
     } else {
-      // 2. Caret is collapsed (typing color mode):
+      // Caret is collapsed (typing color mode):
       // Allows user to pick another color and type, printing newly typed characters in that color
       // WITHOUT altering any of the existing text or existing words!
       if (targetRange && sel) {
@@ -1191,7 +1177,7 @@ export function useCanvaInteractions({
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode, findTextEditableElement]);
 
   /**
    * Applies font family to the selected text range or entire active text element
@@ -1233,22 +1219,10 @@ export function useCanvaInteractions({
     const hasRangeSelection = targetRange !== null && !targetRange.collapsed && targetRange.toString().length > 0;
 
     if (hasRangeSelection && sel && targetRange) {
-      try {
-        sel.removeAllRanges();
-        sel.addRange(targetRange);
-      } catch {}
-      try {
-        document.execCommand("styleWithCSS", false, "true");
-        document.execCommand("fontName", false, fontFamily);
-      } catch {}
-      el.querySelectorAll("font[face]").forEach((font) => {
-        const span = document.createElement("span");
-        span.style.fontFamily = font.getAttribute("face") || fontFamily;
-        span.innerHTML = font.innerHTML;
-        font.replaceWith(span);
-      });
-      if (sel.rangeCount > 0) {
-        savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+      const span = applyRangeInlineStyleDom(targetRange, { fontFamily }, el);
+      if (span && sel) {
+        sel.selectAllChildren(span);
+        savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
       }
     } else {
       if (fontFamily) {
@@ -1264,7 +1238,7 @@ export function useCanvaInteractions({
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode, findTextEditableElement]);
 
   /**
    * Applies font size to the selected text range or entire active text element
@@ -1306,19 +1280,11 @@ export function useCanvaInteractions({
     const hasRangeSelection = targetRange !== null && !targetRange.collapsed && targetRange.toString().length > 0;
 
     if (hasRangeSelection && sel && targetRange) {
-      try {
-        sel.removeAllRanges();
-        sel.addRange(targetRange);
-      } catch {}
-      const span = document.createElement("span");
-      span.style.fontSize = fontSize;
-      try {
-        const contents = targetRange.extractContents();
-        span.appendChild(contents);
-        targetRange.insertNode(span);
+      const span = applyRangeInlineStyleDom(targetRange, { fontSize }, el);
+      if (span && sel) {
         sel.selectAllChildren(span);
-        savedRangeRef.current = sel.getRangeAt(0).cloneRange();
-      } catch {}
+        savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+      }
     } else {
       el.style.fontSize = fontSize;
       el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
@@ -1328,7 +1294,7 @@ export function useCanvaInteractions({
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode, findTextEditableElement]);
 
   /**
    * Applies text alignment (left, center, right, justify) to the active text block
@@ -1348,11 +1314,10 @@ export function useCanvaInteractions({
     el.style.textAlign = align;
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode, findTextEditableElement]);
 
   /**
-   * Line height and letter spacing are properties of the block, not of a run
-   * of characters, so they go on the element like alignment does.
+   * Line height and letter spacing can be applied to selected text range or parent block
    */
   const applyTextSpacing = useCallback((prop: "lineHeight" | "letterSpacing", value: string) => {
     if (prop === "lineHeight") setActiveLineHeight(value);
@@ -1367,16 +1332,43 @@ export function useCanvaInteractions({
     }
     if (!el) return;
 
-    el.style[prop] = value;
+    const sel = typeof window !== "undefined" ? window.getSelection() : null;
+    let targetRange: Range | null = null;
+    if (sel && sel.rangeCount > 0) {
+      const r = sel.getRangeAt(0);
+      if (el.contains(r.commonAncestorContainer)) {
+        targetRange = r;
+      }
+    }
+    if ((!targetRange || targetRange.collapsed) && savedRangeRef.current && el.contains(savedRangeRef.current.commonAncestorContainer)) {
+      targetRange = savedRangeRef.current;
+    }
+
+    const hasRangeSelection = targetRange !== null && !targetRange.collapsed && targetRange.toString().length > 0;
+    if (hasRangeSelection && sel && targetRange) {
+      const span = applyRangeInlineStyleDom(targetRange, { [prop]: value }, el);
+      if (span && sel) {
+        sel.selectAllChildren(span);
+        savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+      }
+    } else {
+      el.style[prop] = value;
+    }
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode, findTextEditableElement]);
 
   /**
    * Applies rich text formatting commands (bold, italic, underline, removeFormat)
    */
   const applyTextFormat = useCallback((command: "bold" | "italic" | "underline" | "removeFormat") => {
-    const el = activeEditingElemRef.current;
+    let el = activeEditingElemRef.current;
+    if (!el && selectedElement?.element) {
+      const textTarget = findTextEditableElement(selectedElement.element);
+      if (textTarget) {
+        el = textTarget;
+      }
+    }
     if (!el) return;
     el.focus();
 
@@ -1403,15 +1395,39 @@ export function useCanvaInteractions({
     const hasRangeSelection = targetRange !== null && !targetRange.collapsed && targetRange.toString().length > 0;
 
     if (hasRangeSelection && sel && targetRange) {
-      try {
-        sel.removeAllRanges();
-        sel.addRange(targetRange);
-      } catch {}
-      try {
-        document.execCommand(command, false);
-      } catch {}
-      if (sel.rangeCount > 0) {
-        savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+      if (command === "bold") {
+        const anchorEl = (targetRange.startContainer.nodeType === 1 ? targetRange.startContainer : targetRange.startContainer.parentElement) as HTMLElement | null;
+        const currentWeight = anchorEl ? window.getComputedStyle(anchorEl).fontWeight : window.getComputedStyle(el).fontWeight;
+        const isBold = currentWeight === "bold" || parseInt(currentWeight, 10) >= 700;
+        const nextWeight = isBold ? "normal" : "bold";
+        const span = applyRangeInlineStyleDom(targetRange, { fontWeight: nextWeight }, el);
+        if (span && sel) {
+          sel.selectAllChildren(span);
+          savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+        }
+      } else if (command === "italic") {
+        const anchorEl = (targetRange.startContainer.nodeType === 1 ? targetRange.startContainer : targetRange.startContainer.parentElement) as HTMLElement | null;
+        const currentStyle = anchorEl ? window.getComputedStyle(anchorEl).fontStyle : window.getComputedStyle(el).fontStyle;
+        const nextStyle = currentStyle === "italic" ? "normal" : "italic";
+        const span = applyRangeInlineStyleDom(targetRange, { fontStyle: nextStyle }, el);
+        if (span && sel) {
+          sel.selectAllChildren(span);
+          savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+        }
+      } else if (command === "underline") {
+        const anchorEl = (targetRange.startContainer.nodeType === 1 ? targetRange.startContainer : targetRange.startContainer.parentElement) as HTMLElement | null;
+        const currentDec = anchorEl ? window.getComputedStyle(anchorEl).textDecoration : window.getComputedStyle(el).textDecoration;
+        const nextDec = currentDec.includes("underline") ? "none" : "underline";
+        const span = applyRangeInlineStyleDom(targetRange, { textDecoration: nextDec }, el);
+        if (span && sel) {
+          sel.selectAllChildren(span);
+          savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+        }
+      } else if (command === "removeFormat") {
+        clearRangeFormattingDom(targetRange, el);
+        if (sel && sel.rangeCount > 0) {
+          savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
       }
     } else {
       if (command === "bold") {
@@ -1439,6 +1455,7 @@ export function useCanvaInteractions({
       } else if (command === "removeFormat") {
         const clearStyles = (target: HTMLElement) => {
           target.removeAttribute("data-xite-user-color");
+          target.removeAttribute("data-xite-heading-tag");
           target.style.fontWeight = "";
           target.style.fontStyle = "";
           target.style.textDecoration = "";
@@ -1452,15 +1469,12 @@ export function useCanvaInteractions({
         };
         clearStyles(el);
         el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach(clearStyles);
-        try {
-          document.execCommand("removeFormat", false);
-        } catch {}
       }
     }
 
     el.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode, findTextEditableElement]);
 
   /**
    * Mutates the semantic tag (h1-h6, p) of the active heading/text live on the canvas

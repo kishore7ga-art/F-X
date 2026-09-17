@@ -5,6 +5,8 @@ import {
   applyCardLayoutDom,
   applyElementProps,
   applyRangeHeadingTagDom,
+  applyRangeInlineStyleDom,
+  clearRangeFormattingDom,
   transformSelectedRangeToTag,
   isPartialTextSelection,
   buildYouTubeEmbedUrl,
@@ -203,6 +205,7 @@ describe("findImageElement & media resolution", () => {
   function createMockNode(tag: string, attrs: Record<string, string> = {}, text = ""): any {
     const nodeAttrs = { ...attrs };
     const node: any = {
+      nodeType: 1,
       tagName: tag.toUpperCase(),
       className: nodeAttrs.class || "",
       classList: {
@@ -945,6 +948,130 @@ describe("findImageElement & media resolution", () => {
       assert.equal(matchPaddingOption("16px"), "16px");
       assert.equal(matchPaddingOption("32px"), "32px");
       assert.equal(matchPaddingOption("48px"), "32px");
+    });
+
+    it("applies inline style to a single selected character without escaping parent container", () => {
+      const container = createMockNode("div", { class: "editor-block", id: "block-test-char" });
+      const p = container.appendChild(createMockNode("p", {}, "Hello World"));
+
+      const charW = createMockNode("span", {}, "W");
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: p,
+        extractContents() {
+          return charW;
+        },
+        insertNode(node: any) {
+          p.appendChild(node);
+        },
+      } as any;
+
+      const span = applyRangeInlineStyleDom(mockRange, { color: "#ec4899", fontSize: "32px", fontWeight: "bold" }, container);
+      assert.ok(span);
+      assert.equal(span.tagName, "SPAN");
+      assert.equal(span.style.color, "#ec4899");
+      assert.equal((span.style as any)["font-size"], "32px");
+      assert.equal((span.style as any)["font-weight"], "bold");
+      assert.equal(span.getAttribute("data-xite-user-color"), "true");
+
+      // Verify hard container boundary is strictly maintained
+      assert.equal(container.children.length, 1);
+      assert.equal(container.children[0], p);
+      assert.equal(p.parentElement, container);
+    });
+
+    it("applies all inline formatting options (fontFamily, fontStyle, textDecoration, textTransform, lineHeight, letterSpacing)", () => {
+      const container = createMockNode("div", { class: "editor-container" });
+      const h2 = container.appendChild(createMockNode("h2", {}, "Special Offer Today"));
+
+      const extracted = createMockNode("span", {}, "Offer");
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: h2,
+        extractContents() {
+          return extracted;
+        },
+        insertNode(node: any) {
+          h2.appendChild(node);
+        },
+      } as any;
+
+      const span = applyRangeInlineStyleDom(
+        mockRange,
+        {
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontStyle: "italic",
+          textDecoration: "underline",
+          textTransform: "uppercase",
+          lineHeight: "1.5",
+          letterSpacing: "0.1em",
+        },
+        container
+      );
+
+      assert.ok(span);
+      assert.equal(span.tagName, "SPAN");
+      assert.equal((span.style as any)["font-family"], "'Plus Jakarta Sans', sans-serif");
+      assert.equal((span.style as any)["font-style"], "italic");
+      assert.equal((span.style as any)["text-decoration"], "underline");
+      assert.equal((span.style as any)["text-transform"], "uppercase");
+      assert.equal((span.style as any)["line-height"], "1.5");
+      assert.equal((span.style as any)["letter-spacing"], "0.1em");
+      assert.equal(span.style.display, "inline-block");
+
+      // Verify container hierarchy
+      assert.equal(h2.parentElement, container);
+    });
+
+    it("rejects out-of-boundary range or collapsed range for applyRangeInlineStyleDom", () => {
+      const containerA = createMockNode("div", { class: "container-a" });
+      const containerB = createMockNode("div", { class: "container-b" });
+      const pInB = containerB.appendChild(createMockNode("p", {}, "Inside B"));
+
+      const outOfBoundsRange = {
+        collapsed: false,
+        commonAncestorContainer: pInB,
+        extractContents() {
+          return createMockNode("span", {}, "Inside");
+        },
+        insertNode() {},
+      } as any;
+
+      assert.equal(applyRangeInlineStyleDom(outOfBoundsRange, { color: "#ff0000" }, containerA), null);
+
+      const collapsedRange = {
+        collapsed: true,
+        commonAncestorContainer: pInB,
+      } as any;
+
+      assert.equal(applyRangeInlineStyleDom(collapsedRange, { color: "#ff0000" }, containerB), null);
+    });
+
+    it("clears range formatting cleanly with clearRangeFormattingDom", () => {
+      const container = createMockNode("div", { class: "editor-block" });
+      const p = container.appendChild(createMockNode("p", {}, "Formatted text"));
+
+      const formattedSpan = createMockNode("span", {
+        class: "custom-class",
+        style: "color: red; font-size: 24px;",
+        "data-xite-user-color": "true",
+      }, "Formatted");
+
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: p,
+        extractContents() {
+          return formattedSpan;
+        },
+        insertNode(node: any) {
+          p.appendChild(node);
+        },
+      } as any;
+
+      const success = clearRangeFormattingDom(mockRange, container);
+      assert.equal(success, true);
+      assert.equal(formattedSpan.hasAttribute("data-xite-user-color"), false);
+      assert.equal(formattedSpan.hasAttribute("style"), false);
     });
   });
 });

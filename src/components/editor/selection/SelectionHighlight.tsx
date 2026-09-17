@@ -47,6 +47,8 @@ import { hexFromValue } from "@/lib/sections/section-edit";
 import {
   changeHeadingTagDom,
   applyRangeHeadingTagDom,
+  applyRangeInlineStyleDom,
+  clearRangeFormattingDom,
   isPartialTextSelection,
   TAG_DEFAULT_STYLES,
   extractYouTubeVideoId,
@@ -558,63 +560,19 @@ export function SelectionHighlight({
     if (!el) return;
 
     const targetRange = getActiveTextRange(el);
-    const sel = window.getSelection();
-
     if (targetRange) {
-      // 1. Partial text selection is highlighted:
-      // Change color ONLY for the highlighted text!
-      if (sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(targetRange);
-        } catch {}
+      const span = applyRangeInlineStyleDom(targetRange, { color: hex }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
       }
-
-      let applied = false;
-      try {
-        if (!el.isContentEditable) el.contentEditable = "true";
-        document.execCommand("styleWithCSS", false, "true");
-        applied = document.execCommand("foreColor", false, hex);
-      } catch {}
-
-      // Convert any legacy <font color="..."> elements to modern <span style="color: ...">
-      el.querySelectorAll("font[color]").forEach((font) => {
-        const span = document.createElement("span");
-        span.style.color = font.getAttribute("color") || hex;
-        span.setAttribute("data-xite-user-color", "true");
-        span.innerHTML = font.innerHTML;
-        font.replaceWith(span);
-        applied = true;
-      });
-
-      if (!applied && targetRange) {
-        try {
-          const span = document.createElement("span");
-          span.style.color = hex;
-          span.setAttribute("data-xite-user-color", "true");
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
-            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
-          }
-        } catch {}
-      } else if (sel && sel.rangeCount > 0) {
-        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
-      }
-
-      el.querySelectorAll<HTMLElement>("span[style*='color']").forEach((s) => {
-        s.setAttribute("data-xite-user-color", "true");
-      });
-
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
       return;
     }
 
-    // 2. No partial text is highlighted:
-    // Change color for the entire element and its children!
     el.setAttribute("data-xite-user-color", "true");
     el.style.setProperty("color", hex, "important");
     el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
@@ -637,26 +595,14 @@ export function SelectionHighlight({
     if (!el) return;
 
     const targetRange = getActiveTextRange(el);
-    const sel = window.getSelection();
-
     if (targetRange) {
-      if (sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(targetRange);
-        } catch {}
-      }
-      const span = document.createElement("span");
-      span.style.fontSize = sizeStr;
-      try {
-        const contents = targetRange.extractContents();
-        span.appendChild(contents);
-        targetRange.insertNode(span);
-        if (sel) {
-          sel.selectAllChildren(span);
+      const span = applyRangeInlineStyleDom(targetRange, { fontSize: sizeStr }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
           savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
         }
-      } catch {}
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
       return;
@@ -679,26 +625,14 @@ export function SelectionHighlight({
     if (!el) return;
 
     const targetRange = getActiveTextRange(el);
-    const sel = window.getSelection();
-
     if (targetRange && sizeStr) {
-      if (sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(targetRange);
-        } catch {}
-      }
-      const span = document.createElement("span");
-      span.style.fontSize = sizeStr;
-      try {
-        const contents = targetRange.extractContents();
-        span.appendChild(contents);
-        targetRange.insertNode(span);
-        if (sel) {
-          sel.selectAllChildren(span);
+      const span = applyRangeInlineStyleDom(targetRange, { fontSize: sizeStr }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
           savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
         }
-      } catch {}
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
       setShowSizePopover(false);
@@ -728,42 +662,13 @@ export function SelectionHighlight({
     if (!el) return;
 
     const targetRange = getActiveTextRange(el);
-    const sel = window.getSelection();
-
     if (targetRange && font) {
-      if (sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(targetRange);
-        } catch {}
-      }
-      let applied = false;
-      try {
-        if (!el.isContentEditable) el.contentEditable = "true";
-        document.execCommand("styleWithCSS", false, "true");
-        applied = document.execCommand("fontName", false, font);
-      } catch {}
-      el.querySelectorAll("font[face]").forEach((fontEl) => {
-        const span = document.createElement("span");
-        span.style.fontFamily = fontEl.getAttribute("face") || font;
-        span.innerHTML = fontEl.innerHTML;
-        fontEl.replaceWith(span);
-        applied = true;
-      });
-      if (!applied && targetRange) {
-        try {
-          const span = document.createElement("span");
-          span.style.fontFamily = font;
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
-            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
-          }
-        } catch {}
-      } else if (sel && sel.rangeCount > 0) {
-        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      const span = applyRangeInlineStyleDom(targetRange, { fontFamily: font }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
@@ -794,34 +699,14 @@ export function SelectionHighlight({
     if (!el) return;
 
     const targetRange = getActiveTextRange(el);
-    const sel = window.getSelection();
-
     if (targetRange) {
-      if (sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(targetRange);
-        } catch {}
-      }
-      let applied = false;
-      try {
-        if (!el.isContentEditable) el.contentEditable = "true";
-        applied = document.execCommand("bold", false);
-      } catch {}
-      if (!applied && targetRange) {
-        try {
-          const span = document.createElement("span");
-          span.style.fontWeight = isBold ? "normal" : "bold";
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
-            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
-          }
-        } catch {}
-      } else if (sel && sel.rangeCount > 0) {
-        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      const nextWeight = isBold ? "normal" : "bold";
+      const span = applyRangeInlineStyleDom(targetRange, { fontWeight: nextWeight }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
@@ -846,34 +731,14 @@ export function SelectionHighlight({
     if (!el) return;
 
     const targetRange = getActiveTextRange(el);
-    const sel = window.getSelection();
-
     if (targetRange) {
-      if (sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(targetRange);
-        } catch {}
-      }
-      let applied = false;
-      try {
-        if (!el.isContentEditable) el.contentEditable = "true";
-        applied = document.execCommand("italic", false);
-      } catch {}
-      if (!applied && targetRange) {
-        try {
-          const span = document.createElement("span");
-          span.style.fontStyle = isItalic ? "normal" : "italic";
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
-            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
-          }
-        } catch {}
-      } else if (sel && sel.rangeCount > 0) {
-        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      const nextStyle = isItalic ? "normal" : "italic";
+      const span = applyRangeInlineStyleDom(targetRange, { fontStyle: nextStyle }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
@@ -898,34 +763,14 @@ export function SelectionHighlight({
     if (!el) return;
 
     const targetRange = getActiveTextRange(el);
-    const sel = window.getSelection();
-
     if (targetRange) {
-      if (sel) {
-        try {
-          sel.removeAllRanges();
-          sel.addRange(targetRange);
-        } catch {}
-      }
-      let applied = false;
-      try {
-        if (!el.isContentEditable) el.contentEditable = "true";
-        applied = document.execCommand("underline", false);
-      } catch {}
-      if (!applied && targetRange) {
-        try {
-          const span = document.createElement("span");
-          span.style.textDecoration = isUnderline ? "none" : "underline";
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
-            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
-          }
-        } catch {}
-      } else if (sel && sel.rangeCount > 0) {
-        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      const nextDec = isUnderline ? "none" : "underline";
+      const span = applyRangeInlineStyleDom(targetRange, { textDecoration: nextDec }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
@@ -949,19 +794,8 @@ export function SelectionHighlight({
     const el = resolveElement();
     if (el) {
       const targetRange = getActiveTextRange(el);
-      const sel = window.getSelection();
-
       if (targetRange) {
-        if (sel) {
-          try {
-            sel.removeAllRanges();
-            sel.addRange(targetRange);
-          } catch {}
-        }
-        try {
-          if (!el.isContentEditable) el.contentEditable = "true";
-          document.execCommand("removeFormat", false);
-        } catch {}
+        clearRangeFormattingDom(targetRange, el);
         el.dispatchEvent(new Event("input", { bubbles: true }));
         onCommitDom?.(el);
         return;
@@ -1009,26 +843,14 @@ export function SelectionHighlight({
     const nextCase = order[nextIdx] || "none";
     if (el) {
       const targetRange = getActiveTextRange(el);
-      const sel = window.getSelection();
-
       if (targetRange) {
-        if (sel) {
-          try {
-            sel.removeAllRanges();
-            sel.addRange(targetRange);
-          } catch {}
-        }
-        const span = document.createElement("span");
-        span.style.textTransform = nextCase === "none" ? "none" : nextCase;
-        try {
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
+        const span = applyRangeInlineStyleDom(targetRange, { textTransform: nextCase === "none" ? "none" : nextCase }, el);
+        if (span) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
             savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
           }
-        } catch {}
+        }
         el.dispatchEvent(new Event("input", { bubbles: true }));
         onCommitDom?.(el);
         return;
@@ -1098,27 +920,14 @@ export function SelectionHighlight({
     const el = resolveElement();
     if (el) {
       const targetRange = getActiveTextRange(el);
-      const sel = window.getSelection();
-
       if (targetRange && val) {
-        if (sel) {
-          try {
-            sel.removeAllRanges();
-            sel.addRange(targetRange);
-          } catch {}
-        }
-        const span = document.createElement("span");
-        span.style.lineHeight = val;
-        span.style.display = "inline-block";
-        try {
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
+        const span = applyRangeInlineStyleDom(targetRange, { lineHeight: val }, el);
+        if (span) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
             savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
           }
-        } catch {}
+        }
         el.dispatchEvent(new Event("input", { bubbles: true }));
         onCommitDom?.(el);
         return;
@@ -1139,26 +948,14 @@ export function SelectionHighlight({
     const el = resolveElement();
     if (el) {
       const targetRange = getActiveTextRange(el);
-      const sel = window.getSelection();
-
       if (targetRange && val) {
-        if (sel) {
-          try {
-            sel.removeAllRanges();
-            sel.addRange(targetRange);
-          } catch {}
-        }
-        const span = document.createElement("span");
-        span.style.letterSpacing = val;
-        try {
-          const contents = targetRange.extractContents();
-          span.appendChild(contents);
-          targetRange.insertNode(span);
-          if (sel) {
-            sel.selectAllChildren(span);
+        const span = applyRangeInlineStyleDom(targetRange, { letterSpacing: val }, el);
+        if (span) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
             savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
           }
-        } catch {}
+        }
         el.dispatchEvent(new Event("input", { bubbles: true }));
         onCommitDom?.(el);
         return;
