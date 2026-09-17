@@ -493,7 +493,7 @@ export function ContextMenu({
               </div>
               <div className="grid grid-cols-4 gap-1">
                 {[
-                  { label: "None", val: "0px" },
+                  { label: "Auto", val: "0px" },
                   { label: "Small", val: "8px" },
                   { label: "Normal", val: "16px" },
                   { label: "Max", val: "9999px" },

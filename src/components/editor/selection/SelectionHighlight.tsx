@@ -171,21 +171,21 @@ const LETTER_SPACINGS = [
 ];
 
 export const RADIUS_OPTIONS = [
-  { label: "None", value: "0px" },
+  { label: "Auto", value: "0px" },
   { label: "Small", value: "8px" },
   { label: "Normal", value: "16px" },
   { label: "Max", value: "9999px" },
 ] as const;
 
 export const BUTTON_RADIUS_OPTIONS = [
-  { label: "None", value: "0px" },
+  { label: "Auto", value: "0px" },
   { label: "Small", value: "6px" },
   { label: "Normal", value: "12px" },
   { label: "Max", value: "50px" },
 ] as const;
 
 export const PADDING_OPTIONS = [
-  { label: "None", value: "0px" },
+  { label: "Auto", value: "0px" },
   { label: "Small", value: "8px" },
   { label: "Normal", value: "16px" },
   { label: "Max", value: "32px" },
@@ -200,7 +200,7 @@ export const BUTTON_SIZES: ReadonlyArray<{ key: ButtonSize; label: string }> = [
 export function matchRadiusOption(val: string | null | undefined, isButton = false): string {
   if (!val) return "0px";
   const str = String(val).trim().toLowerCase();
-  if (str === "0" || str === "0px" || str === "none") return "0px";
+  if (str === "0" || str === "0px" || str === "none" || str === "auto") return "0px";
   if (str.includes("full") || str.includes("9999") || str.includes("pill")) return isButton ? "50px" : "9999px";
   const num = parseInt(str, 10);
   if (isNaN(num) || num <= 0) return "0px";
@@ -218,7 +218,7 @@ export function matchPaddingOption(val: string | null | undefined): string {
   if (!val) return "0px";
   const str = String(val).trim().toLowerCase();
   const num = parseInt(str, 10);
-  if (isNaN(num) || num <= 0 || str === "0" || str === "0px" || str === "none") return "0px";
+  if (isNaN(num) || num <= 0 || str === "0" || str === "0px" || str === "none" || str === "auto") return "0px";
   if (num >= 24) return "32px";
   if (num >= 12) return "16px";
   return "8px";

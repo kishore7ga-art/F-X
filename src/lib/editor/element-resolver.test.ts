@@ -710,11 +710,11 @@ describe("findImageElement & media resolution", () => {
       assert.equal(p.style["letter-spacing"], "-0.01em");
     });
 
-    it("provides clean Small, Normal, Max segmented options for radius, padding, and button sizes", () => {
-      // Radius options: None, Small, Normal, Max
+    it("provides clean Auto, Small, Normal, Max segmented options for radius, padding, and button sizes", () => {
+      // Radius options: Auto, Small, Normal, Max
       assert.deepEqual(
         RADIUS_OPTIONS.map((r) => r.label),
-        ["None", "Small", "Normal", "Max"]
+        ["Auto", "Small", "Normal", "Max"]
       );
       assert.deepEqual(
         RADIUS_OPTIONS.map((r) => r.value),
@@ -724,17 +724,17 @@ describe("findImageElement & media resolution", () => {
       // Button Radius options
       assert.deepEqual(
         BUTTON_RADIUS_OPTIONS.map((r) => r.label),
-        ["None", "Small", "Normal", "Max"]
+        ["Auto", "Small", "Normal", "Max"]
       );
       assert.deepEqual(
         BUTTON_RADIUS_OPTIONS.map((r) => r.value),
         ["0px", "6px", "12px", "50px"]
       );
 
-      // Padding options: None, Small, Normal, Max
+      // Padding options: Auto, Small, Normal, Max
       assert.deepEqual(
         PADDING_OPTIONS.map((p) => p.label),
-        ["None", "Small", "Normal", "Max"]
+        ["Auto", "Small", "Normal", "Max"]
       );
 
       // Button sizes: Small, Normal, Max
