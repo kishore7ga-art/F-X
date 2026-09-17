@@ -627,34 +627,60 @@ describe("findImageElement & media resolution", () => {
       assert.equal(empty.label, "Default Font");
     });
 
-    it("swaps heading and paragraph semantic tags via changeHeadingTagDom", () => {
-      const section = createMockNode("section");
-      const h5 = section.appendChild(
-        createMockNode("h5", { class: "font-bold text-slate-800", id: "hero-title" }, "Hero Heading")
+    it("swaps heading and paragraph semantic tags via changeHeadingTagDom while strictly preserving parent DIV container", () => {
+      const parentDiv = createMockNode("div", { class: "editor-block", id: "block-1", "data-editor-block": "true" });
+      const h1 = parentDiv.appendChild(
+        createMockNode("h1", { class: "font-bold text-slate-800 text-3xl", id: "hero-title" }, "Welcome to Xite")
       );
-      const span = h5.appendChild(createMockNode("span", { class: "text-pink-500" }, "Highlight"));
 
-      // Change H5 to H2
-      const h2 = changeHeadingTagDom(h5, "h2");
-      assert.equal(h2.tagName, "H2");
-      assert.equal(h2.getAttribute("class"), "font-bold text-slate-800");
-      assert.equal(h2.getAttribute("id"), "hero-title");
-      assert.equal(h2.children.length, 1);
-      assert.equal(h2.children[0], span);
-      assert.equal(section.children[0], h2);
-
-      // Change H2 to P
-      const p = changeHeadingTagDom(h2, "p" as any);
+      // 1. Change H1 to P inside parent DIV: parentDiv must remain intact
+      const p = changeHeadingTagDom(h1, "p" as any);
       assert.equal(p.tagName, "P");
-      assert.equal(p.getAttribute("class"), "font-bold text-slate-800");
+      assert.equal(parentDiv.children.length, 1);
+      assert.equal(parentDiv.children[0], p);
+      assert.equal(p.parentElement, parentDiv);
+      assert.equal(parentDiv.getAttribute("class"), "editor-block");
+      assert.equal(parentDiv.getAttribute("id"), "block-1");
+      assert.equal(p.getAttribute("id"), "hero-title");
 
-      // Same tag returns element unchanged
-      const same = changeHeadingTagDom(p, "p" as any);
-      assert.equal(same, p);
+      // 2. Change P to H1 inside parent DIV: stays inside parentDiv
+      const backToH1 = changeHeadingTagDom(p, "h1");
+      assert.equal(backToH1.tagName, "H1");
+      assert.equal(parentDiv.children.length, 1);
+      assert.equal(parentDiv.children[0], backToH1);
+      assert.equal(backToH1.parentElement, parentDiv);
+      assert.equal(parentDiv.getAttribute("class"), "editor-block");
+
+      // 3. Change H1 to H3 inside parent DIV: stays inside parentDiv
+      const h3 = changeHeadingTagDom(backToH1, "h3");
+      assert.equal(h3.tagName, "H3");
+      assert.equal(parentDiv.children[0], h3);
+      assert.equal(h3.parentElement, parentDiv);
+
+      // 4. Calling changeHeadingTagDom on the container DIV directly preserves the container DIV and updates the inner heading
+      const pFromDiv = changeHeadingTagDom(parentDiv, "p" as any);
+      assert.equal(pFromDiv.tagName, "P");
+      assert.equal(parentDiv.children.length, 1);
+      assert.equal(parentDiv.children[0], pFromDiv);
+      assert.equal(parentDiv.tagName, "DIV");
+      assert.equal(parentDiv.getAttribute("class"), "editor-block");
+
+      // 5. Calling changeHeadingTagDom on a bare-text container DIV wraps the text inside the DIV without destroying the DIV
+      const bareDiv = createMockNode("div", { class: "editor-block" });
+      const bareP = changeHeadingTagDom(bareDiv, "p" as any);
+      assert.equal(bareP.tagName, "P");
+      assert.equal(bareDiv.children.length, 1);
+      assert.equal(bareDiv.children[0], bareP);
+      assert.equal(bareDiv.tagName, "DIV");
+
+      // 6. Same tag returns element unchanged
+      const same = changeHeadingTagDom(pFromDiv, "p" as any);
+      assert.equal(same, pFromDiv);
     });
 
     it("detects partial vs full text selection correctly via isPartialTextSelection", () => {
       const p = {
+        tagName: "P",
         textContent: "Welcome to my website",
       } as any;
 
@@ -670,6 +696,12 @@ describe("findImageElement & media resolution", () => {
       } as any;
       assert.equal(isPartialTextSelection(charRange, p), true);
 
+      const fullRange = {
+        collapsed: false,
+        toString: () => "Welcome to my website",
+      } as any;
+      assert.equal(isPartialTextSelection(fullRange, p), false);
+
       const collapsedRange = {
         collapsed: true,
         toString: () => "",
@@ -677,6 +709,28 @@ describe("findImageElement & media resolution", () => {
       assert.equal(isPartialTextSelection(collapsedRange, p), false);
 
       assert.equal(isPartialTextSelection(null, p), false);
+    });
+
+    it("applies range heading tag within parent container boundary", () => {
+      const parentDiv = createMockNode("div", { class: "editor-block" });
+      const h1 = parentDiv.appendChild(createMockNode("h1", {}, "Welcome to my website"));
+
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: h1,
+        extractContents() {
+          return createMockNode("span", {}, "website");
+        },
+        insertNode(node: any) {
+          h1.appendChild(node);
+        },
+      } as any;
+
+      const tagEl = applyRangeHeadingTagDom(mockRange, h1, "p");
+      assert.ok(tagEl);
+      assert.equal(tagEl.tagName, "P");
+      assert.equal(tagEl.getAttribute("data-xite-heading-tag"), "p");
+      assert.equal(h1.parentElement, parentDiv);
     });
 
     it("applies all text formatting toolbar properties (bold, italic, underline, font-size, color, align, line-height, letter-spacing)", () => {

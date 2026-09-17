@@ -1825,11 +1825,42 @@ export const TAG_DEFAULT_STYLES: Record<
 
 const TW_FONT_SIZE_REGEX = /\b(text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)|(sm|md|lg|xl|2xl):text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl))\b/g;
 
+const STRUCTURAL_CONTAINER_TAGS = new Set([
+  "DIV", "SECTION", "ARTICLE", "HEADER", "FOOTER", "NAV", "ASIDE", "MAIN", "FORM", "BODY", "HTML"
+]);
+
 export function changeHeadingTagDom(element: HTMLElement, newTag: HeadingLevel | "p" | string): HTMLElement {
   const normalizedTag = newTag.toLowerCase();
-  const currentTag = element.tagName.toLowerCase();
   const styleDefaults = TAG_DEFAULT_STYLES[normalizedTag as HeadingLevel | "p"] || TAG_DEFAULT_STYLES.h2;
 
+  // 1. Guard against structural container replacement:
+  // Structural containers (DIV, SECTION, etc.) are parent boundaries that MUST NOT be replaced by H1/P.
+  if (STRUCTURAL_CONTAINER_TAGS.has(element.tagName.toUpperCase())) {
+    // If the container has an inner heading, paragraph, or text element, format that inner element
+    const innerTextEl =
+      typeof element.querySelector === "function"
+        ? element.querySelector<HTMLElement>("h1, h2, h3, h4, h5, h6, p, blockquote, span")
+        : null;
+    if (innerTextEl && innerTextEl !== element) {
+      return changeHeadingTagDom(innerTextEl, newTag);
+    }
+
+    // If the container has no heading child, wrap or place its text content in the new tag INSIDE the container
+    const newEl = document.createElement(normalizedTag);
+    while (element.firstChild) {
+      newEl.appendChild(element.firstChild);
+    }
+    if (styleDefaults.twClasses && styleDefaults.twClasses.length > 0) {
+      newEl.className = styleDefaults.twClasses.join(" ");
+    }
+    newEl.style.setProperty("font-size", styleDefaults.fontSize, "important");
+    newEl.style.setProperty("line-height", styleDefaults.lineHeight, "important");
+    element.appendChild(newEl);
+    return newEl;
+  }
+
+  // 2. Element is a heading/paragraph/text element
+  const currentTag = element.tagName.toLowerCase();
   let targetElement = element;
   if (currentTag !== normalizedTag) {
     const newEl = document.createElement(normalizedTag);
@@ -1873,7 +1904,12 @@ export function isPartialTextSelection(range: Range | null, element: HTMLElement
   const rangeText = range.toString().trim();
   if (rangeText.length === 0) return false;
 
-  const elementText = (element.textContent || "").trim();
+  const targetTextEl =
+    /^(div|section|article|header|footer|nav|aside|main|form)$/i.test(element.tagName) && typeof element.querySelector === "function"
+      ? element.querySelector<HTMLElement>("h1, h2, h3, h4, h5, h6, p, blockquote, span") || element
+      : element;
+
+  const elementText = (targetTextEl.textContent || "").trim();
   if (rangeText !== elementText) {
     return true;
   }
@@ -1881,7 +1917,7 @@ export function isPartialTextSelection(range: Range | null, element: HTMLElement
   try {
     if (typeof document !== "undefined" && typeof Range !== "undefined") {
       const fullRange = document.createRange();
-      fullRange.selectNodeContents(element);
+      fullRange.selectNodeContents(targetTextEl);
       const isFull =
         range.compareBoundaryPoints(Range.START_TO_START, fullRange) <= 0 &&
         range.compareBoundaryPoints(Range.END_TO_END, fullRange) >= 0;
@@ -1895,7 +1931,7 @@ export function isPartialTextSelection(range: Range | null, element: HTMLElement
 /**
  * Applies a heading level (h1-h6) or paragraph (p) tag to ONLY the specified Range within an element.
  * Creates an inline-displayed semantic tag with corresponding typographic styling,
- * preserving surrounding text and existing nested markup.
+ * preserving surrounding text, existing nested markup, and parent container hierarchy.
  */
 export function applyRangeHeadingTagDom(
   range: Range,
@@ -1906,26 +1942,90 @@ export function applyRangeHeadingTagDom(
   const normalizedTag = newTag.toLowerCase();
   const styleDefaults = TAG_DEFAULT_STYLES[normalizedTag as HeadingLevel | "p"] || TAG_DEFAULT_STYLES.h2;
 
-  const tagEl = document.createElement(normalizedTag);
+  // 1. Detect closest valid container boundary (hard boundary)
+  const containerBoundary =
+    (typeof containerElement.closest === "function"
+      ? containerElement.closest<HTMLElement>(
+          ".editor-block, [data-editor-block], .section-wrapper-container, [data-section-id], .xite-site-canvas"
+        )
+      : null) || containerElement.parentElement || containerElement;
+
+  // 2. Validate Range is strictly within the container boundary
+  if (
+    typeof containerBoundary.contains === "function" &&
+    !containerBoundary.contains(range.commonAncestorContainer) &&
+    !range.commonAncestorContainer.contains(containerBoundary)
+  ) {
+    return null;
+  }
+
+  // 3. Find the target formatting element enclosing the range, or fallback to containerElement
+  let targetFormattingEl: HTMLElement = containerElement;
+  let currentAncestor: any = range.commonAncestorContainer;
+  while (currentAncestor && currentAncestor !== containerBoundary) {
+    if (
+      currentAncestor.tagName &&
+      /^(h[1-6]|p|blockquote|span|strong|em|b|i|u|s|label)$/i.test(currentAncestor.tagName)
+    ) {
+      targetFormattingEl = currentAncestor;
+      break;
+    }
+    currentAncestor = currentAncestor.parentNode || currentAncestor.parentElement;
+  }
+
+  // 4. Create the new semantic tag element with inline layout
+  const doc =
+    (typeof document !== "undefined" ? document : (containerElement as any).ownerDocument) || {
+      createElement(tag: string) {
+        const el: any = {
+          tagName: tag.toUpperCase(),
+          className: "",
+          style: {
+            setProperty(k: string, v: string) {
+              (this as any)[k] = v;
+            },
+          },
+          setAttribute(k: string, v: string) {
+            (this as any)[k] = v;
+          },
+          getAttribute(k: string) {
+            return (this as any)[k];
+          },
+          children: [],
+          appendChild(c: any) {
+            this.children.push(c);
+            return c;
+          },
+        };
+        return el;
+      },
+    };
+
+  const tagEl = doc.createElement(normalizedTag);
   if (styleDefaults.twClasses && styleDefaults.twClasses.length > 0) {
     tagEl.className = styleDefaults.twClasses.join(" ");
   }
-  tagEl.style.setProperty("display", "inline", "important");
-  tagEl.style.setProperty("font-size", styleDefaults.fontSize, "important");
-  tagEl.style.setProperty("font-weight", styleDefaults.fontWeight, "important");
-  tagEl.style.setProperty("line-height", styleDefaults.lineHeight, "important");
-  tagEl.setAttribute("data-xite-heading-tag", normalizedTag);
+  if (tagEl.style?.setProperty) {
+    tagEl.style.setProperty("display", "inline", "important");
+    tagEl.style.setProperty("font-size", styleDefaults.fontSize, "important");
+    tagEl.style.setProperty("font-weight", styleDefaults.fontWeight, "important");
+    tagEl.style.setProperty("line-height", styleDefaults.lineHeight, "important");
+  }
+  if (tagEl.setAttribute) {
+    tagEl.setAttribute("data-xite-heading-tag", normalizedTag);
+  }
 
   try {
     const contents = range.extractContents();
 
     // If contents has a single child that is already an inline heading tag, unwrap it to avoid redundant nesting
     if (
-      contents.childNodes.length === 1 &&
-      contents.firstChild instanceof HTMLElement &&
-      /^h[1-6]|p$/i.test(contents.firstChild.tagName)
+      contents.childNodes?.length === 1 &&
+      contents.firstChild &&
+      (contents.firstChild as any).tagName &&
+      /^h[1-6]|p$/i.test((contents.firstChild as any).tagName)
     ) {
-      const child = contents.firstChild as HTMLElement;
+      const child = contents.firstChild as any;
       while (child.firstChild) {
         tagEl.appendChild(child.firstChild);
       }
@@ -1934,11 +2034,15 @@ export function applyRangeHeadingTagDom(
     }
 
     range.insertNode(tagEl);
-    if (typeof containerElement.normalize === "function") {
+
+    // Normalize text nodes in target formatting element / container
+    if (typeof targetFormattingEl.normalize === "function") {
+      targetFormattingEl.normalize();
+    } else if (typeof containerElement.normalize === "function") {
       containerElement.normalize();
     }
 
-    // Restore selection over the new tagEl
+    // 5. Restore selection over the new tagEl
     if (typeof window !== "undefined") {
       const sel = window.getSelection();
       if (sel) {

@@ -1772,8 +1772,11 @@ export function EditorStudio({
         onUpdateProps={elementSelection.updateElementProps}
         onCommitDom={elementSelection.commitDomChange}
         onChangeHeadingLevel={(level) => {
-          inPlaceEditor.changeHeadingTag?.(level);
-          elementSelection.changeHeadingLevel(level);
+          if (inPlaceEditor.isEditingText) {
+            inPlaceEditor.changeHeadingTag?.(level);
+          } else {
+            elementSelection.changeHeadingLevel(level);
+          }
         }}
         onDuplicate={elementSelection.duplicateElement}
         onMoveUp={() => elementSelection.moveElement("up")}
