@@ -62,7 +62,7 @@ export interface ElementToolbarProps {
   dockPosition?: DockPosition;
   onDeviceChange: (device: Device) => void;
   onChange: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
-  onChangeHeadingLevel?: (level: HeadingLevel) => void;
+  onChangeHeadingLevel?: (level: HeadingLevel | "p") => void;
   onSelectAncestor?: (path: string, type: ElementType) => void;
   onReplaceMedia?: (targetType: "image" | "video" | "youtube", initialProps?: Record<string, unknown>) => void;
   onReplacePlus?: (targetType: "image" | "video" | "youtube" | "icon" | "button", initialProps?: Record<string, unknown>) => void;

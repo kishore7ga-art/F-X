@@ -62,7 +62,7 @@ export interface ContextMenuProps {
   onClose: () => void;
   onEdit?: () => void;
   onUpdateProps?: (props: Record<string, unknown>) => void;
-  onChangeHeadingLevel?: (level: HeadingLevel) => void;
+  onChangeHeadingLevel?: (level: HeadingLevel | "p") => void;
   onChangeIcon?: (iconName: string) => void;
   onReplaceMedia?: (targetType: "image" | "video" | "youtube") => void;
   onReplacePlus?: (targetType: "image" | "video" | "youtube" | "icon" | "button") => void;
@@ -412,9 +412,9 @@ export function ContextMenu({
         {activeSubmenu === "heading-level" && onChangeHeadingLevel && (
           <div className="space-y-1">
             <div className="font-bold text-[10.5px] uppercase tracking-wider text-slate-400 mb-1 px-1">
-              Heading Tag
+              Semantic Tag
             </div>
-            {(["h1", "h2", "h3", "h4", "h5", "h6"] as HeadingLevel[]).map((lvl) => (
+            {(["h1", "h2", "h3", "h4", "h5", "h6", "p"] as (HeadingLevel | "p")[]).map((lvl) => (
               <button
                 key={lvl}
                 type="button"
@@ -424,8 +424,8 @@ export function ContextMenu({
                 }}
                 className="flex w-full items-center justify-between rounded px-2 py-1.5 hover:bg-slate-100 text-left cursor-pointer"
               >
-                <span className="font-mono font-bold uppercase">{lvl}</span>
-                {elementMeta.level === lvl && <Check className="h-3.5 w-3.5 text-indigo-600" />}
+                <span className="font-mono font-bold uppercase">{lvl === "p" ? "P (Paragraph)" : lvl}</span>
+                {((elementMeta.level || elementMeta.tag) === lvl) && <Check className="h-3.5 w-3.5 text-indigo-600" />}
               </button>
             ))}
           </div>
@@ -982,8 +982,8 @@ export function ContextMenu({
           </button>
         )}
 
-        {/* ── Heading Tag Category ── */}
-        {elementType === "heading" && onChangeHeadingLevel && (
+        {/* ── Heading / Semantic Tag Category ── */}
+        {(elementType === "heading" || elementType === "text") && onChangeHeadingLevel && (
           <button
             type="button"
             onClick={() => setActiveSubmenu(activeSubmenu === "heading-level" ? null : "heading-level")}
@@ -991,7 +991,7 @@ export function ContextMenu({
           >
             <div className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5 text-pink-500" />
-              <span>Heading Tag</span>
+              <span>Semantic Tag</span>
             </div>
             <ChevronRight className="h-3 w-3 text-slate-400" />
           </button>

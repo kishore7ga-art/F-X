@@ -114,8 +114,8 @@ export interface SelectionController {
   duplicateElement: () => void;
   /** Moves the selected element up or down among its siblings. */
   moveElement: (direction: "up" | "down") => void;
-  /** Changes a heading element's semantic tag (h1-h6). */
-  changeHeadingLevel: (level: HeadingLevel) => void;
+  /** Changes a heading or text element's semantic tag (h1-h6, p). */
+  changeHeadingLevel: (level: HeadingLevel | "p") => void;
   /** Inserts or replaces an Image, Video, or YouTube embed inside the selected card */
   addMediaToCard: (
     mediaType: "image" | "video" | "youtube",
@@ -432,13 +432,14 @@ export function useSelectionController({
   );
 
   const changeHeadingLevel = useCallback(
-    (level: HeadingLevel) => {
+    (level: HeadingLevel | "p") => {
       const state = selectionStore.getState();
       if (!state.sectionId) return;
       const element = resolveSelected(state);
       if (!element) return;
       flushCommit();
       const newHeading = changeHeadingTagDom(element, level);
+      newHeading.dispatchEvent(new Event("input", { bubbles: true }));
       const sectionId = state.sectionId;
       const box = canvasBoxFor(sectionId);
       if (box) {
@@ -450,12 +451,13 @@ export function useSelectionController({
           sectionId,
           sectionsRef.current.find((s) => s.id === sectionId)?.title || "Section",
         );
+        const targetType: ElementType = level === "p" ? "text" : "heading";
         const meta = {
-          ...readElementProps("heading", newHeading),
+          ...readElementProps(targetType === "heading" ? "heading" : "text", newHeading),
           tag: level,
           level: level,
         };
-        selectionStore.selectElement(newId, "heading", sectionId, meta, ancestors);
+        selectionStore.selectElement(newId, targetType, sectionId, meta, ancestors);
       }
       writeSectionNow(sectionId);
     },

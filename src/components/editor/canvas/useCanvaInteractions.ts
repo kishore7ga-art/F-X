@@ -1443,9 +1443,9 @@ export function useCanvaInteractions({
   }, [syncCurrentElementCode]);
 
   /**
-   * Mutates the semantic tag (h1-h6) of the active heading live on the canvas
+   * Mutates the semantic tag (h1-h6, p) of the active heading/text live on the canvas
    */
-  const changeHeadingTag = useCallback((newTag: HeadingLevel) => {
+  const changeHeadingTag = useCallback((newTag: HeadingLevel | "p") => {
     let el = activeEditingElemRef.current;
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);

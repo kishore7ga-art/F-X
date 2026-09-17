@@ -1515,10 +1515,41 @@ function applyPlus(el: HTMLElement, p: Partial<PlusProps>): void {
 
 function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
   set(el, "color", p.color);
-  set(el, "font-size", p.fontSize);
+  if (p.fontSize !== undefined) {
+    set(el, "font-size", p.fontSize);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "font-size", p.fontSize);
+      });
+    }
+  }
+  if (p.color !== undefined && typeof el.querySelectorAll === "function") {
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
+      set(child, "color", p.color);
+    });
+  }
   set(el, "font-weight", p.fontWeight);
-  if (p.fontStyle !== undefined) set(el, "font-style", p.fontStyle);
-  if (p.textDecoration !== undefined) set(el, "text-decoration", p.textDecoration);
+  if (p.fontWeight !== undefined && typeof el.querySelectorAll === "function") {
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      set(child, "font-weight", p.fontWeight);
+    });
+  }
+  if (p.fontStyle !== undefined) {
+    set(el, "font-style", p.fontStyle);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "font-style", p.fontStyle);
+      });
+    }
+  }
+  if (p.textDecoration !== undefined) {
+    set(el, "text-decoration", p.textDecoration);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "text-decoration", p.textDecoration);
+      });
+    }
+  }
   set(el, "text-align", p.textAlign);
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
@@ -1536,10 +1567,41 @@ function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
 
 function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   set(el, "color", p.color);
-  set(el, "font-size", p.fontSize);
+  if (p.fontSize !== undefined) {
+    set(el, "font-size", p.fontSize);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "font-size", p.fontSize);
+      });
+    }
+  }
+  if (p.color !== undefined && typeof el.querySelectorAll === "function") {
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
+      set(child, "color", p.color);
+    });
+  }
   set(el, "font-weight", p.fontWeight);
-  if (p.fontStyle !== undefined) set(el, "font-style", p.fontStyle);
-  if (p.textDecoration !== undefined) set(el, "text-decoration", p.textDecoration);
+  if (p.fontWeight !== undefined && typeof el.querySelectorAll === "function") {
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      set(child, "font-weight", p.fontWeight);
+    });
+  }
+  if (p.fontStyle !== undefined) {
+    set(el, "font-style", p.fontStyle);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "font-style", p.fontStyle);
+      });
+    }
+  }
+  if (p.textDecoration !== undefined) {
+    set(el, "text-decoration", p.textDecoration);
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+        set(child, "text-decoration", p.textDecoration);
+      });
+    }
+  }
   set(el, "text-align", p.textAlign);
   set(el, "line-height", p.lineHeight);
   set(el, "letter-spacing", p.letterSpacing);
@@ -1748,18 +1810,58 @@ export function moveElementDom(element: HTMLElement, direction: "up" | "down"): 
   return false;
 }
 
-export function changeHeadingTagDom(element: HTMLElement, newTag: HeadingLevel): HTMLElement {
-  if (element.tagName.toLowerCase() === newTag.toLowerCase()) return element;
-  const newHeading = document.createElement(newTag);
-  for (let i = 0; i < element.attributes.length; i++) {
-    const attr = element.attributes[i]!;
-    newHeading.setAttribute(attr.name, attr.value);
+export const TAG_DEFAULT_STYLES: Record<
+  HeadingLevel | "p",
+  { fontSize: string; twClasses: string[]; fontWeight: string; lineHeight: string }
+> = {
+  h1: { fontSize: "48px", twClasses: ["text-4xl", "sm:text-5xl", "md:text-6xl", "font-extrabold"], fontWeight: "800", lineHeight: "1.15" },
+  h2: { fontSize: "36px", twClasses: ["text-3xl", "sm:text-4xl", "font-bold"], fontWeight: "700", lineHeight: "1.2" },
+  h3: { fontSize: "28px", twClasses: ["text-2xl", "sm:text-3xl", "font-bold"], fontWeight: "700", lineHeight: "1.25" },
+  h4: { fontSize: "22px", twClasses: ["text-xl", "sm:text-2xl", "font-semibold"], fontWeight: "600", lineHeight: "1.3" },
+  h5: { fontSize: "18px", twClasses: ["text-lg", "font-semibold"], fontWeight: "600", lineHeight: "1.35" },
+  h6: { fontSize: "15px", twClasses: ["text-sm", "font-semibold", "tracking-wide"], fontWeight: "600", lineHeight: "1.4" },
+  p: { fontSize: "16px", twClasses: ["text-base", "font-normal"], fontWeight: "400", lineHeight: "1.6" },
+};
+
+const TW_FONT_SIZE_REGEX = /\b(text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)|(sm|md|lg|xl|2xl):text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl))\b/g;
+
+export function changeHeadingTagDom(element: HTMLElement, newTag: HeadingLevel | "p" | string): HTMLElement {
+  const normalizedTag = newTag.toLowerCase();
+  const currentTag = element.tagName.toLowerCase();
+  const styleDefaults = TAG_DEFAULT_STYLES[normalizedTag as HeadingLevel | "p"] || TAG_DEFAULT_STYLES.h2;
+
+  let targetElement = element;
+  if (currentTag !== normalizedTag) {
+    const newEl = document.createElement(normalizedTag);
+    for (let i = 0; i < element.attributes.length; i++) {
+      const attr = element.attributes[i]!;
+      newEl.setAttribute(attr.name, attr.value);
+    }
+    while (element.firstChild) {
+      newEl.appendChild(element.firstChild);
+    }
+    element.replaceWith(newEl);
+    targetElement = newEl;
   }
-  while (element.firstChild) {
-    newHeading.appendChild(element.firstChild);
+
+  // Update font size, line-height, and Tailwind classes so the text visibly changes to match the new heading level
+  if (targetElement.className) {
+    const cleanClass = targetElement.className.replace(TW_FONT_SIZE_REGEX, "").replace(/\s+/g, " ").trim();
+    targetElement.className = `${cleanClass} ${styleDefaults.twClasses.join(" ")}`.trim();
   }
-  element.replaceWith(newHeading);
-  return newHeading;
+  targetElement.style.setProperty("font-size", styleDefaults.fontSize, "important");
+  targetElement.style.setProperty("line-height", styleDefaults.lineHeight, "important");
+
+  // Clean hardcoded child span font sizes so the new tag size applies across the whole heading
+  if (typeof targetElement.querySelectorAll === "function") {
+    targetElement.querySelectorAll<HTMLElement>("span, font").forEach((child) => {
+      if (child.style.fontSize) {
+        child.style.removeProperty("font-size");
+      }
+    });
+  }
+
+  return targetElement;
 }
 
 /**

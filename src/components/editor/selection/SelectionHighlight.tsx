@@ -46,6 +46,7 @@ import { hexFromValue } from "@/lib/sections/section-edit";
 
 import {
   changeHeadingTagDom,
+  TAG_DEFAULT_STYLES,
   extractYouTubeVideoId,
   getEffectiveElementBackground,
   BUTTON_SIZE_PADDING,
@@ -232,7 +233,7 @@ export interface SelectionHighlightProps {
   selection?: SelectionState;
   isEditingText?: boolean;
   onUpdateProps?: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
-  onChangeHeadingLevel?: (level: HeadingLevel) => void;
+  onChangeHeadingLevel?: (level: HeadingLevel | "p") => void;
   onDuplicate?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
@@ -455,7 +456,7 @@ export function SelectionHighlight({
   const rawElementFontSize = activeElement
     ? (activeElement.style.fontSize || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontSize : ""))
     : "";
-  const rawFontSize = activeFontSize || meta.fontSize || rawElementFontSize || (effectiveType === "heading" ? "32px" : "16px");
+  const rawFontSize = activeFontSize || rawElementFontSize || meta.fontSize || (effectiveType === "heading" ? "32px" : "16px");
   const parsedFontSize = parseInt(String(rawFontSize), 10) || (effectiveType === "heading" ? 32 : 16);
 
   const rawElementFont = activeElement
@@ -695,12 +696,21 @@ export function SelectionHighlight({
 
   const handleTagChange = (tag: HeadingLevel | "p") => {
     const el = resolveElement();
-    if (el && el.tagName.toLowerCase() !== tag.toLowerCase()) {
-      const newHeading = changeHeadingTagDom(el, tag as HeadingLevel);
+    if (el) {
+      const newHeading = changeHeadingTagDom(el, tag);
       newHeading.dispatchEvent(new Event("input", { bubbles: true }));
     }
     if (onChangeHeadingLevel) {
-      onChangeHeadingLevel(tag as HeadingLevel);
+      onChangeHeadingLevel(tag);
+    }
+    if (selectedId && onUpdateProps && effectiveType) {
+      const styleDefaults = TAG_DEFAULT_STYLES[tag] || TAG_DEFAULT_STYLES.h2;
+      onUpdateProps(selectedId, {
+        tag,
+        level: tag,
+        fontSize: styleDefaults.fontSize,
+        lineHeight: styleDefaults.lineHeight,
+      } as any);
     }
     setShowTagPopover(false);
   };

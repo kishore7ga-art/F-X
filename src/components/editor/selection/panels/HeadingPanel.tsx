@@ -46,7 +46,7 @@ const TRANSFORMS = [
 ];
 
 export interface HeadingPanelProps extends PanelProps<HeadingProps> {
-  onChangeLevel?: (level: HeadingLevel) => void;
+  onChangeLevel?: (level: HeadingLevel | "p") => void;
 }
 
 export function HeadingPanel({ tab, props, onChange, onChangeLevel }: HeadingPanelProps) {
