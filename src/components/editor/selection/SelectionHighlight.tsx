@@ -380,6 +380,51 @@ export function SelectionHighlight({
     };
   }, [resolveElement, revision]);
 
+  // Track highlighted text selection range within active element
+  const savedTextRangeRef = useRef<Range | null>(null);
+
+  useEffect(() => {
+    savedTextRangeRef.current = null;
+  }, [selection?.selectedId, revision]);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const el = resolveElement();
+      if (!el || !el.isConnected) return;
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer)) {
+        if (!range.collapsed && range.toString().trim().length > 0) {
+          savedTextRangeRef.current = range.cloneRange();
+        }
+      }
+    };
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+    };
+  }, [resolveElement]);
+
+  const getActiveTextRange = (el: HTMLElement): Range | null => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const r = sel.getRangeAt(0);
+      if (el.contains(r.commonAncestorContainer) && !r.collapsed && r.toString().trim().length > 0) {
+        return r;
+      }
+    }
+    if (
+      savedTextRangeRef.current &&
+      el.contains(savedTextRangeRef.current.commonAncestorContainer) &&
+      !savedTextRangeRef.current.collapsed &&
+      savedTextRangeRef.current.toString().trim().length > 0
+    ) {
+      return savedTextRangeRef.current;
+    }
+    return null;
+  };
+
   // Close submenus on genuine outside click
   useEffect(() => {
     const handleOutside = (e: Event) => {
@@ -506,15 +551,74 @@ export function SelectionHighlight({
   // Handlers that work seamlessly in both selection mode and contentEditable mode with instant live DOM reflection
   const handleColorChange = (hex: string) => {
     const el = resolveElement();
-    if (el) {
-      el.setAttribute("data-xite-user-color", "true");
-      el.style.setProperty("color", hex, "important");
-      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
-        child.setAttribute("data-xite-user-color", "true");
-        child.style.setProperty("color", hex, "important");
+    if (!el) return;
+
+    const targetRange = getActiveTextRange(el);
+    const sel = window.getSelection();
+
+    if (targetRange) {
+      // 1. Partial text selection is highlighted:
+      // Change color ONLY for the highlighted text!
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(targetRange);
+        } catch {}
+      }
+
+      let applied = false;
+      try {
+        if (!el.isContentEditable) el.contentEditable = "true";
+        document.execCommand("styleWithCSS", false, "true");
+        applied = document.execCommand("foreColor", false, hex);
+      } catch {}
+
+      // Convert any legacy <font color="..."> elements to modern <span style="color: ...">
+      el.querySelectorAll("font[color]").forEach((font) => {
+        const span = document.createElement("span");
+        span.style.color = font.getAttribute("color") || hex;
+        span.setAttribute("data-xite-user-color", "true");
+        span.innerHTML = font.innerHTML;
+        font.replaceWith(span);
+        applied = true;
       });
+
+      if (!applied && targetRange) {
+        try {
+          const span = document.createElement("span");
+          span.style.color = hex;
+          span.setAttribute("data-xite-user-color", "true");
+          const contents = targetRange.extractContents();
+          span.appendChild(contents);
+          targetRange.insertNode(span);
+          if (sel) {
+            sel.selectAllChildren(span);
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        } catch {}
+      } else if (sel && sel.rangeCount > 0) {
+        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      }
+
+      el.querySelectorAll<HTMLElement>("span[style*='color']").forEach((s) => {
+        s.setAttribute("data-xite-user-color", "true");
+      });
+
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (onApplyTextColor) onApplyTextColor(hex);
+      return;
     }
+
+    // 2. No partial text is highlighted:
+    // Change color for the entire element and its children!
+    el.setAttribute("data-xite-user-color", "true");
+    el.style.setProperty("color", hex, "important");
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
+      child.setAttribute("data-xite-user-color", "true");
+      child.style.setProperty("color", hex, "important");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+
     if (onApplyTextColor) onApplyTextColor(hex);
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { color: hex } as any);
@@ -525,13 +629,39 @@ export function SelectionHighlight({
     const nextSize = Math.max(8, Math.min(160, parsedFontSize + delta));
     const sizeStr = `${nextSize}px`;
     const el = resolveElement();
-    if (el) {
-      el.style.setProperty("font-size", sizeStr, "important");
-      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
-        child.style.setProperty("font-size", sizeStr, "important");
-      });
+    if (!el) return;
+
+    const targetRange = getActiveTextRange(el);
+    const sel = window.getSelection();
+
+    if (targetRange) {
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(targetRange);
+        } catch {}
+      }
+      const span = document.createElement("span");
+      span.style.fontSize = sizeStr;
+      try {
+        const contents = targetRange.extractContents();
+        span.appendChild(contents);
+        targetRange.insertNode(span);
+        if (sel) {
+          sel.selectAllChildren(span);
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
+      } catch {}
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (onApplyFontSize) onApplyFontSize(sizeStr);
+      return;
     }
+
+    el.style.setProperty("font-size", sizeStr, "important");
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      child.style.setProperty("font-size", sizeStr, "important");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
     if (onApplyFontSize) onApplyFontSize(sizeStr);
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontSize: sizeStr } as any);
@@ -540,18 +670,45 @@ export function SelectionHighlight({
 
   const handleSelectExactSize = (sizeStr: string) => {
     const el = resolveElement();
-    if (el) {
-      if (sizeStr) {
-        el.style.setProperty("font-size", sizeStr, "important");
-      } else {
-        el.style.removeProperty("font-size");
+    if (!el) return;
+
+    const targetRange = getActiveTextRange(el);
+    const sel = window.getSelection();
+
+    if (targetRange && sizeStr) {
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(targetRange);
+        } catch {}
       }
-      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
-        if (sizeStr) child.style.setProperty("font-size", sizeStr, "important");
-        else child.style.removeProperty("font-size");
-      });
+      const span = document.createElement("span");
+      span.style.fontSize = sizeStr;
+      try {
+        const contents = targetRange.extractContents();
+        span.appendChild(contents);
+        targetRange.insertNode(span);
+        if (sel) {
+          sel.selectAllChildren(span);
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
+      } catch {}
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (onApplyFontSize) onApplyFontSize(sizeStr);
+      setShowSizePopover(false);
+      return;
     }
+
+    if (sizeStr) {
+      el.style.setProperty("font-size", sizeStr, "important");
+    } else {
+      el.style.removeProperty("font-size");
+    }
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      if (sizeStr) child.style.setProperty("font-size", sizeStr, "important");
+      else child.style.removeProperty("font-size");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
     if (onApplyFontSize) onApplyFontSize(sizeStr);
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontSize: sizeStr } as any);
@@ -561,18 +718,47 @@ export function SelectionHighlight({
 
   const handleFontFamilyChange = (font: string) => {
     const el = resolveElement();
-    if (el) {
-      if (font) {
-        el.style.setProperty("font-family", font, "important");
-      } else {
-        el.style.removeProperty("font-family");
+    if (!el) return;
+
+    const targetRange = getActiveTextRange(el);
+    const sel = window.getSelection();
+
+    if (targetRange && font) {
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(targetRange);
+        } catch {}
       }
-      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
-        if (font) child.style.setProperty("font-family", font, "important");
-        else child.style.removeProperty("font-family");
+      try {
+        document.execCommand("styleWithCSS", false, "true");
+        document.execCommand("fontName", false, font);
+      } catch {}
+      el.querySelectorAll("font[face]").forEach((fontEl) => {
+        const span = document.createElement("span");
+        span.style.fontFamily = fontEl.getAttribute("face") || font;
+        span.innerHTML = fontEl.innerHTML;
+        fontEl.replaceWith(span);
       });
+      if (sel && sel.rangeCount > 0) {
+        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (onApplyFontFamily) onApplyFontFamily(font);
+      setShowFontPopover(false);
+      return;
     }
+
+    if (font) {
+      el.style.setProperty("font-family", font, "important");
+    } else {
+      el.style.removeProperty("font-family");
+    }
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      if (font) child.style.setProperty("font-family", font, "important");
+      else child.style.removeProperty("font-family");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
     if (onApplyFontFamily) onApplyFontFamily(font);
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontFamily: font } as any);
@@ -582,14 +768,35 @@ export function SelectionHighlight({
 
   const handleToggleBold = () => {
     const el = resolveElement();
-    const nextWeight = isBold ? "400" : "700";
-    if (el) {
-      el.style.setProperty("font-weight", nextWeight, "important");
-      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
-        child.style.setProperty("font-weight", nextWeight, "important");
-      });
+    if (!el) return;
+
+    const targetRange = getActiveTextRange(el);
+    const sel = window.getSelection();
+
+    if (targetRange) {
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(targetRange);
+        } catch {}
+      }
+      try {
+        document.execCommand("bold", false);
+      } catch {}
+      if (sel && sel.rangeCount > 0) {
+        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (onApplyTextFormat) onApplyTextFormat("bold");
+      return;
     }
+
+    const nextWeight = isBold ? "400" : "700";
+    el.style.setProperty("font-weight", nextWeight, "important");
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      child.style.setProperty("font-weight", nextWeight, "important");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
     if (onApplyTextFormat) onApplyTextFormat("bold");
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontWeight: nextWeight } as any);
@@ -598,14 +805,35 @@ export function SelectionHighlight({
 
   const handleToggleItalic = () => {
     const el = resolveElement();
-    const nextStyle = isItalic ? "normal" : "italic";
-    if (el) {
-      el.style.setProperty("font-style", nextStyle, "important");
-      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
-        child.style.setProperty("font-style", nextStyle, "important");
-      });
+    if (!el) return;
+
+    const targetRange = getActiveTextRange(el);
+    const sel = window.getSelection();
+
+    if (targetRange) {
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(targetRange);
+        } catch {}
+      }
+      try {
+        document.execCommand("italic", false);
+      } catch {}
+      if (sel && sel.rangeCount > 0) {
+        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (onApplyTextFormat) onApplyTextFormat("italic");
+      return;
     }
+
+    const nextStyle = isItalic ? "normal" : "italic";
+    el.style.setProperty("font-style", nextStyle, "important");
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      child.style.setProperty("font-style", nextStyle, "important");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
     if (onApplyTextFormat) onApplyTextFormat("italic");
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontStyle: nextStyle } as any);
@@ -614,14 +842,35 @@ export function SelectionHighlight({
 
   const handleToggleUnderline = () => {
     const el = resolveElement();
-    const nextDec = isUnderline ? "none" : "underline";
-    if (el) {
-      el.style.setProperty("text-decoration", nextDec, "important");
-      el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
-        child.style.setProperty("text-decoration", nextDec, "important");
-      });
+    if (!el) return;
+
+    const targetRange = getActiveTextRange(el);
+    const sel = window.getSelection();
+
+    if (targetRange) {
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          sel.addRange(targetRange);
+        } catch {}
+      }
+      try {
+        document.execCommand("underline", false);
+      } catch {}
+      if (sel && sel.rangeCount > 0) {
+        savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+      }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      if (onApplyTextFormat) onApplyTextFormat("underline");
+      return;
     }
+
+    const nextDec = isUnderline ? "none" : "underline";
+    el.style.setProperty("text-decoration", nextDec, "important");
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      child.style.setProperty("text-decoration", nextDec, "important");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
     if (onApplyTextFormat) onApplyTextFormat("underline");
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { textDecoration: nextDec } as any);
@@ -631,6 +880,25 @@ export function SelectionHighlight({
   const handleResetFormat = () => {
     const el = resolveElement();
     if (el) {
+      const targetRange = getActiveTextRange(el);
+      const sel = window.getSelection();
+
+      if (targetRange) {
+        if (sel) {
+          try {
+            sel.removeAllRanges();
+            sel.addRange(targetRange);
+          } catch {}
+        }
+        try {
+          if (!el.isContentEditable) el.contentEditable = "true";
+          document.execCommand("removeFormat", false);
+        } catch {}
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        if (onApplyTextFormat) onApplyTextFormat("removeFormat");
+        return;
+      }
+
       const clearStyles = (target: HTMLElement) => {
         target.removeAttribute("data-xite-user-color");
         target.style.removeProperty("font-weight");
@@ -1472,7 +1740,15 @@ export function SelectionHighlight({
         data-xite-floating-toolbar=""
         data-xite-toolbar=""
         onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+            e.stopPropagation();
+            return;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         onPointerDown={(e) => e.stopPropagation()}
         className="fixed z-[99999] pointer-events-auto flex items-center gap-1 bg-white/95 text-slate-700 backdrop-blur-md border border-slate-200/90 shadow-[0_10px_35px_-4px_rgba(0,0,0,0.18),0_4px_12px_-2px_rgba(0,0,0,0.08)] rounded-2xl p-1.5 text-xs select-none transition-all duration-75 max-w-[calc(100vw-24px)]"
         style={{
@@ -1700,7 +1976,15 @@ export function SelectionHighlight({
                 <div
                   className="xite-floating-popover absolute top-full right-0 mt-1.5 p-2.5 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-2 z-[100000] w-48 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                 >
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Colors
