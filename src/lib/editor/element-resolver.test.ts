@@ -618,9 +618,6 @@ describe("findImageElement & media resolution", () => {
       const jakarta = matchFontOption("'Plus Jakarta Sans', sans-serif");
       assert.equal(jakarta.label, "Plus Jakarta");
 
-      const playfair = matchFontOption("'Playfair Display', serif");
-      assert.equal(playfair.label, "Playfair");
-
       const fallback = matchFontOption("CustomFont, serif");
       assert.equal(fallback.label, "CustomFont");
 

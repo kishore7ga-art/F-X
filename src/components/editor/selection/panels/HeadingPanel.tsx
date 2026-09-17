@@ -34,9 +34,6 @@ const FONT_FAMILIES = [
   { value: "'Inter', sans-serif", label: "Inter" },
   { value: "'Outfit', sans-serif", label: "Outfit" },
   { value: "'Plus Jakarta Sans', sans-serif", label: "Plus Jakarta" },
-  { value: "'Playfair Display', serif", label: "Playfair" },
-  { value: "Georgia, serif", label: "Georgia" },
-  { value: "ui-monospace, monospace", label: "Monospace" },
 ];
 
 const TRANSFORMS = [
