@@ -5,6 +5,7 @@ import {
   applyCardLayoutDom,
   applyElementProps,
   applyRangeHeadingTagDom,
+  transformSelectedRangeToTag,
   isPartialTextSelection,
   buildYouTubeEmbedUrl,
   changeHeadingTagDom,
@@ -709,6 +710,96 @@ describe("findImageElement & media resolution", () => {
       assert.equal(isPartialTextSelection(collapsedRange, p), false);
 
       assert.equal(isPartialTextSelection(null, p), false);
+    });
+
+    it("transforms a single character 'W' inside <div class='editor-container'><p>Hello World</p></div> without moving outside container", () => {
+      const container = createMockNode("div", { class: "editor-container", id: "section-block-42" });
+      const p = container.appendChild(createMockNode("p", {}, "Hello World"));
+
+      const charW = createMockNode("span", {}, "W");
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: p,
+        extractContents() {
+          return charW;
+        },
+        insertNode(node: any) {
+          p.appendChild(node);
+        },
+      } as any;
+
+      const tagEl = transformSelectedRangeToTag(mockRange, "h1", container);
+      assert.ok(tagEl);
+      assert.equal(tagEl.tagName, "H1");
+      assert.equal(tagEl.getAttribute("data-xite-heading-tag"), "h1");
+      assert.equal(tagEl.style.display, "inline");
+      assert.equal((tagEl.style as any)["font-weight"], "800");
+      // Verify hard container boundary is strictly preserved
+      assert.equal(container.children.length, 1);
+      assert.equal(container.children[0], p);
+      assert.equal(p.parentElement, container);
+      assert.equal(container.getAttribute("class"), "editor-container");
+      assert.equal(container.getAttribute("id"), "section-block-42");
+      assert.equal(tagEl.parentElement, p);
+    });
+
+    it("dynamically transforms ranges to any generic tag (H1-H6, P, BLOCKQUOTE, PRE, CODE, SPAN, STRONG)", () => {
+      const parentDiv = createMockNode("div", { class: "editor-block" });
+      const textContainer = parentDiv.appendChild(createMockNode("p", {}, "Code and quotes here"));
+
+      const testTags = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "blockquote", "pre", "code", "span", "strong"];
+      for (const tag of testTags) {
+        const extracted = createMockNode("span", {}, "snippet");
+        const mockRange = {
+          collapsed: false,
+          commonAncestorContainer: textContainer,
+          extractContents() {
+            return extracted;
+          },
+          insertNode(node: any) {
+            textContainer.appendChild(node);
+          },
+        } as any;
+
+        const res = transformSelectedRangeToTag(mockRange, tag, parentDiv);
+        assert.ok(res, `Failed for tag: ${tag}`);
+        assert.equal(res.tagName, tag.toUpperCase());
+        assert.equal(res.getAttribute("data-xite-heading-tag"), tag.toLowerCase());
+        assert.equal(res.style.display, "inline");
+        // Ensure parent container hierarchy is 100% maintained
+        assert.equal(textContainer.parentElement, parentDiv);
+      }
+    });
+
+    it("enforces hard DOM boundaries and rejects out-of-boundary ranges", () => {
+      const containerA = createMockNode("div", { class: "editor-block-a" });
+      const containerB = createMockNode("div", { class: "editor-block-b" });
+      const pInB = containerB.appendChild(createMockNode("p", {}, "Other text"));
+
+      const outOfBoundsRange = {
+        collapsed: false,
+        commonAncestorContainer: pInB, // In containerB, but we specify containerA as editorRoot
+        extractContents() {
+          return createMockNode("span", {}, "Other");
+        },
+        insertNode() {},
+      } as any;
+
+      const res = transformSelectedRangeToTag(outOfBoundsRange, "h1", containerA);
+      assert.equal(res, null); // Must safely reject to prevent DOM escape
+    });
+
+    it("handles collapsed ranges cleanly by returning null without DOM mutation", () => {
+      const container = createMockNode("div", { class: "editor-block" });
+      const p = container.appendChild(createMockNode("p", {}, "Hello"));
+
+      const collapsedRange = {
+        collapsed: true,
+        commonAncestorContainer: p,
+      } as any;
+
+      assert.equal(transformSelectedRangeToTag(collapsedRange, "h1", container), null);
+      assert.equal(applyRangeHeadingTagDom(collapsedRange, p, "h1"), null);
     });
 
     it("applies range heading tag within parent container boundary", () => {
