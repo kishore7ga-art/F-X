@@ -22,6 +22,8 @@ import { writeHoverRule } from "@/lib/editor/element-hover-css";
 import {
   applyElementProps,
   changeHeadingTagDom,
+  applyRangeHeadingTagDom,
+  isPartialTextSelection,
   duplicateElementDom,
   elementId,
   ensureElementKey,
@@ -440,6 +442,23 @@ export function useSelectionController({
       const element = resolveSelected(state);
       if (!element) return;
       flushCommit();
+
+      const sel = typeof window !== "undefined" ? window.getSelection() : null;
+      let targetRange: Range | null = null;
+      if (sel && sel.rangeCount > 0) {
+        const r = sel.getRangeAt(0);
+        if (element.contains(r.commonAncestorContainer)) {
+          targetRange = r;
+        }
+      }
+
+      if (targetRange && isPartialTextSelection(targetRange, element)) {
+        applyRangeHeadingTagDom(targetRange, element, level);
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        writeSectionNow(state.sectionId);
+        return;
+      }
+
       const newHeading = changeHeadingTagDom(element, level);
       newHeading.dispatchEvent(new Event("input", { bubbles: true }));
       const sectionId = state.sectionId;

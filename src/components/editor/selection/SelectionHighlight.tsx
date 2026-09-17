@@ -46,6 +46,8 @@ import { hexFromValue } from "@/lib/sections/section-edit";
 
 import {
   changeHeadingTagDom,
+  applyRangeHeadingTagDom,
+  isPartialTextSelection,
   TAG_DEFAULT_STYLES,
   extractYouTubeVideoId,
   getEffectiveElementBackground,
@@ -1057,6 +1059,21 @@ export function SelectionHighlight({
   const handleTagChange = (tag: HeadingLevel | "p") => {
     const el = resolveElement();
     if (el) {
+      const targetRange = getActiveTextRange(el);
+      if (targetRange && isPartialTextSelection(targetRange, el)) {
+        const tagEl = applyRangeHeadingTagDom(targetRange, el, tag);
+        if (tagEl) {
+          const sel = window.getSelection();
+          if (sel && sel.rangeCount > 0) {
+            savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+          }
+        }
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+        onCommitDom?.(el);
+        setShowTagPopover(false);
+        return;
+      }
+
       const newHeading = changeHeadingTagDom(el, tag);
       newHeading.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(newHeading);

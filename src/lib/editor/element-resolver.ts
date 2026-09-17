@@ -1865,6 +1865,100 @@ export function changeHeadingTagDom(element: HTMLElement, newTag: HeadingLevel |
 }
 
 /**
+ * Checks whether a Range is a partial text selection within container element
+ * (e.g. single character, single word, multiple words, partial sentence) vs the entire element.
+ */
+export function isPartialTextSelection(range: Range | null, element: HTMLElement): boolean {
+  if (!range || range.collapsed) return false;
+  const rangeText = range.toString().trim();
+  if (rangeText.length === 0) return false;
+
+  const elementText = (element.textContent || "").trim();
+  if (rangeText !== elementText) {
+    return true;
+  }
+
+  try {
+    if (typeof document !== "undefined" && typeof Range !== "undefined") {
+      const fullRange = document.createRange();
+      fullRange.selectNodeContents(element);
+      const isFull =
+        range.compareBoundaryPoints(Range.START_TO_START, fullRange) <= 0 &&
+        range.compareBoundaryPoints(Range.END_TO_END, fullRange) >= 0;
+      return !isFull;
+    }
+  } catch {}
+
+  return false;
+}
+
+/**
+ * Applies a heading level (h1-h6) or paragraph (p) tag to ONLY the specified Range within an element.
+ * Creates an inline-displayed semantic tag with corresponding typographic styling,
+ * preserving surrounding text and existing nested markup.
+ */
+export function applyRangeHeadingTagDom(
+  range: Range,
+  containerElement: HTMLElement,
+  newTag: HeadingLevel | "p" | string
+): HTMLElement | null {
+  if (!range || range.collapsed) return null;
+  const normalizedTag = newTag.toLowerCase();
+  const styleDefaults = TAG_DEFAULT_STYLES[normalizedTag as HeadingLevel | "p"] || TAG_DEFAULT_STYLES.h2;
+
+  const tagEl = document.createElement(normalizedTag);
+  if (styleDefaults.twClasses && styleDefaults.twClasses.length > 0) {
+    tagEl.className = styleDefaults.twClasses.join(" ");
+  }
+  tagEl.style.setProperty("display", "inline", "important");
+  tagEl.style.setProperty("font-size", styleDefaults.fontSize, "important");
+  tagEl.style.setProperty("font-weight", styleDefaults.fontWeight, "important");
+  tagEl.style.setProperty("line-height", styleDefaults.lineHeight, "important");
+  tagEl.setAttribute("data-xite-heading-tag", normalizedTag);
+
+  try {
+    const contents = range.extractContents();
+
+    // If contents has a single child that is already an inline heading tag, unwrap it to avoid redundant nesting
+    if (
+      contents.childNodes.length === 1 &&
+      contents.firstChild instanceof HTMLElement &&
+      /^h[1-6]|p$/i.test(contents.firstChild.tagName)
+    ) {
+      const child = contents.firstChild as HTMLElement;
+      while (child.firstChild) {
+        tagEl.appendChild(child.firstChild);
+      }
+    } else {
+      tagEl.appendChild(contents);
+    }
+
+    range.insertNode(tagEl);
+    if (typeof containerElement.normalize === "function") {
+      containerElement.normalize();
+    }
+
+    // Restore selection over the new tagEl
+    if (typeof window !== "undefined") {
+      const sel = window.getSelection();
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          const newRange = document.createRange();
+          newRange.selectNodeContents(tagEl);
+          sel.addRange(newRange);
+        } catch {}
+      }
+    }
+
+    return tagEl;
+  } catch (err) {
+    console.error("Failed to apply range heading tag:", err);
+    return null;
+  }
+}
+
+/**
  * Replaces an image element (or container) with an HTML5 Video element in the DOM.
  */
 export function replaceImageWithVideoDom(element: HTMLElement, videoProps?: Partial<VideoProps>): HTMLElement {

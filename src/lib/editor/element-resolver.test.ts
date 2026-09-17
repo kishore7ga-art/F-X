@@ -4,6 +4,8 @@ import { describe, it } from "node:test";
 import {
   applyCardLayoutDom,
   applyElementProps,
+  applyRangeHeadingTagDom,
+  isPartialTextSelection,
   buildYouTubeEmbedUrl,
   changeHeadingTagDom,
   classify,
@@ -649,6 +651,32 @@ describe("findImageElement & media resolution", () => {
       // Same tag returns element unchanged
       const same = changeHeadingTagDom(p, "p" as any);
       assert.equal(same, p);
+    });
+
+    it("detects partial vs full text selection correctly via isPartialTextSelection", () => {
+      const p = {
+        textContent: "Welcome to my website",
+      } as any;
+
+      const partialRange = {
+        collapsed: false,
+        toString: () => "website",
+      } as any;
+      assert.equal(isPartialTextSelection(partialRange, p), true);
+
+      const charRange = {
+        collapsed: false,
+        toString: () => "W",
+      } as any;
+      assert.equal(isPartialTextSelection(charRange, p), true);
+
+      const collapsedRange = {
+        collapsed: true,
+        toString: () => "",
+      } as any;
+      assert.equal(isPartialTextSelection(collapsedRange, p), false);
+
+      assert.equal(isPartialTextSelection(null, p), false);
     });
 
     it("applies all text formatting toolbar properties (bold, italic, underline, font-size, color, align, line-height, letter-spacing)", () => {

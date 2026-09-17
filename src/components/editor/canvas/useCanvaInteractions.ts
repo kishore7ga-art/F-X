@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { SnapGuide, DistanceBadge } from "@/stores/useVisualCanvasStore";
 import type { HeadingLevel } from "@/lib/editor/element-resolver";
-import { changeHeadingTagDom } from "@/lib/editor/element-resolver";
+import { changeHeadingTagDom, applyRangeHeadingTagDom, isPartialTextSelection } from "@/lib/editor/element-resolver";
 import { recomposeSectionCode } from "@/lib/section-runtime";
 import { resetInteractiveState } from "@/lib/interactive-section-runtime";
 
@@ -1475,6 +1475,28 @@ export function useCanvaInteractions({
     }
     if (!el) return;
 
+    const sel = typeof window !== "undefined" ? window.getSelection() : null;
+    let targetRange: Range | null = null;
+    if (sel && sel.rangeCount > 0) {
+      const r = sel.getRangeAt(0);
+      if (el.contains(r.commonAncestorContainer)) {
+        targetRange = r;
+      }
+    }
+    if ((!targetRange || targetRange.collapsed) && savedRangeRef.current && el.contains(savedRangeRef.current.commonAncestorContainer)) {
+      targetRange = savedRangeRef.current;
+    }
+
+    if (targetRange && isPartialTextSelection(targetRange, el)) {
+      const tagEl = applyRangeHeadingTagDom(targetRange, el, newTag);
+      if (tagEl && sel && sel.rangeCount > 0) {
+        savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      syncCurrentElementCode();
+      return;
+    }
+
     const newHeading = changeHeadingTagDom(el, newTag);
     if (activeEditingElemRef.current === el) {
       activeEditingElemRef.current = newHeading;
@@ -1499,7 +1521,7 @@ export function useCanvaInteractions({
     }
     newHeading.dispatchEvent(new Event("input", { bubbles: true }));
     syncCurrentElementCode();
-  }, [selectedElement, syncCurrentElementCode]);
+  }, [selectedElement, syncCurrentElementCode, findTextEditableElement]);
 
   return {
     selectedElement,
