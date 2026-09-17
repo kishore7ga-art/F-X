@@ -237,7 +237,15 @@ describe("findImageElement & media resolution", () => {
           delete (this as any)[prop];
         },
       },
-      textContent: text,
+      get textContent() {
+        if (this.children && this.children.length > 0) {
+          return this.children.map((c: any) => c.textContent || "").join("");
+        }
+        return text;
+      },
+      set textContent(v: string) {
+        text = v;
+      },
       children: [],
       parentElement: null,
       get firstChild() {
@@ -1072,6 +1080,158 @@ describe("findImageElement & media resolution", () => {
       assert.equal(success, true);
       assert.equal(formattedSpan.hasAttribute("data-xite-user-color"), false);
       assert.equal(formattedSpan.hasAttribute("style"), false);
+    });
+
+    it("changes font-family for a single word 'beautiful' inside <div class='editor-block'><p>Hello beautiful world</p></div> without modifying surrounding text or parent container", () => {
+      const container = createMockNode("div", { class: "editor-block" });
+      const p = container.appendChild(createMockNode("p", {}, "Hello beautiful world"));
+
+      const wordBeautiful = createMockNode("span", {}, "beautiful");
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: p,
+        extractContents() {
+          return wordBeautiful;
+        },
+        insertNode(node: any) {
+          p.appendChild(node);
+        },
+      } as any;
+
+      const span = applyRangeInlineStyleDom(mockRange, { fontFamily: "Roboto, sans-serif" }, container);
+      assert.ok(span);
+      assert.equal(span.tagName, "SPAN");
+      assert.equal((span.style as any)["font-family"], "Roboto, sans-serif");
+      assert.equal(span.textContent, "beautiful");
+
+      // Verify hard container boundary
+      assert.equal(container.children.length, 1);
+      assert.equal(container.children[0], p);
+      assert.equal(p.parentElement, container);
+      assert.equal(span.parentElement, p);
+    });
+
+    it("changes font-family for a single character 'W' inside 'Welcome' leaving the rest of the word unchanged", () => {
+      const container = createMockNode("div", { class: "editor-container" });
+      const h1 = container.appendChild(createMockNode("h1", {}, "Welcome"));
+
+      const charW = createMockNode("span", {}, "W");
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: h1,
+        extractContents() {
+          return charW;
+        },
+        insertNode(node: any) {
+          h1.appendChild(node);
+        },
+      } as any;
+
+      const span = applyRangeInlineStyleDom(mockRange, { fontFamily: "'Inter', sans-serif" }, container);
+      assert.ok(span);
+      assert.equal(span.tagName, "SPAN");
+      assert.equal((span.style as any)["font-family"], "'Inter', sans-serif");
+      assert.equal(span.textContent, "W");
+      assert.equal(h1.parentElement, container);
+    });
+
+    it("preserves nested <strong> formatting when applying font-family to 'beautiful' in <p>Hello <strong>beautiful world</strong></p>", () => {
+      const container = createMockNode("div", { class: "editor-block" });
+      const p = container.appendChild(createMockNode("p", {}, "Hello "));
+      const strong = p.appendChild(createMockNode("strong", {}, "beautiful world"));
+
+      const wordBeautiful = createMockNode("span", {}, "beautiful");
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: strong,
+        extractContents() {
+          return wordBeautiful;
+        },
+        insertNode(node: any) {
+          strong.appendChild(node);
+        },
+      } as any;
+
+      const span = applyRangeInlineStyleDom(mockRange, { fontFamily: "Roboto" }, container);
+      assert.ok(span);
+      assert.equal(span.tagName, "SPAN");
+      assert.equal((span.style as any)["font-family"], "Roboto");
+      assert.equal(span.parentElement, strong);
+      assert.equal(strong.tagName, "STRONG");
+      assert.equal(strong.parentElement, p);
+      assert.equal(p.parentElement, container);
+    });
+
+    it("preserves nested <a> link element when applying font-family inside link text", () => {
+      const container = createMockNode("div", { class: "editor-block" });
+      const p = container.appendChild(createMockNode("p", {}, "Visit our "));
+      const link = p.appendChild(createMockNode("a", { href: "/courses" }, "summer campus"));
+
+      const wordSummer = createMockNode("span", {}, "summer");
+      const mockRange = {
+        collapsed: false,
+        commonAncestorContainer: link,
+        extractContents() {
+          return wordSummer;
+        },
+        insertNode(node: any) {
+          link.appendChild(node);
+        },
+      } as any;
+
+      const span = applyRangeInlineStyleDom(mockRange, { fontFamily: "'Outfit', sans-serif" }, container);
+      assert.ok(span);
+      assert.equal(span.tagName, "SPAN");
+      assert.equal((span.style as any)["font-family"], "'Outfit', sans-serif");
+      assert.equal(span.parentElement, link);
+      assert.equal(link.getAttribute("href"), "/courses");
+      assert.equal(link.parentElement, p);
+    });
+
+    it("reuses existing span and does not create duplicate nested spans when font-family is changed multiple times", () => {
+      const container = createMockNode("div", { class: "editor-block" });
+      const p = container.appendChild(createMockNode("p", {}, "Hello world"));
+
+      // 1. First font application creates span with Roboto
+      const initialSpan = createMockNode("span", {}, "world");
+      const mockRange1 = {
+        collapsed: false,
+        commonAncestorContainer: p,
+        extractContents() {
+          return initialSpan;
+        },
+        insertNode(node: any) {
+          p.appendChild(node);
+        },
+      } as any;
+
+      const firstSpan = applyRangeInlineStyleDom(mockRange1, { fontFamily: "Roboto" }, container);
+      assert.ok(firstSpan);
+      assert.equal((firstSpan.style as any)["font-family"], "Roboto");
+
+      // 2. Second font application on the same span changes to Inter without nesting
+      const mockRange2 = {
+        collapsed: false,
+        commonAncestorContainer: p,
+        extractContents() {
+          // Extracts the single existing SPAN node
+          return {
+            childNodes: [firstSpan],
+            children: [firstSpan],
+          };
+        },
+        insertNode(node: any) {
+          p.appendChild(node);
+        },
+      } as any;
+
+      const updatedSpan = applyRangeInlineStyleDom(mockRange2, { fontFamily: "Inter" }, container);
+      assert.ok(updatedSpan);
+      // It must be the exact same span reused, updated to Inter
+      assert.equal(updatedSpan, firstSpan);
+      assert.equal((updatedSpan.style as any)["font-family"], "Inter");
+      // Must not have nested span children
+      assert.equal(updatedSpan.children.length, 0);
     });
   });
 });

@@ -2235,13 +2235,14 @@ export function applyRangeInlineStyleDom(
     currentAncestor = currentAncestor.parentNode || currentAncestor.parentElement;
   }
 
-  // 4. Create the span element
+  // 4. Create element factory
   const doc =
     (typeof document !== "undefined"
       ? document
       : (editorRoot as any).ownerDocument || (targetFormattingEl as any).ownerDocument) || {
       createElement(tag: string) {
         const el: any = {
+          nodeType: 1,
           tagName: tag.toUpperCase(),
           className: "",
           style: {
@@ -2271,57 +2272,125 @@ export function applyRangeInlineStyleDom(
       },
     };
 
-  const span = doc.createElement("span");
+  // Helper to apply style options to any element
+  const applyStylesToElement = (el: HTMLElement) => {
+    if (styles.className && el.classList) {
+      el.className = styles.className;
+    }
+    if (el.style?.setProperty) {
+      if (styles.color) {
+        el.style.setProperty("color", styles.color, "important");
+        el.setAttribute?.("data-xite-user-color", "true");
+      }
+      if (styles.fontSize) {
+        el.style.setProperty("font-size", styles.fontSize, "important");
+      }
+      if (styles.fontFamily) {
+        el.style.setProperty("font-family", styles.fontFamily, "important");
+      }
+      if (styles.fontWeight) {
+        el.style.setProperty("font-weight", styles.fontWeight, "important");
+      }
+      if (styles.fontStyle) {
+        el.style.setProperty("font-style", styles.fontStyle, "important");
+      }
+      if (styles.textDecoration) {
+        el.style.setProperty("text-decoration", styles.textDecoration, "important");
+      }
+      if (styles.textTransform) {
+        el.style.setProperty("text-transform", styles.textTransform, "important");
+      }
+      if (styles.lineHeight) {
+        el.style.setProperty("line-height", styles.lineHeight, "important");
+        el.style.setProperty("display", "inline-block", "important");
+      }
+      if (styles.letterSpacing) {
+        el.style.setProperty("letter-spacing", styles.letterSpacing, "important");
+      }
+      if (styles.backgroundColor) {
+        el.style.setProperty("background-color", styles.backgroundColor, "important");
+      }
+    }
+    if (styles.attributes && el.setAttribute) {
+      for (const [k, v] of Object.entries(styles.attributes)) {
+        el.setAttribute(k, v);
+      }
+    }
+  };
 
-  if (styles.className) {
-    span.className = styles.className;
-  }
-
-  if (span.style?.setProperty) {
-    if (styles.color) {
-      span.style.setProperty("color", styles.color, "important");
-      span.setAttribute?.("data-xite-user-color", "true");
+  // Helper to clean conflicting child styles from inner nodes
+  const cleanConflictingChildStyles = (node: any) => {
+    if (!node) return;
+    if (node.nodeType === 1 || node.tagName) {
+      if (styles.fontFamily && node.style?.removeProperty) {
+        node.style.removeProperty("font-family");
+      }
+      if (styles.color && node.style?.removeProperty) {
+        node.style.removeProperty("color");
+        node.removeAttribute?.("data-xite-user-color");
+      }
+      if (styles.fontSize && node.style?.removeProperty) {
+        node.style.removeProperty("font-size");
+      }
+      if (styles.fontWeight && node.style?.removeProperty) {
+        node.style.removeProperty("font-weight");
+      }
+      if (styles.fontStyle && node.style?.removeProperty) {
+        node.style.removeProperty("font-style");
+      }
+      if (styles.textDecoration && node.style?.removeProperty) {
+        node.style.removeProperty("text-decoration");
+      }
+      if (styles.textTransform && node.style?.removeProperty) {
+        node.style.removeProperty("text-transform");
+      }
+      if (styles.lineHeight && node.style?.removeProperty) {
+        node.style.removeProperty("line-height");
+      }
+      if (styles.letterSpacing && node.style?.removeProperty) {
+        node.style.removeProperty("letter-spacing");
+      }
+      if (styles.backgroundColor && node.style?.removeProperty) {
+        node.style.removeProperty("background-color");
+      }
     }
-    if (styles.fontSize) {
-      span.style.setProperty("font-size", styles.fontSize, "important");
+    const children = node.children || node.childNodes;
+    if (children) {
+      for (const child of Array.from(children)) {
+        cleanConflictingChildStyles(child);
+      }
     }
-    if (styles.fontFamily) {
-      span.style.setProperty("font-family", styles.fontFamily, "important");
-    }
-    if (styles.fontWeight) {
-      span.style.setProperty("font-weight", styles.fontWeight, "important");
-    }
-    if (styles.fontStyle) {
-      span.style.setProperty("font-style", styles.fontStyle, "important");
-    }
-    if (styles.textDecoration) {
-      span.style.setProperty("text-decoration", styles.textDecoration, "important");
-    }
-    if (styles.textTransform) {
-      span.style.setProperty("text-transform", styles.textTransform, "important");
-    }
-    if (styles.lineHeight) {
-      span.style.setProperty("line-height", styles.lineHeight, "important");
-      span.style.setProperty("display", "inline-block", "important");
-    }
-    if (styles.letterSpacing) {
-      span.style.setProperty("letter-spacing", styles.letterSpacing, "important");
-    }
-    if (styles.backgroundColor) {
-      span.style.setProperty("background-color", styles.backgroundColor, "important");
-    }
-  }
-
-  if (styles.attributes && span.setAttribute) {
-    for (const [k, v] of Object.entries(styles.attributes)) {
-      span.setAttribute(k, v);
-    }
-  }
+  };
 
   try {
     const contents = range.extractContents();
-    span.appendChild(contents);
-    range.insertNode(span);
+
+    const isDirectSpan = (contents as any)?.tagName === "SPAN";
+    const childList = (contents as any)?.childNodes || (contents as any)?.children || [];
+    const firstChild: any = isDirectSpan ? contents : (childList[0] || null);
+    const childCount = isDirectSpan ? 1 : childList.length;
+
+    let targetSpan: HTMLElement;
+
+    if (childCount === 1 && firstChild && firstChild.tagName === "SPAN") {
+      // Reuse the existing single span directly to avoid duplicate nesting
+      applyStylesToElement(firstChild);
+      targetSpan = firstChild;
+      if (!isDirectSpan) {
+        range.insertNode(firstChild);
+      } else {
+        range.insertNode(contents);
+      }
+    } else {
+      // Clean any conflicting nested styles inside extracted content
+      cleanConflictingChildStyles(contents);
+
+      const span = doc.createElement("span");
+      applyStylesToElement(span);
+      span.appendChild(contents);
+      range.insertNode(span);
+      targetSpan = span;
+    }
 
     // Normalize text nodes in target formatting element / container
     if (typeof targetFormattingEl.normalize === "function") {
@@ -2330,20 +2399,20 @@ export function applyRangeInlineStyleDom(
       editorRoot.normalize();
     }
 
-    // Restore selection over the new span
+    // Restore selection over the styled span
     if (typeof window !== "undefined") {
       const sel = window.getSelection();
       if (sel) {
         try {
           sel.removeAllRanges();
           const newRange = document.createRange();
-          newRange.selectNodeContents(span);
+          newRange.selectNodeContents(targetSpan);
           sel.addRange(newRange);
         } catch {}
       }
     }
 
-    return span;
+    return targetSpan;
   } catch (err) {
     console.error("[applyRangeInlineStyleDom] Failed to apply inline style:", err);
     return null;
