@@ -130,6 +130,8 @@ export interface SelectionController {
   selectCardMedia: () => boolean;
   /** Selects the parent card of the currently selected element */
   selectParentCard: () => boolean;
+  /** Commits the live DOM state of a section directly to the persistent store */
+  commitDomChange: (element?: HTMLElement) => void;
   /** Selects an ancestor in the element hierarchy (Container, Card, Section). */
   selectAncestor: (path: string, type: ElementType) => void;
   clearSelection: () => void;
@@ -753,6 +755,18 @@ export function useSelectionController({
     return true;
   }, [selectAncestor]);
 
+  const commitDomChange = useCallback(
+    (element?: HTMLElement) => {
+      const state = selectionStore.getState();
+      const sectionId =
+        state.sectionId ||
+        (element ? element.closest("[data-xite-section]")?.getAttribute("data-xite-section") : null);
+      if (!sectionId) return;
+      scheduleCommit(sectionId);
+    },
+    [scheduleCommit],
+  );
+
   return {
     selection,
     contextMenu,
@@ -762,6 +776,7 @@ export function useSelectionController({
     handleElementSelect,
     handleElementDoubleClick,
     updateElementProps,
+    commitDomChange,
     replaceMedia,
     replacePlusWith,
     changeIcon,

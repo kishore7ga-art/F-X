@@ -230,6 +230,7 @@ export interface SelectionHighlightProps {
   selection?: SelectionState;
   isEditingText?: boolean;
   onUpdateProps?: <T extends LeafType>(id: string, props: Partial<ElementPropsByType[T]>) => void;
+  onCommitDom?: (element?: HTMLElement) => void;
   onChangeHeadingLevel?: (level: HeadingLevel | "p") => void;
   onDuplicate?: () => void;
   onMoveUp?: () => void;
@@ -272,6 +273,7 @@ export function SelectionHighlight({
   selection,
   isEditingText = false,
   onUpdateProps,
+  onCommitDom,
   onChangeHeadingLevel,
   onDuplicate,
   onMoveUp,
@@ -605,6 +607,7 @@ export function SelectionHighlight({
       });
 
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
       return;
     }
 
@@ -617,6 +620,7 @@ export function SelectionHighlight({
       child.style.setProperty("color", hex, "important");
     });
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
 
     if (onApplyTextColor) onApplyTextColor(hex);
     if (selectedId && onUpdateProps && effectiveType) {
@@ -652,6 +656,7 @@ export function SelectionHighlight({
         }
       } catch {}
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
       return;
     }
 
@@ -660,6 +665,7 @@ export function SelectionHighlight({
       child.style.setProperty("font-size", sizeStr, "important");
     });
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
     if (onApplyFontSize) onApplyFontSize(sizeStr);
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontSize: sizeStr } as any);
@@ -692,6 +698,7 @@ export function SelectionHighlight({
         }
       } catch {}
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
       setShowSizePopover(false);
       return;
     }
@@ -706,6 +713,7 @@ export function SelectionHighlight({
       else child.style.removeProperty("font-size");
     });
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
     if (onApplyFontSize) onApplyFontSize(sizeStr);
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontSize: sizeStr } as any);
@@ -756,6 +764,7 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
       setShowFontPopover(false);
       return;
     }
@@ -770,6 +779,7 @@ export function SelectionHighlight({
       else child.style.removeProperty("font-family");
     });
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
     if (onApplyFontFamily) onApplyFontFamily(font);
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontFamily: font } as any);
@@ -812,6 +822,7 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
       return;
     }
 
@@ -821,6 +832,7 @@ export function SelectionHighlight({
       child.style.setProperty("font-weight", nextWeight, "important");
     });
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
     if (onApplyTextFormat) onApplyTextFormat("bold");
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontWeight: nextWeight } as any);
@@ -862,6 +874,7 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
       return;
     }
 
@@ -871,6 +884,7 @@ export function SelectionHighlight({
       child.style.setProperty("font-style", nextStyle, "important");
     });
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
     if (onApplyTextFormat) onApplyTextFormat("italic");
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { fontStyle: nextStyle } as any);
@@ -912,6 +926,7 @@ export function SelectionHighlight({
         savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
       return;
     }
 
@@ -921,6 +936,7 @@ export function SelectionHighlight({
       child.style.setProperty("text-decoration", nextDec, "important");
     });
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
     if (onApplyTextFormat) onApplyTextFormat("underline");
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { textDecoration: nextDec } as any);
@@ -945,6 +961,7 @@ export function SelectionHighlight({
           document.execCommand("removeFormat", false);
         } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
+        onCommitDom?.(el);
         return;
       }
 
@@ -964,6 +981,7 @@ export function SelectionHighlight({
       clearStyles(el);
       el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach(clearStyles);
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (onApplyTextFormat) onApplyTextFormat("removeFormat");
     if (selectedId && onUpdateProps && effectiveType) {
@@ -1010,11 +1028,13 @@ export function SelectionHighlight({
           }
         } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
+        onCommitDom?.(el);
         return;
       }
 
       el.style.setProperty("text-transform", nextCase === "none" ? "none" : nextCase, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps && effectiveType) {
       onUpdateProps(selectedId, { textTransform: nextCase } as any);
@@ -1026,6 +1046,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("text-align", align, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (onApplyTextAlign) onApplyTextAlign(align);
     if (selectedId && onUpdateProps && effectiveType) {
@@ -1038,6 +1059,7 @@ export function SelectionHighlight({
     if (el) {
       const newHeading = changeHeadingTagDom(el, tag);
       newHeading.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(newHeading);
     }
     if (onChangeHeadingLevel) {
       onChangeHeadingLevel(tag);
@@ -1080,12 +1102,14 @@ export function SelectionHighlight({
           }
         } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
+        onCommitDom?.(el);
         return;
       }
 
       if (val) el.style.setProperty("line-height", val, "important");
       else el.style.removeProperty("line-height");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (onApplyTextSpacing) onApplyTextSpacing("lineHeight", val);
     if (selectedId && onUpdateProps && effectiveType) {
@@ -1118,12 +1142,14 @@ export function SelectionHighlight({
           }
         } catch {}
         el.dispatchEvent(new Event("input", { bubbles: true }));
+        onCommitDom?.(el);
         return;
       }
 
       if (val) el.style.setProperty("letter-spacing", val, "important");
       else el.style.removeProperty("letter-spacing");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (onApplyTextSpacing) onApplyTextSpacing("letterSpacing", val);
     if (selectedId && onUpdateProps && effectiveType) {
@@ -1165,6 +1191,7 @@ export function SelectionHighlight({
         }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { background: hex } as any);
@@ -1176,6 +1203,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("border-radius", rad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { radius: rad } as any);
@@ -1189,6 +1217,7 @@ export function SelectionHighlight({
       el.style.setProperty("border-style", "solid", "important");
       el.style.setProperty("border-color", cardBorderColor || "#e2e8f0", "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { borderWidth: w, borderColor: cardBorderColor || "#e2e8f0" } as any);
@@ -1200,6 +1229,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("border-color", c, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { borderColor: c } as any);
@@ -1207,6 +1237,10 @@ export function SelectionHighlight({
   };
 
   const handleCardShadowChange = (sh: string) => {
+    const el = resolveElement();
+    if (el) {
+      onCommitDom?.(el);
+    }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { shadow: sh as any });
     }
@@ -1295,6 +1329,7 @@ export function SelectionHighlight({
         }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { background: hex, backgroundColor: hex } as any);
@@ -1306,6 +1341,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("border-radius", rad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { radius: rad, borderRadius: rad } as any);
@@ -1317,6 +1353,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("padding", pad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { padding: pad } as any);
@@ -1330,6 +1367,7 @@ export function SelectionHighlight({
       el.style.setProperty("border-style", "solid", "important");
       el.style.setProperty("border-color", containerBorderColor || "#e2e8f0", "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { borderWidth: w, borderColor: containerBorderColor || "#e2e8f0" } as any);
@@ -1341,6 +1379,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("border-color", c, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { borderColor: c } as any);
@@ -1348,6 +1387,10 @@ export function SelectionHighlight({
   };
 
   const handleContainerShadowChange = (sh: string) => {
+    const el = resolveElement();
+    if (el) {
+      onCommitDom?.(el);
+    }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { shadow: sh as any });
     }
@@ -1370,6 +1413,7 @@ export function SelectionHighlight({
         el.style.removeProperty("grid-template-columns");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { display: disp } as any);
@@ -1386,6 +1430,7 @@ export function SelectionHighlight({
         el.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", "important");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { gap: gapStr } as any);
@@ -1400,6 +1445,7 @@ export function SelectionHighlight({
         el.style.setProperty("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", "important");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { gap: val } as any);
@@ -1421,6 +1467,7 @@ export function SelectionHighlight({
         if (img) img.src = src;
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { src } as any);
@@ -1437,6 +1484,7 @@ export function SelectionHighlight({
         if (img) img.alt = alt;
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { alt } as any);
@@ -1453,6 +1501,7 @@ export function SelectionHighlight({
         if (img) img.style.setProperty("object-fit", fit, "important");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { objectFit: fit } as any);
@@ -1466,6 +1515,7 @@ export function SelectionHighlight({
       const img = el.querySelector("img");
       if (img) img.style.setProperty("border-radius", rad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { radius: rad } as any);
@@ -1519,6 +1569,7 @@ export function SelectionHighlight({
         if (vid) vid.src = src;
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { src } as any);
@@ -1535,6 +1586,7 @@ export function SelectionHighlight({
         if (vid) vid.poster = poster;
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { poster } as any);
@@ -1576,6 +1628,7 @@ export function SelectionHighlight({
         if (vid) vid.style.setProperty("object-fit", fit, "important");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { objectFit: fit } as any);
@@ -1589,6 +1642,7 @@ export function SelectionHighlight({
       const vid = el.querySelector("video");
       if (vid) vid.style.setProperty("border-radius", rad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { radius: rad } as any);
@@ -1612,6 +1666,7 @@ export function SelectionHighlight({
         vid.playsInline = value;
       }
       el?.dispatchEvent(new Event("input", { bubbles: true }));
+      if (el) onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       if (prop === "autoplay" && value) {
@@ -1635,6 +1690,10 @@ export function SelectionHighlight({
   const handleYoutubeUrlChange = (rawUrl: string) => {
     const trimmed = rawUrl.trim();
     const id = extractYouTubeVideoId(trimmed);
+    const el = resolveElement();
+    if (el) {
+      onCommitDom?.(el);
+    }
     if (id && selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { url: trimmed, videoId: id } as any);
     } else if (selectedId && onUpdateProps) {
@@ -1649,6 +1708,7 @@ export function SelectionHighlight({
       const iframe = el.querySelector("iframe");
       if (iframe) iframe.style.setProperty("border-radius", rad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { radius: rad } as any);
@@ -1656,6 +1716,10 @@ export function SelectionHighlight({
   };
 
   const handleYoutubePlaybackToggle = (prop: "autoplay" | "muted" | "loop" | "controls", value: boolean) => {
+    const el = resolveElement();
+    if (el) {
+      onCommitDom?.(el);
+    }
     if (selectedId && onUpdateProps) {
       if (prop === "autoplay" && value) {
         onUpdateProps(selectedId, { autoplay: true, muted: true } as any);
@@ -1678,6 +1742,7 @@ export function SelectionHighlight({
       if (el.tagName === "A") el.setAttribute("href", href);
       else el.setAttribute("data-href", href);
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { href } as any);
@@ -1695,6 +1760,7 @@ export function SelectionHighlight({
         el.removeAttribute("rel");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { newTab } as any);
@@ -1708,6 +1774,7 @@ export function SelectionHighlight({
       el.style.setProperty("padding", BUTTON_SIZE_PADDING[size], "important");
       el.style.setProperty("font-size", BUTTON_SIZE_FONT[size], "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { size } as any);
@@ -1721,6 +1788,7 @@ export function SelectionHighlight({
       el.style.setProperty("background-color", hex, "important");
       el.style.setProperty("color", autoTextColor, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { background: hex, textColor: autoTextColor } as any);
@@ -1732,6 +1800,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("border-radius", rad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { radius: rad } as any);
@@ -1763,6 +1832,7 @@ export function SelectionHighlight({
         }
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { background: hex } as any);
@@ -1774,6 +1844,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("color", hex, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { color: hex } as any);
@@ -1785,6 +1856,7 @@ export function SelectionHighlight({
     if (el) {
       el.style.setProperty("border-radius", rad, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { radius: rad } as any);
@@ -1804,6 +1876,7 @@ export function SelectionHighlight({
         el.style.setProperty("border-color", genericBorderColor || "#e2e8f0", "important");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, { borderWidth: w, borderColor: genericBorderColor || "#e2e8f0" } as any);
@@ -1819,6 +1892,7 @@ export function SelectionHighlight({
         el.style.setProperty("border-style", "solid", "important");
       }
       el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
     }
     if (selectedId && onUpdateProps) {
       onUpdateProps(selectedId, {
@@ -1910,7 +1984,15 @@ export function SelectionHighlight({
                 <div
                   className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[56px]"
                   onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                 >
                   {ALL_TEXT_TAGS.map(({ tag: t, label }) => (
                     <button
@@ -1963,7 +2045,15 @@ export function SelectionHighlight({
                 <div
                   className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl flex flex-col gap-0.5 z-[100000] min-w-[150px]"
                   onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                 >
                   {FONT_OPTIONS.map((font) => (
                     <button
@@ -2030,7 +2120,15 @@ export function SelectionHighlight({
                 <div
                   className="xite-floating-popover absolute top-full left-0 mt-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xl grid grid-cols-3 gap-0.5 z-[100000] w-48"
                   onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                 >
                   {FONT_SIZES.map((s) => (
                     <button
@@ -2174,7 +2272,15 @@ export function SelectionHighlight({
                 <div
                   className="xite-floating-popover absolute top-full right-0 mt-1.5 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-3 z-[100000] w-64 text-slate-800"
                   onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                 >
                   {/* Style Row: Italic, Underline, Reset, Case */}
                   <div>

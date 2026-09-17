@@ -2100,6 +2100,7 @@ export function EditorStudio({
         selection={elementSelection.selection}
         isEditingText={inPlaceEditor.isEditingText}
         onUpdateProps={elementSelection.updateElementProps}
+        onCommitDom={elementSelection.commitDomChange}
         onChangeHeadingLevel={(level) => {
           inPlaceEditor.changeHeadingTag?.(level);
           elementSelection.changeHeadingLevel(level);
