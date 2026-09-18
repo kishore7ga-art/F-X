@@ -1038,6 +1038,101 @@ export function OnboardingWizard({
     return page?.sections || [];
   };
 
+  const getCustomizedSectionsForPage = (
+    pageId: string,
+    sourcePagesList: EditorPage[] = adminPages
+  ): EditorSection[] => {
+    const normId = pageId.toLowerCase().replace(/^\/+/, "");
+    const page = sourcePagesList.find((p) => {
+      const slug = (p.slug || "").toLowerCase().replace(/^\/+/, "");
+      if (normId === "home") {
+        return slug === "home" || slug === "" || slug === "index";
+      }
+      if (normId === "about") {
+        return slug === "about" || slug === "about-us";
+      }
+      if (normId === "academics") {
+        return slug === "academics" || slug === "courses" || slug === "programs";
+      }
+      if (normId === "contact") {
+        return slug === "contact" || slug === "contact-us";
+      }
+      if (normId === "placements") {
+        return slug === "placements" || slug === "careers";
+      }
+      return slug === normId;
+    });
+    const rawSections = page?.sections || [];
+    if (!rawSections || rawSections.length === 0) return [];
+
+    const personality =
+      BRAND_PERSONALITIES.find((p) => p.id === selectedPersonality) ||
+      BRAND_PERSONALITIES[0];
+    const displayTitle = siteTitle && siteTitle.trim() ? siteTitle.trim() : (collegeName || "Greenfield University");
+    const initials =
+      displayTitle
+        .split(/\s+/)
+        .map((w) => w[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join("")
+        .toUpperCase() || "GU";
+
+    return rawSections.map((sec, idx) => {
+      let raw = sec.code || "";
+      if (displayTitle) {
+        raw = raw.replace(
+          /(<span[^>]*class="[^"]*(?:lit-brand-text|brand-text|logo-text|brand-name|site-title)[^"]*"[^>]*>)([\s\S]*?)(<\/span>)/gi,
+          `$1${displayTitle}$3`
+        );
+        raw = raw.replace(
+          /(<div[^>]*class="[^"]*(?:lit-brand-text|brand-text|logo-text|brand-name|site-title)[^"]*"[^>]*>)([\s\S]*?)(<\/div>)/gi,
+          `$1${displayTitle}$3`
+        );
+        raw = raw
+          .replace(/Madras Institute of Tech(?:nology)?/gi, displayTitle)
+          .replace(/Greenfield University/gi, displayTitle)
+          .replace(/GREENFIELD UNIVERSITY/gi, displayTitle.toUpperCase())
+          .replace(/>GU</g, `>${initials}<`);
+      }
+
+      const isHero =
+        sec.category === "hero" ||
+        (sec.title && sec.title.toLowerCase().includes("hero")) ||
+        raw.includes("ai-hero") ||
+        raw.includes("hero-title") ||
+        (idx === 1 && rawSections.length > 1);
+
+      if (isHero) {
+        if (/class="[^"]*(?:ai-hero-title|hero-title)[^"]*"/i.test(raw)) {
+          raw = raw.replace(
+            /(<h1[^>]*class="[^"]*(?:ai-hero-title|hero-title)[^"]*"[^>]*>)([\s\S]*?)(<\/h1>)/gi,
+            `$1${personality.heroTitle}$3`
+          );
+        } else {
+          raw = raw.replace(/(<h1[^>]*>)([\s\S]*?)(<\/h1>)/i, `$1${personality.heroTitle}$3`);
+        }
+
+        if (/class="[^"]*(?:ai-hero-desc|hero-desc|hero-subtitle|lead)[^"]*"/i.test(raw)) {
+          raw = raw.replace(
+            /(<(?:p|div)[^>]*class="[^"]*(?:ai-hero-desc|hero-desc|hero-subtitle|lead)[^"]*"[^>]*>)([\s\S]*?)(<\/(?:p|div)>)/gi,
+            `$1${personality.heroSubtitle}$3`
+          );
+        } else {
+          raw = raw.replace(
+            /(<\/h1>[\s\S]*?<p[^>]*>)([\s\S]*?)(<\/p>)/i,
+            `$1${personality.heroSubtitle}$3`
+          );
+        }
+      }
+
+      return {
+        ...sec,
+        code: raw,
+      };
+    });
+  };
+
   const dynamicPages = useMemo<InstitutionalPageItem[]>(() => {
     const knownIds = new Set<string>(INSTITUTIONAL_PAGES.map((p) => p.id));
     const extraPages: InstitutionalPageItem[] = [];
@@ -1170,27 +1265,36 @@ export function OnboardingWizard({
       console.warn("Failed to save theme during skip:", cause);
     }
 
-    // Persist empty draft to ensure fresh site starts without admin default sections
+    // Persist draft with user configured pages and customized sections
     try {
+      let sourcePages = adminPages;
+      if (!sourcePages || sourcePages.length === 0) {
+        try {
+          sourcePages = await fetchDefaultWebsite();
+        } catch {
+          sourcePages = [];
+        }
+      }
       const pageIdsToSeed = selectedPages.size > 0 ? Array.from(selectedPages) : ["home"];
-      const freshPages = pageIdsToSeed.map((pId) => {
+      if (!pageIdsToSeed.includes("home")) pageIdsToSeed.unshift("home");
+      const seededPages = pageIdsToSeed.map((pId) => {
         const pageDef = dynamicPages.find((p) => p.id === pId);
         const slug = pId === "home" ? "/home" : `/${pId}`;
         return {
           id: `page-${pId}`,
           slug,
           title: pageDef?.title || pageDef?.label || pId,
-          sections: [],
+          sections: getCustomizedSectionsForPage(pId, sourcePages),
         };
       });
-      await saveWebsite(freshPages);
+      await saveWebsite(seededPages);
     } catch (cause) {
-      console.warn("Failed to initialize empty website draft during skip:", cause);
+      console.warn("Failed to initialize website draft during skip:", cause);
     }
 
     try {
       localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(customTokens));
-      localStorage.setItem(`xite_fresh_site_${subdomain}`, "true");
+      localStorage.removeItem(`xite_fresh_site_${subdomain}`);
       localStorage.setItem(
         `xite_onboarding_${subdomain}`,
         JSON.stringify({
@@ -1250,27 +1354,36 @@ export function OnboardingWizard({
         console.warn("Failed to save theme during launch:", cause);
       }
 
-      // Persist empty draft with tenant-selected pages so tenant starts clean without admin defaults
+      // Persist draft with user configured pages and customized sections
       try {
+        let sourcePages = adminPages;
+        if (!sourcePages || sourcePages.length === 0) {
+          try {
+            sourcePages = await fetchDefaultWebsite();
+          } catch {
+            sourcePages = [];
+          }
+        }
         const pageIdsToSeed = selectedPages.size > 0 ? Array.from(selectedPages) : ["home"];
-        const freshPages = pageIdsToSeed.map((pId) => {
+        if (!pageIdsToSeed.includes("home")) pageIdsToSeed.unshift("home");
+        const seededPages = pageIdsToSeed.map((pId) => {
           const pageDef = dynamicPages.find((p) => p.id === pId);
           const slug = pId === "home" ? "/home" : `/${pId}`;
           return {
             id: `page-${pId}`,
             slug,
             title: pageDef?.title || pageDef?.label || pId,
-            sections: [],
+            sections: getCustomizedSectionsForPage(pId, sourcePages),
           };
         });
-        await saveWebsite(freshPages);
+        await saveWebsite(seededPages);
       } catch (cause) {
-        console.warn("Failed to initialize empty website draft during launch:", cause);
+        console.warn("Failed to initialize website draft during launch:", cause);
       }
 
       try {
         localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(customTokens));
-        localStorage.setItem(`xite_fresh_site_${subdomain}`, "true");
+        localStorage.removeItem(`xite_fresh_site_${subdomain}`);
         localStorage.setItem(
           `xite_onboarding_${subdomain}`,
           JSON.stringify({

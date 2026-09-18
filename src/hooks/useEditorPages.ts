@@ -527,33 +527,14 @@ export function useEditorPages(initialSlug = "/home", subdomain?: string) {
     let cancelled = false;
     void (async () => {
       try {
+        if (subdomain && typeof window !== "undefined") {
+          try {
+            localStorage.removeItem(`xite_fresh_site_${subdomain}`);
+          } catch {}
+        }
         const pages = await fetchWebsite();
         if (!cancelled) {
-          const isFresh = Boolean(
-            subdomain &&
-            typeof window !== "undefined" &&
-            (localStorage.getItem(`xite_fresh_site_${subdomain}`) === "true" ||
-             (() => {
-               try {
-                 const raw = localStorage.getItem(`xite_onboarding_${subdomain}`);
-                 return raw ? JSON.parse(raw)?.isFresh === true : false;
-               } catch {
-                 return false;
-               }
-             })())
-          );
-
-          if (isFresh) {
-            // When building a fresh site from onboarding, admin default sections must NOT
-            // be force-injected into the tenant's site sections.
-            const freshPages = pages.map((p) => ({
-              ...p,
-              sections: [],
-            }));
-            dispatch({ type: "boot", pages: freshPages, activePageId: rootPageId });
-          } else {
-            dispatch({ type: "boot", pages, activePageId: rootPageId });
-          }
+          dispatch({ type: "boot", pages, activePageId: rootPageId });
         }
       } catch (error) {
         console.error("[editor] could not load this college's website:", error);
@@ -595,36 +576,7 @@ export function useEditorPages(initialSlug = "/home", subdomain?: string) {
         const pages = await fetchWebsite();
         if (loadToken.current[pageId] !== token) return;
 
-        const isFresh = Boolean(
-          subdomain &&
-          typeof window !== "undefined" &&
-          (localStorage.getItem(`xite_fresh_site_${subdomain}`) === "true" ||
-           (() => {
-             try {
-               const raw = localStorage.getItem(`xite_onboarding_${subdomain}`);
-               return raw ? JSON.parse(raw)?.isFresh === true : false;
-             } catch {
-               return false;
-             }
-           })())
-        );
-
         const match = pages.find((p) => canonicalSlug(p.slug) === pageId);
-
-        if (isFresh) {
-          if (loadToken.current[pageId] !== token) return;
-          dispatch({
-            type: "pageLoaded",
-            pageId,
-            page: {
-              id: match?.id ?? `page-${pageId.replace(/^\//, "")}`,
-              slug: pageId,
-              title: match?.title ?? titleFromSlug(pageId),
-              sections: [],
-            },
-          });
-          return;
-        }
 
         if (match && match.sections.length > 0) {
           dispatch({ type: "pageLoaded", pageId, page: match });
@@ -657,7 +609,7 @@ export function useEditorPages(initialSlug = "/home", subdomain?: string) {
         });
       }
     },
-    [seedFromDefaults, subdomain],
+    [seedFromDefaults],
   );
 
   // Load the active page whenever it is not already loaded. One effect, one
