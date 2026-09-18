@@ -47,8 +47,6 @@ import {
   viewportUnitsToContainer,
   viewportMediaToContainer,
 } from "@/lib/section-runtime";
-import { OnboardingShowcaseImage } from "./OnboardingShowcaseImage";
-
 type Step = 0 | 1 | 2;
 type BuilderTab = "topic" | "goals" | "site_info" | "pages" | "colors" | "fonts";
 
@@ -900,7 +898,7 @@ export function OnboardingWizard({
   collegeName: string;
   initialCollegeType?: string | null;
 }) {
-  const [step, setStep] = useState<Step>(0);
+  const [step, setStep] = useState<Step>(1);
 
   // Step 1: Goals State
   const [selectedGoals, setSelectedGoals] = useState<Set<string>>(() => {
@@ -1255,131 +1253,8 @@ export function OnboardingWizard({
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
       />
       {/* ─────────────────────────────────────────────────────────────
-          STEP 0: "What do you want to do with your website?"
-          (Screenshot 1: Split Screen with 14 Educational Options)
-         ───────────────────────────────────────────────────────────── */}
-      {step === 0 && (
-        <div className="min-h-screen w-full flex">
-          {/* Left Workspace Panel */}
-          <div className="flex-1 min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-14 xl:p-16 max-w-[1320px]">
-            {/* Top Bar */}
-            <header className="w-full flex items-center justify-between pb-6">
-              <div className="flex items-center gap-2.5 group select-none">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white p-1 shadow-sm">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <span className="font-black text-lg tracking-tight text-black">
-                  XITE
-                </span>
-              </div>
-
-              {/* Skip Link (Matches Screenshot 1 top-right) */}
-              <button
-                type="button"
-                onClick={handleSkipToEditor}
-                className="text-xs font-bold uppercase tracking-widest text-neutral-500 hover:text-black transition-colors cursor-pointer"
-              >
-                I&apos;M JUST BROWSING
-              </button>
-            </header>
-
-            {error && (
-              <div className="my-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
-                {error}
-              </div>
-            )}
-
-            {/* Main Question & Grid Area */}
-            <main className="my-auto py-6 sm:py-8 lg:py-10">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-                {/* Left Column: Title & 2-Segment Progress Bar */}
-                <div className="lg:col-span-4 space-y-4">
-                  <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-normal tracking-tight text-neutral-900 leading-[1.18]">
-                    What do you want to do with your website?
-                  </h1>
-
-                  {/* 2-Segment Progress Indicator (Step 1 of 2: 1st black, 2nd grey) */}
-                  <div className="pt-2">
-                    <div className="flex items-center gap-1.5 w-20">
-                      <div className="h-[2.5px] w-8 bg-black rounded-full transition-all" />
-                      <div className="h-[2.5px] w-8 bg-neutral-200 rounded-full transition-all" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column: 14 Selection Cards in 2 Columns */}
-                <div className="lg:col-span-8">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                    {INSTITUTIONAL_GOALS.map((item) => {
-                      const isChecked = selectedGoals.has(item.id);
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => toggleGoal(item.id)}
-                          className={`group flex items-center gap-3.5 p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer select-none ${
-                            isChecked
-                              ? "bg-neutral-100/90 border-neutral-300 shadow-xs"
-                              : "bg-[#F9FAFB] border-neutral-100/90 hover:bg-neutral-100/60 hover:border-neutral-200"
-                          }`}
-                        >
-                          {/* Square Checkbox (Matches Reference Screenshot) */}
-                          <div
-                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-xs border transition-colors ${
-                              isChecked
-                                ? "bg-black border-black text-white"
-                                : "bg-white border-neutral-300 group-hover:border-neutral-400"
-                            }`}
-                          >
-                            {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
-                          </div>
-
-                          <span className="text-[13px] sm:text-sm font-normal text-neutral-800 leading-snug">
-                            {item.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </main>
-
-            {/* Bottom Bar: BACK on Left, NEXT on Right */}
-            <footer className="w-full flex items-center justify-between pt-6 border-t border-neutral-100">
-              <button
-                type="button"
-                disabled
-                className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest border border-neutral-200 rounded text-neutral-400 bg-neutral-50 cursor-not-allowed opacity-40"
-              >
-                BACK
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setStep(1);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="px-8 py-2.5 text-xs font-bold uppercase tracking-widest bg-black text-white rounded hover:bg-neutral-800 active:bg-neutral-900 transition-all cursor-pointer shadow-sm hover:shadow"
-              >
-                NEXT
-              </button>
-            </footer>
-          </div>
-
-          {/* Right Vertical Campus Showcase Image */}
-          <aside className="hidden lg:block lg:w-[28%] xl:w-[30%] min-h-screen relative shrink-0 border-l border-neutral-100">
-            <OnboardingShowcaseImage
-              hasAdminSections={homeSections.length > 0}
-              adminSectionsCount={homeSections.length}
-            />
-          </aside>
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
           STEP 1: "How would you like to get started?"
-          (Screenshot 2: Templates vs AI Builder Cards)
+          (Single Option: "Start Build Now")
          ───────────────────────────────────────────────────────────── */}
       {step === 1 && (
         <div className="min-h-screen w-full flex flex-col justify-between p-6 sm:p-10 lg:p-14 xl:p-16 max-w-[1400px] mx-auto">
@@ -1410,11 +1285,11 @@ export function OnboardingWizard({
             </div>
           )}
 
-          {/* Main Area: Title on Left, 2 Cards on Right */}
+          {/* Main Area: Title on Left, Single 'Start Build Now' Card on Right */}
           <main className="my-auto py-8 lg:py-12">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-start">
               {/* Left Column: Headline & Progress Bar */}
-              <div className="lg:col-span-4 space-y-4">
+              <div className="lg:col-span-5 space-y-4">
                 <h1 className="text-3xl sm:text-4xl lg:text-[40px] font-normal tracking-tight text-neutral-900 leading-[1.18]">
                   How would you like to get started?
                 </h1>
@@ -1422,79 +1297,43 @@ export function OnboardingWizard({
                 {/* 2-Segment Progress Indicator */}
                 <div className="pt-2">
                   <div className="flex items-center gap-1.5 w-20">
-                    <div className="h-[2.5px] w-8 bg-neutral-300 rounded-full transition-all" />
                     <div className="h-[2.5px] w-8 bg-black rounded-full transition-all" />
+                    <div className="h-[2.5px] w-8 bg-neutral-300 rounded-full transition-all" />
                   </div>
                 </div>
               </div>
 
-              {/* Right Area: Two Large Cards Side-by-Side */}
-              <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-                {/* ── CARD 1: Professional Website Templates / Build Now ── */}
+              {/* Right Area: Single Card for "Start Build Now" */}
+              <div className="lg:col-span-7 flex justify-start">
                 <div
                   onClick={() => {
                     setStep(2);
                     setBuilderTab("site_info");
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="group rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between hover:border-neutral-300"
+                  className="group w-full max-w-xl rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between hover:border-neutral-300"
                 >
                   <div>
-                    <div className="h-44 sm:h-52 w-full overflow-hidden bg-neutral-100 relative">
+                    <div className="h-52 sm:h-60 w-full overflow-hidden bg-neutral-100 relative">
                       <img
                         src="/tab2-templates.jpg"
-                        alt="Professional Website Templates"
+                        alt="Start Build Now"
                         className="h-full w-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-500"
                       />
                     </div>
                     <div className="p-6 sm:p-7">
-                      <h3 className="text-xs font-bold text-neutral-900 tracking-tight mb-2">
+                      <h3 className="text-base font-bold text-neutral-900 tracking-tight mb-2">
                         Professional Website Templates
                       </h3>
                       <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-                        Choose from a curated set of designer templates or Blueprint AI templates made for you.
+                        Customize your college site title, brand personality, pages, curated color palettes, and typography before opening the editor canvas.
                       </p>
                     </div>
                   </div>
 
-                  <div className="px-6 sm:px-7 pb-6 sm:pb-7 pt-2 flex items-center justify-between">
+                  <div className="px-6 sm:px-7 pb-6 sm:pb-7 pt-2 flex items-center justify-between border-t border-neutral-100/80">
                     <span className="text-base font-bold text-neutral-900 group-hover:text-black flex items-center gap-2">
-                      <span>Build Now</span>
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  </div>
-                </div>
-
-                {/* ── CARD 2: AI Website Builder / Build a Website ── */}
-                <div
-                  onClick={() => {
-                    setStep(2);
-                    setBuilderTab("site_info");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  className="group rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between hover:border-neutral-300"
-                >
-                  <div>
-                    <div className="h-44 sm:h-52 w-full overflow-hidden bg-neutral-100 relative">
-                      <img
-                        src="/tab1-builder.jpg"
-                        alt="AI Website Builder"
-                        className="h-full w-full object-cover object-center group-hover:scale-[1.02] transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="p-6 sm:p-7">
-                      <h3 className="text-xs font-bold text-neutral-900 tracking-tight mb-2">
-                        AI Website Builder
-                      </h3>
-                      <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-                        Let Blueprint AI build you a custom starting point that&apos;s ready to make your own.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="px-6 sm:px-7 pb-6 sm:pb-7 pt-2 flex items-center justify-between">
-                    <span className="text-base font-bold text-neutral-900 group-hover:text-black flex items-center gap-2">
-                      <span>Build a Website</span>
+                      <span>Start Build Now</span>
                       <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </span>
                   </div>
@@ -1503,18 +1342,9 @@ export function OnboardingWizard({
             </div>
           </main>
 
-          {/* Bottom Bar: BACK on Left */}
+          {/* Bottom Bar: Clean Step Indicator */}
           <footer className="w-full flex items-center justify-between pt-6 border-t border-neutral-100">
-            <button
-              type="button"
-              onClick={() => {
-                setStep(0);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="px-6 py-2.5 text-xs font-bold uppercase tracking-widest border border-neutral-200 rounded text-neutral-800 bg-white hover:bg-neutral-50 active:bg-neutral-100 transition-colors cursor-pointer"
-            >
-              BACK
-            </button>
+            <span className="text-xs font-medium text-neutral-400">Step 1 of 2</span>
           </footer>
         </div>
       )}
@@ -1970,8 +1800,6 @@ export function OnboardingWizard({
             <div className="hidden md:flex items-center gap-8 lg:gap-10 text-xs tracking-wide">
               {(
                 [
-                  { id: "topic", label: "Topic" },
-                  { id: "goals", label: "Goals" },
                   { id: "site_info", label: "Site Info" },
                   { id: "pages", label: "Pages" },
                   { id: "colors", label: "Colors" },
@@ -1983,15 +1811,7 @@ export function OnboardingWizard({
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => {
-                      if (tab.id === "topic") {
-                        setStep(0);
-                      } else if (tab.id === "goals") {
-                        setStep(1);
-                      } else {
-                        setBuilderTab(tab.id as BuilderTab);
-                      }
-                    }}
+                    onClick={() => setBuilderTab(tab.id as BuilderTab)}
                     className={`transition-colors cursor-pointer pb-0.5 ${
                       isActive
                         ? "text-neutral-900 font-bold border-b-2 border-neutral-900"
