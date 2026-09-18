@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 import { ApiError, completeOnboardingRequest } from "@/lib/api-client";
-import { EDITOR_FONTS, EDITOR_THEMES, tokenizeSectionHtml } from "@/lib/editor-themes";
+import { EDITOR_FONTS, EDITOR_THEMES, themeStylesheet, tokenizeSectionHtml } from "@/lib/editor-themes";
 import {
   fetchDefaultWebsite,
   saveTheme,
@@ -28,7 +28,17 @@ import {
   type EditorPage,
   type EditorSection,
 } from "@/lib/editor-api";
-import { sectionCanvasHtml } from "@/lib/section-runtime";
+import {
+  SECTION_RUNTIME_TAILWIND_CDN_SRC,
+  SECTION_RUNTIME_HEAD_LINKS,
+  sectionRuntimeCss,
+  sectionResponsiveCss,
+  extractStylesAndBody,
+  extractCssImports,
+  absolutiseUploadUrls,
+  viewportUnitsToContainer,
+  viewportMediaToContainer,
+} from "@/lib/section-runtime";
 import { OnboardingShowcaseImage } from "./OnboardingShowcaseImage";
 
 type Step = 0 | 1 | 2;
@@ -432,33 +442,131 @@ export const CURATED_FONT_GROUPS: FontGroup[] = [
   },
 ];
 
-/** Formats a section's code for dynamic preview with title, canvas styling and color tokenization */
-function formatSectionForPreview(
-  rawCode: string,
-  sectionId: string,
-  siteTitle: string,
-  activePalette: (typeof CURATED_PALETTE_GROUPS)[number]["palettes"][number],
-  activeFontPairing: FontPairing
-): string {
-  if (!rawCode || !rawCode.trim()) return "";
+/** Assembles all sections for a page into a complete, standalone preview document with Tailwind Play CDN and theme styles */
+function buildMultiSectionPreviewDocument({
+  sections,
+  siteTitle,
+  activePalette,
+  activeFontPairing,
+}: {
+  sections: EditorSection[];
+  siteTitle: string;
+  activePalette: (typeof CURATED_PALETTE_GROUPS)[number]["palettes"][number];
+  activeFontPairing: FontPairing;
+}): string {
+  const allHeadLinks: string[] = [];
+  const allHeadCss: string[] = [];
+  const bodySectionsHtml: string[] = [];
 
-  let processed = rawCode;
+  sections.forEach((sec, idx) => {
+    let raw = sec.code || "";
+    if (siteTitle && siteTitle.trim() && siteTitle !== "Greenfield University") {
+      raw = raw
+        .replace(/Madras Institute of Tech/g, siteTitle)
+        .replace(/Greenfield University/g, siteTitle);
+    }
+    const code = absolutiseUploadUrls(raw, null);
+    const { headCss, headLinks, bodyHtml } = extractStylesAndBody(code);
 
-  // Personalize institutional site title if custom
-  if (siteTitle && siteTitle.trim() && siteTitle !== "Greenfield University") {
-    processed = processed
-      .replace(/Madras Institute of Tech/g, siteTitle)
-      .replace(/Greenfield University/g, siteTitle);
-  }
+    if (headLinks && headLinks.trim()) {
+      allHeadLinks.push(headLinks.trim());
+    }
 
-  // Wrap inside section-canvas-box with responsive viewport units mapped
-  const canvasHtml = sectionCanvasHtml(processed, sectionId);
+    const { css: importedCss, hrefs } = extractCssImports(headCss);
+    hrefs.forEach((href) => {
+      allHeadLinks.push(`<link rel="stylesheet" href="${href}"/>`);
+    });
 
-  // Tokenize colors so theme tokens apply
-  return tokenizeSectionHtml(canvasHtml);
+    if (importedCss && importedCss.trim()) {
+      allHeadCss.push(viewportUnitsToContainer(viewportMediaToContainer(importedCss.trim())));
+    }
+
+    // Tokenize colors so active palette tokens apply
+    const tokenizedBody = tokenizeSectionHtml(bodyHtml || code);
+    bodySectionsHtml.push(`
+      <div data-xite-section="${sec.id || `sec-${idx}`}" class="section-canvas-box" style="width: 100%; box-sizing: border-box;">
+        ${tokenizedBody}
+      </div>
+    `);
+  });
+
+  const themeId = activePalette.backendThemeId;
+  const fontId = activeFontPairing.backendFontId;
+
+  return `<!DOCTYPE html>
+<html lang="en" data-xite-theme="${themeId}" data-xite-font="${fontId}">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="${SECTION_RUNTIME_TAILWIND_CDN_SRC}"></script>
+  ${SECTION_RUNTIME_HEAD_LINKS}
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+  ${allHeadLinks.join("\n  ")}
+  <style>
+    ${sectionRuntimeCss(null)}
+    ${sectionResponsiveCss(null)}
+    ${themeStylesheet(".xite-site-canvas")}
+
+    :root, html, body, .xite-site-canvas {
+      --xite-accent: ${activePalette.accent};
+      --xite-primary: ${activePalette.accent};
+      --theme-accent: ${activePalette.accent};
+      --xite-surface: ${activePalette.bg};
+      --xite-surface-raised: ${activePalette.colors[1] || activePalette.bg};
+      --theme-light-1: ${activePalette.bg};
+      --theme-light-2: ${activePalette.colors[1] || activePalette.bg};
+      --xite-text: ${activePalette.text};
+      --xite-text-muted: ${activePalette.text}99;
+      --theme-dark-1: ${activePalette.text}99;
+      --theme-dark-2: ${activePalette.text};
+      --xite-font: ${activeFontPairing.bodyFamily};
+      --font-heading: ${activeFontPairing.headingFamily};
+      --font-body: ${activeFontPairing.bodyFamily};
+      font-family: ${activeFontPairing.bodyFamily};
+      background-color: ${activePalette.bg};
+      color: ${activePalette.text};
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: ${activeFontPairing.headingFamily} !important;
+    }
+
+    p, span, a, li, button {
+      font-family: ${activeFontPairing.bodyFamily} !important;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    ${allHeadCss.join("\n\n")}
+  </style>
+</head>
+<body class="xite-site-canvas">
+  <div style="width: 100%; display: flex; flex-direction: column;">
+    ${bodySectionsHtml.join("\n")}
+  </div>
+  <script>
+    document.addEventListener("click", function(e) {
+      var link = e.target.closest("a");
+      if (link) {
+        e.preventDefault();
+      }
+    }, true);
+  </script>
+</body>
+</html>`;
 }
 
-// Dynamic Multi-Section Page Canvas Card (Displays sections from Admin, or empty state if none configured)
+// Dynamic Multi-Section Page Canvas Card (Displays sections from Admin in high fidelity, or empty state if none configured)
 function DynamicPageCanvasCard({
   page,
   sections,
@@ -476,87 +584,23 @@ function DynamicPageCanvasCard({
   isLoading?: boolean;
   className?: string;
 }) {
-  const hasNavbarSection = sections.some(
-    (s) => s.category === "navbar" || s.code.includes("<header")
-  );
+  const previewDoc = useMemo(() => {
+    if (!sections || sections.length === 0) return "";
+    return buildMultiSectionPreviewDocument({
+      sections,
+      siteTitle,
+      activePalette,
+      activeFontPairing,
+    });
+  }, [sections, siteTitle, activePalette, activeFontPairing]);
 
   return (
     <div
-      className={`rounded-xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none xite-site-canvas dynamic-card-${page.id} ${
+      className={`rounded-xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white ${
         className ? className : "w-full h-[520px] sm:h-[580px] lg:h-[620px]"
       }`}
-      data-xite-theme={activePalette.backendThemeId}
-      data-xite-font={activeFontPairing.backendFontId}
-      style={
-        {
-          backgroundColor: activePalette.bg,
-          color: activePalette.text,
-          fontFamily: activeFontPairing.bodyFamily,
-          "--xite-accent": activePalette.accent,
-          "--xite-primary": activePalette.accent,
-          "--theme-accent": activePalette.accent,
-          "--xite-surface": activePalette.bg,
-          "--xite-surface-raised": activePalette.colors[1] || activePalette.bg,
-          "--theme-light-1": activePalette.bg,
-          "--theme-light-2": activePalette.colors[1] || activePalette.bg,
-          "--xite-text": activePalette.text,
-          "--xite-text-muted": `${activePalette.text}99`,
-          "--theme-dark-1": `${activePalette.text}99`,
-          "--theme-dark-2": activePalette.text,
-          "--xite-header": activePalette.bg,
-          "--xite-footer": activePalette.text,
-          "--xite-font": activeFontPairing.bodyFamily,
-          "--font-heading": activeFontPairing.headingFamily,
-          "--font-body": activeFontPairing.bodyFamily,
-        } as React.CSSProperties
-      }
+      style={{ backgroundColor: activePalette.bg, color: activePalette.text }}
     >
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            .dynamic-card-${page.id} h1,
-            .dynamic-card-${page.id} h2,
-            .dynamic-card-${page.id} h3,
-            .dynamic-card-${page.id} h4,
-            .dynamic-card-${page.id} h5,
-            .dynamic-card-${page.id} h6 {
-              font-family: ${activeFontPairing.headingFamily} !important;
-            }
-            .dynamic-card-${page.id} p,
-            .dynamic-card-${page.id} span,
-            .dynamic-card-${page.id} a,
-            .dynamic-card-${page.id} li,
-            .dynamic-card-${page.id} button {
-              font-family: ${activeFontPairing.bodyFamily} !important;
-            }
-            .dynamic-card-${page.id} .section-canvas-box {
-              width: 100%;
-              box-sizing: border-box;
-            }
-          `,
-        }}
-      />
-
-      {/* Mock Nav when no navbar section is present, only shown when sections exist */}
-      {!hasNavbarSection && sections.length > 0 && (
-        <div
-          className="sticky top-0 z-30 px-5 py-3 border-b flex items-center justify-between backdrop-blur-md shrink-0"
-          style={{
-            borderColor: `${activePalette.text}15`,
-            backgroundColor: `${activePalette.bg}FA`,
-          }}
-        >
-          <span className="font-bold text-xs truncate max-w-[160px]">
-            {siteTitle}
-          </span>
-          <div className="flex items-center gap-3 text-[10px] font-medium opacity-70">
-            <span>About</span>
-            <span>Programs</span>
-            <span>Admissions</span>
-          </div>
-        </div>
-      )}
-
       {/* Loading State */}
       {isLoading ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-3">
@@ -600,25 +644,14 @@ function DynamicPageCanvasCard({
           </span>
         </div>
       ) : (
-        /* Dynamic Sections Configured in Admin */
-        <div className="w-full flex flex-col divide-y divide-transparent">
-          {sections.map((sec, idx) => (
-            <div
-              key={sec.id || idx}
-              data-xite-section={sec.id}
-              className="w-full relative section-preview-wrapper"
-              dangerouslySetInnerHTML={{
-                __html: formatSectionForPreview(
-                  sec.code,
-                  sec.id,
-                  siteTitle,
-                  activePalette,
-                  activeFontPairing
-                ),
-              }}
-            />
-          ))}
-        </div>
+        /* Dynamic Sections Configured in Admin: Rendered with complete Tailwind & Custom CSS fidelity */
+        <iframe
+          key={`${page.id}-${activePalette.id}-${activeFontPairing.id}-${sections.length}`}
+          srcDoc={previewDoc}
+          title={page.label || page.id}
+          className="w-full h-full flex-1 border-0 bg-transparent rounded-xl"
+          sandbox="allow-same-origin allow-scripts"
+        />
       )}
     </div>
   );
