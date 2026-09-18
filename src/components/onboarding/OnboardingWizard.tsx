@@ -660,6 +660,32 @@ function buildMultiSectionPreviewDocument({
       overflow-x: hidden;
       overflow-y: auto;
       scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.35);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    /* Solid and prominent top navbar positioning */
+    .lit-header {
+      position: relative !important;
+      z-index: 1000 !important;
+      background: #09090b !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .lit-header a, .lit-header button, .lit-header span, .lit-brand-text, .lit-nav-link {
+      color: #ffffff !important;
     }
 
     ${allHeadCss.join("\n\n")}
@@ -811,7 +837,7 @@ function DynamicPageCanvasCard({
   return (
     <div
       className={`rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white ${
-        className ? className : "w-full h-[600px] sm:h-[680px] lg:h-[740px] xl:h-[800px]"
+        className ? className : "w-full flex-1 min-h-0 h-full max-h-[calc(100vh-210px)] min-h-[420px]"
       }`}
       style={{ backgroundColor: activePalette.bg, color: activePalette.text }}
     >
@@ -1360,7 +1386,7 @@ export function OnboardingWizard({
           <div className="absolute inset-0 backdrop-blur-3xl" />
 
           {/* Top Brand Bar */}
-          <header className="relative z-20 w-full flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/20 backdrop-blur-md">
+          <header className="relative z-30 w-full shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-black/40 backdrop-blur-md">
             <div className="flex items-center gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-black p-1 shadow-xs">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -1381,16 +1407,16 @@ export function OnboardingWizard({
           </header>
 
           {/* Center Stage + Right Drawer */}
-          <div className="relative z-10 flex-1 flex overflow-hidden">
+          <div className="relative z-10 flex-1 min-h-0 flex overflow-hidden">
             {/* ─── CENTER PREVIEW CANVAS (Shows live recoloring and pages carousel) ─── */}
-            <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 lg:p-8 overflow-hidden relative">
+            <div className="flex-1 min-h-0 flex flex-col justify-between p-3 sm:p-5 lg:p-6 overflow-hidden relative">
               {/* IF TAB IS 'PAGES' OR 'COLORS' OR 'FONTS' (Multi-Page Carousel View matching Screenshot 4 & 5) */}
               {builderTab === "pages" || builderTab === "colors" || builderTab === "fonts" ? (
-                <div className="h-full w-full flex flex-col justify-between">
+                <div className="h-full w-full flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
                   {/* Pages Horizontal Scroll Row */}
                   <div
                     ref={carouselRef}
-                    className="flex-1 flex items-center gap-8 overflow-x-auto pb-4 pt-2 px-4 scrollbar-none"
+                    className="flex-1 min-h-0 flex items-center gap-6 sm:gap-8 overflow-x-auto py-2 px-2 sm:px-4 scrollbar-none"
                     style={{ transform: `scale(${zoomScale})`, transformOrigin: "center left" }}
                   >
                     {dynamicPages.filter(
@@ -1398,10 +1424,10 @@ export function OnboardingWizard({
                     ).map((page) => (
                       <div
                         key={page.id}
-                        className="w-[540px] sm:w-[680px] lg:w-[800px] xl:w-[880px] shrink-0 flex flex-col transition-all duration-300"
+                        className="w-[480px] sm:w-[600px] lg:w-[720px] xl:w-[800px] h-full max-h-[calc(100vh-210px)] min-h-[420px] shrink-0 flex flex-col transition-all duration-300"
                       >
                         {/* Page Top Label (Matches Screenshot 4 & 5) */}
-                        <div className="text-xs sm:text-sm font-bold text-white/90 mb-2.5 px-1 flex items-center justify-between">
+                        <div className="text-xs sm:text-sm font-bold text-white/90 mb-2 px-1 flex items-center justify-between shrink-0">
                           <span className="truncate">{page.label}</span>
                           <span className="text-[10px] font-mono font-medium text-white/50 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">
                             Desktop View
@@ -1417,14 +1443,14 @@ export function OnboardingWizard({
                           activePalette={activePalette}
                           activeFontPairing={activeFontPairing}
                           isLoading={adminConfigLoading}
-                          className="w-full h-[580px] sm:h-[660px] lg:h-[740px] xl:h-[800px] rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white"
+                          className="flex-1 min-h-0 w-full rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white"
                         />
                       </div>
                     ))}
                   </div>
 
                   {/* Bottom Controls on Canvas Stage: Zoom Pill & Carousel Arrows (Matches Screenshot 4 & 5) */}
-                  <div className="flex items-center justify-between pt-3 px-2">
+                  <div className="flex items-center justify-between pt-2 px-2 shrink-0">
                     {/* Zoom Pill */}
                     <div className="inline-flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs select-none">
                       <button
@@ -1467,8 +1493,8 @@ export function OnboardingWizard({
                 </div>
               ) : (
                 /* IF TAB IS 'SITE INFO' (Single Page Preview: Dynamic Home Sections from Header to Footer) */
-                <div className="h-full w-full flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden">
-                  <div className="w-full max-w-5xl xl:max-w-6xl h-full max-h-[820px] flex flex-col">
+                <div className="h-full w-full flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+                  <div className="w-full max-w-5xl xl:max-w-6xl h-full max-h-[calc(100vh-210px)] min-h-[420px] flex flex-col">
                     <DynamicPageCanvasCard
                       page={INSTITUTIONAL_PAGES[0]}
                       sections={homeSections}
@@ -1790,7 +1816,7 @@ export function OnboardingWizard({
           )}
 
           {/* ─── BOTTOM STEPPER NAVIGATION BAR (Matches Screenshots 3, 4, 5, 6) ─── */}
-          <footer className="relative z-20 w-full flex items-center justify-between px-6 py-3.5 border-t border-neutral-200 bg-white select-none">
+          <footer className="relative z-30 w-full shrink-0 flex items-center justify-between px-6 py-3.5 border-t border-neutral-200 bg-white select-none">
             {/* BACK BUTTON */}
             <button
               type="button"
