@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Link from "next/link";
 import {
   ArrowRight,
   Check,
@@ -148,6 +147,7 @@ type PaletteGroup = {
   palettes: {
     id: string;
     name: string;
+    backendThemeId: string;
     colors: [string, string, string, string, string]; // 5 horizontal swatches
     accent: string;
     bg: string;
@@ -162,6 +162,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "academic-blue",
         name: "Academic Navy",
+        backendThemeId: "academic-blue",
         colors: ["#FFFFFF", "#F8FAFC", "#2563EB", "#1E3A8A", "#0F172A"],
         accent: "#2563EB",
         bg: "#FFFFFF",
@@ -170,6 +171,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "emerald-campus",
         name: "Forest Emerald",
+        backendThemeId: "forest-emerald",
         colors: ["#FFFFFF", "#ECFDF5", "#059669", "#064E3B", "#022C22"],
         accent: "#059669",
         bg: "#FFFFFF",
@@ -178,6 +180,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "monochrome",
         name: "Institutional Mono",
+        backendThemeId: "black-and-white",
         colors: ["#FFFFFF", "#F3F4F6", "#9CA3AF", "#1F2937", "#000000"],
         accent: "#1F2937",
         bg: "#FFFFFF",
@@ -186,6 +189,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "oxford-blue",
         name: "Oxford Cyan",
+        backendThemeId: "ocean-navy",
         colors: ["#FFFFFF", "#F0F9FF", "#0284C7", "#0369A1", "#082F49"],
         accent: "#0284C7",
         bg: "#FFFFFF",
@@ -200,6 +204,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "crimson-maroon",
         name: "Heritage Crimson",
+        backendThemeId: "crimson-slate",
         colors: ["#FFF1F2", "#FFE4E6", "#E11D48", "#881337", "#4C0519"],
         accent: "#E11D48",
         bg: "#FFF1F2",
@@ -208,6 +213,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "amber-sapphire",
         name: "Gold & Sapphire",
+        backendThemeId: "emerald-gold",
         colors: ["#FFFBEB", "#FEF3C7", "#D97706", "#2563EB", "#1E293B"],
         accent: "#D97706",
         bg: "#FFFBEB",
@@ -216,6 +222,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "indigo-violet",
         name: "Innovation Violet",
+        backendThemeId: "midnight-purple",
         colors: ["#FAF5FF", "#F3E8FF", "#7C3AED", "#4C1D95", "#1E1B4B"],
         accent: "#7C3AED",
         bg: "#FAF5FF",
@@ -224,6 +231,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "coastal-teal",
         name: "Campus Teal",
+        backendThemeId: "forest-emerald",
         colors: ["#F0FDFA", "#CCFBF1", "#0D9488", "#115E59", "#042F2E"],
         accent: "#0D9488",
         bg: "#F0FDFA",
@@ -237,6 +245,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "warm-terracotta",
         name: "Collegiate Terracotta",
+        backendThemeId: "warm-terracotta",
         colors: ["#FFFBEB", "#FEF3C7", "#EA580C", "#44403C", "#1C1917"],
         accent: "#EA580C",
         bg: "#FFFBEB",
@@ -245,6 +254,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "regal-sand",
         name: "Autonomous Sand",
+        backendThemeId: "warm-terracotta",
         colors: ["#FAF5F0", "#F5EBE1", "#C29B38", "#5C4B37", "#2D241E"],
         accent: "#C29B38",
         bg: "#FAF5F0",
@@ -253,6 +263,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "scholarly-slate",
         name: "Scholarly Slate",
+        backendThemeId: "ocean-navy",
         colors: ["#F8FAFC", "#F1F5F9", "#64748B", "#334155", "#0F172A"],
         accent: "#64748B",
         bg: "#F8FAFC",
@@ -261,6 +272,7 @@ const CURATED_PALETTE_GROUPS: PaletteGroup[] = [
       {
         id: "midnight-purple",
         name: "Obsidian Purple",
+        backendThemeId: "midnight-purple",
         colors: ["#0D0418", "#180828", "#A855F7", "#C084FC", "#FAF5FF"],
         accent: "#A855F7",
         bg: "#FAF5FF",
@@ -813,7 +825,7 @@ export function OnboardingWizard({
     if (currentIdx !== -1 && currentIdx < tabs.length - 1) {
       setBuilderTab(tabs[currentIdx + 1]);
     } else {
-      handleLaunchEditor();
+      void handleLaunchEditor();
     }
   }
 
@@ -827,16 +839,57 @@ export function OnboardingWizard({
     }
   }
 
+  // Skip or close: marks onboarding complete with defaults and navigates straight to editor
+  async function handleSkipToEditor() {
+    setPending(true);
+    setError(null);
+    const themePaletteId = activePalette?.backendThemeId || "academic-blue";
+    const themeFontId = activeFontPairing?.backendFontId || "inter";
+
+    try {
+      await completeOnboardingRequest({
+        role: "principal",
+        themePaletteId,
+        themeFontId,
+      });
+    } catch (cause) {
+      console.warn("Skip onboarding completion error:", cause);
+    }
+
+    try {
+      localStorage.setItem(
+        `xite_onboarding_${subdomain}`,
+        JSON.stringify({
+          siteTitle,
+          selectedPersonality,
+          themePaletteId,
+          themeFontId,
+          selectedFontPairingId,
+          selectedGoals: Array.from(selectedGoals),
+          selectedPages: Array.from(selectedPages),
+          completedAt: new Date().toISOString(),
+        })
+      );
+    } catch {
+      // ignore localStorage errors
+    }
+
+    window.location.assign(`/editor/${encodeURIComponent(subdomain)}`);
+  }
+
   // Final Action: Complete onboarding and launch the editor ("go the build now")
   async function handleLaunchEditor() {
     setPending(true);
     setError(null);
 
+    const themePaletteId = activePalette?.backendThemeId || "academic-blue";
+    const themeFontId = activeFontPairing?.backendFontId || "inter";
+
     try {
       await completeOnboardingRequest({
         role: "principal",
-        themePaletteId: selectedPaletteId,
-        themeFontId: activeFontPairing.backendFontId,
+        themePaletteId,
+        themeFontId,
       });
 
       try {
@@ -845,8 +898,8 @@ export function OnboardingWizard({
           JSON.stringify({
             siteTitle,
             selectedPersonality,
-            themePaletteId: selectedPaletteId,
-            themeFontId: activeFontPairing.backendFontId,
+            themePaletteId,
+            themeFontId,
             selectedFontPairingId,
             selectedGoals: Array.from(selectedGoals),
             selectedPages: Array.from(selectedPages),
@@ -858,8 +911,9 @@ export function OnboardingWizard({
       }
 
       // Hard redirect to editor
-      window.location.assign(`/editor/${subdomain}`);
+      window.location.assign(`/editor/${encodeURIComponent(subdomain)}`);
     } catch (cause) {
+      console.error("Failed to complete onboarding:", cause);
       setPending(false);
       setError(
         cause instanceof ApiError
@@ -900,12 +954,13 @@ export function OnboardingWizard({
               </div>
 
               {/* Skip Link (Matches Screenshot 1 top-right) */}
-              <Link
-                href={`/editor/${subdomain}`}
-                className="text-xs font-bold uppercase tracking-widest text-neutral-500 hover:text-black transition-colors"
+              <button
+                type="button"
+                onClick={handleSkipToEditor}
+                className="text-xs font-bold uppercase tracking-widest text-neutral-500 hover:text-black transition-colors cursor-pointer"
               >
                 I&apos;M JUST BROWSING
-              </Link>
+              </button>
             </header>
 
             {error && (
@@ -1017,12 +1072,13 @@ export function OnboardingWizard({
             </div>
 
             {/* CLOSE Button */}
-            <Link
-              href={`/editor/${subdomain}`}
-              className="text-xs font-bold uppercase tracking-widest text-neutral-600 hover:text-black transition-colors"
+            <button
+              type="button"
+              onClick={handleSkipToEditor}
+              className="text-xs font-bold uppercase tracking-widest text-neutral-600 hover:text-black transition-colors cursor-pointer"
             >
               CLOSE
-            </Link>
+            </button>
           </header>
 
           {error && (
@@ -1162,12 +1218,13 @@ export function OnboardingWizard({
             </div>
 
             {/* Quick Exit to Editor */}
-            <Link
-              href={`/editor/${subdomain}`}
-              className="text-xs font-bold uppercase tracking-widest text-white/70 hover:text-white transition-colors"
+            <button
+              type="button"
+              onClick={handleSkipToEditor}
+              className="text-xs font-bold uppercase tracking-widest text-white/70 hover:text-white transition-colors cursor-pointer"
             >
               SKIP TO CANVAS
-            </Link>
+            </button>
           </header>
 
           {/* Center Stage + Right Drawer */}
@@ -1349,13 +1406,14 @@ export function OnboardingWizard({
                       {(builderTab === "topic" || builderTab === "goals") && "Review the academic modules configured for your portal."}
                     </p>
                   </div>
-                  <Link
-                    href={`/editor/${subdomain}`}
-                    className="p-1 -mr-1 rounded-md text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors shrink-0"
+                  <button
+                    type="button"
+                    onClick={handleSkipToEditor}
+                    className="p-1 -mr-1 rounded-md text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors shrink-0 cursor-pointer"
                     title="Close"
                   >
                     <X className="h-5 w-5" />
-                  </Link>
+                  </button>
                 </div>
 
                 {/* ─── TAB: SITE INFO / BRAND PERSONALITY (Screenshot 3) ─── */}
@@ -1610,6 +1668,20 @@ export function OnboardingWizard({
             </aside>
           </div>
 
+          {/* Error Banner */}
+          {error && (
+            <div className="relative z-20 px-6 py-2.5 bg-red-50 border-t border-red-200 text-red-700 text-xs font-medium flex items-center justify-between">
+              <span>{error}</span>
+              <button
+                type="button"
+                onClick={() => window.location.assign(`/editor/${encodeURIComponent(subdomain)}`)}
+                className="underline font-bold hover:text-red-900 ml-4 cursor-pointer"
+              >
+                Proceed to Editor anyway &rarr;
+              </button>
+            </div>
+          )}
+
           {/* ─── BOTTOM STEPPER NAVIGATION BAR (Matches Screenshots 3, 4, 5, 6) ─── */}
           <footer className="relative z-20 w-full flex items-center justify-between px-6 py-3.5 border-t border-neutral-200 bg-white select-none">
             {/* BACK BUTTON */}
@@ -1638,7 +1710,15 @@ export function OnboardingWizard({
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setBuilderTab(tab.id as BuilderTab)}
+                    onClick={() => {
+                      if (tab.id === "topic") {
+                        setStep(0);
+                      } else if (tab.id === "goals") {
+                        setStep(1);
+                      } else {
+                        setBuilderTab(tab.id as BuilderTab);
+                      }
+                    }}
                     className={`transition-colors cursor-pointer pb-0.5 ${
                       isActive
                         ? "text-neutral-900 font-bold border-b-2 border-neutral-900"
@@ -1654,14 +1734,14 @@ export function OnboardingWizard({
             {/* NEXT / FINISH BUTTON */}
             <button
               type="button"
-              onClick={handleAdvanceStepper}
+              onClick={builderTab === "fonts" ? handleLaunchEditor : handleAdvanceStepper}
               disabled={pending}
               className="px-8 py-2.5 text-xs font-bold uppercase tracking-wider bg-black text-white rounded-sm hover:bg-neutral-800 active:bg-neutral-900 transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
             >
               {pending ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>{builderTab === "fonts" ? "Finalizing..." : "Launching Studio..."}</span>
+                  <span>{builderTab === "fonts" ? "Finalizing Studio..." : "Next..."}</span>
                 </>
               ) : (
                 <span>{builderTab === "fonts" ? "FINISH" : "NEXT"}</span>
