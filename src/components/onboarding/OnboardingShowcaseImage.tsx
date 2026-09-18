@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 
-export function OnboardingShowcaseImage() {
+interface OnboardingShowcaseImageProps {
+  hasAdminSections?: boolean;
+  adminSectionsCount?: number;
+}
+
+export function OnboardingShowcaseImage({
+  hasAdminSections = false,
+  adminSectionsCount = 0,
+}: OnboardingShowcaseImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
@@ -21,10 +29,18 @@ export function OnboardingShowcaseImage() {
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
 
       {/* Bottom Institutional Pill Tag */}
-      <div className="absolute bottom-8 left-8 right-8 z-10 pointer-events-none">
-        <div className="inline-flex items-center gap-2 rounded-full bg-black/40 backdrop-blur-md px-4 py-2 border border-white/20 text-white text-xs font-medium tracking-wide">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>XITE Institutional Engine • Live Multi-Tenant Portal</span>
+      <div className="absolute bottom-8 left-6 right-6 z-10 pointer-events-none">
+        <div className="inline-flex items-center gap-2 rounded-full bg-black/50 backdrop-blur-md px-4 py-2 border border-white/20 text-white text-xs font-medium tracking-wide">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              hasAdminSections ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+            }`}
+          />
+          <span>
+            {hasAdminSections
+              ? `XITE Engine • ${adminSectionsCount} Admin Section${adminSectionsCount === 1 ? "" : "s"} Configured`
+              : "XITE Engine • Awaiting Admin Home Sections"}
+          </span>
         </div>
       </div>
     </div>

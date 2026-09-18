@@ -450,7 +450,7 @@ function initialState(activePageId: PageId): EditorState {
 
 const AUTOSAVE_DELAY_MS = 1200;
 
-export function useEditorPages(initialSlug = "/home") {
+export function useEditorPages(initialSlug = "/home", subdomain?: string) {
   const rootPageId = canonicalSlug(initialSlug) || "/home";
   const [state, dispatch] = useReducer(reducer, rootPageId, initialState);
 
@@ -528,7 +528,33 @@ export function useEditorPages(initialSlug = "/home") {
     void (async () => {
       try {
         const pages = await fetchWebsite();
-        if (!cancelled) dispatch({ type: "boot", pages, activePageId: rootPageId });
+        if (!cancelled) {
+          const isFresh = Boolean(
+            subdomain &&
+            typeof window !== "undefined" &&
+            (localStorage.getItem(`xite_fresh_site_${subdomain}`) === "true" ||
+             (() => {
+               try {
+                 const raw = localStorage.getItem(`xite_onboarding_${subdomain}`);
+                 return raw ? JSON.parse(raw)?.isFresh === true : false;
+               } catch {
+                 return false;
+               }
+             })())
+          );
+
+          if (isFresh) {
+            // When building a fresh site from onboarding, admin default sections must NOT
+            // be force-injected into the tenant's site sections.
+            const freshPages = pages.map((p) => ({
+              ...p,
+              sections: [],
+            }));
+            dispatch({ type: "boot", pages: freshPages, activePageId: rootPageId });
+          } else {
+            dispatch({ type: "boot", pages, activePageId: rootPageId });
+          }
+        }
       } catch (error) {
         console.error("[editor] could not load this college's website:", error);
         if (!cancelled) dispatch({ type: "bootFailed" });
@@ -537,7 +563,7 @@ export function useEditorPages(initialSlug = "/home") {
     return () => {
       cancelled = true;
     };
-  }, [rootPageId]);
+  }, [rootPageId, subdomain]);
 
   /**
    * Fill a page that has never been saved from the Super Admin's default.
@@ -569,7 +595,37 @@ export function useEditorPages(initialSlug = "/home") {
         const pages = await fetchWebsite();
         if (loadToken.current[pageId] !== token) return;
 
+        const isFresh = Boolean(
+          subdomain &&
+          typeof window !== "undefined" &&
+          (localStorage.getItem(`xite_fresh_site_${subdomain}`) === "true" ||
+           (() => {
+             try {
+               const raw = localStorage.getItem(`xite_onboarding_${subdomain}`);
+               return raw ? JSON.parse(raw)?.isFresh === true : false;
+             } catch {
+               return false;
+             }
+           })())
+        );
+
         const match = pages.find((p) => canonicalSlug(p.slug) === pageId);
+
+        if (isFresh) {
+          if (loadToken.current[pageId] !== token) return;
+          dispatch({
+            type: "pageLoaded",
+            pageId,
+            page: {
+              id: match?.id ?? `page-${pageId.replace(/^\//, "")}`,
+              slug: pageId,
+              title: match?.title ?? titleFromSlug(pageId),
+              sections: [],
+            },
+          });
+          return;
+        }
+
         if (match && match.sections.length > 0) {
           dispatch({ type: "pageLoaded", pageId, page: match });
           return;
@@ -601,7 +657,7 @@ export function useEditorPages(initialSlug = "/home") {
         });
       }
     },
-    [seedFromDefaults],
+    [seedFromDefaults, subdomain],
   );
 
   // Load the active page whenever it is not already loaded. One effect, one
@@ -653,6 +709,17 @@ export function useEditorPages(initialSlug = "/home") {
             });
             dispatch({ type: "markSaved", pageId, snapshot, page: saved });
             setSavedOnce(true);
+            if (subdomain && typeof window !== "undefined") {
+              try {
+                localStorage.removeItem(`xite_fresh_site_${subdomain}`);
+                const raw = localStorage.getItem(`xite_onboarding_${subdomain}`);
+                if (raw) {
+                  const parsed = JSON.parse(raw);
+                  parsed.isFresh = false;
+                  localStorage.setItem(`xite_onboarding_${subdomain}`, JSON.stringify(parsed));
+                }
+              } catch {}
+            }
           } catch (error) {
             const message = error instanceof Error ? error.message : "Could not save";
             console.error(`[editor] save failed for ${pageId}:`, error);

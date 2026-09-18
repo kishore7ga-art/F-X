@@ -431,3 +431,38 @@ describe("deriveSaveStatus — the editor may not claim a save that did not happ
     assert.equal(deriveSaveStatus([], 0, false).saveStatus, "idle");
   });
 });
+
+describe("fresh site onboarding — admin default sections must not be force-injected", () => {
+  it("boots fresh site pages with empty sections", () => {
+    // Fresh site pages created during onboarding completion have empty sections
+    const freshPages: EditorPage[] = [
+      apiPage("/home", []),
+      apiPage("/about", []),
+      apiPage("/academics", []),
+    ];
+    const state = boot(freshPages, "/home");
+    assert.equal(state.pages["/home"]!.sections.length, 0);
+    assert.equal(state.pages["/about"]!.sections.length, 0);
+    assert.equal(state.pages["/academics"]!.sections.length, 0);
+    assert.equal(state.pages["/home"]!.status, "ready");
+    assert.equal(state.pages["/home"]!.dirty, false);
+  });
+
+  it("ensures adding a user section to a fresh page only affects that page and keeps other pages clean", () => {
+    const freshPages: EditorPage[] = [apiPage("/home", []), apiPage("/about", [])];
+    const state = boot(freshPages, "/home");
+
+    const withSection = reducer(state, {
+      type: "setSections",
+      pageId: "/home",
+      sections: [section("user-hero", { title: "Custom User Hero" })],
+      record: true,
+    });
+
+    assert.equal(withSection.pages["/home"]!.sections.length, 1);
+    assert.equal(withSection.pages["/home"]!.sections[0]!.title, "Custom User Hero");
+    assert.equal(withSection.pages["/about"]!.sections.length, 0);
+    assert.equal(withSection.pages["/home"]!.dirty, true);
+    assert.equal(withSection.pages["/about"]!.dirty, false);
+  });
+});

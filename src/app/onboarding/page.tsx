@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { getCurrentCollegeOrNull } from "@/lib/auth/current";
+import { SectionRuntimeAssets } from "@/components/preview/SectionRuntimeAssets";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +28,13 @@ export default async function OnboardingPage({
   }
 
   return (
-    <OnboardingWizard
-      subdomain={subdomain}
-      collegeName={collegeName}
-      initialCollegeType={college?.collegeType}
-    />
+    <>
+      <SectionRuntimeAssets />
+      <OnboardingWizard
+        subdomain={subdomain}
+        collegeName={collegeName}
+        initialCollegeType={college?.collegeType}
+      />
+    </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   ArrowRight,
   Check,
@@ -16,10 +16,19 @@ import {
   FileText,
   Building2,
   GraduationCap,
+  Layout,
 } from "lucide-react";
 
 import { ApiError, completeOnboardingRequest } from "@/lib/api-client";
-import { EDITOR_FONTS, EDITOR_THEMES } from "@/lib/editor-themes";
+import { EDITOR_FONTS, EDITOR_THEMES, tokenizeSectionHtml } from "@/lib/editor-themes";
+import {
+  fetchDefaultWebsite,
+  saveTheme,
+  saveWebsite,
+  type EditorPage,
+  type EditorSection,
+} from "@/lib/editor-api";
+import { sectionCanvasHtml } from "@/lib/section-runtime";
 import { OnboardingShowcaseImage } from "./OnboardingShowcaseImage";
 
 type Step = 0 | 1 | 2;
@@ -79,8 +88,18 @@ const BRAND_PERSONALITIES = [
   },
 ] as const;
 
+export type InstitutionalPageItem = {
+  id: string;
+  label: string;
+  required: boolean;
+  title: string;
+  badge?: string;
+  summary: string;
+  img: string;
+};
+
 // Institutional Pages (Matching Screenshot 4)
-const INSTITUTIONAL_PAGES = [
+const INSTITUTIONAL_PAGES: InstitutionalPageItem[] = [
   {
     id: "home",
     label: "Homepage",
@@ -413,319 +432,192 @@ export const CURATED_FONT_GROUPS: FontGroup[] = [
   },
 ];
 
-// Rich Multi-Section Page Canvas Mockup (Matches Screenshot 4, 5, 6 exactly)
-function MockPageCanvasCard({
+/** Formats a section's code for dynamic preview with title, canvas styling and color tokenization */
+function formatSectionForPreview(
+  rawCode: string,
+  sectionId: string,
+  siteTitle: string,
+  activePalette: (typeof CURATED_PALETTE_GROUPS)[number]["palettes"][number],
+  activeFontPairing: FontPairing
+): string {
+  if (!rawCode || !rawCode.trim()) return "";
+
+  let processed = rawCode;
+
+  // Personalize institutional site title if custom
+  if (siteTitle && siteTitle.trim() && siteTitle !== "Greenfield University") {
+    processed = processed
+      .replace(/Madras Institute of Tech/g, siteTitle)
+      .replace(/Greenfield University/g, siteTitle);
+  }
+
+  // Wrap inside section-canvas-box with responsive viewport units mapped
+  const canvasHtml = sectionCanvasHtml(processed, sectionId);
+
+  // Tokenize colors so theme tokens apply
+  return tokenizeSectionHtml(canvasHtml);
+}
+
+// Dynamic Multi-Section Page Canvas Card (Displays sections from Admin, or empty state if none configured)
+function DynamicPageCanvasCard({
   page,
+  sections,
   siteTitle,
   activePalette,
   activeFontPairing,
+  isLoading,
+  className,
 }: {
-  page: (typeof INSTITUTIONAL_PAGES)[number];
+  page: InstitutionalPageItem;
+  sections: EditorSection[];
   siteTitle: string;
   activePalette: (typeof CURATED_PALETTE_GROUPS)[number]["palettes"][number];
   activeFontPairing: FontPairing;
+  isLoading?: boolean;
+  className?: string;
 }) {
+  const hasNavbarSection = sections.some(
+    (s) => s.category === "navbar" || s.code.includes("<header")
+  );
+
   return (
     <div
-      className="w-full h-[520px] sm:h-[580px] lg:h-[620px] rounded-xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none"
-      style={{ backgroundColor: activePalette.bg, color: activePalette.text }}
+      className={`rounded-xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none xite-site-canvas dynamic-card-${page.id} ${
+        className ? className : "w-full h-[520px] sm:h-[580px] lg:h-[620px]"
+      }`}
+      data-xite-theme={activePalette.backendThemeId}
+      data-xite-font={activeFontPairing.backendFontId}
+      style={
+        {
+          backgroundColor: activePalette.bg,
+          color: activePalette.text,
+          fontFamily: activeFontPairing.bodyFamily,
+          "--xite-accent": activePalette.accent,
+          "--xite-primary": activePalette.accent,
+          "--theme-accent": activePalette.accent,
+          "--xite-surface": activePalette.bg,
+          "--xite-surface-raised": activePalette.colors[1] || activePalette.bg,
+          "--theme-light-1": activePalette.bg,
+          "--theme-light-2": activePalette.colors[1] || activePalette.bg,
+          "--xite-text": activePalette.text,
+          "--xite-text-muted": `${activePalette.text}99`,
+          "--theme-dark-1": `${activePalette.text}99`,
+          "--theme-dark-2": activePalette.text,
+          "--xite-header": activePalette.bg,
+          "--xite-footer": activePalette.text,
+          "--xite-font": activeFontPairing.bodyFamily,
+          "--font-heading": activeFontPairing.headingFamily,
+          "--font-body": activeFontPairing.bodyFamily,
+        } as React.CSSProperties
+      }
     >
-      {/* Mock Nav */}
-      <div
-        className="sticky top-0 z-10 px-5 py-3 border-b flex items-center justify-between backdrop-blur-md"
-        style={{
-          borderColor: `${activePalette.text}15`,
-          backgroundColor: `${activePalette.bg}FA`,
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .dynamic-card-${page.id} h1,
+            .dynamic-card-${page.id} h2,
+            .dynamic-card-${page.id} h3,
+            .dynamic-card-${page.id} h4,
+            .dynamic-card-${page.id} h5,
+            .dynamic-card-${page.id} h6 {
+              font-family: ${activeFontPairing.headingFamily} !important;
+            }
+            .dynamic-card-${page.id} p,
+            .dynamic-card-${page.id} span,
+            .dynamic-card-${page.id} a,
+            .dynamic-card-${page.id} li,
+            .dynamic-card-${page.id} button {
+              font-family: ${activeFontPairing.bodyFamily} !important;
+            }
+            .dynamic-card-${page.id} .section-canvas-box {
+              width: 100%;
+              box-sizing: border-box;
+            }
+          `,
         }}
-      >
-        <span className="font-bold text-xs truncate max-w-[160px]">
-          {siteTitle}
-        </span>
-        <div className="flex items-center gap-3 text-[10px] font-medium opacity-70">
-          <span>About</span>
-          <span>Programs</span>
-          <span>Admissions</span>
-        </div>
-      </div>
+      />
 
-      {/* PAGE: HOMEPAGE (Matches Screenshot 6 Card 1) */}
-      {page.id === "home" && (
-        <div className="p-6 space-y-6">
-          {/* Main Hero Heading */}
-          <h1
-            className={`text-2xl sm:text-3xl leading-tight ${activeFontPairing.headingClass}`}
-            style={{ fontFamily: activeFontPairing.headingFamily }}
-          >
-            Empowering Next-Gen Innovators
-          </h1>
-
-          {/* Hero Banner Image */}
-          <div className="h-44 sm:h-52 w-full rounded-lg overflow-hidden relative bg-neutral-100 shadow-xs">
-            <img
-              src="/onboarding/campus-showcase.jpg"
-              alt="University Campus"
-              className="h-full w-full object-cover object-center"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-              <span className="text-[11px] text-white/90 font-medium">
-                Ranked #1 Autonomous Technical University 2026
-              </span>
-            </div>
-          </div>
-
-          {/* Section 2: Flagship Academic Programs (Matches 'Creative Services' in Screenshot 6) */}
-          <div className="pt-2 space-y-3">
-            <h2
-              className={`text-lg sm:text-xl leading-snug ${activeFontPairing.headingClass}`}
-              style={{ fontFamily: activeFontPairing.headingFamily }}
-            >
-              Flagship Academic Programs
-            </h2>
-
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="space-y-1.5 flex flex-col">
-                <div className="h-20 w-full rounded overflow-hidden bg-neutral-100">
-                  <img
-                    src="/tab1-builder.jpg"
-                    alt="B.Tech"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="text-[10px] font-bold truncate">B.Tech CSE</div>
-                <div className="text-[9px] opacity-70">4 Years • Full Time</div>
-                <div
-                  className="mt-auto py-1 px-1.5 text-center text-[9px] font-bold text-white rounded transition-colors shadow-xs"
-                  style={{ backgroundColor: activePalette.accent }}
-                >
-                  Apply Now
-                </div>
-              </div>
-
-              <div className="space-y-1.5 flex flex-col">
-                <div className="h-20 w-full rounded overflow-hidden bg-neutral-100">
-                  <img
-                    src="/tab2-templates.jpg"
-                    alt="MBA"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="text-[10px] font-bold truncate">MBA Leadership</div>
-                <div className="text-[9px] opacity-70">2 Years • PG</div>
-                <div
-                  className="mt-auto py-1 px-1.5 text-center text-[9px] font-bold text-white rounded transition-colors shadow-xs"
-                  style={{ backgroundColor: activePalette.accent }}
-                >
-                  Apply Now
-                </div>
-              </div>
-
-              <div className="space-y-1.5 flex flex-col">
-                <div className="h-20 w-full rounded overflow-hidden bg-neutral-100">
-                  <img
-                    src="/onboarding/team-collaboration.jpg"
-                    alt="Research"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div className="text-[10px] font-bold truncate">AI Research</div>
-                <div className="text-[9px] opacity-70">Doctoral Fellowship</div>
-                <div
-                  className="mt-auto py-1 px-1.5 text-center text-[9px] font-bold text-white rounded transition-colors shadow-xs"
-                  style={{ backgroundColor: activePalette.accent }}
-                >
-                  Apply Now
-                </div>
-              </div>
-            </div>
+      {/* Mock Nav when no navbar section is present, only shown when sections exist */}
+      {!hasNavbarSection && sections.length > 0 && (
+        <div
+          className="sticky top-0 z-30 px-5 py-3 border-b flex items-center justify-between backdrop-blur-md shrink-0"
+          style={{
+            borderColor: `${activePalette.text}15`,
+            backgroundColor: `${activePalette.bg}FA`,
+          }}
+        >
+          <span className="font-bold text-xs truncate max-w-[160px]">
+            {siteTitle}
+          </span>
+          <div className="flex items-center gap-3 text-[10px] font-medium opacity-70">
+            <span>About</span>
+            <span>Programs</span>
+            <span>Admissions</span>
           </div>
         </div>
       )}
 
-      {/* PAGE: ABOUT (Matches Screenshot 6 Card 2) */}
-      {page.id === "about" && (
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-4 items-start">
-            <div className="space-y-2">
-              <h1
-                className={`text-xl sm:text-2xl leading-tight ${activeFontPairing.headingClass}`}
-                style={{ fontFamily: activeFontPairing.headingFamily }}
-              >
-                A Legacy of Academic Distinction
-              </h1>
-              <p
-                className="text-[11px] opacity-75 leading-relaxed"
-                style={{ fontFamily: activeFontPairing.bodyFamily }}
-              >
-                Fostering technological innovation, interdisciplinary research, and ethics across two decades of excellence.
-              </p>
-            </div>
-            <div className="h-36 rounded-lg overflow-hidden bg-neutral-100 shadow-xs">
-              <img
-                src="/onboarding/oxford.jpg"
-                alt="About College"
-                className="h-full w-full object-cover"
-              />
-            </div>
-          </div>
-
-          {/* Section 2: Admissions Inquiry Form (Matches Form in Screenshot 6) */}
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-3">
+          <Loader2 className="h-6 w-6 animate-spin opacity-40" />
+          <span className="text-[11px] opacity-60">Loading sections...</span>
+        </div>
+      ) : sections.length === 0 ? (
+        /* Empty State: Displayed until Admin adds sections */
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
           <div
-            className="p-4 rounded-xl space-y-3"
+            className="w-12 h-12 rounded-xl border-2 border-dashed flex items-center justify-center"
             style={{
-              backgroundColor: `${activePalette.text}06`,
-              borderColor: `${activePalette.text}15`,
+              borderColor: `${activePalette.text}25`,
+              backgroundColor: `${activePalette.text}05`,
             }}
           >
-            <h2
-              className={`text-base font-bold ${activeFontPairing.headingClass}`}
+            <Layout className="w-5 h-5 opacity-40" style={{ color: activePalette.text }} />
+          </div>
+          <div className="space-y-1 max-w-[260px]">
+            <div
+              className={`text-sm font-bold ${activeFontPairing.headingClass}`}
               style={{ fontFamily: activeFontPairing.headingFamily }}
             >
-              Ready to Join Our Campus?
-            </h2>
-            <p className="text-[10px] opacity-70 leading-relaxed">
-              Drop an admissions enquiry and our faculty counsellors will assist you.
+              No Sections Added Yet
+            </div>
+            <p
+              className="text-[11px] opacity-60 leading-relaxed"
+              style={{ fontFamily: activeFontPairing.bodyFamily }}
+            >
+              Admin has not configured sections for this page yet. It will show as empty until Admin adds them.
             </p>
-
-            <div className="space-y-2 pt-1">
-              <div className="grid grid-cols-2 gap-2">
-                <div
-                  className="h-7 px-2.5 rounded border text-[10px] flex items-center opacity-60"
-                  style={{ borderColor: `${activePalette.text}25` }}
-                >
-                  First Name
-                </div>
-                <div
-                  className="h-7 px-2.5 rounded border text-[10px] flex items-center opacity-60"
-                  style={{ borderColor: `${activePalette.text}25` }}
-                >
-                  Last Name
-                </div>
-              </div>
-              <div
-                className="h-7 px-2.5 rounded border text-[10px] flex items-center opacity-60"
-                style={{ borderColor: `${activePalette.text}25` }}
-              >
-                Email Address
-              </div>
-              <div className="flex items-center gap-1.5 text-[9px] opacity-75">
-                <div
-                  className="h-3 w-3 rounded-xs border"
-                  style={{ borderColor: `${activePalette.text}40` }}
-                />
-                <span>Sign up for admissions circulars</span>
-              </div>
-              <div
-                className="h-10 px-2.5 py-1 rounded border text-[10px] opacity-60"
-                style={{ borderColor: `${activePalette.text}25` }}
-              >
-                Message (optional)
-              </div>
-              <div
-                className="h-7 px-4 rounded text-[10px] font-bold text-white flex items-center justify-center cursor-pointer shadow-xs"
-                style={{ backgroundColor: activePalette.text }}
-              >
-                Submit Inquiry
-              </div>
-            </div>
           </div>
+          <span
+            className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border opacity-75"
+            style={{
+              borderColor: `${activePalette.text}20`,
+              backgroundColor: `${activePalette.text}05`,
+            }}
+          >
+            Awaiting Admin Sections
+          </span>
         </div>
-      )}
-
-      {/* PAGE: CONTACT (Matches Screenshot 6 Card 3) */}
-      {page.id === "contact" && (
-        <div className="p-6 space-y-5">
-          <h1
-            className={`text-xl sm:text-2xl leading-tight ${activeFontPairing.headingClass}`}
-            style={{ fontFamily: activeFontPairing.headingFamily }}
-          >
-            Admissions Desk & Campus Helpline
-          </h1>
-          <p
-            className="text-[11px] opacity-75 leading-relaxed"
-            style={{ fontFamily: activeFontPairing.bodyFamily }}
-          >
-            Have a project or admission query in mind? Reach out to our campus desk.
-          </p>
-
-          <div className="space-y-2.5 pt-1">
+      ) : (
+        /* Dynamic Sections Configured in Admin */
+        <div className="w-full flex flex-col divide-y divide-transparent">
+          {sections.map((sec, idx) => (
             <div
-              className="h-7 px-2.5 rounded border text-[10px] flex items-center opacity-60"
-              style={{ borderColor: `${activePalette.text}25` }}
-            >
-              Your Name
-            </div>
-            <div
-              className="h-7 px-2.5 rounded border text-[10px] flex items-center opacity-60"
-              style={{ borderColor: `${activePalette.text}25` }}
-            >
-              Your Email Address
-            </div>
-            <div
-              className="h-14 px-2.5 py-1 rounded border text-[10px] opacity-60"
-              style={{ borderColor: `${activePalette.text}25` }}
-            >
-              How can our admissions committee help?
-            </div>
-            <div
-              className="h-7 px-4 rounded text-[10px] font-bold text-white flex items-center justify-center cursor-pointer shadow-xs"
-              style={{ backgroundColor: activePalette.text }}
-            >
-              Send Message
-            </div>
-          </div>
-
-          <div
-            className="pt-6 border-t opacity-60 text-[10px] flex items-center justify-between"
-            style={{ borderColor: `${activePalette.text}15` }}
-          >
-            <span>{siteTitle}</span>
-            <span>Accredited Institutional Portal</span>
-          </div>
-        </div>
-      )}
-
-      {/* OTHER PAGES: Programs, Admissions, Placements, Faculty */}
-      {page.id !== "home" && page.id !== "about" && page.id !== "contact" && (
-        <div className="p-6 space-y-4">
-          <h1
-            className={`text-xl leading-tight ${activeFontPairing.headingClass}`}
-            style={{ fontFamily: activeFontPairing.headingFamily }}
-          >
-            {page.title}
-          </h1>
-
-          <div className="h-44 w-full rounded-lg overflow-hidden relative bg-neutral-100">
-            <img
-              src={page.img}
-              alt={page.title}
-              className="h-full w-full object-cover object-center"
-            />
-          </div>
-
-          <p
-            className="text-xs opacity-75 leading-relaxed"
-            style={{ fontFamily: activeFontPairing.bodyFamily }}
-          >
-            {page.summary}
-          </p>
-
-          <div className="pt-2 flex items-center gap-2">
-            <div
-              className="h-6 px-3 rounded text-[11px] font-bold text-white flex items-center justify-center shadow-xs transition-colors duration-300"
-              style={{ backgroundColor: activePalette.accent }}
-            >
-              View Section
-            </div>
-            <div
-              className="h-6 px-3 rounded text-[11px] font-medium border flex items-center justify-center"
-              style={{
-                borderColor: `${activePalette.text}25`,
-                backgroundColor: `${activePalette.text}05`,
+              key={sec.id || idx}
+              data-xite-section={sec.id}
+              className="w-full relative section-preview-wrapper"
+              dangerouslySetInnerHTML={{
+                __html: formatSectionForPreview(
+                  sec.code,
+                  sec.id,
+                  siteTitle,
+                  activePalette,
+                  activeFontPairing
+                ),
               }}
-            >
-              Details &rarr;
-            </div>
-          </div>
+            />
+          ))}
         </div>
       )}
     </div>
@@ -769,6 +661,79 @@ export function OnboardingWizard({
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Dynamic Admin Configured Pages and Sections
+  const [adminPages, setAdminPages] = useState<EditorPage[]>([]);
+  const [adminConfigLoading, setAdminConfigLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAdminConfigLoading(true);
+    fetchDefaultWebsite()
+      .then((pages) => {
+        if (!cancelled && Array.isArray(pages)) {
+          setAdminPages(pages);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load admin default website config:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setAdminConfigLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const getSectionsForPage = (pageId: string): EditorSection[] => {
+    const normId = pageId.toLowerCase().replace(/^\/+/, "");
+    const page = adminPages.find((p) => {
+      const slug = (p.slug || "").toLowerCase().replace(/^\/+/, "");
+      if (normId === "home") {
+        return slug === "home" || slug === "" || slug === "index";
+      }
+      if (normId === "about") {
+        return slug === "about" || slug === "about-us";
+      }
+      if (normId === "academics") {
+        return slug === "academics" || slug === "courses" || slug === "programs";
+      }
+      if (normId === "contact") {
+        return slug === "contact" || slug === "contact-us";
+      }
+      if (normId === "placements") {
+        return slug === "placements" || slug === "careers";
+      }
+      return slug === normId;
+    });
+    return page?.sections || [];
+  };
+
+  const dynamicPages = useMemo<InstitutionalPageItem[]>(() => {
+    const knownIds = new Set<string>(INSTITUTIONAL_PAGES.map((p) => p.id));
+    const extraPages: InstitutionalPageItem[] = [];
+
+    adminPages.forEach((p) => {
+      const norm = (p.slug || "").toLowerCase().replace(/^\/+/, "");
+      if (!norm || norm === "home" || norm === "index") return;
+      if (!knownIds.has(norm)) {
+        extraPages.push({
+          id: norm,
+          label: p.title || norm.charAt(0).toUpperCase() + norm.slice(1),
+          required: false,
+          title: p.title || norm,
+          summary: `${p.title || norm} configured by Admin.`,
+          img: "/onboarding/campus-showcase.jpg",
+        });
+        knownIds.add(norm);
+      }
+    });
+
+    return [...INSTITUTIONAL_PAGES, ...extraPages];
+  }, [adminPages]);
+
+  const homeSections = useMemo(() => getSectionsForPage("home"), [adminPages]);
 
   // Toggle goal
   function toggleGoal(id: string) {
@@ -857,6 +822,31 @@ export function OnboardingWizard({
     }
 
     try {
+      await saveTheme({ themeId: themePaletteId, fontId: themeFontId });
+    } catch (cause) {
+      console.warn("Failed to save theme during skip:", cause);
+    }
+
+    // Persist empty draft to ensure fresh site starts without admin default sections
+    try {
+      const pageIdsToSeed = selectedPages.size > 0 ? Array.from(selectedPages) : ["home"];
+      const freshPages = pageIdsToSeed.map((pId) => {
+        const pageDef = dynamicPages.find((p) => p.id === pId);
+        const slug = pId === "home" ? "/home" : `/${pId}`;
+        return {
+          id: `page-${pId}`,
+          slug,
+          title: pageDef?.title || pageDef?.label || pId,
+          sections: [],
+        };
+      });
+      await saveWebsite(freshPages);
+    } catch (cause) {
+      console.warn("Failed to initialize empty website draft during skip:", cause);
+    }
+
+    try {
+      localStorage.setItem(`xite_fresh_site_${subdomain}`, "true");
       localStorage.setItem(
         `xite_onboarding_${subdomain}`,
         JSON.stringify({
@@ -867,6 +857,7 @@ export function OnboardingWizard({
           selectedFontPairingId,
           selectedGoals: Array.from(selectedGoals),
           selectedPages: Array.from(selectedPages),
+          isFresh: true,
           completedAt: new Date().toISOString(),
         })
       );
@@ -893,6 +884,31 @@ export function OnboardingWizard({
       });
 
       try {
+        await saveTheme({ themeId: themePaletteId, fontId: themeFontId });
+      } catch (cause) {
+        console.warn("Failed to save theme during launch:", cause);
+      }
+
+      // Persist empty draft with tenant-selected pages so tenant starts clean without admin defaults
+      try {
+        const pageIdsToSeed = selectedPages.size > 0 ? Array.from(selectedPages) : ["home"];
+        const freshPages = pageIdsToSeed.map((pId) => {
+          const pageDef = dynamicPages.find((p) => p.id === pId);
+          const slug = pId === "home" ? "/home" : `/${pId}`;
+          return {
+            id: `page-${pId}`,
+            slug,
+            title: pageDef?.title || pageDef?.label || pId,
+            sections: [],
+          };
+        });
+        await saveWebsite(freshPages);
+      } catch (cause) {
+        console.warn("Failed to initialize empty website draft during launch:", cause);
+      }
+
+      try {
+        localStorage.setItem(`xite_fresh_site_${subdomain}`, "true");
         localStorage.setItem(
           `xite_onboarding_${subdomain}`,
           JSON.stringify({
@@ -903,6 +919,7 @@ export function OnboardingWizard({
             selectedFontPairingId,
             selectedGoals: Array.from(selectedGoals),
             selectedPages: Array.from(selectedPages),
+            isFresh: true,
             completedAt: new Date().toISOString(),
           })
         );
@@ -1049,7 +1066,10 @@ export function OnboardingWizard({
 
           {/* Right Vertical Campus Showcase Image */}
           <aside className="hidden lg:block lg:w-[28%] xl:w-[30%] min-h-screen relative shrink-0 border-l border-neutral-100">
-            <OnboardingShowcaseImage />
+            <OnboardingShowcaseImage
+              hasAdminSections={homeSections.length > 0}
+              adminSectionsCount={homeSections.length}
+            />
           </aside>
         </div>
       )}
@@ -1240,7 +1260,7 @@ export function OnboardingWizard({
                     className="flex-1 flex items-center gap-6 overflow-x-auto pb-4 pt-2 px-2 scrollbar-none"
                     style={{ transform: `scale(${zoomScale})`, transformOrigin: "center left" }}
                   >
-                    {INSTITUTIONAL_PAGES.filter(
+                    {dynamicPages.filter(
                       (p) => p.required || selectedPages.has(p.id)
                     ).map((page) => (
                       <div
@@ -1252,12 +1272,14 @@ export function OnboardingWizard({
                           {page.label}
                         </div>
 
-                        {/* Page Mockup Card with Dynamic Live Palette Colors & Realistic Multi-Section Content */}
-                        <MockPageCanvasCard
+                        {/* Page Canvas Card with Dynamic Live Palette Colors & Sections from Admin */}
+                        <DynamicPageCanvasCard
                           page={page}
+                          sections={getSectionsForPage(page.id)}
                           siteTitle={siteTitle}
                           activePalette={activePalette}
                           activeFontPairing={activeFontPairing}
+                          isLoading={adminConfigLoading}
                         />
                       </div>
                     ))}
@@ -1306,80 +1328,18 @@ export function OnboardingWizard({
                   </div>
                 </div>
               ) : (
-                /* IF TAB IS 'SITE INFO' (Screenshot 3: Single Floating Hero Canvas) */
-                <div className="h-full flex items-center justify-center overflow-y-auto">
-                  <div
-                    className="w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden border border-white/20 transition-colors duration-500"
-                    style={{ backgroundColor: activePalette.bg, color: activePalette.text }}
-                  >
-                    {/* Mock Browser Header */}
-                    <div
-                      className="w-full px-6 py-4 flex items-center justify-between border-b"
-                      style={{
-                        borderColor: `${activePalette.text}15`,
-                        backgroundColor: `${activePalette.text}08`,
-                      }}
-                    >
-                      <div className="font-black text-lg tracking-tight truncate max-w-[280px]">
-                        {siteTitle}
-                      </div>
-                      <div className="hidden sm:flex items-center gap-6 text-xs font-semibold opacity-70">
-                        <span>About</span>
-                        <span>Academics</span>
-                        <span>Admissions</span>
-                        <span>Placements</span>
-                        <span>Contact</span>
-                      </div>
-                    </div>
-
-                    {/* Hero Section Preview with Live Personality & Typography */}
-                    <div className="p-8 sm:p-12 lg:p-14 space-y-6">
-                      <h2
-                        className={`text-3xl sm:text-4xl lg:text-5xl tracking-tight leading-[1.12] ${activeFontPairing.headingClass}`}
-                        style={{ fontFamily: activeFontPairing.headingFamily }}
-                      >
-                        {activePersonalityData.heroTitle}
-                      </h2>
-
-                      {/* Campus Showcase Image */}
-                      <div className="relative h-64 sm:h-80 w-full rounded-xl overflow-hidden shadow-sm bg-neutral-100">
-                        <img
-                          src="/onboarding/campus-showcase.jpg"
-                          alt="Campus Hero Preview"
-                          className="h-full w-full object-cover object-center"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                        <div className="absolute bottom-4 left-5 right-5 text-white">
-                          <p
-                            className="text-xs sm:text-sm font-medium text-white/90 leading-relaxed max-w-xl"
-                            style={{ fontFamily: activeFontPairing.bodyFamily }}
-                          >
-                            {activePersonalityData.heroSubtitle}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Action CTA buttons with live palette accent */}
-                      <div className="flex flex-wrap items-center gap-3 pt-2">
-                        <button
-                          type="button"
-                          className="px-6 py-2.5 rounded-lg text-xs font-bold text-white shadow-sm transition-colors duration-300"
-                          style={{ backgroundColor: activePalette.accent }}
-                        >
-                          Apply for Admission 2026
-                        </button>
-                        <button
-                          type="button"
-                          className="px-6 py-2.5 rounded-lg text-xs font-bold border"
-                          style={{
-                            borderColor: `${activePalette.text}30`,
-                            backgroundColor: `${activePalette.text}05`,
-                          }}
-                        >
-                          Explore Programs &rarr;
-                        </button>
-                      </div>
-                    </div>
+                /* IF TAB IS 'SITE INFO' (Single Page Preview: Dynamic Home Sections from Header to Footer) */
+                <div className="h-full w-full flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden">
+                  <div className="w-full max-w-4xl h-full max-h-[720px] flex flex-col">
+                    <DynamicPageCanvasCard
+                      page={INSTITUTIONAL_PAGES[0]}
+                      sections={homeSections}
+                      siteTitle={siteTitle}
+                      activePalette={activePalette}
+                      activeFontPairing={activeFontPairing}
+                      isLoading={adminConfigLoading}
+                      className="w-full h-full rounded-xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none xite-site-canvas dynamic-card-home"
+                    />
                   </div>
                 </div>
               )}
@@ -1483,7 +1443,7 @@ export function OnboardingWizard({
                     </p>
 
                     <div className="space-y-2.5 pt-1">
-                      {INSTITUTIONAL_PAGES.map((page) => {
+                      {dynamicPages.map((page) => {
                         const isChecked = page.required || selectedPages.has(page.id);
                         return (
                           <div

@@ -337,7 +337,7 @@ export function EditorStudio({
    * only store; a failed load leaves a page untouched rather than replacing it
    * with whatever the browser last cached.
    */
-  const editor = useEditorPages("/home");
+  const editor = useEditorPages("/home", subdomain);
 
   const sections = editor.activePage.sections;
   const activeSectionIndex = editor.activeSectionIndex;
@@ -811,6 +811,25 @@ export function EditorStudio({
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      // Prioritize onboarding selection if freshly completed
+      if (typeof window !== "undefined" && subdomain) {
+        try {
+          const onboardingRaw = localStorage.getItem(`xite_onboarding_${subdomain}`);
+          if (onboardingRaw) {
+            const parsed = JSON.parse(onboardingRaw);
+            if (parsed.themePaletteId) {
+              const norm = normalizeThemeId(parsed.themePaletteId);
+              setThemeId(norm);
+              const defaultTokens = presetBrandTokens(themeById(norm));
+              persistCustomThemeTokens(defaultTokens);
+            }
+            if (parsed.themeFontId) {
+              setFontId(parsed.themeFontId as EditorFontId);
+            }
+          }
+        } catch {}
+      }
+
       const stored = await fetchTheme();
       if (cancelled) return;
       if (stored.themeId) {
@@ -826,7 +845,7 @@ export function EditorStudio({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [subdomain]);
 
   /**
    * All themes, as one stylesheet, injected once.
@@ -1852,7 +1871,7 @@ export function EditorStudio({
                   <AddSectionButton
                     onClick={(e) => {
                       e.stopPropagation();
-                      void seedPageFromAdminDefaults();
+                      setShowAddSectionModal(true);
                     }}
                     label="Add Section"
                   />

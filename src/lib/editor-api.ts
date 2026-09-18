@@ -215,3 +215,11 @@ export async function fetchTheme(): Promise<ThemeSelection> {
 export async function saveTheme(selection: Partial<ThemeSelection>): Promise<void> {
   await api("/api/v1/my-theme", { method: "PUT", body: selection });
 }
+
+/** Replace the whole website draft (used to initialize fresh pages on onboarding completion). */
+export async function saveWebsite(pages: Array<{ slug: string; title: string; sections: unknown[] }>): Promise<void> {
+  await api("/api/v1/my-website", {
+    method: "PUT",
+    body: { pages },
+  });
+}
