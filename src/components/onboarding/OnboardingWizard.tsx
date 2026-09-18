@@ -677,18 +677,55 @@ function buildMultiSectionPreviewDocument({
       background: rgba(255, 255, 255, 0.65);
     }
 
-    /* Solid and prominent top navbar positioning */
-    .lit-header {
+    ${allHeadCss.join("\n\n")}
+
+    /* ─── Top Navbar & Header Visibility & Contrast Overrides ─── */
+    header, nav, [class*="header"], [class*="navbar"], .lit-header {
       position: relative !important;
       z-index: 1000 !important;
-      background: #09090b !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    }
-    .lit-header a, .lit-header button, .lit-header span, .lit-brand-text, .lit-nav-link {
-      color: #ffffff !important;
+      background-color: ${activePalette.bg} !important;
+      border-bottom: 1px solid ${activePalette.text}15 !important;
     }
 
-    ${allHeadCss.join("\n\n")}
+    .lit-header-inner {
+      background: transparent !important;
+    }
+
+    /* All Navbar text, brand title, and links contrast sharply with background */
+    .lit-brand-text,
+    [class*="brand-text"],
+    [class*="logo-text"],
+    [class*="site-title"],
+    .navbar-brand span {
+      color: ${activePalette.text} !important;
+      font-weight: 800 !important;
+    }
+
+    .lit-nav-link,
+    [class*="nav-link"],
+    header nav a:not([class*="btn-"]):not([class*="button-"]):not([id*="Btn"]),
+    nav a:not([class*="btn-"]):not([class*="button-"]):not([id*="Btn"]) {
+      color: ${activePalette.text} !important;
+      opacity: 0.88 !important;
+      font-weight: 700 !important;
+    }
+
+    .lit-nav-link:hover,
+    [class*="nav-link"]:hover,
+    header nav a:not([class*="btn-"]):hover {
+      color: ${activePalette.accent} !important;
+      opacity: 1 !important;
+    }
+
+    /* Logo bars on light / dark background */
+    .lit-logo-bars .bar-white {
+      background-color: ${activePalette.text} !important;
+    }
+
+    /* Mobile toggle icon bars */
+    .lit-mobile-toggle span {
+      background-color: ${activePalette.text} !important;
+    }
   </style>
 </head>
 <body class="xite-site-canvas" data-xite-theme="${themeId}" data-xite-font="${fontId}">
