@@ -812,19 +812,30 @@ export function EditorStudio({
     let cancelled = false;
     void (async () => {
       // Prioritize onboarding selection if freshly completed
+      let hasFreshOnboarding = false;
+      let freshThemeId: EditorThemeId | null = null;
+      let freshFontId: EditorFontId | null = null;
+      let freshCustomTokens: EditorThemeTokens | null = null;
+
       if (typeof window !== "undefined" && subdomain) {
         try {
           const onboardingRaw = localStorage.getItem(`xite_onboarding_${subdomain}`);
           if (onboardingRaw) {
             const parsed = JSON.parse(onboardingRaw);
+            if (parsed.isFresh) {
+              hasFreshOnboarding = true;
+            }
             if (parsed.themePaletteId) {
               const norm = normalizeThemeId(parsed.themePaletteId);
+              freshThemeId = norm;
               setThemeId(norm);
-              const defaultTokens = presetBrandTokens(themeById(norm));
+              const defaultTokens = parsed.customTokens || presetBrandTokens(themeById(norm));
+              freshCustomTokens = defaultTokens;
               persistCustomThemeTokens(defaultTokens);
             }
             if (parsed.themeFontId) {
-              setFontId(parsed.themeFontId as EditorFontId);
+              freshFontId = parsed.themeFontId as EditorFontId;
+              setFontId(freshFontId);
             }
           }
         } catch {}
@@ -832,15 +843,34 @@ export function EditorStudio({
 
       const stored = await fetchTheme();
       if (cancelled) return;
-      if (stored.themeId) {
-        const norm = normalizeThemeId(stored.themeId);
-        setThemeId(norm);
-        if (!customThemeTokens) {
-          const defaultTokens = presetBrandTokens(themeById(norm));
-          persistCustomThemeTokens(defaultTokens);
+
+      if (hasFreshOnboarding && freshThemeId) {
+        // Fresh onboarding takes precedence over stale/default theme in database!
+        setThemeId(freshThemeId);
+        if (freshFontId) setFontId(freshFontId);
+        if (freshCustomTokens) persistCustomThemeTokens(freshCustomTokens);
+        // Persist to backend database so it becomes permanent in DB
+        void saveTheme({ themeId: freshThemeId, fontId: freshFontId || "inter" }).catch(() => {});
+        // Consume isFresh flag so future reloads use DB
+        try {
+          const onboardingRaw = localStorage.getItem(`xite_onboarding_${subdomain}`);
+          if (onboardingRaw) {
+            const parsed = JSON.parse(onboardingRaw);
+            parsed.isFresh = false;
+            localStorage.setItem(`xite_onboarding_${subdomain}`, JSON.stringify(parsed));
+          }
+        } catch {}
+      } else {
+        if (stored.themeId) {
+          const norm = normalizeThemeId(stored.themeId);
+          setThemeId(norm);
+          if (!customThemeTokens) {
+            const defaultTokens = presetBrandTokens(themeById(norm));
+            persistCustomThemeTokens(defaultTokens);
+          }
         }
+        if (stored.fontId) setFontId(stored.fontId as EditorFontId);
       }
-      if (stored.fontId) setFontId(stored.fontId as EditorFontId);
     })();
     return () => {
       cancelled = true;

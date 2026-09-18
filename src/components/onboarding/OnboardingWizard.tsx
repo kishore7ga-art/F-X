@@ -20,7 +20,15 @@ import {
 } from "lucide-react";
 
 import { ApiError, completeOnboardingRequest } from "@/lib/api-client";
-import { EDITOR_FONTS, EDITOR_THEMES, themeStylesheet, tokenizeSectionHtml } from "@/lib/editor-themes";
+import {
+  EDITOR_FONTS,
+  EDITOR_THEMES,
+  themeStylesheet,
+  customThemeCss,
+  themeFontsHref,
+  tokenizeSectionHtml,
+  type EditorThemeTokens,
+} from "@/lib/editor-themes";
 import {
   fetchDefaultWebsite,
   saveTheme,
@@ -442,6 +450,8 @@ export const CURATED_FONT_GROUPS: FontGroup[] = [
   },
 ];
 
+const DESKTOP_VIEWPORT_WIDTH = 1200;
+
 /** Assembles all sections for a page into a complete, standalone preview document with Tailwind Play CDN and theme styles */
 function buildMultiSectionPreviewDocument({
   sections,
@@ -500,12 +510,20 @@ function buildMultiSectionPreviewDocument({
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="${SECTION_RUNTIME_TAILWIND_CDN_SRC}"></script>
   ${SECTION_RUNTIME_HEAD_LINKS}
+  <link href="${themeFontsHref()}" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
   ${allHeadLinks.join("\n  ")}
   <style>
     ${sectionRuntimeCss(null)}
     ${sectionResponsiveCss(null)}
     ${themeStylesheet(".xite-site-canvas")}
+    ${customThemeCss(".xite-site-canvas", {
+      light1: activePalette.bg,
+      light2: activePalette.colors[1] || activePalette.bg,
+      accent: activePalette.accent,
+      dark1: `${activePalette.text}99`,
+      dark2: activePalette.text,
+    })}
 
     :root, html, body, .xite-site-canvas {
       --xite-accent: ${activePalette.accent};
@@ -531,12 +549,38 @@ function buildMultiSectionPreviewDocument({
       -webkit-font-smoothing: antialiased;
     }
 
-    h1, h2, h3, h4, h5, h6 {
+    h1, h2, h3, h4, h5, h6, [class*="font-serif"], .font-heading {
       font-family: ${activeFontPairing.headingFamily} !important;
     }
 
-    p, span, a, li, button {
+    p, span, a, li, button, input, label, div, [class*="font-sans"], .font-body {
       font-family: ${activeFontPairing.bodyFamily} !important;
+    }
+
+    /* Live active palette color overrides for section components */
+    .xite-site-canvas [class*="btn-primary"],
+    .xite-site-canvas [class*="bg-blue-6"],
+    .xite-site-canvas [class*="bg-indigo-6"],
+    .xite-site-canvas [class*="bg-primary"],
+    .xite-site-canvas a[style*="background: #2563eb"],
+    .xite-site-canvas a[style*="background:#2563eb"],
+    .xite-site-canvas button[style*="background: #2563eb"],
+    .xite-site-canvas button[style*="background:#2563eb"] {
+      background-color: ${activePalette.accent} !important;
+    }
+
+    .xite-site-canvas [class*="text-blue-6"],
+    .xite-site-canvas [class*="text-indigo-6"],
+    .xite-site-canvas [class*="text-primary"],
+    .xite-site-canvas a[style*="color: #2563eb"],
+    .xite-site-canvas a[style*="color:#2563eb"] {
+      color: ${activePalette.accent} !important;
+    }
+
+    .xite-site-canvas [class*="border-blue-6"],
+    .xite-site-canvas [class*="border-indigo-6"],
+    .xite-site-canvas [class*="border-primary"] {
+      border-color: ${activePalette.accent} !important;
     }
 
     html, body {
@@ -550,7 +594,7 @@ function buildMultiSectionPreviewDocument({
     ${allHeadCss.join("\n\n")}
   </style>
 </head>
-<body class="xite-site-canvas">
+<body class="xite-site-canvas" data-xite-theme="${themeId}" data-xite-font="${fontId}">
   <div style="width: 100%; display: flex; flex-direction: column;">
     ${bodySectionsHtml.join("\n")}
   </div>
@@ -566,7 +610,7 @@ function buildMultiSectionPreviewDocument({
 </html>`;
 }
 
-// Dynamic Multi-Section Page Canvas Card (Displays sections from Admin in high fidelity, or empty state if none configured)
+// Dynamic Multi-Section Page Canvas Card (Displays sections from Admin in full desktop fidelity scaled to fit)
 function DynamicPageCanvasCard({
   page,
   sections,
@@ -584,6 +628,33 @@ function DynamicPageCanvasCard({
   isLoading?: boolean;
   className?: string;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState<number>(0.32);
+  const [containerHeight, setContainerHeight] = useState<number>(580);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const width = el.clientWidth;
+      const height = el.clientHeight;
+      if (width > 0) {
+        setScale(width / DESKTOP_VIEWPORT_WIDTH);
+      }
+      if (height > 0) {
+        setContainerHeight(height);
+      }
+    };
+
+    measure();
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(measure);
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+  }, [sections.length]);
+
   const previewDoc = useMemo(() => {
     if (!sections || sections.length === 0) return "";
     return buildMultiSectionPreviewDocument({
@@ -644,14 +715,31 @@ function DynamicPageCanvasCard({
           </span>
         </div>
       ) : (
-        /* Dynamic Sections Configured in Admin: Rendered with complete Tailwind & Custom CSS fidelity */
-        <iframe
-          key={`${page.id}-${activePalette.id}-${activeFontPairing.id}-${sections.length}`}
-          srcDoc={previewDoc}
-          title={page.label || page.id}
-          className="w-full h-full flex-1 border-0 bg-transparent rounded-xl"
-          sandbox="allow-same-origin allow-scripts"
-        />
+        /* Dynamic Sections Configured in Admin: Rendered with complete Tailwind & Custom CSS fidelity in ALWAYS DESKTOP layout */
+        <div ref={containerRef} className="w-full h-full relative overflow-hidden flex-1 rounded-xl">
+          <div
+            className="absolute top-0 left-0 origin-top-left"
+            style={{
+              width: `${DESKTOP_VIEWPORT_WIDTH}px`,
+              height: `${Math.max(500, Math.round(containerHeight / Math.max(0.05, scale)))}px`,
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+            }}
+          >
+            <iframe
+              key={`${page.id}-${activePalette.id}-${activeFontPairing.id}-${sections.length}`}
+              srcDoc={previewDoc}
+              title={page.label || page.id}
+              style={{
+                width: `${DESKTOP_VIEWPORT_WIDTH}px`,
+                height: "100%",
+                border: 0,
+              }}
+              className="bg-transparent rounded-xl"
+              sandbox="allow-same-origin allow-scripts"
+            />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -844,6 +932,21 @@ export function OnboardingWizard({
     const themePaletteId = activePalette?.backendThemeId || "academic-blue";
     const themeFontId = activeFontPairing?.backendFontId || "inter";
 
+    const customTokens: EditorThemeTokens = {
+      surface: activePalette.bg,
+      surfaceRaised: activePalette.colors[1] || activePalette.bg,
+      header: activePalette.text,
+      footer: activePalette.text,
+      accent: activePalette.accent,
+      accentSoft: `${activePalette.accent}26`,
+      onAccent: "#ffffff",
+      text: activePalette.text,
+      textMuted: `${activePalette.text}99`,
+      border: `${activePalette.text}20`,
+      primary: activePalette.accent,
+      secondary: activePalette.colors[3] || activePalette.text,
+    };
+
     try {
       await completeOnboardingRequest({
         role: "principal",
@@ -879,6 +982,7 @@ export function OnboardingWizard({
     }
 
     try {
+      localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(customTokens));
       localStorage.setItem(`xite_fresh_site_${subdomain}`, "true");
       localStorage.setItem(
         `xite_onboarding_${subdomain}`,
@@ -887,7 +991,9 @@ export function OnboardingWizard({
           selectedPersonality,
           themePaletteId,
           themeFontId,
-          selectedFontPairingId,
+          selectedPaletteId: activePalette.id,
+          selectedFontPairingId: activeFontPairing.id,
+          customTokens,
           selectedGoals: Array.from(selectedGoals),
           selectedPages: Array.from(selectedPages),
           isFresh: true,
@@ -908,6 +1014,21 @@ export function OnboardingWizard({
 
     const themePaletteId = activePalette?.backendThemeId || "academic-blue";
     const themeFontId = activeFontPairing?.backendFontId || "inter";
+
+    const customTokens: EditorThemeTokens = {
+      surface: activePalette.bg,
+      surfaceRaised: activePalette.colors[1] || activePalette.bg,
+      header: activePalette.text,
+      footer: activePalette.text,
+      accent: activePalette.accent,
+      accentSoft: `${activePalette.accent}26`,
+      onAccent: "#ffffff",
+      text: activePalette.text,
+      textMuted: `${activePalette.text}99`,
+      border: `${activePalette.text}20`,
+      primary: activePalette.accent,
+      secondary: activePalette.colors[3] || activePalette.text,
+    };
 
     try {
       await completeOnboardingRequest({
@@ -941,6 +1062,7 @@ export function OnboardingWizard({
       }
 
       try {
+        localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(customTokens));
         localStorage.setItem(`xite_fresh_site_${subdomain}`, "true");
         localStorage.setItem(
           `xite_onboarding_${subdomain}`,
@@ -949,7 +1071,9 @@ export function OnboardingWizard({
             selectedPersonality,
             themePaletteId,
             themeFontId,
-            selectedFontPairingId,
+            selectedPaletteId: activePalette.id,
+            selectedFontPairingId: activeFontPairing.id,
+            customTokens,
             selectedGoals: Array.from(selectedGoals),
             selectedPages: Array.from(selectedPages),
             isFresh: true,
