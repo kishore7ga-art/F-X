@@ -810,8 +810,8 @@ function DynamicPageCanvasCard({
 
   return (
     <div
-      className={`rounded-xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white ${
-        className ? className : "w-full h-[520px] sm:h-[580px] lg:h-[620px]"
+      className={`rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white ${
+        className ? className : "w-full h-[600px] sm:h-[680px] lg:h-[740px] xl:h-[800px]"
       }`}
       style={{ backgroundColor: activePalette.bg, color: activePalette.text }}
     >
@@ -823,32 +823,32 @@ function DynamicPageCanvasCard({
         </div>
       ) : sections.length === 0 ? (
         /* Empty State: Displayed until Admin adds sections */
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-3">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
           <div
-            className="w-12 h-12 rounded-xl border-2 border-dashed flex items-center justify-center"
+            className="w-16 h-16 rounded-2xl border-2 border-dashed flex items-center justify-center"
             style={{
               borderColor: `${activePalette.text}25`,
               backgroundColor: `${activePalette.text}05`,
             }}
           >
-            <Layout className="w-5 h-5 opacity-40" style={{ color: activePalette.text }} />
+            <Layout className="w-7 h-7 opacity-40" style={{ color: activePalette.text }} />
           </div>
-          <div className="space-y-1 max-w-[260px]">
+          <div className="space-y-1.5 max-w-sm">
             <div
-              className={`text-sm font-bold ${activeFontPairing.headingClass}`}
+              className={`text-base sm:text-lg font-bold ${activeFontPairing.headingClass}`}
               style={{ fontFamily: activeFontPairing.headingFamily }}
             >
               No Sections Added Yet
             </div>
             <p
-              className="text-[11px] opacity-60 leading-relaxed"
+              className="text-xs sm:text-sm opacity-60 leading-relaxed"
               style={{ fontFamily: activeFontPairing.bodyFamily }}
             >
               Admin has not configured sections for this page yet. It will show as empty until Admin adds them.
             </p>
           </div>
           <span
-            className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border opacity-75"
+            className="text-xs font-semibold px-3 py-1 rounded-full border opacity-75"
             style={{
               borderColor: `${activePalette.text}20`,
               backgroundColor: `${activePalette.text}05`,
@@ -1023,7 +1023,7 @@ export function OnboardingWizard({
 
   function scrollCarousel(direction: "left" | "right") {
     if (carouselRef.current) {
-      const amount = direction === "left" ? -420 : 420;
+      const amount = direction === "left" ? -720 : 720;
       carouselRef.current.scrollBy({ left: amount, behavior: "smooth" });
     }
   }
@@ -1390,7 +1390,7 @@ export function OnboardingWizard({
                   {/* Pages Horizontal Scroll Row */}
                   <div
                     ref={carouselRef}
-                    className="flex-1 flex items-center gap-6 overflow-x-auto pb-4 pt-2 px-2 scrollbar-none"
+                    className="flex-1 flex items-center gap-8 overflow-x-auto pb-4 pt-2 px-4 scrollbar-none"
                     style={{ transform: `scale(${zoomScale})`, transformOrigin: "center left" }}
                   >
                     {dynamicPages.filter(
@@ -1398,11 +1398,14 @@ export function OnboardingWizard({
                     ).map((page) => (
                       <div
                         key={page.id}
-                        className="w-[340px] sm:w-[380px] lg:w-[410px] shrink-0 flex flex-col transition-all duration-300"
+                        className="w-[540px] sm:w-[680px] lg:w-[800px] xl:w-[880px] shrink-0 flex flex-col transition-all duration-300"
                       >
                         {/* Page Top Label (Matches Screenshot 4 & 5) */}
-                        <div className="text-xs font-semibold text-white/80 mb-2.5 px-1 truncate">
-                          {page.label}
+                        <div className="text-xs sm:text-sm font-bold text-white/90 mb-2.5 px-1 flex items-center justify-between">
+                          <span className="truncate">{page.label}</span>
+                          <span className="text-[10px] font-mono font-medium text-white/50 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">
+                            Desktop View
+                          </span>
                         </div>
 
                         {/* Page Canvas Card with Dynamic Live Palette Colors & Sections from Admin */}
@@ -1414,6 +1417,7 @@ export function OnboardingWizard({
                           activePalette={activePalette}
                           activeFontPairing={activeFontPairing}
                           isLoading={adminConfigLoading}
+                          className="w-full h-[580px] sm:h-[660px] lg:h-[740px] xl:h-[800px] rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white"
                         />
                       </div>
                     ))}
@@ -1464,7 +1468,7 @@ export function OnboardingWizard({
               ) : (
                 /* IF TAB IS 'SITE INFO' (Single Page Preview: Dynamic Home Sections from Header to Footer) */
                 <div className="h-full w-full flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden">
-                  <div className="w-full max-w-4xl h-full max-h-[720px] flex flex-col">
+                  <div className="w-full max-w-5xl xl:max-w-6xl h-full max-h-[820px] flex flex-col">
                     <DynamicPageCanvasCard
                       page={INSTITUTIONAL_PAGES[0]}
                       sections={homeSections}
@@ -1473,7 +1477,7 @@ export function OnboardingWizard({
                       activePalette={activePalette}
                       activeFontPairing={activeFontPairing}
                       isLoading={adminConfigLoading}
-                      className="w-full h-full rounded-xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none xite-site-canvas dynamic-card-home"
+                      className="w-full h-full rounded-2xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none xite-site-canvas dynamic-card-home"
                     />
                   </div>
                 </div>
