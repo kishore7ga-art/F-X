@@ -26,7 +26,7 @@
 
 import { hexFromValue } from "@/lib/sections/section-edit";
 import { ELEMENT_KEY_ATTR } from "@/lib/sections/section-managed-css";
-import { calculateOppositeContrast } from "@/lib/editor-themes";
+import { calculateOppositeContrast, isDarkColor, getRelativeLuminance } from "@/lib/editor-themes";
 import type { ElementType, SelectionAncestor } from "./selection-store";
 import { applyLinkTarget } from "./link-target";
 
@@ -805,6 +805,20 @@ function buttonVariant(el: HTMLElement): ButtonVariant {
 export function getEffectiveElementBackground(el: HTMLElement | null): string {
   let curr = el;
   while (curr && curr !== document.body && curr !== document.documentElement) {
+    const cls = curr.getAttribute ? (curr.getAttribute("class") || "") : "";
+    if (
+      cls.includes("ai-hero") ||
+      cls.includes("lit-header") ||
+      cls.includes("dark") ||
+      cls.includes("bg-dark") ||
+      cls.includes("bg-slate-900") ||
+      cls.includes("bg-black") ||
+      cls.includes("bg-gray-900") ||
+      curr.getAttribute?.("data-theme") === "dark"
+    ) {
+      return "#0a0a0c";
+    }
+
     const bg = curr.style.backgroundColor || (typeof window !== "undefined" ? window.getComputedStyle(curr).backgroundColor : "");
     if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") {
       const hex = hexFromValue(bg, "");
@@ -1175,6 +1189,10 @@ export function applyElementProps<T extends LeafType>(
 }
 
 function applyCard(el: HTMLElement, p: Partial<CardProps>): void {
+  el.setAttribute("data-xite-user-override", "true");
+  if (p.background !== undefined || p.borderColor !== undefined) {
+    el.setAttribute("data-xite-user-color", "true");
+  }
   set(el, "background-color", p.background);
   set(el, "border-radius", p.radius);
   if (p.shadow !== undefined) {
@@ -1202,6 +1220,10 @@ function applyCard(el: HTMLElement, p: Partial<CardProps>): void {
 }
 
 function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
+  el.setAttribute("data-xite-user-override", "true");
+  if (p.textColor !== undefined || p.background !== undefined || p.variant !== undefined) {
+    el.setAttribute("data-xite-user-color", "true");
+  }
   if (p.href !== undefined) {
     if (el.tagName === "A") el.setAttribute("href", p.href);
     else el.setAttribute("data-href", p.href);
@@ -1265,6 +1287,15 @@ function applyButton(el: HTMLElement, p: Partial<ButtonProps>): void {
     }
   } else if (p.textColor !== undefined) {
     set(el, "color", p.textColor);
+  }
+
+  if (p.textColor !== undefined || p.background !== undefined || p.variant !== undefined) {
+    if (typeof el.querySelectorAll === "function") {
+      el.querySelectorAll<HTMLElement>("span, strong, b, em, p").forEach((child) => {
+        child.setAttribute("data-xite-user-override", "true");
+        child.setAttribute("data-xite-user-color", "true");
+      });
+    }
   }
 
   if (p.size !== undefined) {
@@ -1514,6 +1545,10 @@ function applyPlus(el: HTMLElement, p: Partial<PlusProps>): void {
 }
 
 function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
+  el.setAttribute("data-xite-user-override", "true");
+  if (p.color !== undefined) {
+    el.setAttribute("data-xite-user-color", "true");
+  }
   set(el, "color", p.color);
   if (p.fontSize !== undefined) {
     set(el, "font-size", p.fontSize);
@@ -1526,6 +1561,8 @@ function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
   if (p.color !== undefined && typeof el.querySelectorAll === "function") {
     el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
       set(child, "color", p.color);
+      child.setAttribute("data-xite-user-override", "true");
+      child.setAttribute("data-xite-user-color", "true");
     });
   }
   set(el, "font-weight", p.fontWeight);
@@ -1566,6 +1603,10 @@ function applyHeading(el: HTMLElement, p: Partial<HeadingProps>): void {
 }
 
 function applyText(el: HTMLElement, p: Partial<TextProps>): void {
+  el.setAttribute("data-xite-user-override", "true");
+  if (p.color !== undefined) {
+    el.setAttribute("data-xite-user-color", "true");
+  }
   set(el, "color", p.color);
   if (p.fontSize !== undefined) {
     set(el, "font-size", p.fontSize);
@@ -1578,6 +1619,8 @@ function applyText(el: HTMLElement, p: Partial<TextProps>): void {
   if (p.color !== undefined && typeof el.querySelectorAll === "function") {
     el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach((child) => {
       set(child, "color", p.color);
+      child.setAttribute("data-xite-user-override", "true");
+      child.setAttribute("data-xite-user-color", "true");
     });
   }
   set(el, "font-weight", p.fontWeight);
@@ -1654,6 +1697,10 @@ function applyContainer(el: HTMLElement, p: Partial<ContainerProps>): void {
 }
 
 function applyGeneric(el: HTMLElement, p: Partial<GenericProps>): void {
+  el.setAttribute("data-xite-user-override", "true");
+  if (p.color !== undefined || p.background !== undefined || p.borderColor !== undefined) {
+    el.setAttribute("data-xite-user-color", "true");
+  }
   set(el, "background-color", p.background);
   set(el, "color", p.color);
   set(el, "border-radius", p.radius);
@@ -2282,6 +2329,7 @@ export function applyRangeInlineStyleDom(
 
   // Helper to apply style options to any element
   const applyStylesToElement = (el: HTMLElement) => {
+    el.setAttribute?.("data-xite-user-override", "true");
     if (styles.className && el.classList) {
       el.className = styles.className;
     }

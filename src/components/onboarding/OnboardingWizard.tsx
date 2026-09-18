@@ -25,6 +25,7 @@ import {
   EDITOR_THEMES,
   themeStylesheet,
   customThemeCss,
+  generateHarmoniousContrastCss,
   themeFontsHref,
   tokenizeSectionHtml,
   type EditorThemeTokens,
@@ -589,6 +590,13 @@ function buildMultiSectionPreviewDocument({
     ${sectionResponsiveCss(null)}
     ${themeStylesheet(".xite-site-canvas")}
     ${customThemeCss(".xite-site-canvas", {
+      light1: activePalette.bg,
+      light2: activePalette.colors[1] || activePalette.bg,
+      accent: activePalette.accent,
+      dark1: `${activePalette.text}99`,
+      dark2: activePalette.text,
+    })}
+    ${generateHarmoniousContrastCss(".xite-site-canvas", {
       light1: activePalette.bg,
       light2: activePalette.colors[1] || activePalette.bg,
       accent: activePalette.accent,

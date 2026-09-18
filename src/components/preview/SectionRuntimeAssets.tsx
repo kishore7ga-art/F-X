@@ -2,7 +2,7 @@ import {
   SECTION_RUNTIME_STYLESHEET_HREFS,
   SECTION_RUNTIME_TAILWIND_CDN_SRC,
 } from "@/lib/section-runtime";
-import { themeFontsHref, themeStylesheet } from "@/lib/editor-themes";
+import { themeFontsHref, themeStylesheet, generateHarmoniousContrastCss } from "@/lib/editor-themes";
 
 /** The canvas element the theme tokens are scoped to, on every surface. */
 const CANVAS_SCOPE = ".xite-site-canvas";
@@ -52,6 +52,7 @@ export function SectionRuntimeAssets() {
       {/* Generated from static constants in `editor-themes.ts`; no request
           data reaches it. */}
       <style dangerouslySetInnerHTML={{ __html: themeStylesheet(CANVAS_SCOPE) }} />
+      <style dangerouslySetInnerHTML={{ __html: generateHarmoniousContrastCss(CANVAS_SCOPE) }} />
       {/* eslint-disable-next-line @next/next/no-sync-scripts -- parse-time execution is the point; see above. */}
       <script src={SECTION_RUNTIME_TAILWIND_CDN_SRC} />
     </>

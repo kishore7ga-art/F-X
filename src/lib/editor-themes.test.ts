@@ -29,6 +29,8 @@ import {
   isValidHex,
   hexToRgb,
   hslToHex,
+  generateHarmoniousContrastCss,
+  isDarkColor,
   type ColorTokenMap,
 } from "@/lib/editor-themes";
 
@@ -626,6 +628,41 @@ describe("Squarespace 7.1 Style Color Engine", () => {
     assert.equal(hslToHex(0, 0, 0), "#000000");
     assert.equal(hslToHex(220, 90, 56), "#2A6DF4");
   });
+
+  it("isDarkColor correctly determines perceptual darkness for hex and rgb strings", () => {
+    assert.equal(isDarkColor("#000000"), true);
+    assert.equal(isDarkColor("#0f172a"), true);
+    assert.equal(isDarkColor("#0d0418"), true);
+    assert.equal(isDarkColor("#ffffff"), false);
+    assert.equal(isDarkColor("#f8fafc"), false);
+    assert.equal(isDarkColor("rgb(15, 23, 42)"), true);
+    assert.equal(isDarkColor("rgb(255, 255, 255)"), false);
+    assert.equal(isDarkColor("transparent"), false);
+  });
+
+  it("generateHarmoniousContrastCss guarantees accessible contrast and respects data-xite-user-override", () => {
+    const css = generateHarmoniousContrastCss(".xite-site-canvas", {
+      light1: "#ffffff",
+      light2: "#f8fafc",
+      accent: "#2563eb",
+      dark1: "#334155",
+      dark2: "#0f172a",
+    });
+
+    // Contains rules for primary buttons with WCAG on-accent
+    assert.ok(css.includes("background-color: #2563eb !important;"));
+    assert.ok(css.includes("color: #ffffff !important;"));
+
+    // Contains dark hero / dark header re-scoping and heading rules
+    assert.ok(css.includes(".ai-hero"));
+    assert.ok(css.includes(".lit-header"));
+    assert.ok(css.includes("--xite-text: #FFFFFF;"));
+    assert.ok(css.includes("color: #FFFFFF !important;"));
+
+    // Strictly isolates user manual changes via :not([data-xite-user-override])
+    assert.ok(css.includes(":not([data-xite-user-override]):not([data-xite-user-color])"));
+  });
 });
+
 
 

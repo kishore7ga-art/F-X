@@ -64,6 +64,7 @@ import {
   themeFontsHref,
   themeStylesheet,
   customThemeCss,
+  generateHarmoniousContrastCss,
   tokenizeSectionHtml,
   getMatchingPaletteId,
   normalizeThemeId,
@@ -902,10 +903,9 @@ export function EditorStudio({
   }, []);
 
   /**
-   * Injects dynamic custom theme CSS when custom theme tokens are adjusted.
+   * Injects dynamic custom theme CSS and harmonious contrast rules.
    */
   useEffect(() => {
-    if (!customThemeTokens) return;
     const id = "xite-editor-custom-theme-tokens";
     let style = document.getElementById(id) as HTMLStyleElement | null;
     if (!style) {
@@ -918,7 +918,19 @@ export function EditorStudio({
       if (presets) presets.after(style);
       else document.head.prepend(style);
     }
-    style.textContent = customThemeCss(EDITOR_CANVAS_SCOPE, customThemeTokens);
+    style.textContent = customThemeTokens ? customThemeCss(EDITOR_CANVAS_SCOPE, customThemeTokens) : "";
+
+    const contrastId = "xite-editor-contrast-rules";
+    let contrastStyle = document.getElementById(contrastId) as HTMLStyleElement | null;
+    if (!contrastStyle) {
+      contrastStyle = document.createElement("style");
+      contrastStyle.id = contrastId;
+      style.after(contrastStyle);
+    }
+    contrastStyle.textContent = generateHarmoniousContrastCss(
+      EDITOR_CANVAS_SCOPE,
+      customThemeTokens ?? undefined,
+    );
   }, [customThemeTokens]);
 
   const persistCustomThemeTokens = (tokens: EditorThemeTokens) => {
