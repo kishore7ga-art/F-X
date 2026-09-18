@@ -79,6 +79,8 @@ const BRAND_PERSONALITIES = [
     heroTitle: "Excellence in Higher Education & Research",
     heroSubtitle:
       "Premier NAAC A++ accredited autonomous institution cultivating technological leadership, scientific inquiry, and global career outcomes.",
+    defaultPaletteId: "academic-blue",
+    defaultFontPairingId: "modern-sans",
   },
   {
     id: "innovative",
@@ -87,6 +89,8 @@ const BRAND_PERSONALITIES = [
     heroTitle: "Engineering the Future with Innovation",
     heroSubtitle:
       "Leading multidisciplinary campus empowering next-gen researchers through AI laboratories, advanced robotics, and patent innovation.",
+    defaultPaletteId: "indigo-violet",
+    defaultFontPairingId: "technical-sans",
   },
   {
     id: "scholarly",
@@ -95,6 +99,8 @@ const BRAND_PERSONALITIES = [
     heroTitle: "A Legacy of Intellectual Distinction",
     heroSubtitle:
       "Upholding a storied tradition of scientific discovery, distinguished faculty scholarship, and transformative postgraduate education.",
+    defaultPaletteId: "crimson-maroon",
+    defaultFontPairingId: "editorial-serif",
   },
   {
     id: "vibrant",
@@ -103,6 +109,8 @@ const BRAND_PERSONALITIES = [
     heroTitle: "Where Passion Meets Purpose & Career",
     heroSubtitle:
       "An inspiring university campus offering world-class student life, dynamic hackathons, industry internships, and 100% placement support.",
+    defaultPaletteId: "coastal-teal",
+    defaultFontPairingId: "expressive-display",
   },
 ] as const;
 
@@ -456,25 +464,90 @@ const DESKTOP_VIEWPORT_WIDTH = 1200;
 function buildMultiSectionPreviewDocument({
   sections,
   siteTitle,
+  selectedPersonality = "professional",
   activePalette,
   activeFontPairing,
 }: {
   sections: EditorSection[];
   siteTitle: string;
+  selectedPersonality?: string;
   activePalette: (typeof CURATED_PALETTE_GROUPS)[number]["palettes"][number];
   activeFontPairing: FontPairing;
 }): string {
+  const personality =
+    BRAND_PERSONALITIES.find((p) => p.id === selectedPersonality) ||
+    BRAND_PERSONALITIES[0];
+
   const allHeadLinks: string[] = [];
   const allHeadCss: string[] = [];
   const bodySectionsHtml: string[] = [];
 
+  const displayTitle = siteTitle && siteTitle.trim() ? siteTitle.trim() : "Greenfield University";
+  const initials =
+    displayTitle
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "GU";
+
   sections.forEach((sec, idx) => {
     let raw = sec.code || "";
-    if (siteTitle && siteTitle.trim() && siteTitle !== "Greenfield University") {
+
+    // 1. Dynamic Site Title replacement across Navbar and all sections
+    if (displayTitle) {
+      // Replace brand text inside navbar or brand logo/link
+      raw = raw.replace(
+        /(<span[^>]*class="[^"]*(?:lit-brand-text|brand-text|logo-text|brand-name|site-title)[^"]*"[^>]*>)([\s\S]*?)(<\/span>)/gi,
+        `$1${displayTitle}$3`
+      );
+      raw = raw.replace(
+        /(<div[^>]*class="[^"]*(?:lit-brand-text|brand-text|logo-text|brand-name|site-title)[^"]*"[^>]*>)([\s\S]*?)(<\/div>)/gi,
+        `$1${displayTitle}$3`
+      );
+      // Replace known placeholders
       raw = raw
-        .replace(/Madras Institute of Tech/g, siteTitle)
-        .replace(/Greenfield University/g, siteTitle);
+        .replace(/Madras Institute of Tech(?:nology)?/gi, displayTitle)
+        .replace(/Greenfield University/gi, displayTitle)
+        .replace(/GREENFIELD UNIVERSITY/gi, displayTitle.toUpperCase())
+        .replace(/>GU</g, `>${initials}<`);
     }
+
+    // 2. Dynamic Brand Personality updates for Hero & Lead sections
+    const isHero =
+      sec.category === "hero" ||
+      (sec.title && sec.title.toLowerCase().includes("hero")) ||
+      raw.includes("ai-hero") ||
+      raw.includes("hero-title") ||
+      (idx === 1 && sections.length > 1);
+
+    if (isHero) {
+      if (/class="[^"]*(?:ai-hero-title|hero-title)[^"]*"/i.test(raw)) {
+        raw = raw.replace(
+          /(<h1[^>]*class="[^"]*(?:ai-hero-title|hero-title)[^"]*"[^>]*>)([\s\S]*?)(<\/h1>)/gi,
+          `$1${personality.heroTitle}$3`
+        );
+      } else {
+        raw = raw.replace(
+          /(<h1[^>]*>)([\s\S]*?)(<\/h1>)/i,
+          `$1${personality.heroTitle}$3`
+        );
+      }
+
+      if (/class="[^"]*(?:ai-hero-desc|hero-desc|hero-subtitle|lead)[^"]*"/i.test(raw)) {
+        raw = raw.replace(
+          /(<(?:p|div)[^>]*class="[^"]*(?:ai-hero-desc|hero-desc|hero-subtitle|lead)[^"]*"[^>]*>)([\s\S]*?)(<\/(?:p|div)>)/gi,
+          `$1${personality.heroSubtitle}$3`
+        );
+      } else {
+        raw = raw.replace(
+          /(<\/h1>[\s\S]*?<p[^>]*>)([\s\S]*?)(<\/p>)/i,
+          `$1${personality.heroSubtitle}$3`
+        );
+      }
+    }
+
     const code = absolutiseUploadUrls(raw, null);
     const { headCss, headLinks, bodyHtml } = extractStylesAndBody(code);
 
@@ -599,12 +672,70 @@ function buildMultiSectionPreviewDocument({
     ${bodySectionsHtml.join("\n")}
   </div>
   <script>
-    document.addEventListener("click", function(e) {
-      var link = e.target.closest("a");
-      if (link) {
-        e.preventDefault();
+    (function() {
+      // Prevent link navigation inside the preview iframe
+      document.addEventListener("click", function(e) {
+        var link = e.target.closest("a");
+        if (link) {
+          e.preventDefault();
+        }
+      }, true);
+
+      // Dynamic live DOM updates for siteTitle and brand personality
+      var title = ${JSON.stringify(displayTitle)};
+      var heroTitle = ${JSON.stringify(personality.heroTitle)};
+      var heroDesc = ${JSON.stringify(personality.heroSubtitle)};
+      var inits = ${JSON.stringify(initials)};
+
+      function applyUpdates(t, hT, hD, iN) {
+        if (t) {
+          var updated = false;
+          document.querySelectorAll('.lit-brand-text, [class*="brand-text"], [class*="logo-text"], .navbar-brand span').forEach(function(el) {
+            el.textContent = t;
+            updated = true;
+          });
+          if (!updated) {
+            var headerSpan = document.querySelector('header span, nav span, [data-xite-navbar] span');
+            if (headerSpan) headerSpan.textContent = t;
+          }
+          var navLogo = document.querySelector('header div > div, nav div > div');
+          if (navLogo && navLogo.textContent.trim().length <= 3) {
+            navLogo.textContent = iN;
+          }
+        }
+
+        if (hT) {
+          var h1 = document.querySelector('.ai-hero-title, [class*="hero-title"], .ai-hero h1, section:nth-of-type(2) h1, section h1, h1');
+          if (h1) {
+            h1.innerHTML = hT;
+          }
+        }
+
+        if (hD) {
+          var p = document.querySelector('.ai-hero-desc, [class*="hero-desc"], [class*="hero-subtitle"]');
+          if (!p) {
+            var allH1 = document.querySelector('.ai-hero-title, [class*="hero-title"], .ai-hero h1, section:nth-of-type(2) h1, section h1, h1');
+            if (allH1 && allH1.parentElement) {
+              var ps = allH1.parentElement.querySelectorAll('p');
+              if (ps.length > 0) p = ps[ps.length - 1];
+            }
+          }
+          if (p) {
+            p.textContent = hD;
+          }
+        }
       }
-    }, true);
+
+      applyUpdates(title, heroTitle, heroDesc, inits);
+
+      window.addEventListener("message", function(e) {
+        if (!e || !e.data) return;
+        if (e.data.type === "UPDATE_TITLE" && e.data.title) {
+          var newInits = e.data.title.split(/\s+/).map(function(w){return w[0];}).filter(Boolean).slice(0, 2).join("").toUpperCase() || "GU";
+          applyUpdates(e.data.title, null, null, newInits);
+        }
+      });
+    })();
   </script>
 </body>
 </html>`;
@@ -615,6 +746,7 @@ function DynamicPageCanvasCard({
   page,
   sections,
   siteTitle,
+  selectedPersonality,
   activePalette,
   activeFontPairing,
   isLoading,
@@ -623,14 +755,26 @@ function DynamicPageCanvasCard({
   page: InstitutionalPageItem;
   sections: EditorSection[];
   siteTitle: string;
+  selectedPersonality?: string;
   activePalette: (typeof CURATED_PALETTE_GROUPS)[number]["palettes"][number];
   activeFontPairing: FontPairing;
   isLoading?: boolean;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [scale, setScale] = useState<number>(0.32);
   const [containerHeight, setContainerHeight] = useState<number>(580);
+
+  // Send instant title updates via postMessage for zero-lag typing
+  useEffect(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        { type: "UPDATE_TITLE", title: siteTitle },
+        "*"
+      );
+    }
+  }, [siteTitle]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -660,10 +804,11 @@ function DynamicPageCanvasCard({
     return buildMultiSectionPreviewDocument({
       sections,
       siteTitle,
+      selectedPersonality,
       activePalette,
       activeFontPairing,
     });
-  }, [sections, siteTitle, activePalette, activeFontPairing]);
+  }, [sections, siteTitle, selectedPersonality, activePalette, activeFontPairing]);
 
   return (
     <div
@@ -727,7 +872,8 @@ function DynamicPageCanvasCard({
             }}
           >
             <iframe
-              key={`${page.id}-${activePalette.id}-${activeFontPairing.id}-${sections.length}`}
+              ref={iframeRef}
+              key={`${page.id}-${activePalette.id}-${activeFontPairing.id}-${selectedPersonality}-${sections.length}`}
               srcDoc={previewDoc}
               title={page.label || page.id}
               style={{
@@ -1434,6 +1580,7 @@ export function OnboardingWizard({
                           page={page}
                           sections={getSectionsForPage(page.id)}
                           siteTitle={siteTitle}
+                          selectedPersonality={selectedPersonality}
                           activePalette={activePalette}
                           activeFontPairing={activeFontPairing}
                           isLoading={adminConfigLoading}
@@ -1492,6 +1639,7 @@ export function OnboardingWizard({
                       page={INSTITUTIONAL_PAGES[0]}
                       sections={homeSections}
                       siteTitle={siteTitle}
+                      selectedPersonality={selectedPersonality}
                       activePalette={activePalette}
                       activeFontPairing={activeFontPairing}
                       isLoading={adminConfigLoading}
@@ -1571,7 +1719,15 @@ export function OnboardingWizard({
                           return (
                             <div
                               key={p.id}
-                              onClick={() => setSelectedPersonality(p.id)}
+                              onClick={() => {
+                                setSelectedPersonality(p.id);
+                                if (p.defaultPaletteId) {
+                                  setSelectedPaletteId(p.defaultPaletteId);
+                                }
+                                if (p.defaultFontPairingId) {
+                                  setSelectedFontPairingId(p.defaultFontPairingId);
+                                }
+                              }}
                               className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
                                 isSelected
                                   ? "bg-white border-neutral-900 ring-1 ring-neutral-900 shadow-xs"

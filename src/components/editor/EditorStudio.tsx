@@ -284,6 +284,7 @@ export function EditorStudio({
   subdomain = "greenfield",
   collegeName = "Greenfield University",
 }: EditorStudioProps) {
+  const [effectiveCollegeName, setEffectiveCollegeName] = useState(collegeName);
   /**
    * The preview: which device, which width, and how large it is drawn.
    *
@@ -822,6 +823,9 @@ export function EditorStudio({
           const onboardingRaw = localStorage.getItem(`xite_onboarding_${subdomain}`);
           if (onboardingRaw) {
             const parsed = JSON.parse(onboardingRaw);
+            if (parsed.siteTitle && typeof parsed.siteTitle === "string" && parsed.siteTitle.trim()) {
+              setEffectiveCollegeName(parsed.siteTitle.trim());
+            }
             if (parsed.isFresh) {
               hasFreshOnboarding = true;
             }
@@ -1145,10 +1149,21 @@ export function EditorStudio({
     // Fresh ids: these are this college's sections now, not references to the
     // platform default. Sharing ids with the default is what let a later admin
     // edit appear to reach into a tenant's page.
-    const seeded = match.sections.map((section: EditorSection) => ({ ...section, id: newSectionId() }));
+    const seeded = match.sections.map((section: EditorSection) => {
+      let code = section.code;
+      if (effectiveCollegeName && effectiveCollegeName !== "Greenfield University") {
+        const inits = effectiveCollegeName.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "GU";
+        code = code
+          .replace(/GREENFIELD UNIVERSITY/gi, effectiveCollegeName.toUpperCase())
+          .replace(/Greenfield University/gi, effectiveCollegeName)
+          .replace(/Madras Institute of Tech(?:nology)?/gi, effectiveCollegeName)
+          .replace(/>GU</g, `>${inits}<`);
+      }
+      return { ...section, id: newSectionId(), code };
+    });
     setSectionsWithHistory(() => seeded);
     setActiveSectionIndex(0);
-  }, [editor.activePage.id, setSectionsWithHistory, setActiveSectionIndex]);
+  }, [editor.activePage.id, effectiveCollegeName, setSectionsWithHistory, setActiveSectionIndex]);
 
   // Global document click handler to close SectionToolbar when left-clicking outside
   useEffect(() => {
@@ -1374,7 +1389,19 @@ export function EditorStudio({
         return;
       }
 
-      const newSection = sectionFromTemplate(chosen, newSectionId());
+      let code = chosen.code;
+      if (effectiveCollegeName && effectiveCollegeName !== "Greenfield University") {
+        const inits = effectiveCollegeName.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "GU";
+        code = code
+          .replace(/GREENFIELD UNIVERSITY/gi, effectiveCollegeName.toUpperCase())
+          .replace(/Greenfield University/gi, effectiveCollegeName)
+          .replace(/Madras Institute of Tech(?:nology)?/gi, effectiveCollegeName)
+          .replace(/>GU</g, `>${inits}<`);
+      }
+      const newSection = {
+        ...sectionFromTemplate(chosen, newSectionId()),
+        code,
+      };
 
       /**
        * The placement rule, from `@/lib/section-variants`.
@@ -1420,6 +1447,7 @@ export function EditorStudio({
     },
     [
       activeSectionIndex,
+      effectiveCollegeName,
       libraryTemplatesFor,
       sections,
       setSectionsWithHistory,
@@ -1459,12 +1487,25 @@ export function EditorStudio({
         return;
       }
 
+      let swappedSection = result.section;
+      if (effectiveCollegeName && effectiveCollegeName !== "Greenfield University") {
+        const inits = effectiveCollegeName.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join("").toUpperCase() || "GU";
+        swappedSection = {
+          ...swappedSection,
+          code: swappedSection.code
+            .replace(/GREENFIELD UNIVERSITY/gi, effectiveCollegeName.toUpperCase())
+            .replace(/Greenfield University/gi, effectiveCollegeName)
+            .replace(/Madras Institute of Tech(?:nology)?/gi, effectiveCollegeName)
+            .replace(/>GU</g, `>${inits}<`),
+        };
+      }
+
       setSectionsWithHistory((prev) =>
-        prev.map((sec, idx) => (idx === activeSectionIndex ? result.section : sec)),
+        prev.map((sec, idx) => (idx === activeSectionIndex ? swappedSection : sec)),
       );
       setSwapNotice(`Layout ${result.position} of ${result.total} — ${result.section.title}`);
     },
-    [activeSectionIndex, sections, library, setSectionsWithHistory],
+    [activeSectionIndex, effectiveCollegeName, sections, library, setSectionsWithHistory],
   );
 
   /** How many variants the selected section could swap between. For the toolbar. */
