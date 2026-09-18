@@ -39,7 +39,7 @@ export interface InlineTextToolbarProps {
 
   colorValue: string;
   onApplyColor: (hex: string) => void;
-  onApplyFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
+  onApplyFormat?: (command: "bold" | "italic" | "underline" | "strikethrough" | "removeFormat") => void;
   fontFamilyValue?: string;
   onApplyFontFamily?: (font: string) => void;
   fontSizeValue?: string;

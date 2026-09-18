@@ -436,7 +436,7 @@ export function useSelectionController({
   );
 
   const changeHeadingLevel = useCallback(
-    (level: HeadingLevel | "p") => {
+    (level: HeadingLevel | "p" | string) => {
       const state = selectionStore.getState();
       if (!state.sectionId) return;
       const element = resolveSelected(state);

@@ -1940,8 +1940,8 @@ export function changeHeadingTagDom(
  */
 export function isPartialTextSelection(range: Range | null, element: HTMLElement): boolean {
   if (!range || range.collapsed) return false;
-  const rangeText = range.toString().trim();
-  if (rangeText.length === 0) return false;
+  const rawRangeText = range.toString();
+  if (rawRangeText.length === 0) return false;
 
   const targetTextEl =
     /^(div|section|article|header|footer|nav|aside|main|form)$/i.test(element.tagName) &&
@@ -1951,8 +1951,8 @@ export function isPartialTextSelection(range: Range | null, element: HTMLElement
         ) || element
       : element;
 
-  const elementText = (targetTextEl.textContent || "").trim();
-  if (rangeText !== elementText) {
+  const elementText = targetTextEl.textContent || "";
+  if (rawRangeText !== elementText && rawRangeText.trim() !== elementText.trim()) {
     return true;
   }
 
@@ -2021,13 +2021,15 @@ export function transformSelectedRangeToTag(
 
   if (!editorRoot) return null;
 
-  // 2. Validate that the Range strictly belongs to editorRoot
-  if (
-    typeof editorRoot.contains === "function" &&
-    !editorRoot.contains(range.commonAncestorContainer) &&
-    !range.commonAncestorContainer.contains(editorRoot)
-  ) {
-    return null;
+  // 2. Validate that the Range strictly belongs to editorRoot (hard boundary)
+  const startContainer = range.startContainer || range.commonAncestorContainer;
+  const endContainer = range.endContainer || range.commonAncestorContainer;
+  if (typeof editorRoot.contains === "function") {
+    const startInside = startContainer === editorRoot || editorRoot.contains(startContainer);
+    const endInside = endContainer === editorRoot || editorRoot.contains(endContainer);
+    if (!startInside || !endInside) {
+      return null;
+    }
   }
 
   // 3. Find the target formatting element enclosing the range, or fallback to editorRoot
@@ -2146,6 +2148,10 @@ export function transformSelectedRangeToTag(
       }
     }
 
+    if (editorRoot && typeof editorRoot.contains === "function" && !editorRoot.contains(tagEl)) {
+      return null;
+    }
+
     return tagEl;
   } catch (err) {
     console.error("[transformSelectedRangeToTag] Failed to apply range tag:", err);
@@ -2210,13 +2216,15 @@ export function applyRangeInlineStyleDom(
 
   if (!editorRoot) return null;
 
-  // 2. Validate that the Range strictly belongs to editorRoot
-  if (
-    typeof editorRoot.contains === "function" &&
-    !editorRoot.contains(range.commonAncestorContainer) &&
-    !range.commonAncestorContainer.contains(editorRoot)
-  ) {
-    return null;
+  // 2. Validate that the Range strictly belongs to editorRoot (hard boundary)
+  const startContainer = range.startContainer || range.commonAncestorContainer;
+  const endContainer = range.endContainer || range.commonAncestorContainer;
+  if (typeof editorRoot.contains === "function") {
+    const startInside = startContainer === editorRoot || editorRoot.contains(startContainer);
+    const endInside = endContainer === editorRoot || editorRoot.contains(endContainer);
+    if (!startInside || !endInside) {
+      return null;
+    }
   }
 
   // 3. Find the target formatting element enclosing the range, or fallback to editorRoot
@@ -2362,6 +2370,29 @@ export function applyRangeInlineStyleDom(
     }
   };
 
+  const cleanEmptySpans = (node: any) => {
+    if (!node) return;
+    const children = Array.from(node.children || node.childNodes || []);
+    for (const child of children as any[]) {
+      cleanEmptySpans(child);
+      if (child.tagName === "SPAN" && child.attributes) {
+        const styleAttr = child.getAttribute?.("style");
+        const hasStyle = styleAttr && styleAttr.trim().length > 0;
+        const hasClass = child.className && child.className.trim().length > 0;
+        const hasDataAttr = child.getAttribute?.("data-xite-user-color") || child.getAttribute?.("data-xite-heading-tag");
+        if (!hasStyle && !hasClass && !hasDataAttr && typeof child.replaceWith === "function") {
+          const frag = child.ownerDocument?.createDocumentFragment ? child.ownerDocument.createDocumentFragment() : null;
+          if (frag) {
+            while (child.firstChild) {
+              frag.appendChild(child.firstChild);
+            }
+            child.replaceWith(frag);
+          }
+        }
+      }
+    }
+  };
+
   try {
     const contents = range.extractContents();
 
@@ -2384,6 +2415,7 @@ export function applyRangeInlineStyleDom(
     } else {
       // Clean any conflicting nested styles inside extracted content
       cleanConflictingChildStyles(contents);
+      cleanEmptySpans(contents);
 
       const span = doc.createElement("span");
       applyStylesToElement(span);
@@ -2412,6 +2444,10 @@ export function applyRangeInlineStyleDom(
       }
     }
 
+    if (editorRoot && typeof editorRoot.contains === "function" && !editorRoot.contains(targetSpan)) {
+      return null;
+    }
+
     return targetSpan;
   } catch (err) {
     console.error("[applyRangeInlineStyleDom] Failed to apply inline style:", err);
@@ -2422,31 +2458,89 @@ export function applyRangeInlineStyleDom(
 /**
  * Clears inline formatting from a selected range without breaking DOM boundaries.
  */
+/**
+ * Clears inline formatting from a selected range without breaking DOM boundaries.
+ * Unwraps formatting tags (strong, b, em, i, u, s, del, strike, font, mark, etc.)
+ * and removes inline style / data attributes while preserving text.
+ */
 export function clearRangeFormattingDom(
   range: Range,
   containerOrRoot?: HTMLElement | null
 ): boolean {
   if (!range || range.collapsed) return false;
 
+  const startContainer = range.startContainer || range.commonAncestorContainer;
+  const endContainer = range.endContainer || range.commonAncestorContainer;
+  if (containerOrRoot && typeof containerOrRoot.contains === "function") {
+    const startInside = startContainer === containerOrRoot || containerOrRoot.contains(startContainer);
+    const endInside = endContainer === containerOrRoot || containerOrRoot.contains(endContainer);
+    if (!startInside || !endInside) {
+      return false;
+    }
+  }
+
+  const FORMATTING_TAGS_TO_UNWRAP = new Set([
+    "STRONG", "B", "EM", "I", "U", "S", "DEL", "STRIKE", "FONT", "MARK", "SMALL", "BIG", "SUB", "SUP"
+  ]);
+
   try {
     const contents = range.extractContents();
 
-    const cleanNode = (node: any) => {
+    const cleanAndUnwrapNode = (node: any) => {
       if (!node) return;
+
       if (node.nodeType === 1 || node.tagName) {
         node.removeAttribute?.("style");
         node.removeAttribute?.("data-xite-user-color");
         node.removeAttribute?.("data-xite-heading-tag");
       }
-      const children = node.children || node.childNodes;
-      if (children) {
-        for (const child of Array.from(children)) {
-          cleanNode(child);
+
+      const children = Array.from(node.childNodes || node.children || []);
+      for (const child of children as any[]) {
+        cleanAndUnwrapNode(child);
+
+        if (child.nodeType === 1 || child.tagName) {
+          child.removeAttribute?.("style");
+          child.removeAttribute?.("data-xite-user-color");
+          child.removeAttribute?.("data-xite-heading-tag");
+
+          const tag = (child.tagName || "").toUpperCase();
+          const parent = child.parentNode || child.parentElement;
+
+          // If child is a formatting tag, unwrap it
+          if (FORMATTING_TAGS_TO_UNWRAP.has(tag) && parent) {
+            while (child.firstChild) {
+              parent.insertBefore(child.firstChild, child);
+            }
+            if (typeof child.remove === "function") child.remove();
+            else if (parent.children) {
+              const idx = parent.children.indexOf(child);
+              if (idx >= 0) parent.children.splice(idx, 1);
+            }
+          } else if (tag === "SPAN" && parent) {
+            // If child is a span with no remaining attributes or class, unwrap it
+            const hasStyle = Boolean(child.getAttribute?.("style")?.trim());
+            const hasClass = Boolean(child.className?.trim());
+            const hasData = Boolean(
+              child.getAttribute?.("data-xite-user-color") ||
+              child.getAttribute?.("data-xite-heading-tag")
+            );
+            if (!hasStyle && !hasClass && !hasData) {
+              while (child.firstChild) {
+                parent.insertBefore(child.firstChild, child);
+              }
+              if (typeof child.remove === "function") child.remove();
+              else if (parent.children) {
+                const idx = parent.children.indexOf(child);
+                if (idx >= 0) parent.children.splice(idx, 1);
+              }
+            }
+          }
         }
       }
     };
 
-    cleanNode(contents);
+    cleanAndUnwrapNode(contents);
     range.insertNode(contents);
 
     if (containerOrRoot && typeof containerOrRoot.normalize === "function") {
@@ -2457,6 +2551,418 @@ export function clearRangeFormattingDom(
     console.error("[clearRangeFormattingDom] Failed to clear range formatting:", err);
     return false;
   }
+}
+
+/**
+ * Applies a hyperlink (<a> tag) to ONLY the specified Range within an editorRoot boundary.
+ * Prevents invalid nested <a> tags, updates existing link if whole link is selected,
+ * and unlinks partial existing links cleanly.
+ */
+export function applyRangeLinkDom(
+  range: Range,
+  href: string,
+  containerOrRoot?: HTMLElement | null
+): HTMLAnchorElement | null {
+  if (!range || range.collapsed || !href) return null;
+
+  const anchorNode: HTMLElement | null =
+    range.commonAncestorContainer.nodeType === 1
+      ? (range.commonAncestorContainer as HTMLElement)
+      : (range.commonAncestorContainer.parentElement as HTMLElement | null);
+
+  const editorRoot =
+    (containerOrRoot && typeof containerOrRoot.contains === "function" ? containerOrRoot : null) ||
+    (anchorNode && typeof anchorNode.closest === "function"
+      ? anchorNode.closest<HTMLElement>(
+          ".editor-container, .editor-block, [data-editor-block], .section-wrapper-container, [data-section-id], .xite-site-canvas"
+        )
+      : null) ||
+    anchorNode?.parentElement ||
+    anchorNode ||
+    containerOrRoot;
+
+  if (!editorRoot) return null;
+
+  const startContainer = range.startContainer || range.commonAncestorContainer;
+  const endContainer = range.endContainer || range.commonAncestorContainer;
+  if (typeof editorRoot.contains === "function") {
+    const startInside = startContainer === editorRoot || editorRoot.contains(startContainer);
+    const endInside = endContainer === editorRoot || editorRoot.contains(endContainer);
+    if (!startInside || !endInside) return null;
+  }
+
+  // Check if selection is inside an existing <a> tag
+  const existingLink =
+    (anchorNode && typeof anchorNode.closest === "function" ? anchorNode.closest("a") : null) ||
+    ((range.commonAncestorContainer as any)?.closest?.("a") ?? null);
+
+  if (existingLink) {
+    let rangeText = "";
+    if (typeof range.toString === "function" && range.toString !== Object.prototype.toString) {
+      try {
+        const s = range.toString();
+        if (s !== "[object Object]") rangeText = s.trim();
+      } catch {}
+    }
+    const linkText = (existingLink.textContent || "").trim();
+    const isWholeExistingLink =
+      rangeText.length === 0 ||
+      rangeText === linkText ||
+      range.collapsed ||
+      range.startContainer === existingLink ||
+      range.commonAncestorContainer === existingLink;
+
+    if (isWholeExistingLink) {
+      existingLink.setAttribute("href", href);
+      existingLink.setAttribute("target", "_blank");
+      existingLink.setAttribute("rel", "noopener noreferrer");
+      return existingLink as HTMLAnchorElement;
+    }
+    // Partial selection inside existing link: unlink that sub-range first so we don't nest <a> inside <a>
+    removeRangeLinkDom(range, editorRoot);
+  }
+
+  const doc =
+    (typeof document !== "undefined"
+      ? document
+      : (editorRoot as any).ownerDocument) || {
+      createElement(tag: string) {
+        const el: any = {
+          nodeType: 1,
+          tagName: tag.toUpperCase(),
+          className: "",
+          attributes: {},
+          setAttribute(k: string, v: string) {
+            (this as any)[k] = v;
+          },
+          getAttribute(k: string) {
+            return (this as any)[k];
+          },
+          children: [],
+          appendChild(c: any) {
+            this.children.push(c);
+            return c;
+          },
+        };
+        return el;
+      },
+    };
+
+  try {
+    const contents = range.extractContents();
+
+    // Unwrap any existing nested <a> tags in contents to prevent invalid nested HTML
+    const unwrapNestedLinks = (node: any) => {
+      if (!node) return;
+      const children = Array.from(node.childNodes || node.children || []);
+      for (const child of children as any[]) {
+        unwrapNestedLinks(child);
+        if (child.tagName === "A") {
+          const parent = child.parentNode || child.parentElement;
+          if (parent) {
+            while (child.firstChild) {
+              parent.insertBefore(child.firstChild, child);
+            }
+            if (typeof child.remove === "function") child.remove();
+            else if (parent.children) {
+              const idx = parent.children.indexOf(child);
+              if (idx >= 0) parent.children.splice(idx, 1);
+            }
+          }
+        }
+      }
+    };
+    unwrapNestedLinks(contents);
+
+    const a = doc.createElement("a");
+    a.setAttribute("href", href);
+    a.setAttribute("target", "_blank");
+    a.setAttribute("rel", "noopener noreferrer");
+    a.className = "text-blue-600 underline hover:text-blue-800 transition cursor-pointer";
+    a.appendChild(contents);
+    range.insertNode(a);
+
+    if (editorRoot && typeof editorRoot.contains === "function" && !editorRoot.contains(a)) {
+      return null;
+    }
+
+    if (typeof window !== "undefined") {
+      const sel = window.getSelection();
+      if (sel) {
+        try {
+          sel.removeAllRanges();
+          const newRange = document.createRange();
+          newRange.selectNodeContents(a);
+          sel.addRange(newRange);
+        } catch {}
+      }
+    }
+    return a as HTMLAnchorElement;
+  } catch (err) {
+    console.error("[applyRangeLinkDom] Failed to apply range link:", err);
+    return null;
+  }
+}
+
+/**
+ * Removes a hyperlink from the selected Range without removing text content.
+ * Safely handles:
+ * 1. Partial selection inside a link: unlinks only the selected range and preserves the surrounding link.
+ * 2. Full selection of a link: unlinks the entire link.
+ * 3. Multi-node selection containing one or more links: unlinks all links in the range.
+ */
+export function removeRangeLinkDom(
+  range: Range,
+  containerOrRoot?: HTMLElement | null
+): boolean {
+  if (!range) return false;
+
+  const anchorNode: HTMLElement | null =
+    range.commonAncestorContainer.nodeType === 1
+      ? (range.commonAncestorContainer as HTMLElement)
+      : (range.commonAncestorContainer.parentElement as HTMLElement | null);
+
+  const editorRoot =
+    (containerOrRoot && typeof containerOrRoot.contains === "function" ? containerOrRoot : null) ||
+    (anchorNode && typeof anchorNode.closest === "function"
+      ? anchorNode.closest<HTMLElement>(
+          ".editor-container, .editor-block, [data-editor-block], .section-wrapper-container, [data-section-id], .xite-site-canvas"
+        )
+      : null) ||
+    anchorNode?.parentElement ||
+    anchorNode ||
+    containerOrRoot;
+
+  const startContainer = range.startContainer || range.commonAncestorContainer;
+  const endContainer = range.endContainer || range.commonAncestorContainer;
+  if (editorRoot && typeof editorRoot.contains === "function") {
+    const startInside = startContainer === editorRoot || editorRoot.contains(startContainer);
+    const endInside = endContainer === editorRoot || editorRoot.contains(endContainer);
+    if (!startInside || !endInside) return false;
+  }
+
+  try {
+    const insideLink =
+      (anchorNode && typeof anchorNode.closest === "function" ? anchorNode.closest("a") : null) ||
+      ((range.commonAncestorContainer as any)?.closest?.("a") ?? null);
+
+    // Case 1: The selection is within an existing <a> tag
+    if (insideLink) {
+      const linkParent = insideLink.parentNode || insideLink.parentElement;
+      if (!linkParent) return false;
+
+      const linkText = (insideLink.textContent || "").trim();
+      let rangeText = "";
+      if (typeof range.toString === "function" && range.toString !== Object.prototype.toString) {
+        try {
+          const s = range.toString();
+          if (s !== "[object Object]") rangeText = s.trim();
+        } catch {}
+      }
+
+      const isWholeLink =
+        rangeText.length === 0 ||
+        rangeText === linkText ||
+        range.collapsed ||
+        range.startContainer === insideLink ||
+        range.commonAncestorContainer === insideLink;
+
+      // If the selection covers the entire link text or collapsed, unwrap the link completely
+      if (isWholeLink || typeof range.extractContents !== "function") {
+        while (insideLink.firstChild) {
+          linkParent.insertBefore(insideLink.firstChild, insideLink);
+        }
+        if (typeof insideLink.remove === "function") {
+          insideLink.remove();
+        } else if (linkParent.children) {
+          const idx = linkParent.children.indexOf(insideLink);
+          if (idx >= 0) linkParent.children.splice(idx, 1);
+        }
+        return true;
+      }
+
+      // Partial selection inside the link:
+      // Extract the selected range (which splits the <a> in standard DOM)
+      const contents = range.extractContents();
+      const unwrapLinks = (node: any) => {
+        if (!node) return;
+        const children = Array.from(node.childNodes || node.children || []);
+        for (const child of children as any[]) {
+          unwrapLinks(child);
+          if (child.tagName === "A") {
+            const parent = child.parentNode || child.parentElement;
+            if (parent) {
+              while (child.firstChild) {
+                parent.insertBefore(child.firstChild, child);
+              }
+              if (typeof child.remove === "function") child.remove();
+              else if (parent.children) {
+                const idx = parent.children.indexOf(child);
+                if (idx >= 0) parent.children.splice(idx, 1);
+              }
+            }
+          }
+        }
+      };
+      unwrapLinks(contents);
+      range.insertNode(contents);
+
+      if (insideLink.textContent === "" || (insideLink.childNodes && insideLink.childNodes.length === 0)) {
+        if (typeof insideLink.remove === "function") insideLink.remove();
+      }
+      return true;
+    }
+
+    // Case 2: The range is NOT inside an <a>, but may contain one or more <a> elements
+    const contents = range.extractContents();
+    let hadLinks = false;
+    const unwrapLinksInFragment = (node: any) => {
+      if (!node) return;
+      const children = Array.from(node.childNodes || node.children || []);
+      for (const child of children as any[]) {
+        unwrapLinksInFragment(child);
+        if (child.tagName === "A") {
+          hadLinks = true;
+          const parent = child.parentNode || child.parentElement;
+          if (parent) {
+            while (child.firstChild) {
+              parent.insertBefore(child.firstChild, child);
+            }
+            if (typeof child.remove === "function") child.remove();
+            else if (parent.children) {
+              const idx = parent.children.indexOf(child);
+              if (idx >= 0) parent.children.splice(idx, 1);
+            }
+          }
+        }
+      }
+    };
+    unwrapLinksInFragment(contents);
+    range.insertNode(contents);
+    return hadLinks;
+  } catch (err) {
+    console.error("[removeRangeLinkDom] Failed to remove range link:", err);
+    return false;
+  }
+}
+
+/**
+ * Toggles an element between standard paragraph and bulleted/numbered list (UL/OL).
+ * Preserves nested inline formatting (strong, em, a, span) within list items.
+ */
+export function toggleListFormatDom(
+  element: HTMLElement,
+  listType: "ul" | "ol" = "ul"
+): HTMLElement {
+  const currentTag = element.tagName.toLowerCase();
+  const doc =
+    (typeof document !== "undefined"
+      ? document
+      : (element as any).ownerDocument) || {
+      createElement(tag: string) {
+        let text = "";
+        const el: any = {
+          nodeType: 1,
+          tagName: tag.toUpperCase(),
+          className: "",
+          style: {},
+          children: [],
+          get textContent() {
+            if (this.children && this.children.length > 0) {
+              return this.children.map((c: any) => c.textContent || "").join("");
+            }
+            return text;
+          },
+          set textContent(v: string) {
+            text = v;
+          },
+          appendChild(c: any) {
+            c.parentElement = this;
+            this.children.push(c);
+            return c;
+          },
+          querySelectorAll(sel: string) {
+            if (sel === "li") return this.children.filter((c: any) => c.tagName === "LI");
+            return [];
+          },
+        };
+        return el;
+      },
+    };
+
+  // 1. Converting from UL/OL back to P (preserving inline formatting)
+  if (currentTag === listType) {
+    const p = doc.createElement("p");
+    p.className = "text-base text-slate-700 leading-relaxed mb-4";
+    const lis = Array.from(element.querySelectorAll("li"));
+    if (lis.length > 0) {
+      lis.forEach((li, idx) => {
+        if (idx > 0 && typeof doc.createElement === "function") {
+          const br = doc.createElement("br");
+          p.appendChild(br);
+        }
+        if (li.firstChild) {
+          while (li.firstChild) {
+            p.appendChild(li.firstChild);
+          }
+        } else if (li.textContent) {
+          if (typeof doc.createTextNode === "function") {
+            p.appendChild(doc.createTextNode(li.textContent));
+          } else {
+            p.appendChild({
+              nodeType: 3,
+              textContent: li.textContent,
+            });
+          }
+        }
+      });
+    } else {
+      if (element.firstChild) {
+        while (element.firstChild) {
+          p.appendChild(element.firstChild);
+        }
+      } else if (element.textContent) {
+        p.textContent = element.textContent;
+      }
+    }
+    if (typeof element.replaceWith === "function") {
+      element.replaceWith(p);
+    }
+    return p;
+  }
+
+  // 2. Switching between UL and OL
+  if (currentTag === "ul" || currentTag === "ol") {
+    const newList = doc.createElement(listType);
+    newList.className =
+      listType === "ul"
+        ? "list-disc pl-5 space-y-1 my-2"
+        : "list-decimal pl-5 space-y-1 my-2";
+    while (element.firstChild) {
+      newList.appendChild(element.firstChild);
+    }
+    if (typeof element.replaceWith === "function") {
+      element.replaceWith(newList);
+    }
+    return newList;
+  }
+
+  // 3. Converting paragraph/heading to UL/OL
+  const list = doc.createElement(listType);
+  list.className =
+    listType === "ul"
+      ? "list-disc pl-5 space-y-1 my-2"
+      : "list-decimal pl-5 space-y-1 my-2";
+  const li = doc.createElement("li");
+  li.className = "text-base text-slate-700 leading-relaxed";
+  while (element.firstChild) {
+    li.appendChild(element.firstChild);
+  }
+  list.appendChild(li);
+  if (typeof element.replaceWith === "function") {
+    element.replaceWith(list);
+  }
+  return list;
 }
 
 /**

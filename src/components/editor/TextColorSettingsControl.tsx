@@ -9,6 +9,7 @@ import {
   Bold,
   Italic,
   Underline,
+  Strikethrough,
   RotateCcw,
   Type,
 } from "lucide-react";
@@ -17,7 +18,7 @@ import { hexFromValue } from "@/lib/sections/section-edit";
 export interface SingleRowTextColorPanelProps {
   currentColor: string;
   onSelectColor: (hex: string) => void;
-  onFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
+  onFormat?: (command: "bold" | "italic" | "underline" | "strikethrough" | "removeFormat") => void;
   currentFont?: string;
   onSelectFont?: (font: string) => void;
   currentFontSize?: string;
@@ -180,6 +181,15 @@ export function SingleRowTextColorPanel({
             className="p-1 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition cursor-pointer"
           >
             <Underline className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            title="Strikethrough"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onFormat("strikethrough")}
+            className="p-1 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition cursor-pointer"
+          >
+            <Strikethrough className="w-3.5 h-3.5" />
           </button>
           <div className="w-px h-3.5 bg-slate-200 mx-0.5" />
           <button

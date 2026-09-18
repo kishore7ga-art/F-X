@@ -13,6 +13,8 @@ import {
   Bold,
   Italic,
   Underline,
+  Strikethrough,
+  Highlighter,
   RotateCcw,
   AlignLeft,
   AlignCenter,
@@ -38,6 +40,11 @@ import {
   AlertCircle,
   ExternalLink,
   Link as LinkIcon,
+  Unlink,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
 } from "lucide-react";
 import { Youtube } from "./YouTubeIcon";
 import { uploadMedia, ApiError } from "@/lib/api-client";
@@ -48,6 +55,9 @@ import {
   changeHeadingTagDom,
   applyRangeHeadingTagDom,
   applyRangeInlineStyleDom,
+  applyRangeLinkDom,
+  removeRangeLinkDom,
+  toggleListFormatDom,
   clearRangeFormattingDom,
   isPartialTextSelection,
   TAG_DEFAULT_STYLES,
@@ -128,6 +138,21 @@ export const ALL_TEXT_TAGS: ReadonlyArray<{ tag: HeadingLevel | "p"; label: stri
   { tag: "h5", label: "H5", sub: "Heading 5 (Small heading)" },
   { tag: "h6", label: "H6", sub: "Heading 6 (Subtle heading)" },
   { tag: "p", label: "P", sub: "Paragraph body text" },
+];
+
+export const ADDITIONAL_TEXT_TAGS: ReadonlyArray<{ tag: string; label: string; sub: string }> = [
+  { tag: "blockquote", label: "Quote", sub: "Blockquote callout" },
+  { tag: "code", label: "Code", sub: "Code snippet block" },
+];
+
+const PRESET_HIGHLIGHT_COLORS = [
+  { label: "None", value: "transparent" },
+  { label: "Yellow", value: "#fef08a" },
+  { label: "Green", value: "#bbf7d0" },
+  { label: "Blue", value: "#bfdbfe" },
+  { label: "Pink", value: "#fbcfe8" },
+  { label: "Orange", value: "#fed7aa" },
+  { label: "Purple", value: "#e9d5ff" },
 ];
 
 const FONT_SIZES = [
@@ -258,7 +283,7 @@ export interface SelectionHighlightProps {
   // Direct formatting actions from inPlaceEditor
   activeTextColor?: string;
   onApplyTextColor?: (hex: string) => void;
-  onApplyTextFormat?: (command: "bold" | "italic" | "underline" | "removeFormat") => void;
+  onApplyTextFormat?: (command: "bold" | "italic" | "underline" | "strikethrough" | "removeFormat") => void;
   activeFontFamily?: string;
   onApplyFontFamily?: (font: string) => void;
   activeFontSize?: string;
@@ -307,6 +332,9 @@ export function SelectionHighlight({
   const [rect, setRect] = useState<DOMRect | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const [showColorPopover, setShowColorPopover] = useState(false);
+  const [showHighlightPopover, setShowHighlightPopover] = useState(false);
+  const [showLinkPopover, setShowLinkPopover] = useState(false);
+  const [linkUrlInput, setLinkUrlInput] = useState("");
   const [showFontPopover, setShowFontPopover] = useState(false);
   const [showTagPopover, setShowTagPopover] = useState(false);
   const [showSizePopover, setShowSizePopover] = useState(false);
@@ -388,6 +416,7 @@ export function SelectionHighlight({
 
   // Track highlighted text selection range within active element
   const savedTextRangeRef = useRef<Range | null>(null);
+  const [selectionRevision, setSelectionRevision] = useState(0);
 
   useEffect(() => {
     savedTextRangeRef.current = null;
@@ -401,9 +430,10 @@ export function SelectionHighlight({
       if (!el || !el.isConnected) return;
       const range = sel.getRangeAt(0);
       if (el.contains(range.commonAncestorContainer)) {
-        if (!range.collapsed && range.toString().trim().length > 0) {
+        if (!range.collapsed && range.toString().length > 0) {
           savedTextRangeRef.current = range.cloneRange();
         }
+        setSelectionRevision((r) => r + 1);
       }
     };
     document.addEventListener("selectionchange", handleSelectionChange);
@@ -416,7 +446,7 @@ export function SelectionHighlight({
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) {
       const r = sel.getRangeAt(0);
-      if (el.contains(r.commonAncestorContainer) && !r.collapsed && r.toString().trim().length > 0) {
+      if (el.contains(r.commonAncestorContainer) && !r.collapsed && r.toString().length > 0) {
         return r;
       }
     }
@@ -424,7 +454,7 @@ export function SelectionHighlight({
       savedTextRangeRef.current &&
       el.contains(savedTextRangeRef.current.commonAncestorContainer) &&
       !savedTextRangeRef.current.collapsed &&
-      savedTextRangeRef.current.toString().trim().length > 0
+      savedTextRangeRef.current.toString().length > 0
     ) {
       return savedTextRangeRef.current;
     }
@@ -446,6 +476,8 @@ export function SelectionHighlight({
         return;
       }
       setShowColorPopover(false);
+      setShowHighlightPopover(false);
+      setShowLinkPopover(false);
       setShowFontPopover(false);
       setShowTagPopover(false);
       setShowSizePopover(false);
@@ -492,6 +524,29 @@ export function SelectionHighlight({
   const effectiveBg = getEffectiveElementBackground(activeElement);
   const autoContrastColor = calculateOppositeContrast(effectiveBg).textColor;
 
+  // Active target node inspection at the user's cursor / selection
+  let activeTargetNode: Node | null = null;
+  const currentSel = typeof window !== "undefined" ? window.getSelection() : null;
+  if (currentSel && currentSel.rangeCount > 0 && activeElement) {
+    const r = currentSel.getRangeAt(0);
+    if (activeElement.contains(r.startContainer)) {
+      activeTargetNode = r.startContainer;
+    }
+  }
+  if (!activeTargetNode && savedTextRangeRef.current && activeElement) {
+    if (activeElement.contains(savedTextRangeRef.current.startContainer)) {
+      activeTargetNode = savedTextRangeRef.current.startContainer;
+    }
+  }
+  const activeTargetEl: HTMLElement | null = activeTargetNode
+    ? (activeTargetNode.nodeType === 1 ? (activeTargetNode as HTMLElement) : activeTargetNode.parentElement)
+    : activeElement;
+
+  const targetComputed = activeTargetEl && typeof window !== "undefined" ? window.getComputedStyle(activeTargetEl) : null;
+  const targetWeight = targetComputed ? targetComputed.fontWeight : (activeElement && typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontWeight : "");
+  const targetStyle = targetComputed ? targetComputed.fontStyle : (activeElement && typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontStyle : "");
+  const targetDec = targetComputed ? targetComputed.textDecoration : (activeElement && typeof window !== "undefined" ? window.getComputedStyle(activeElement).textDecoration : "");
+
   // Current props extraction with live inPlaceEditor fallback:
   // Reads live DOM computed styles when meta is not yet set
   const rawElementColor = activeElement?.style.color
@@ -499,7 +554,8 @@ export function SelectionHighlight({
     : (activeElement && typeof window !== "undefined"
         ? hexFromValue(window.getComputedStyle(activeElement).color, autoContrastColor)
         : autoContrastColor);
-  const currentColor = activeTextColor || meta.color || rawElementColor;
+  const targetColor = targetComputed ? hexFromValue(targetComputed.color, autoContrastColor) : null;
+  const currentColor = activeTextColor || targetColor || meta.color || rawElementColor;
 
   const rawElementFontSize = activeElement
     ? (activeElement.style.fontSize || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontSize : ""))
@@ -510,24 +566,55 @@ export function SelectionHighlight({
   const rawElementFont = activeElement
     ? (activeElement.style.fontFamily || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontFamily : ""))
     : "";
-  const currentFontFamily = activeFontFamily || meta.fontFamily || rawElementFont || "";
+  const currentFontFamily = activeFontFamily || targetComputed?.fontFamily || meta.fontFamily || rawElementFont || "";
   const selectedFontOption = matchFontOption(currentFontFamily);
 
   const rawElementWeight = activeElement
     ? (activeElement.style.fontWeight || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontWeight : ""))
     : "";
   const currentWeight = String(meta.fontWeight || rawElementWeight || (effectiveType === "heading" ? "700" : "400"));
-  const isBold = parseInt(currentWeight, 10) >= 600 || currentWeight === "bold" || currentWeight === "bolder";
+  const isBold = Boolean(
+    activeTargetEl?.closest("strong, b") ||
+    parseInt(targetWeight, 10) >= 600 ||
+    targetWeight === "bold" ||
+    targetWeight === "bolder" ||
+    parseInt(currentWeight, 10) >= 600 ||
+    currentWeight === "bold" ||
+    currentWeight === "bolder"
+  );
 
   const rawElementStyle = activeElement
     ? (activeElement.style.fontStyle || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).fontStyle : ""))
     : "";
-  const isItalic = rawElementStyle === "italic" || meta.fontStyle === "italic";
+  const isItalic = Boolean(
+    activeTargetEl?.closest("em, i") ||
+    targetStyle === "italic" ||
+    meta.fontStyle === "italic" ||
+    rawElementStyle === "italic"
+  );
 
   const rawElementDec = activeElement
     ? (activeElement.style.textDecoration || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).textDecoration : ""))
     : "";
-  const isUnderline = rawElementDec.includes("underline") || (typeof meta.textDecoration === "string" && meta.textDecoration.includes("underline"));
+  const isUnderline = Boolean(
+    activeTargetEl?.closest("u") ||
+    targetDec.includes("underline") ||
+    rawElementDec.includes("underline") ||
+    (typeof meta.textDecoration === "string" && meta.textDecoration.includes("underline"))
+  );
+
+  const isStrikethrough = Boolean(
+    activeTargetEl?.closest("s, del, strike") ||
+    targetDec.includes("line-through") ||
+    rawElementDec.includes("line-through") ||
+    (typeof meta.textDecoration === "string" && meta.textDecoration.includes("line-through"))
+  );
+
+  const isLink = Boolean(activeTargetEl?.closest("a"));
+  const currentLinkHref = activeTargetEl?.closest("a")?.getAttribute("href") || "";
+
+  const isListUl = Boolean(activeElement?.tagName.toLowerCase() === "ul" || activeTargetEl?.closest("ul"));
+  const isListOl = Boolean(activeElement?.tagName.toLowerCase() === "ol" || activeTargetEl?.closest("ol"));
 
   const rawElementAlign = activeElement
     ? (activeElement.style.textAlign || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).textAlign : ""))
@@ -539,10 +626,13 @@ export function SelectionHighlight({
     : "";
   const currentTransform = (meta.textTransform || rawElementTransform || "none") as TextTransform;
 
-  const activeTag = activeElement?.tagName.toLowerCase() || "";
-  const currentLevel = (HEADING_TAGS.includes(activeTag as HeadingLevel) || activeTag === "p"
+  const headingTagAttr = activeTargetEl?.closest?.("[data-xite-heading-tag]")?.getAttribute?.("data-xite-heading-tag");
+  const innerTagEl = activeTargetEl?.closest("h1, h2, h3, h4, h5, h6, p, blockquote, code");
+  const innerTag = innerTagEl && innerTagEl !== activeElement && activeElement?.contains(innerTagEl) ? innerTagEl.tagName.toLowerCase() : "";
+  const activeTag = headingTagAttr || innerTag || activeElement?.tagName.toLowerCase() || "";
+  const currentLevel = (["h1", "h2", "h3", "h4", "h5", "h6", "p", "blockquote", "code"].includes(activeTag)
     ? activeTag
-    : (meta.level || (effectiveType === "heading" ? "h2" : "p"))) as HeadingLevel | "p";
+    : (meta.level || (effectiveType === "heading" ? "h2" : "p")));
 
   const rawElementLineHeight = activeElement
     ? (activeElement.style.lineHeight || (typeof window !== "undefined" ? window.getComputedStyle(activeElement).lineHeight : ""))
@@ -558,6 +648,7 @@ export function SelectionHighlight({
   const handleColorChange = (hex: string) => {
     const el = resolveElement();
     if (!el) return;
+    el.focus();
 
     const targetRange = getActiveTextRange(el);
     if (targetRange) {
@@ -593,6 +684,7 @@ export function SelectionHighlight({
     const sizeStr = `${nextSize}px`;
     const el = resolveElement();
     if (!el) return;
+    el.focus();
 
     const targetRange = getActiveTextRange(el);
     if (targetRange) {
@@ -623,6 +715,7 @@ export function SelectionHighlight({
   const handleSelectExactSize = (sizeStr: string) => {
     const el = resolveElement();
     if (!el) return;
+    el.focus();
 
     const targetRange = getActiveTextRange(el);
     if (targetRange && sizeStr) {
@@ -660,6 +753,7 @@ export function SelectionHighlight({
   const handleFontFamilyChange = (font: string) => {
     const el = resolveElement();
     if (!el) return;
+    el.focus();
 
     const targetRange = getActiveTextRange(el);
     if (targetRange && font) {
@@ -697,6 +791,7 @@ export function SelectionHighlight({
   const handleToggleBold = () => {
     const el = resolveElement();
     if (!el) return;
+    el.focus();
 
     const targetRange = getActiveTextRange(el);
     if (targetRange) {
@@ -729,6 +824,7 @@ export function SelectionHighlight({
   const handleToggleItalic = () => {
     const el = resolveElement();
     if (!el) return;
+    el.focus();
 
     const targetRange = getActiveTextRange(el);
     if (targetRange) {
@@ -761,10 +857,13 @@ export function SelectionHighlight({
   const handleToggleUnderline = () => {
     const el = resolveElement();
     if (!el) return;
+    el.focus();
 
     const targetRange = getActiveTextRange(el);
+    const hasLineThrough = isStrikethrough;
+    const nextDec = !isUnderline ? (hasLineThrough ? "underline line-through" : "underline") : (hasLineThrough ? "line-through" : "none");
+
     if (targetRange) {
-      const nextDec = isUnderline ? "none" : "underline";
       const span = applyRangeInlineStyleDom(targetRange, { textDecoration: nextDec }, el);
       if (span) {
         const sel = window.getSelection();
@@ -777,7 +876,6 @@ export function SelectionHighlight({
       return;
     }
 
-    const nextDec = isUnderline ? "none" : "underline";
     el.style.setProperty("text-decoration", nextDec, "important");
     el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
       child.style.setProperty("text-decoration", nextDec, "important");
@@ -790,9 +888,154 @@ export function SelectionHighlight({
     }
   };
 
+  const handleToggleStrikethrough = () => {
+    const el = resolveElement();
+    if (!el) return;
+    el.focus();
+
+    const targetRange = getActiveTextRange(el);
+    const hasUnderline = isUnderline;
+    const nextDec = !isStrikethrough ? (hasUnderline ? "underline line-through" : "line-through") : (hasUnderline ? "underline" : "none");
+
+    if (targetRange) {
+      const span = applyRangeInlineStyleDom(targetRange, { textDecoration: nextDec }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
+      return;
+    }
+
+    el.style.setProperty("text-decoration", nextDec, "important");
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      child.style.setProperty("text-decoration", nextDec, "important");
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
+    if (onApplyTextFormat) onApplyTextFormat("strikethrough");
+    if (selectedId && onUpdateProps && effectiveType) {
+      onUpdateProps(selectedId, { textDecoration: nextDec } as any);
+    }
+  };
+
+  const handleHighlightChange = (hex: string) => {
+    const el = resolveElement();
+    if (!el) return;
+    el.focus();
+
+    const targetRange = getActiveTextRange(el);
+    if (targetRange) {
+      const span = applyRangeInlineStyleDom(targetRange, { backgroundColor: hex === "transparent" ? "" : hex }, el);
+      if (span) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
+      setShowHighlightPopover(false);
+      return;
+    }
+
+    if (hex && hex !== "transparent") {
+      el.style.setProperty("background-color", hex, "important");
+    } else {
+      el.style.removeProperty("background-color");
+    }
+    el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+      if (hex && hex !== "transparent") {
+        child.style.setProperty("background-color", hex, "important");
+      } else {
+        child.style.removeProperty("background-color");
+      }
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
+    setShowHighlightPopover(false);
+  };
+
+  const handleApplyLink = (url: string) => {
+    const el = resolveElement();
+    if (!el || !url.trim()) return;
+    el.focus();
+
+    const targetRange = getActiveTextRange(el);
+    if (targetRange) {
+      const linkEl = applyRangeLinkDom(targetRange, url.trim(), el);
+      if (linkEl) {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedTextRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
+      }
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
+      setShowLinkPopover(false);
+      return;
+    }
+
+    if (el.tagName.toLowerCase() !== "a") {
+      const a = document.createElement("a");
+      a.setAttribute("href", url.trim());
+      a.setAttribute("target", "_blank");
+      a.setAttribute("rel", "noopener noreferrer");
+      a.className = "text-blue-600 underline hover:text-blue-800 transition cursor-pointer";
+      while (el.firstChild) {
+        a.appendChild(el.firstChild);
+      }
+      el.appendChild(a);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
+    }
+    setShowLinkPopover(false);
+  };
+
+  const handleRemoveLink = () => {
+    const el = resolveElement();
+    if (!el) return;
+    el.focus();
+
+    const targetRange = getActiveTextRange(el);
+    if (targetRange) {
+      removeRangeLinkDom(targetRange, el);
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      onCommitDom?.(el);
+      setShowLinkPopover(false);
+      return;
+    }
+
+    const links = el.querySelectorAll("a");
+    links.forEach((link) => {
+      while (link.firstChild) {
+        link.parentNode?.insertBefore(link.firstChild, link);
+      }
+      link.remove();
+    });
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(el);
+    setShowLinkPopover(false);
+  };
+
+  const handleToggleList = (listType: "ul" | "ol") => {
+    const el = resolveElement();
+    if (!el) return;
+    el.focus();
+
+    const newList = toggleListFormatDom(el, listType);
+    newList.focus();
+    newList.dispatchEvent(new Event("input", { bubbles: true }));
+    onCommitDom?.(newList);
+  };
+
   const handleResetFormat = () => {
     const el = resolveElement();
     if (el) {
+      el.focus();
       const targetRange = getActiveTextRange(el);
       if (targetRange) {
         clearRangeFormattingDom(targetRange, el);
@@ -816,6 +1059,13 @@ export function SelectionHighlight({
       };
       clearStyles(el);
       el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach(clearStyles);
+      el.querySelectorAll<HTMLElement>("b, strong, em, i, u, s, strike, del, font, mark").forEach((tagEl) => {
+        const parent = tagEl.parentNode;
+        if (parent) {
+          while (tagEl.firstChild) parent.insertBefore(tagEl.firstChild, tagEl);
+          tagEl.remove();
+        }
+      });
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
     }
@@ -842,6 +1092,7 @@ export function SelectionHighlight({
     const nextIdx = (order.indexOf(currentTransform) + 1) % order.length;
     const nextCase = order[nextIdx] || "none";
     if (el) {
+      el.focus();
       const targetRange = getActiveTextRange(el);
       if (targetRange) {
         const span = applyRangeInlineStyleDom(targetRange, { textTransform: nextCase === "none" ? "none" : nextCase }, el);
@@ -868,6 +1119,7 @@ export function SelectionHighlight({
   const handleAlignChange = (align: TextAlign) => {
     const el = resolveElement();
     if (el) {
+      el.focus();
       el.style.setProperty("text-align", align, "important");
       el.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(el);
@@ -878,9 +1130,10 @@ export function SelectionHighlight({
     }
   };
 
-  const handleTagChange = (tag: HeadingLevel | "p") => {
+  const handleTagChange = (tag: HeadingLevel | "p" | "blockquote" | "code" | string) => {
     const el = resolveElement();
     if (el) {
+      el.focus();
       const targetRange = getActiveTextRange(el);
       if (targetRange && isPartialTextSelection(targetRange, el)) {
         const tagEl = applyRangeHeadingTagDom(targetRange, el, tag);
@@ -898,9 +1151,10 @@ export function SelectionHighlight({
     }
 
     if (onChangeHeadingLevel) {
-      onChangeHeadingLevel(tag);
+      onChangeHeadingLevel(tag as any);
     } else if (el) {
       const newHeading = changeHeadingTagDom(el, tag);
+      newHeading.focus();
       newHeading.dispatchEvent(new Event("input", { bubbles: true }));
       onCommitDom?.(newHeading);
     }
@@ -919,6 +1173,7 @@ export function SelectionHighlight({
   const handleLineHeightChange = (val: string) => {
     const el = resolveElement();
     if (el) {
+      el.focus();
       const targetRange = getActiveTextRange(el);
       if (targetRange && val) {
         const span = applyRangeInlineStyleDom(targetRange, { lineHeight: val }, el);
@@ -947,6 +1202,7 @@ export function SelectionHighlight({
   const handleLetterSpacingChange = (val: string) => {
     const el = resolveElement();
     if (el) {
+      el.focus();
       const targetRange = getActiveTextRange(el);
       if (targetRange && val) {
         const span = applyRangeInlineStyleDom(targetRange, { letterSpacing: val }, el);
@@ -1809,7 +2065,7 @@ export function SelectionHighlight({
                     e.stopPropagation();
                   }}
                 >
-                  {ALL_TEXT_TAGS.map(({ tag: t, label }) => (
+                  {[...ALL_TEXT_TAGS, ...ADDITIONAL_TEXT_TAGS].map(({ tag: t, label }) => (
                     <button
                       key={t}
                       type="button"
@@ -1968,22 +2224,71 @@ export function SelectionHighlight({
 
             <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
 
-            {/* 4. Bold (B) */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleBold();
-              }}
-              title="Bold"
-              className={`p-1.5 rounded-xl transition cursor-pointer ${
-                isBold
-                  ? "bg-slate-900 text-white shadow-xs font-black"
-                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Bold className="w-3.5 h-3.5" />
-            </button>
+            {/* 4. Bold, Italic, Underline, Strikethrough */}
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleBold();
+                }}
+                title="Bold (Ctrl+B)"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isBold
+                    ? "bg-slate-900 text-white shadow-xs font-black"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <Bold className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleItalic();
+                }}
+                title="Italic (Ctrl+I)"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isItalic
+                    ? "bg-slate-900 text-white shadow-xs font-black"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <Italic className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleUnderline();
+                }}
+                title="Underline (Ctrl+U)"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isUnderline
+                    ? "bg-slate-900 text-white shadow-xs font-black"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <Underline className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleStrikethrough();
+                }}
+                title="Strikethrough"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isStrikethrough
+                    ? "bg-slate-900 text-white shadow-xs font-black"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <Strikethrough className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
 
             {/* 5. Text Color Swatch & Popover */}
             <div className="relative">
@@ -1992,6 +2297,8 @@ export function SelectionHighlight({
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowColorPopover(!showColorPopover);
+                  setShowHighlightPopover(false);
+                  setShowLinkPopover(false);
                   setShowFontPopover(false);
                   setShowTagPopover(false);
                   setShowSizePopover(false);
@@ -2060,7 +2367,194 @@ export function SelectionHighlight({
               )}
             </div>
 
-            {/* 6. More Options Popover Button (All Other Options As Pop) */}
+            {/* 6. Highlight (Background Color) Swatch & Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowHighlightPopover(!showHighlightPopover);
+                  setShowColorPopover(false);
+                  setShowLinkPopover(false);
+                  setShowFontPopover(false);
+                  setShowTagPopover(false);
+                  setShowSizePopover(false);
+                  setShowMorePopover(false);
+                }}
+                title="Highlight Color"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  showHighlightPopover
+                    ? "bg-amber-100 text-amber-900 shadow-xs"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <Highlighter className="w-3.5 h-3.5" />
+              </button>
+
+              {showHighlightPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full right-0 mt-1.5 p-2 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-1.5 z-[100000] w-48 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Text Highlight
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {PRESET_HIGHLIGHT_COLORS.map(({ label, value }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleHighlightChange(value);
+                        }}
+                        title={label}
+                        className={`h-6 rounded-lg border border-slate-200 text-[10px] font-bold transition shadow-xs cursor-pointer flex items-center justify-center ${
+                          value === "transparent" ? "bg-slate-100 text-slate-500" : ""
+                        }`}
+                        style={value !== "transparent" ? { background: value } : {}}
+                      >
+                        {value === "transparent" ? "None" : ""}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 7. Link Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLinkUrlInput(currentLinkHref || "");
+                  setShowLinkPopover(!showLinkPopover);
+                  setShowColorPopover(false);
+                  setShowHighlightPopover(false);
+                  setShowFontPopover(false);
+                  setShowTagPopover(false);
+                  setShowSizePopover(false);
+                  setShowMorePopover(false);
+                }}
+                title={isLink ? "Edit or Remove Link" : "Insert Link"}
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isLink
+                    ? "bg-blue-600 text-white shadow-xs font-bold"
+                    : showLinkPopover
+                    ? "bg-blue-50 text-blue-600 border border-blue-200"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+              </button>
+
+              {showLinkPopover && (
+                <div
+                  className="xite-floating-popover absolute top-full right-0 mt-1.5 p-3 bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col gap-2 z-[100000] w-64 text-slate-800"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => {
+                    const target = e.target as HTMLElement | null;
+                    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+                      e.stopPropagation();
+                      return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Hyperlink
+                  </div>
+                  <input
+                    type="url"
+                    placeholder="https://example.com"
+                    value={linkUrlInput}
+                    onChange={(e) => setLinkUrlInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleApplyLink(linkUrlInput);
+                      }
+                    }}
+                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApplyLink(linkUrlInput);
+                      }}
+                      className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition cursor-pointer text-center"
+                    >
+                      {isLink ? "Update Link" : "Apply Link"}
+                    </button>
+                    {isLink && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveLink();
+                          setShowLinkPopover(false);
+                        }}
+                        title="Remove Link"
+                        className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Unlink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 8. Bullet & Numbered List */}
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleList("ul");
+                }}
+                title="Bulleted List"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isListUl
+                    ? "bg-slate-900 text-white shadow-xs font-black"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToggleList("ol");
+                }}
+                title="Numbered List"
+                className={`p-1.5 rounded-xl transition cursor-pointer ${
+                  isListOl
+                    ? "bg-slate-900 text-white shadow-xs font-black"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                <ListOrdered className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-slate-200/80 mx-0.5" />
+
+            {/* 9. More Options Popover Button */}
             <div className="relative">
               <button
                 type="button"
@@ -2068,6 +2562,8 @@ export function SelectionHighlight({
                   e.stopPropagation();
                   setShowMorePopover(!showMorePopover);
                   setShowColorPopover(false);
+                  setShowHighlightPopover(false);
+                  setShowLinkPopover(false);
                   setShowFontPopover(false);
                   setShowTagPopover(false);
                   setShowSizePopover(false);
@@ -2132,6 +2628,21 @@ export function SelectionHighlight({
                         }`}
                       >
                         <Underline className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStrikethrough();
+                        }}
+                        title="Strikethrough"
+                        className={`p-1 rounded-lg transition cursor-pointer flex-1 flex justify-center ${
+                          isStrikethrough
+                            ? "bg-purple-50 text-purple-600 shadow-xs font-bold border border-purple-200"
+                            : "text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-xs"
+                        }`}
+                      >
+                        <Strikethrough className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"

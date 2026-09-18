@@ -575,6 +575,32 @@ export function useCanvaInteractions({
           keyEvent.stopPropagation();
           element.blur();
           finishInlineTextEditing(false);
+          return;
+        }
+      }
+
+      // Keyboard shortcuts for Bold (Ctrl/Cmd+B), Italic (Ctrl/Cmd+I), Underline (Ctrl/Cmd+U)
+      const isMac = typeof navigator !== "undefined" && navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const ctrlOrCmd = isMac ? keyEvent.metaKey : keyEvent.ctrlKey;
+      if (ctrlOrCmd && !keyEvent.altKey) {
+        const k = keyEvent.key.toLowerCase();
+        if (k === "b") {
+          keyEvent.preventDefault();
+          keyEvent.stopPropagation();
+          applyTextFormat("bold");
+          return;
+        }
+        if (k === "i") {
+          keyEvent.preventDefault();
+          keyEvent.stopPropagation();
+          applyTextFormat("italic");
+          return;
+        }
+        if (k === "u") {
+          keyEvent.preventDefault();
+          keyEvent.stopPropagation();
+          applyTextFormat("underline");
+          return;
         }
       }
     };
@@ -1361,7 +1387,7 @@ export function useCanvaInteractions({
   /**
    * Applies rich text formatting commands (bold, italic, underline, removeFormat)
    */
-  const applyTextFormat = useCallback((command: "bold" | "italic" | "underline" | "removeFormat") => {
+  const applyTextFormat = useCallback((command: "bold" | "italic" | "underline" | "strikethrough" | "removeFormat") => {
     let el = activeEditingElemRef.current;
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);
@@ -1398,7 +1424,7 @@ export function useCanvaInteractions({
       if (command === "bold") {
         const anchorEl = (targetRange.startContainer.nodeType === 1 ? targetRange.startContainer : targetRange.startContainer.parentElement) as HTMLElement | null;
         const currentWeight = anchorEl ? window.getComputedStyle(anchorEl).fontWeight : window.getComputedStyle(el).fontWeight;
-        const isBold = currentWeight === "bold" || parseInt(currentWeight, 10) >= 700;
+        const isBold = currentWeight === "bold" || currentWeight === "bolder" || parseInt(currentWeight, 10) >= 600 || Boolean(anchorEl?.closest("strong, b"));
         const nextWeight = isBold ? "normal" : "bold";
         const span = applyRangeInlineStyleDom(targetRange, { fontWeight: nextWeight }, el);
         if (span && sel) {
@@ -1417,7 +1443,20 @@ export function useCanvaInteractions({
       } else if (command === "underline") {
         const anchorEl = (targetRange.startContainer.nodeType === 1 ? targetRange.startContainer : targetRange.startContainer.parentElement) as HTMLElement | null;
         const currentDec = anchorEl ? window.getComputedStyle(anchorEl).textDecoration : window.getComputedStyle(el).textDecoration;
-        const nextDec = currentDec.includes("underline") ? "none" : "underline";
+        const hasUnderline = currentDec.includes("underline") || Boolean(anchorEl?.closest("u"));
+        const hasLineThrough = currentDec.includes("line-through") || Boolean(anchorEl?.closest("s, del, strike"));
+        const nextDec = !hasUnderline ? (hasLineThrough ? "underline line-through" : "underline") : (hasLineThrough ? "line-through" : "none");
+        const span = applyRangeInlineStyleDom(targetRange, { textDecoration: nextDec }, el);
+        if (span && sel) {
+          sel.selectAllChildren(span);
+          savedRangeRef.current = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+        }
+      } else if (command === "strikethrough") {
+        const anchorEl = (targetRange.startContainer.nodeType === 1 ? targetRange.startContainer : targetRange.startContainer.parentElement) as HTMLElement | null;
+        const currentDec = anchorEl ? window.getComputedStyle(anchorEl).textDecoration : window.getComputedStyle(el).textDecoration;
+        const hasUnderline = currentDec.includes("underline") || Boolean(anchorEl?.closest("u"));
+        const hasLineThrough = currentDec.includes("line-through") || Boolean(anchorEl?.closest("s, del, strike"));
+        const nextDec = !hasLineThrough ? (hasUnderline ? "underline line-through" : "line-through") : (hasUnderline ? "underline" : "none");
         const span = applyRangeInlineStyleDom(targetRange, { textDecoration: nextDec }, el);
         if (span && sel) {
           sel.selectAllChildren(span);
@@ -1432,7 +1471,7 @@ export function useCanvaInteractions({
     } else {
       if (command === "bold") {
         const currentWeight = window.getComputedStyle(el).fontWeight;
-        const isBold = currentWeight === "bold" || parseInt(currentWeight, 10) >= 700;
+        const isBold = currentWeight === "bold" || currentWeight === "bolder" || parseInt(currentWeight, 10) >= 600 || Boolean(el.closest("strong, b"));
         const nextWeight = isBold ? "normal" : "bold";
         el.style.fontWeight = nextWeight;
         el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
@@ -1447,7 +1486,18 @@ export function useCanvaInteractions({
         });
       } else if (command === "underline") {
         const currentDec = window.getComputedStyle(el).textDecoration;
-        const nextDec = currentDec.includes("underline") ? "none" : "underline";
+        const hasUnderline = currentDec.includes("underline") || Boolean(el.closest("u"));
+        const hasLineThrough = currentDec.includes("line-through") || Boolean(el.closest("s, del, strike"));
+        const nextDec = !hasUnderline ? (hasLineThrough ? "underline line-through" : "underline") : (hasLineThrough ? "line-through" : "none");
+        el.style.textDecoration = nextDec;
+        el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
+          child.style.textDecoration = nextDec;
+        });
+      } else if (command === "strikethrough") {
+        const currentDec = window.getComputedStyle(el).textDecoration;
+        const hasUnderline = currentDec.includes("underline") || Boolean(el.closest("u"));
+        const hasLineThrough = currentDec.includes("line-through") || Boolean(el.closest("s, del, strike"));
+        const nextDec = !hasLineThrough ? (hasUnderline ? "underline line-through" : "line-through") : (hasUnderline ? "underline" : "none");
         el.style.textDecoration = nextDec;
         el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6").forEach((child) => {
           child.style.textDecoration = nextDec;
@@ -1469,6 +1519,13 @@ export function useCanvaInteractions({
         };
         clearStyles(el);
         el.querySelectorAll<HTMLElement>("span, font, b, strong, em, i, p, h1, h2, h3, h4, h5, h6, a").forEach(clearStyles);
+        el.querySelectorAll<HTMLElement>("b, strong, em, i, u, s, strike, del, font, mark").forEach((tagEl) => {
+          const parent = tagEl.parentNode;
+          if (parent) {
+            while (tagEl.firstChild) parent.insertBefore(tagEl.firstChild, tagEl);
+            tagEl.remove();
+          }
+        });
       }
     }
 
@@ -1479,7 +1536,7 @@ export function useCanvaInteractions({
   /**
    * Mutates the semantic tag (h1-h6, p) of the active heading/text live on the canvas
    */
-  const changeHeadingTag = useCallback((newTag: HeadingLevel | "p") => {
+  const changeHeadingTag = useCallback((newTag: HeadingLevel | "p" | string) => {
     let el = activeEditingElemRef.current;
     if (!el && selectedElement?.element) {
       const textTarget = findTextEditableElement(selectedElement.element);

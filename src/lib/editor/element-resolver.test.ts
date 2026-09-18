@@ -6,6 +6,9 @@ import {
   applyElementProps,
   applyRangeHeadingTagDom,
   applyRangeInlineStyleDom,
+  applyRangeLinkDom,
+  removeRangeLinkDom,
+  toggleListFormatDom,
   clearRangeFormattingDom,
   transformSelectedRangeToTag,
   isPartialTextSelection,
@@ -1232,6 +1235,512 @@ describe("findImageElement & media resolution", () => {
       assert.equal((updatedSpan.style as any)["font-family"], "Inter");
       // Must not have nested span children
       assert.equal(updatedSpan.children.length, 0);
+    });
+
+    describe("editor comprehensive audit, boundary enforcement, and tool operations", () => {
+      // 1. isPartialTextSelection across diverse selection states
+      describe("isPartialTextSelection across diverse selection states", () => {
+        it("returns true for single character selection within element", () => {
+          const p = createMockNode("p", {}, "Hello world");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => "H",
+          } as any;
+          assert.equal(isPartialTextSelection(mockRange, p), true);
+        });
+
+        it("returns true for partial word selection", () => {
+          const p = createMockNode("p", {}, "Hello world");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => "Hel",
+          } as any;
+          assert.equal(isPartialTextSelection(mockRange, p), true);
+        });
+
+        it("returns true for full word selection", () => {
+          const p = createMockNode("p", {}, "Hello world");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => "Hello",
+          } as any;
+          assert.equal(isPartialTextSelection(mockRange, p), true);
+        });
+
+        it("returns true for multiple words selection", () => {
+          const p = createMockNode("p", {}, "The quick brown fox jumps");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => "quick brown fox",
+          } as any;
+          assert.equal(isPartialTextSelection(mockRange, p), true);
+        });
+
+        it("returns true for full sentence selection in a paragraph with multiple sentences", () => {
+          const p = createMockNode("p", {}, "First sentence here. Second sentence here.");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => "First sentence here.",
+          } as any;
+          assert.equal(isPartialTextSelection(mockRange, p), true);
+        });
+
+        it("returns true for whitespace or punctuation selections without error", () => {
+          const p = createMockNode("p", {}, "Hello, world!");
+          const spaceRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => " ",
+          } as any;
+          assert.equal(isPartialTextSelection(spaceRange, p), true);
+
+          const punctRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => ",",
+          } as any;
+          assert.equal(isPartialTextSelection(punctRange, p), true);
+        });
+
+        it("returns false for collapsed range", () => {
+          const p = createMockNode("p", {}, "Hello world");
+          const mockRange = {
+            collapsed: true,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => "",
+          } as any;
+          assert.equal(isPartialTextSelection(mockRange, p), false);
+        });
+
+        it("returns false when the entire element text is selected", () => {
+          const p = createMockNode("p", {}, "Hello world");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            toString: () => "Hello world",
+          } as any;
+          assert.equal(isPartialTextSelection(mockRange, p), false);
+        });
+      });
+
+      // 2. Strict Editor Root Hard Boundary Enforcement
+      describe("strict editor root boundary enforcement", () => {
+        it("rejects transformSelectedRangeToTag when selection startContainer is outside editorRoot", () => {
+          const outsideContainer = createMockNode("div", { class: "unrelated-container" });
+          const outsideNode = outsideContainer.appendChild(createMockNode("p", {}, "Outside text"));
+
+          const editorRoot = createMockNode("div", { class: "editor-container" });
+          const editorP = editorRoot.appendChild(createMockNode("p", {}, "Inside editor"));
+
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: outsideContainer,
+            startContainer: outsideNode,
+            endContainer: editorP,
+            toString: () => "Outside text Inside editor",
+            extractContents: () => createMockNode("span", {}, "test"),
+            insertNode: () => {},
+          } as any;
+
+          const result = transformSelectedRangeToTag(mockRange, "h2", editorRoot);
+          assert.equal(result, null);
+        });
+
+        it("rejects cross-editor boundary selections between Editor A and Editor B", () => {
+          const editorA = createMockNode("div", { class: "editor-block" });
+          const editorB = createMockNode("div", { class: "editor-block" });
+          const pA = editorA.appendChild(createMockNode("p", {}, "Block A content"));
+          const pB = editorB.appendChild(createMockNode("p", {}, "Block B content"));
+
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: createMockNode("body"),
+            startContainer: pA,
+            endContainer: pB,
+            toString: () => "Block A Block B",
+            extractContents: () => createMockNode("span", {}, "test"),
+            insertNode: () => {},
+          } as any;
+
+          assert.equal(applyRangeInlineStyleDom(mockRange, { fontWeight: "bold" }, editorA), null);
+          assert.equal(applyRangeInlineStyleDom(mockRange, { fontWeight: "bold" }, editorB), null);
+          assert.equal(transformSelectedRangeToTag(mockRange, "h3", editorA), null);
+          assert.equal(transformSelectedRangeToTag(mockRange, "h3", editorB), null);
+          assert.equal(clearRangeFormattingDom(mockRange, editorA), false);
+          assert.equal(clearRangeFormattingDom(mockRange, editorB), false);
+          assert.equal(applyRangeLinkDom(mockRange, "https://example.com", editorA), null);
+          assert.equal(removeRangeLinkDom(mockRange, editorA), false);
+        });
+      });
+
+      // 3. Strikethrough & Highlight Formatting
+      describe("strikethrough & highlight formatting", () => {
+        it("applies strikethrough (textDecoration: line-through) to range", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p", {}, "Old price was $99"));
+
+          const extracted = createMockNode("span", {}, "$99");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => extracted,
+            insertNode: (node: any) => p.appendChild(node),
+          } as any;
+
+          const span = applyRangeInlineStyleDom(mockRange, { textDecoration: "line-through" }, container);
+          assert.ok(span);
+          assert.equal(span.tagName, "SPAN");
+          assert.equal((span.style as any)["text-decoration"], "line-through");
+          assert.equal(span.parentElement, p);
+        });
+
+        it("applies highlight (backgroundColor) to range", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p", {}, "Important highlight note"));
+
+          const extracted = createMockNode("span", {}, "Important");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => extracted,
+            insertNode: (node: any) => p.appendChild(node),
+          } as any;
+
+          const span = applyRangeInlineStyleDom(mockRange, { backgroundColor: "#fef08a" }, container);
+          assert.ok(span);
+          assert.equal(span.tagName, "SPAN");
+          assert.equal((span.style as any)["background-color"], "#fef08a");
+          assert.equal(span.parentElement, p);
+        });
+
+        it("applies multiple simultaneous inline styles cleanly without conflict", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p", {}, "Sale ended today"));
+
+          const extracted = createMockNode("span", {}, "Sale ended");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => extracted,
+            insertNode: (node: any) => p.appendChild(node),
+          } as any;
+
+          const span = applyRangeInlineStyleDom(
+            mockRange,
+            {
+              fontWeight: "bold",
+              fontStyle: "italic",
+              textDecoration: "line-through",
+              backgroundColor: "#fee2e2",
+              color: "#dc2626",
+            },
+            container
+          );
+
+          assert.ok(span);
+          assert.equal((span.style as any)["font-weight"], "bold");
+          assert.equal((span.style as any)["font-style"], "italic");
+          assert.equal((span.style as any)["text-decoration"], "line-through");
+          assert.equal((span.style as any)["background-color"], "#fee2e2");
+          assert.equal(span.style.color, "#dc2626");
+        });
+      });
+
+      // 4. Link Formatting & Removal
+      describe("link formatting and removal", () => {
+        it("applies hyperlink (<a>) with correct target and rel attributes", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p", {}, "Click here to read docs"));
+
+          const extracted = createMockNode("span", {}, "here to read");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => extracted,
+            insertNode: (node: any) => p.appendChild(node),
+          } as any;
+
+          const link = applyRangeLinkDom(mockRange, "https://example.com/docs", container);
+          assert.ok(link);
+          assert.equal(link.tagName, "A");
+          assert.equal(link.getAttribute("href"), "https://example.com/docs");
+          assert.equal(link.getAttribute("target"), "_blank");
+          assert.equal(link.getAttribute("rel"), "noopener noreferrer");
+          assert.equal(link.parentElement, p);
+        });
+
+        it("removes hyperlink cleanly without deleting inner text content", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p", {}, "Check our "));
+          const link = p.appendChild(createMockNode("a", { href: "/about" }));
+          link.appendChild(createMockNode("span", {}, "about page"));
+
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: link,
+            startContainer: link,
+            endContainer: link,
+          } as any;
+
+          const removed = removeRangeLinkDom(mockRange, container);
+          assert.equal(removed, true);
+          assert.equal(p.querySelectorAll("a").length, 0);
+          assert.ok(p.textContent.includes("about page"));
+        });
+
+        it("updates existing link href when the entire link is selected without creating nested <a>", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p", {}, "Read "));
+          const link = p.appendChild(createMockNode("a", { href: "https://old.example.com" }));
+          link.appendChild(createMockNode("span", {}, "documentation"));
+
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: link,
+            startContainer: link,
+            endContainer: link,
+            toString: () => "documentation",
+          } as any;
+
+          const updatedLink = applyRangeLinkDom(mockRange, "https://new.example.com", container);
+          assert.ok(updatedLink);
+          assert.equal(updatedLink.getAttribute("href"), "https://new.example.com");
+          assert.equal(p.querySelectorAll("a").length, 1);
+        });
+
+        it("unlinks multiple <a> tags when multi-node range is selected", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p"));
+          const link1 = createMockNode("a", { href: "/one" });
+          link1.appendChild(createMockNode("span", {}, "Link 1"));
+          const link2 = createMockNode("a", { href: "/two" });
+          link2.appendChild(createMockNode("span", {}, "Link 2"));
+
+          const extractedFragment = {
+            children: [link1, link2],
+            childNodes: [link1, link2],
+          };
+
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => extractedFragment,
+            insertNode: (node: any) => {
+              for (const child of node.children) {
+                p.appendChild(child);
+              }
+            },
+          } as any;
+
+          const removed = removeRangeLinkDom(mockRange, container);
+          assert.equal(removed, true);
+        });
+      });
+
+      // 5. List Formatting (toggleListFormatDom)
+      describe("list formatting (toggleListFormatDom)", () => {
+        it("converts a paragraph to an unordered list (ul)", () => {
+          const p = createMockNode("p", {}, "Item one");
+          let replacedWith: any = null;
+          p.replaceWith = (replacement: any) => {
+            replacedWith = replacement;
+          };
+
+          const list = toggleListFormatDom(p, "ul");
+          assert.ok(list);
+          assert.equal(list.tagName, "UL");
+          assert.equal(replacedWith, list);
+        });
+
+        it("converts a paragraph to an ordered list (ol)", () => {
+          const p = createMockNode("p", {}, "Step one");
+          let replacedWith: any = null;
+          p.replaceWith = (replacement: any) => {
+            replacedWith = replacement;
+          };
+
+          const list = toggleListFormatDom(p, "ol");
+          assert.ok(list);
+          assert.equal(list.tagName, "OL");
+          assert.equal(replacedWith, list);
+        });
+
+        it("converts an unordered list back to a paragraph", () => {
+          const ul = createMockNode("ul");
+          const li1 = ul.appendChild(createMockNode("li", {}, "Alpha"));
+          const li2 = ul.appendChild(createMockNode("li", {}, "Beta"));
+          let replacedWith: any = null;
+          ul.replaceWith = (replacement: any) => {
+            replacedWith = replacement;
+          };
+
+          const p = toggleListFormatDom(ul, "ul");
+          assert.ok(p);
+          assert.equal(p.tagName, "P");
+          assert.equal(replacedWith, p);
+          assert.ok(p.textContent.includes("Alpha"));
+          assert.ok(p.textContent.includes("Beta"));
+        });
+
+        it("converts an unordered list back to a paragraph preserving bold and link children", () => {
+          const ul = createMockNode("ul");
+          const li = ul.appendChild(createMockNode("li"));
+          const strong = li.appendChild(createMockNode("strong", {}, "Bold item"));
+          const a = li.appendChild(createMockNode("a", { href: "https://example.com" }, " with link"));
+
+          let replacedWith: any = null;
+          ul.replaceWith = (replacement: any) => {
+            replacedWith = replacement;
+          };
+
+          const p = toggleListFormatDom(ul, "ul");
+          assert.ok(p);
+          assert.equal(p.tagName, "P");
+          assert.equal(replacedWith, p);
+          assert.equal(p.querySelectorAll("strong").length, 1);
+          assert.equal(p.querySelectorAll("a").length, 1);
+          assert.ok(p.textContent.includes("Bold item"));
+          assert.ok(p.textContent.includes("with link"));
+        });
+      });
+
+      // 6. Preservation of Nested Formatting & Redundant Span Cleanup
+      describe("preservation of nested formatting & cleanEmptySpans", () => {
+        it("preserves outer bold formatting when inner italic is applied", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p"));
+          const strong = p.appendChild(createMockNode("strong", {}, "All Bold Text"));
+
+          const extracted = createMockNode("span", {}, "Bold");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: strong,
+            startContainer: strong,
+            endContainer: strong,
+            extractContents: () => extracted,
+            insertNode: (node: any) => strong.appendChild(node),
+          } as any;
+
+          const span = applyRangeInlineStyleDom(mockRange, { fontStyle: "italic" }, container);
+          assert.ok(span);
+          assert.equal(span.tagName, "SPAN");
+          assert.equal((span.style as any)["font-style"], "italic");
+          assert.equal(span.parentElement, strong);
+          assert.equal(strong.parentElement, p);
+          assert.equal(strong.tagName, "STRONG");
+        });
+
+        it("cleans redundant empty styling spans when applying styles", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p"));
+
+          const emptySpan = createMockNode("span");
+          const textSpan = createMockNode("span", {}, "Clean me");
+          emptySpan.appendChild(textSpan);
+          emptySpan.replaceWith = (replacement: any) => {};
+
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => ({
+              childNodes: [emptySpan],
+              children: [emptySpan],
+            }),
+            insertNode: (node: any) => p.appendChild(node),
+          } as any;
+
+          const styled = applyRangeInlineStyleDom(mockRange, { color: "#3b82f6" }, container);
+          assert.ok(styled);
+          assert.equal(styled.style.color, "#3b82f6");
+        });
+
+        it("unwraps formatting tags (strong, em, u, s, mark) and removes styles while preserving text in clearRangeFormattingDom", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p"));
+
+          const strong = createMockNode("strong", { style: "color: red;" });
+          const em = createMockNode("em", {});
+          const text = createMockNode("span", {}, "Deeply formatted");
+          em.appendChild(text);
+          strong.appendChild(em);
+
+          const fragment = {
+            children: [strong],
+            childNodes: [strong],
+          };
+
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => fragment,
+            insertNode: (node: any) => {
+              for (const child of node.children) {
+                p.appendChild(child);
+              }
+            },
+          } as any;
+
+          const cleared = clearRangeFormattingDom(mockRange, container);
+          assert.equal(cleared, true);
+          assert.ok(text.textContent.includes("Deeply formatted"));
+        });
+
+        it("applies combined underline and strikethrough (text-decoration: underline line-through)", () => {
+          const container = createMockNode("div", { class: "editor-block" });
+          const p = container.appendChild(createMockNode("p", {}, "Discount text"));
+
+          const extracted = createMockNode("span", {}, "Discount");
+          const mockRange = {
+            collapsed: false,
+            commonAncestorContainer: p,
+            startContainer: p,
+            endContainer: p,
+            extractContents: () => extracted,
+            insertNode: (node: any) => p.appendChild(node),
+          } as any;
+
+          const span = applyRangeInlineStyleDom(mockRange, { textDecoration: "underline line-through" }, container);
+          assert.ok(span);
+          assert.equal((span.style as any)["text-decoration"], "underline line-through");
+        });
+      });
     });
   });
 });
