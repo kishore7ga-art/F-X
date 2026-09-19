@@ -734,23 +734,6 @@ export function SectionToolbar({
           saveStatus={saveStatus}
           saveError={saveError}
         >
-          {/* Overlay on Hero toggle button */}
-          {(section.category === "navbar" || position.index === 0) && onToggleOverlay && (
-            <button
-              type="button"
-              onClick={onToggleOverlay}
-              title={isOverlaid ? "Detach header from hero" : "Overlay header on hero"}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold transition shadow-xs cursor-pointer ${
-                isOverlaid
-                  ? "bg-cyan-600 text-white hover:bg-cyan-500"
-                  : "bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200"
-              }`}
-            >
-              <Layers className="h-3 w-3" />
-              <span className="hidden sm:inline">{isOverlaid ? "Overlaid" : "Overlay on Hero"}</span>
-            </button>
-          )}
-
           {/* Reset styling button inside header for horizontal mode */}
           {isHorizontal && (
             <button

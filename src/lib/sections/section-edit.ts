@@ -992,30 +992,19 @@ export function isHeaderOverlaid(section: { code?: string; title?: string } | nu
 /**
  * Whether the overlay may actually be *applied* to the section at `index`.
  *
- * Distinct from `isHeaderOverlaid`, which reads the stored setting. This asks
- * whether the current composition can carry it, and the answer is no when the
- * header is the last section on the page.
- *
- * The overlay renders the header `position: absolute`. That takes it out of
- * flow, so it contributes no height — correct when a hero follows and carries
- * the height, and ruinous when nothing does: the page collapses to a hairline
- * and reads as empty. A page created and given only a navbar did exactly that,
- * which from the canvas is indistinguishable from the section never having
- * been added at all.
- *
- * The stored setting is deliberately left alone, so adding a hero underneath
- * restores the overlay with no further action from anyone.
- *
- * Shared because the editor canvas and the preview renderer both make this
- * decision and a copy in each is how the two drift apart.
+ * The header at index 0 always automatically overlays the following section
+ * whenever another section follows it to carry the layout height.
+ * When the header is the only section on the page, it remains in flow so the
+ * canvas/page does not collapse to empty height.
  */
 export function canApplyHeaderOverlay(
   sections: ReadonlyArray<{ code?: string; title?: string }>,
   index: number,
 ): boolean {
-  const section = sections[index];
-  if (!section || !isHeaderOverlaid(section)) return false;
-  return index < sections.length - 1;
+  if (index !== 0 || sections.length <= 1) return false;
+  const section = sections[0];
+  if (!section) return false;
+  return true;
 }
 
 /**

@@ -82,7 +82,6 @@ import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
 import { sanitizeCssUrls, type Device } from "@/lib/sections/section-managed-css";
 import { canApplyHeaderOverlay, isHeaderOverlaid, toggleHeaderOverlay, type SectionPatch } from "@/lib/sections/section-edit";
-import { HeaderOverlayDropZone } from "./canvas/HeaderOverlayDropZone";
 import { SectionOutsideControls } from "./canvas/SectionOutsideControls";
 import { resolveCategory } from "@/lib/sections/categories";
 import { handleInteractiveSectionClick, attachInteractiveSectionListeners, resetInteractiveState } from "@/lib/interactive-section-runtime";
@@ -1761,24 +1760,6 @@ export function EditorStudio({
 
 
       {/* Main Studio Canvas Workspace */}
-      {/* The header's overlay toggle, small and outside the section, only for header and hero section */}
-      {sections.length > 1 && headerSection && isHeroSectionFollowingHeader && (
-        <HeaderOverlayDropZone
-          isOverlaid={isHeaderOverlaid(headerSection)}
-          onToggleOverlay={(enable) => {
-            setSectionsWithHistory((prev) => {
-              if (prev.length === 0) return prev;
-              const target = prev[0];
-              const updated = toggleHeaderOverlay(target, enable);
-              return prev.map((s, i) => (i === 0 ? updated : s));
-            });
-          }}
-          resolveHeader={resolveHeaderWrapper}
-          revision={`${headerSection.id}|${sections.length}|${viewport.width}|${canvasScale}|${dockPosition}|${isHeaderOverlaid(headerSection)}`}
-          headerTitle={headerSection.title || "Header"}
-          heroTitle={sections[1]?.title || "Hero"}
-        />
-      )}
 
       {/* Section Reorder Quick Action Controls outside the section frame on the right */}
       {sections.length > 1 && (

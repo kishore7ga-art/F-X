@@ -489,9 +489,9 @@ describe("an overlaid header only leaves the flow when something follows it", ()
     assert.equal(canApplyHeaderOverlay([hero, overlaid], 1), false);
   });
 
-  it("says no for a header that was never overlaid, and for a missing index", () => {
+  it("always applies the overlay when a hero is underneath, and says no for a missing index", () => {
     const plain = header(NAV);
-    assert.equal(canApplyHeaderOverlay([plain, hero], 0), false);
+    assert.equal(canApplyHeaderOverlay([plain, hero], 0), true);
     assert.equal(canApplyHeaderOverlay([plain, hero], 9), false);
   });
 });
