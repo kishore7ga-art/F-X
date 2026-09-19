@@ -77,8 +77,6 @@ import {
 import { useViewport } from "@/hooks/useViewport";
 import { switchTier, tierById } from "@/lib/viewport-presets";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
-import { SectionToolbar } from "./SectionToolbar";
-import { InlineTextToolbar } from "./InlineTextToolbar";
 import { useCanvaInteractions } from "./canvas/useCanvaInteractions";
 import { ToolbarTestHarness } from "./ToolbarTestHarness";
 import { useMediaCleanupOnReplace } from "@/lib/dom/media-cleanup";
@@ -92,7 +90,6 @@ import { DrawerPanel } from "./DrawerPanel";
 import { DomainSettingsModal } from "./DomainSettingsModal";
 import { UserProfileMenu } from "./UserProfileMenu";
 import { useSelectionController } from "./selection/useSelectionController";
-import { ElementToolbar } from "./selection/ElementToolbar";
 import { SelectionHighlight } from "./selection/SelectionHighlight";
 import { buildSectionSchema } from "@/lib/sections/section-schema";
 import { applyControl } from "@/lib/sections/section-edit";
@@ -620,11 +617,11 @@ export function EditorStudio({
     },
     showToast: showToastNotification,
     onStartTextEditing: (_element, sectionIndex) => {
-      openCustomToolbar(sectionIndex);
+      setActiveSectionIndex(sectionIndex);
     },
     onFinishTextEditing: () => {},
     onSelectButton: (_element, sectionIndex) => {
-      openCustomToolbar(sectionIndex);
+      setActiveSectionIndex(sectionIndex);
     },
   });
 
@@ -1313,13 +1310,6 @@ export function EditorStudio({
     // Select and highlight this specific section
     setActiveSectionIndex(sectionIndex);
 
-    // Open custom multi-edit toolbar for the right-clicked section
-    setCustomToolbarState({
-      isOpen: true,
-      sectionIndex,
-      position: { x: e.clientX, y: e.clientY },
-    });
-
     // 📍 1. Map & Location iFrame / Button Target Detection
     const secObj = sections[sectionIndex];
     const secCategory = (secObj?.category || secObj?.title || "").toLowerCase();
@@ -1658,13 +1648,6 @@ export function EditorStudio({
     return cat === "hero" || second.title.toLowerCase().includes("hero") || (cat !== "navbar" && cat !== "footer");
   }, [sections]);
 
-  const resolvedToolbarSectionIndex =
-    customToolbarState.sectionIndex !== null ? customToolbarState.sectionIndex : activeSectionIndex;
-  const isSectionPanelOpen =
-    customToolbarState.isOpen && resolvedToolbarSectionIndex !== null;
-  const customToolbarSection =
-    resolvedToolbarSectionIndex !== null ? sections[resolvedToolbarSectionIndex] ?? null : null;
-
   /**
    * One observer over every section, rather than one per section: sections
    * mount and unmount as pages change, but this wraps all of them, so it
@@ -1681,59 +1664,8 @@ export function EditorStudio({
     closeCustomToolbar();
   }, [elementSelection, setActiveSectionIndex, closeCustomToolbar]);
 
-  /**
-   * The device the panel is editing, taken from the canvas rather than kept
-   * beside it.
-   *
-   * A second copy of "which device am I looking at" is how a panel comes to
-   * show mobile values next to a desktop preview. There is one viewport in this
-   * editor and the panel reads it; pressing Tablet in the panel moves the
-   * canvas, because those are the same act.
-   */
   const activeTierIcon = tierById(deviceCatalogue, viewport.mode)?.icon ?? "desktop";
   const sectionDevice: Device = activeTierIcon === "phone" ? "mobile" : activeTierIcon;
-
-  const handleSectionDeviceChange = useCallback(
-    (device: Device) => {
-      // The panel's three devices are the catalogue's icons; the first tier
-      // drawn with that icon is the one the dock would switch to.
-      const icon = device === "mobile" ? "phone" : device;
-      const tier = deviceCatalogue.tiers.find((t) => t.icon === icon);
-      if (!tier || tier.id === viewport.mode) return;
-      const next = switchTier(viewport, deviceCatalogue, tier.id);
-      if (next !== viewport) setViewport(next);
-    },
-    [viewport, deviceCatalogue, setViewport],
-  );
-
-  /**
-   * One control change, written the way every other section edit is written.
-   *
-   * `setSectionsWithHistory` is the same call the swap button, the inline text
-   * editor and the section picker make, so a toolbar edit gets undo, the
-   * per-page save queue and the dirty flag by construction rather than by
-   * remembering to wire them up. The index is captured here and the page is
-   * captured inside `mutateSections`, which is what makes an edit dispatched
-   * moments before a page switch land on the page it was made for.
-   */
-  const handleSectionPatch = useCallback(
-    (patch: SectionPatch) => {
-      const targetIndex = customToolbarState.sectionIndex ?? activeSectionIndex;
-      if (targetIndex === null) return;
-      setSectionsWithHistory((prev) =>
-        prev.map((sec, index) =>
-          index === targetIndex
-            ? {
-                ...sec,
-                ...(patch.code !== undefined ? { code: patch.code } : null),
-                ...(patch.title !== undefined ? { title: patch.title } : null),
-              }
-            : sec,
-        ),
-      );
-    },
-    [customToolbarState.sectionIndex, activeSectionIndex, setSectionsWithHistory],
-  );
 
   const handleContextMenuPatchSection = useCallback(
     (patch: Record<string, unknown>) => {
@@ -2001,10 +1933,7 @@ export function EditorStudio({
                         }
 
                         setActiveSectionIndex(idx);
-                        const hit = elementSelection.handleElementSelect(target, idx);
-                        if (!hit) {
-                          openCustomToolbar(idx);
-                        }
+                        elementSelection.handleElementSelect(target, idx);
                         inPlaceEditor.handleElementClick(target, idx, e);
                       }}
                       onClick={(e) => {
@@ -2334,122 +2263,41 @@ export function EditorStudio({
       )}
 
       {/*
-        Toolbar Dock: Mutually exclusive render.
-        When ElementToolbar, InlineTextToolbar, or SectionToolbar is active,
-        the dock displays the selected element's dedicated toolbar.
-        When no element or section is selected, it displays the global EditorToolbar.
+        Toolbar Dock: Main toolbar (EditorToolbar) is always preserved at the dock.
       */}
       {!isSettingsOpen && !isDrawerOpen && (
-        elementSelection.selection.selectedId &&
-        elementSelection.selection.type !== "heading" &&
-        elementSelection.selection.type !== "text" &&
-        elementSelection.selection.type !== "card" &&
-        elementSelection.selection.type !== "container" &&
-        elementSelection.selection.type !== "image" &&
-        elementSelection.selection.type !== "video" &&
-        elementSelection.selection.type !== "youtube" &&
-        elementSelection.selection.type !== "button" &&
-        elementSelection.selection.type !== "generic" ? (
-          /* Non-text element (icon, logo, plus): its own toolbar, same dock. Text, Heading, Card, Container, Image, Video, YouTube, Button, & Generic Element are edited via floating toolbar directly on canvas */
-          <ElementToolbar
-            key={elementSelection.selection.selectedId}
-            selection={elementSelection.selection}
-            sectionTitle={
-              sections.find((s) => s.id === elementSelection.selection.sectionId)?.title ?? "Section"
-            }
-            device={sectionDevice}
-            dockPosition={dockPosition}
-            onDeviceChange={handleSectionDeviceChange}
-            onChange={elementSelection.updateElementProps}
-            onChangeHeadingLevel={elementSelection.changeHeadingLevel}
-            onSelectAncestor={elementSelection.selectAncestor}
-            onReplaceMedia={elementSelection.replaceMedia}
-            onReplacePlus={elementSelection.replacePlusWith}
-            onChangeIcon={elementSelection.changeIcon}
-            onAddMediaToCard={elementSelection.addMediaToCard}
-            onRemoveMediaFromCard={elementSelection.removeMediaFromCard}
-            onSelectChildMedia={elementSelection.selectCardMedia}
-            onSelectParentCard={elementSelection.selectParentCard}
-            onInsertChildIntoCard={elementSelection.insertChildIntoCard}
-            onDuplicate={elementSelection.duplicateElement}
-            onMoveUp={() => elementSelection.moveElement("up")}
-            onMoveDown={() => elementSelection.moveElement("down")}
-            onClose={elementSelection.clearSelection}
-            onDelete={elementSelection.deleteElement}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-          />
-        ) : isSectionPanelOpen && customToolbarSection && resolvedToolbarSectionIndex !== null ? (
-          <SectionToolbar
-            key={customToolbarSection.id}
-            section={customToolbarSection}
-            position={{ index: resolvedToolbarSectionIndex, total: sections.length }}
-            device={sectionDevice}
-            dockPosition={dockPosition}
-            selectedCanvasElement={inPlaceEditor.selectedElement?.element ?? null}
-            onDeviceChange={handleSectionDeviceChange}
-            onPatch={handleSectionPatch}
-            /* Back button / Deselect: returns to normal dock */
-            onClose={closeCustomToolbar}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            onDeleteSection={handleDeleteSection}
-            onDuplicateSection={handleDuplicateSection}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-            isOverlaid={isHeaderOverlaid(customToolbarSection)}
-            onToggleOverlay={() => {
-              const secIdx = resolvedToolbarSectionIndex;
-              if (secIdx === null || !sections[secIdx]) return;
-              const target = sections[secIdx];
-              const updated = toggleHeaderOverlay(target);
-              setSectionsWithHistory((prev) =>
-                prev.map((s, i) => (i === secIdx ? updated : s)),
-              );
-            }}
-          />
-        ) : (
-          <EditorToolbar
-            subdomain={subdomain}
-            activePageSlug={editor.activePage.slug}
-            onOpenSettings={() => setIsSettingsOpen((prev) => !prev)}
-            isSettingsOpen={isSettingsOpen}
-            onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
-            viewport={viewport}
-            setViewport={setViewport}
-            deviceCatalogue={deviceCatalogue}
-            canvasScale={canvasScale}
-            /* Empty when nothing is selected, so the toolbar can say so. */
-            activeSectionTitle={
-              activeSectionIndex !== null ? sections[activeSectionIndex]?.title ?? "" : ""
-            }
-            hasSections={sections.length > 0}
-            isSectionSelected={activeSectionIndex !== null}
-            onAddSection={() => setShowAddSectionModal(true)}
-            onDuplicateSection={handleDuplicateSection}
-            onSwapVariant={() => handleSwapVariant(1)}
-            variantCount={activeVariantCount}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={editor.canUndo}
-            canRedo={editor.canRedo}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
-            onDeleteSection={handleDeleteSection}
-            onSyncAdminWebsite={handlePersistWebsiteSave}
-            saveStatus={editor.saveStatus}
-            saveError={editor.saveError}
-            onDockPositionChange={setDockPosition}
-          />
-        )
+        <EditorToolbar
+          subdomain={subdomain}
+          activePageSlug={editor.activePage.slug}
+          onOpenSettings={() => setIsSettingsOpen((prev) => !prev)}
+          isSettingsOpen={isSettingsOpen}
+          onToggleDrawer={() => setIsDrawerOpen(!isDrawerOpen)}
+          viewport={viewport}
+          setViewport={setViewport}
+          deviceCatalogue={deviceCatalogue}
+          canvasScale={canvasScale}
+          /* Empty when nothing is selected, so the toolbar can say so. */
+          activeSectionTitle={
+            activeSectionIndex !== null ? sections[activeSectionIndex]?.title ?? "" : ""
+          }
+          hasSections={sections.length > 0}
+          isSectionSelected={activeSectionIndex !== null}
+          onAddSection={() => setShowAddSectionModal(true)}
+          onDuplicateSection={handleDuplicateSection}
+          onSwapVariant={() => handleSwapVariant(1)}
+          variantCount={activeVariantCount}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={editor.canUndo}
+          canRedo={editor.canRedo}
+          onMoveUp={handleMoveUp}
+          onMoveDown={handleMoveDown}
+          onDeleteSection={handleDeleteSection}
+          onSyncAdminWebsite={handlePersistWebsiteSave}
+          saveStatus={editor.saveStatus}
+          saveError={editor.saveError}
+          onDockPositionChange={setDockPosition}
+        />
       )}
 
 
