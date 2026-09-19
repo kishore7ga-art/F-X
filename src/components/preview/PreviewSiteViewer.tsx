@@ -393,7 +393,7 @@ export function PreviewSiteViewer({
   }
 
   const body = sections.map((sec, idx) => {
-      const isHeader = resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
+      const isHeader = (sec as any).category === "navbar" || resolveCategory({ category: (sec as any).category, title: sec.title, code: sec.code }) === "navbar";
       // Same rule as the editor canvas, from the same function, so preview and
       // studio cannot disagree about whether the header is in flow.
       const isOverlaid = isHeader && canApplyHeaderOverlay(sections, idx);
@@ -496,7 +496,7 @@ export function PreviewSiteViewer({
                the first paint of the server-rendered HTML. */
             data-xite-theme={themeId ?? undefined}
             data-xite-font={fontId ?? undefined}
-            className="xite-site-canvas block w-full min-h-screen m-0 p-0"
+            className="xite-site-canvas block w-full min-h-screen m-0 p-0 relative"
           >
             {body}
           </div>

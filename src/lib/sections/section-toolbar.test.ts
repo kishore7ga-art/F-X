@@ -492,6 +492,20 @@ describe("header overlay — header floats transparently over hero", () => {
     assert.equal(isHeaderOverlaid(detached), false);
     assert.ok(!detached.code.includes("--x-header-overlay:hero"));
   });
+
+  it("cleans up forced transparent inline and tailwind backgrounds when disabling overlay", () => {
+    const navWithBg = section(
+      `<header class="header bg-white" style="background:#ffffff;color:#111;"><nav><a href="/">Home</a></nav></header>`,
+      "navbar",
+    );
+    const overlaid = toggleHeaderOverlay(navWithBg, true);
+    assert.ok(overlaid.code.includes("bg-transparent"));
+    assert.ok(overlaid.code.includes("background: transparent"));
+
+    const detached = toggleHeaderOverlay(overlaid, false);
+    assert.ok(!detached.code.includes("bg-transparent"));
+    assert.ok(!detached.code.includes("background: transparent"));
+  });
 });
 
 describe("background image & color markup sync", () => {

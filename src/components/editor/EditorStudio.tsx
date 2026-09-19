@@ -1766,11 +1766,15 @@ export function EditorStudio({
         <HeaderOverlayDropZone
           isOverlaid={isHeaderOverlaid(headerSection)}
           onToggleOverlay={(enable) => {
-            const updated = toggleHeaderOverlay(headerSection, enable);
-            setSectionsWithHistory((prev) => prev.map((s, i) => (i === 0 ? updated : s)));
+            setSectionsWithHistory((prev) => {
+              if (prev.length === 0) return prev;
+              const target = prev[0];
+              const updated = toggleHeaderOverlay(target, enable);
+              return prev.map((s, i) => (i === 0 ? updated : s));
+            });
           }}
           resolveHeader={resolveHeaderWrapper}
-          revision={`${headerSection.id}|${sections.length}|${viewport.width}|${canvasScale}|${dockPosition}`}
+          revision={`${headerSection.id}|${sections.length}|${viewport.width}|${canvasScale}|${dockPosition}|${isHeaderOverlaid(headerSection)}`}
           headerTitle={headerSection.title || "Header"}
           heroTitle={sections[1]?.title || "Hero"}
         />
@@ -1895,7 +1899,7 @@ export function EditorStudio({
             </div>
           ) : (
             /* Pure Section Rendering for Current Page */
-            <div className="w-full" ref={canvasRootRef}>
+            <div className="w-full relative" ref={canvasRootRef}>
               {sections.map((sec, idx) => {
                 const isHeader = sec.category === "navbar" || resolveCategory({ title: sec.title, code: sec.code }) === "navbar";
                 // Overlaid only while a section follows to carry the height —

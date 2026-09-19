@@ -983,6 +983,7 @@ export function hexFromValue(value: string, fallback = "#000000"): string {
 export function isHeaderOverlaid(section: { code?: string; title?: string } | null | undefined): boolean {
   if (!section || !section.code) return false;
   return (
+    /--x-header-overlay\s*:\s*["']?hero["']?/i.test(section.code) ||
     section.code.includes("--x-header-overlay:hero") ||
     section.code.includes("--x-header-overlay: hero")
   );
@@ -1085,6 +1086,23 @@ export function toggleHeaderOverlay<T extends EditableSection>(
       styles = setManagedProperty(styles, k, "desktop", "background-color", null);
       styles = setManagedProperty(styles, k, "desktop", "background", null);
     });
+    // Remove forced transparent background when detaching
+    updatedBody = updatedBody.replace(
+      /(<(?:header|nav|div)[^>]*\s+style=(["']))([\s\S]*?)(\2)/i,
+      (_match, pre, quote, styleContent) => {
+        let sc = styleContent
+          .replace(/background(?:-color)?\s*:\s*transparent\s*;?/gi, "")
+          .trim();
+        return `${pre}${sc}${quote}`;
+      },
+    );
+    updatedBody = updatedBody.replace(
+      /(<(?:header|nav|div)[^>]*\s+class=(["']))([\s\S]*?)(\2)/i,
+      (_match, pre, quote, classContent) => {
+        let cc = classContent.replace(/\bbg-transparent\b/g, "").trim();
+        return `${pre}${cc}${quote}`;
+      },
+    );
   }
 
   const nextCode = joinSectionCode({

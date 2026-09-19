@@ -15,7 +15,7 @@ interface HeaderOverlayDropZoneProps {
 }
 
 const GAP = 8;
-const BUTTON_WIDTH = 76;
+const BUTTON_WIDTH = 80;
 
 /**
  * The overlay toggle, beside the header section — outside the canvas.
@@ -76,7 +76,7 @@ export function HeaderOverlayDropZone({
       window.removeEventListener("resize", schedule);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [resolveHeader, revision]);
+  }, [resolveHeader, revision, isOverlaid]);
 
   if (!pos) return null;
 
@@ -85,9 +85,9 @@ export function HeaderOverlayDropZone({
       className="fixed z-[9997] select-none pointer-events-auto"
       style={{ top: pos.top, left: pos.left, width: BUTTON_WIDTH }}
       data-xite-canvas-chrome=""
-      onMouseDownCapture={(e) => e.stopPropagation()}
-      onPointerDownCapture={(e) => e.stopPropagation()}
-      onClickCapture={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <button
         type="button"
@@ -96,6 +96,8 @@ export function HeaderOverlayDropZone({
           e.stopPropagation();
           onToggleOverlay(!isOverlaid);
         }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         className={`flex w-full items-center justify-center gap-1 rounded-lg border px-2 py-1 text-[10.5px] font-bold shadow-xs backdrop-blur-md transition-all duration-150 cursor-pointer ${
           isOverlaid
             ? "bg-slate-900/95 border-cyan-500/60 text-cyan-300 hover:bg-red-950/90 hover:border-red-500/60 hover:text-red-200"
