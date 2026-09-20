@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
+  AlertCircle,
   ArrowRight,
   Check,
   ChevronLeft,
@@ -34,6 +35,8 @@ import {
   fetchDefaultWebsite,
   saveTheme,
   saveWebsite,
+  requestGenerateSite,
+  pollJobStatus,
   type EditorPage,
   type EditorSection,
 } from "@/lib/editor-api";
@@ -49,7 +52,7 @@ import {
   viewportMediaToContainer,
 } from "@/lib/section-runtime";
 type Step = 0 | 1 | 2;
-type BuilderTab = "topic" | "goals" | "site_info" | "pages" | "colors" | "fonts";
+type BuilderTab = "site_info" | "colors" | "fonts";
 
 // 14 Educational & Institutional Website Goals tailored for XITE
 const INSTITUTIONAL_GOALS = [
@@ -978,22 +981,30 @@ export function OnboardingWizard({
     );
   });
 
-  // Step 2: Blueprint AI Studio State (Screenshots 3, 4, 5, 6)
+  // Step 2: Blueprint AI Studio State
   const [builderTab, setBuilderTab] = useState<BuilderTab>("site_info");
   const [siteTitle, setSiteTitle] = useState(collegeName || "Greenfield University");
+  const [collegeType, setCollegeType] = useState<string>(initialCollegeType || "autonomous");
+  const [keyFacts, setKeyFacts] = useState<string>(
+    "NAAC A++ Accredited, Autonomous Institution, 100% Placement Record"
+  );
   const [selectedPersonality, setSelectedPersonality] = useState<string>("professional");
   const [selectedPaletteId, setSelectedPaletteId] = useState<string>("academic-blue");
-  // Default selected font pairing: Expressive Display (matches Screenshot 6)
+  // Default selected font pairing: Expressive Display
   const [selectedFontPairingId, setSelectedFontPairingId] = useState<string>("expressive-display");
 
-  // Selected Pages (Pages tab)
-  const [selectedPages, setSelectedPages] = useState<Set<string>>(
-    new Set(["home", "about", "academics", "admissions", "contact"])
+  // AI Generation State
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgressText, setGenerationProgressText] = useState(
+    "Analyzing your college profile & branding..."
   );
+  const [generationError, setGenerationError] = useState<{
+    message: string;
+    isBudget?: boolean;
+  } | null>(null);
 
-  // Carousel zoom and scroll state
+  // Zoom state
   const [zoomScale, setZoomScale] = useState(1);
-  const carouselRef = useRef<HTMLDivElement>(null);
 
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1029,140 +1040,10 @@ export function OnboardingWizard({
       if (normId === "home") {
         return slug === "home" || slug === "" || slug === "index";
       }
-      if (normId === "about") {
-        return slug === "about" || slug === "about-us";
-      }
-      if (normId === "academics") {
-        return slug === "academics" || slug === "courses" || slug === "programs";
-      }
-      if (normId === "contact") {
-        return slug === "contact" || slug === "contact-us";
-      }
-      if (normId === "placements") {
-        return slug === "placements" || slug === "careers";
-      }
       return slug === normId;
     });
     return page?.sections || [];
   };
-
-  const getCustomizedSectionsForPage = (
-    pageId: string,
-    sourcePagesList: EditorPage[] = adminPages
-  ): EditorSection[] => {
-    const normId = pageId.toLowerCase().replace(/^\/+/, "");
-    const page = sourcePagesList.find((p) => {
-      const slug = (p.slug || "").toLowerCase().replace(/^\/+/, "");
-      if (normId === "home") {
-        return slug === "home" || slug === "" || slug === "index";
-      }
-      if (normId === "about") {
-        return slug === "about" || slug === "about-us";
-      }
-      if (normId === "academics") {
-        return slug === "academics" || slug === "courses" || slug === "programs";
-      }
-      if (normId === "contact") {
-        return slug === "contact" || slug === "contact-us";
-      }
-      if (normId === "placements") {
-        return slug === "placements" || slug === "careers";
-      }
-      return slug === normId;
-    });
-    const rawSections = page?.sections || [];
-    if (!rawSections || rawSections.length === 0) return [];
-
-    const personality =
-      BRAND_PERSONALITIES.find((p) => p.id === selectedPersonality) ||
-      BRAND_PERSONALITIES[0];
-    const displayTitle = siteTitle && siteTitle.trim() ? siteTitle.trim() : (collegeName || "Greenfield University");
-    const initials =
-      displayTitle
-        .split(/\s+/)
-        .map((w) => w[0])
-        .filter(Boolean)
-        .slice(0, 2)
-        .join("")
-        .toUpperCase() || "GU";
-
-    return rawSections.map((sec, idx) => {
-      let raw = sec.code || "";
-      if (displayTitle) {
-        raw = raw.replace(
-          /(<span[^>]*class="[^"]*(?:lit-brand-text|brand-text|logo-text|brand-name|site-title)[^"]*"[^>]*>)([\s\S]*?)(<\/span>)/gi,
-          `$1${displayTitle}$3`
-        );
-        raw = raw.replace(
-          /(<div[^>]*class="[^"]*(?:lit-brand-text|brand-text|logo-text|brand-name|site-title)[^"]*"[^>]*>)([\s\S]*?)(<\/div>)/gi,
-          `$1${displayTitle}$3`
-        );
-        raw = raw
-          .replace(/Madras Institute of Tech(?:nology)?/gi, displayTitle)
-          .replace(/Greenfield University/gi, displayTitle)
-          .replace(/GREENFIELD UNIVERSITY/gi, displayTitle.toUpperCase())
-          .replace(/>GU</g, `>${initials}<`);
-      }
-
-      const isHero =
-        sec.category === "hero" ||
-        (sec.title && sec.title.toLowerCase().includes("hero")) ||
-        raw.includes("ai-hero") ||
-        raw.includes("hero-title") ||
-        (idx === 1 && rawSections.length > 1);
-
-      if (isHero) {
-        if (/class="[^"]*(?:ai-hero-title|hero-title)[^"]*"/i.test(raw)) {
-          raw = raw.replace(
-            /(<h1[^>]*class="[^"]*(?:ai-hero-title|hero-title)[^"]*"[^>]*>)([\s\S]*?)(<\/h1>)/gi,
-            `$1${personality.heroTitle}$3`
-          );
-        } else {
-          raw = raw.replace(/(<h1[^>]*>)([\s\S]*?)(<\/h1>)/i, `$1${personality.heroTitle}$3`);
-        }
-
-        if (/class="[^"]*(?:ai-hero-desc|hero-desc|hero-subtitle|lead)[^"]*"/i.test(raw)) {
-          raw = raw.replace(
-            /(<(?:p|div)[^>]*class="[^"]*(?:ai-hero-desc|hero-desc|hero-subtitle|lead)[^"]*"[^>]*>)([\s\S]*?)(<\/(?:p|div)>)/gi,
-            `$1${personality.heroSubtitle}$3`
-          );
-        } else {
-          raw = raw.replace(
-            /(<\/h1>[\s\S]*?<p[^>]*>)([\s\S]*?)(<\/p>)/i,
-            `$1${personality.heroSubtitle}$3`
-          );
-        }
-      }
-
-      return {
-        ...sec,
-        code: raw,
-      };
-    });
-  };
-
-  const dynamicPages = useMemo<InstitutionalPageItem[]>(() => {
-    const knownIds = new Set<string>(INSTITUTIONAL_PAGES.map((p) => p.id));
-    const extraPages: InstitutionalPageItem[] = [];
-
-    adminPages.forEach((p) => {
-      const norm = (p.slug || "").toLowerCase().replace(/^\/+/, "");
-      if (!norm || norm === "home" || norm === "index") return;
-      if (!knownIds.has(norm)) {
-        extraPages.push({
-          id: norm,
-          label: p.title || norm.charAt(0).toUpperCase() + norm.slice(1),
-          required: false,
-          title: p.title || norm,
-          summary: `${p.title || norm} configured by Admin.`,
-          img: "/onboarding/campus-showcase.jpg",
-        });
-        knownIds.add(norm);
-      }
-    });
-
-    return [...INSTITUTIONAL_PAGES, ...extraPages];
-  }, [adminPages]);
 
   const homeSections = useMemo(() => getSectionsForPage("home"), [adminPages]);
 
@@ -1176,24 +1057,6 @@ export function OnboardingWizard({
     });
   }
 
-  // Toggle page
-  function togglePage(id: string) {
-    if (id === "home") return; // Home is required
-    setSelectedPages((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function scrollCarousel(direction: "left" | "right") {
-    if (carouselRef.current) {
-      const amount = direction === "left" ? -720 : 720;
-      carouselRef.current.scrollBy({ left: amount, behavior: "smooth" });
-    }
-  }
-
   // Find active palette details
   let activePalette = CURATED_PALETTE_GROUPS[0].palettes[0];
   for (const group of CURATED_PALETTE_GROUPS) {
@@ -1204,7 +1067,7 @@ export function OnboardingWizard({
     }
   }
 
-  // Find active font pairing details (Matching Screenshot 6)
+  // Find active font pairing details
   let activeFontPairing = CURATED_FONT_GROUPS[1].pairings[0];
   for (const group of CURATED_FONT_GROUPS) {
     const found = group.pairings.find((p) => p.id === selectedFontPairingId);
@@ -1215,18 +1078,18 @@ export function OnboardingWizard({
   }
 
   // Stepper advancement
+  const tabs: BuilderTab[] = ["site_info", "colors", "fonts"];
+
   function handleAdvanceStepper() {
-    const tabs: BuilderTab[] = ["site_info", "pages", "colors", "fonts"];
     const currentIdx = tabs.indexOf(builderTab);
     if (currentIdx !== -1 && currentIdx < tabs.length - 1) {
       setBuilderTab(tabs[currentIdx + 1]);
     } else {
-      void handleLaunchEditor();
+      void handleGenerateWebsite();
     }
   }
 
   function handleBackStepper() {
-    const tabs: BuilderTab[] = ["site_info", "pages", "colors", "fonts"];
     const currentIdx = tabs.indexOf(builderTab);
     if (currentIdx > 0) {
       setBuilderTab(tabs[currentIdx - 1]);
@@ -1273,33 +1136,6 @@ export function OnboardingWizard({
       console.warn("Failed to save theme during skip:", cause);
     }
 
-    // Persist draft with user configured pages and customized sections
-    try {
-      let sourcePages = adminPages;
-      if (!sourcePages || sourcePages.length === 0) {
-        try {
-          sourcePages = await fetchDefaultWebsite();
-        } catch {
-          sourcePages = [];
-        }
-      }
-      const pageIdsToSeed = selectedPages.size > 0 ? Array.from(selectedPages) : ["home"];
-      if (!pageIdsToSeed.includes("home")) pageIdsToSeed.unshift("home");
-      const seededPages = pageIdsToSeed.map((pId) => {
-        const pageDef = dynamicPages.find((p) => p.id === pId);
-        const slug = pId === "home" ? "/home" : `/${pId}`;
-        return {
-          id: `page-${pId}`,
-          slug,
-          title: pageDef?.title || pageDef?.label || pId,
-          sections: getCustomizedSectionsForPage(pId, sourcePages),
-        };
-      });
-      await saveWebsite(seededPages);
-    } catch (cause) {
-      console.warn("Failed to initialize website draft during skip:", cause);
-    }
-
     try {
       localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(customTokens));
       localStorage.removeItem(`xite_fresh_site_${subdomain}`);
@@ -1307,15 +1143,13 @@ export function OnboardingWizard({
         `xite_onboarding_${subdomain}`,
         JSON.stringify({
           siteTitle,
+          collegeType,
           selectedPersonality,
           themePaletteId,
           themeFontId,
           selectedPaletteId: activePalette.id,
           selectedFontPairingId: activeFontPairing.id,
           customTokens,
-          selectedGoals: Array.from(selectedGoals),
-          selectedPages: Array.from(selectedPages),
-          isFresh: true,
           completedAt: new Date().toISOString(),
         })
       );
@@ -1326,10 +1160,12 @@ export function OnboardingWizard({
     window.location.assign(`/editor/${encodeURIComponent(subdomain)}`);
   }
 
-  // Final Action: Complete onboarding and launch the editor ("go the build now")
-  async function handleLaunchEditor() {
-    setPending(true);
+  // Final Action: Complete onboarding and trigger AI Site Generation (Spec §2)
+  async function handleGenerateWebsite() {
+    setIsGenerating(true);
+    setGenerationError(null);
     setError(null);
+    setGenerationProgressText("Analyzing your college profile & branding...");
 
     const themePaletteId = activePalette?.backendThemeId || "academic-blue";
     const themeFontId = activeFontPairing?.backendFontId || "inter";
@@ -1350,79 +1186,134 @@ export function OnboardingWizard({
     };
 
     try {
+      localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(customTokens));
+      localStorage.removeItem(`xite_fresh_site_${subdomain}`);
+      localStorage.setItem(
+        `xite_onboarding_${subdomain}`,
+        JSON.stringify({
+          siteTitle,
+          collegeType,
+          selectedPersonality,
+          themePaletteId,
+          themeFontId,
+          selectedPaletteId: activePalette.id,
+          selectedFontPairingId: activeFontPairing.id,
+          customTokens,
+          completedAt: new Date().toISOString(),
+        })
+      );
+    } catch {
+      // ignore
+    }
+
+    try {
       await completeOnboardingRequest({
         role: "principal",
         themePaletteId,
         themeFontId,
       });
-
-      try {
-        await saveTheme({ themeId: themePaletteId, fontId: themeFontId });
-      } catch (cause) {
-        console.warn("Failed to save theme during launch:", cause);
-      }
-
-      // Persist draft with user configured pages and customized sections
-      try {
-        let sourcePages = adminPages;
-        if (!sourcePages || sourcePages.length === 0) {
-          try {
-            sourcePages = await fetchDefaultWebsite();
-          } catch {
-            sourcePages = [];
-          }
-        }
-        const pageIdsToSeed = selectedPages.size > 0 ? Array.from(selectedPages) : ["home"];
-        if (!pageIdsToSeed.includes("home")) pageIdsToSeed.unshift("home");
-        const seededPages = pageIdsToSeed.map((pId) => {
-          const pageDef = dynamicPages.find((p) => p.id === pId);
-          const slug = pId === "home" ? "/home" : `/${pId}`;
-          return {
-            id: `page-${pId}`,
-            slug,
-            title: pageDef?.title || pageDef?.label || pId,
-            sections: getCustomizedSectionsForPage(pId, sourcePages),
-          };
-        });
-        await saveWebsite(seededPages);
-      } catch (cause) {
-        console.warn("Failed to initialize website draft during launch:", cause);
-      }
-
-      try {
-        localStorage.setItem("xite_custom_theme_tokens", JSON.stringify(customTokens));
-        localStorage.removeItem(`xite_fresh_site_${subdomain}`);
-        localStorage.setItem(
-          `xite_onboarding_${subdomain}`,
-          JSON.stringify({
-            siteTitle,
-            selectedPersonality,
-            themePaletteId,
-            themeFontId,
-            selectedPaletteId: activePalette.id,
-            selectedFontPairingId: activeFontPairing.id,
-            customTokens,
-            selectedGoals: Array.from(selectedGoals),
-            selectedPages: Array.from(selectedPages),
-            isFresh: true,
-            completedAt: new Date().toISOString(),
-          })
-        );
-      } catch {
-        // ignore localStorage errors
-      }
-
-      // Hard redirect to editor
-      window.location.assign(`/editor/${encodeURIComponent(subdomain)}`);
     } catch (cause) {
-      console.error("Failed to complete onboarding:", cause);
-      setPending(false);
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : "Could not initialize editor builder. Please try again or click SKIP TO CANVAS."
-      );
+      console.warn("Onboarding metadata completion:", cause);
     }
+
+    try {
+      await saveTheme({ themeId: themePaletteId, fontId: themeFontId });
+    } catch (cause) {
+      console.warn("Failed to save theme during generation:", cause);
+    }
+
+    let jobId: string;
+    try {
+      const keyFactsList = keyFacts
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const res = await requestGenerateSite({
+        collegeContext: {
+          name: siteTitle.trim() || collegeName || "Greenfield University",
+          collegeName: siteTitle.trim() || collegeName || "Greenfield University",
+          collegeType,
+          brandPersonality: selectedPersonality,
+          subdomain,
+          keyFacts: keyFactsList,
+          goals: Array.from(selectedGoals),
+        },
+        colorTheme: {
+          themeId: themePaletteId,
+          primary: activePalette.colors[3] || activePalette.accent,
+          secondary: activePalette.colors[2] || activePalette.accent,
+          accent: activePalette.accent,
+          neutral: [activePalette.colors[0], activePalette.colors[1], activePalette.colors[4]],
+        },
+      });
+      jobId = res.jobId;
+    } catch (err: any) {
+      setIsGenerating(false);
+      const isBudget = err?.status === 402 || err?.data?.error === "BUDGET_EXCEEDED";
+      setGenerationError({
+        message: isBudget
+          ? "Monthly AI generation budget reached — please contact your administrator."
+          : err?.message || "Failed to start website generation. Please try again.",
+        isBudget,
+      });
+      return;
+    }
+
+    const progressMessages = [
+      "Analyzing your college profile & branding...",
+      "Synthesizing custom layout & harmonious color palette...",
+      "Generating bespoke sections tailored to your institution...",
+      "Writing academic copy & institutional messaging...",
+      "Assembling your website blueprint...",
+      "Still working — AI generation can take up to a couple of minutes...",
+    ];
+
+    let messageIdx = 0;
+    const messageInterval = setInterval(() => {
+      messageIdx = (messageIdx + 1) % progressMessages.length;
+      setGenerationProgressText(progressMessages[messageIdx]);
+    }, 4000);
+
+    const startTime = Date.now();
+    const maxWaitMs = 180000;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        if (Date.now() - startTime > maxWaitMs) {
+          clearInterval(pollInterval);
+          clearInterval(messageInterval);
+          setIsGenerating(false);
+          setGenerationError({
+            message: "Generation is taking longer than expected. You can open the studio or retry.",
+          });
+          return;
+        }
+
+        const jobStatus = await pollJobStatus(jobId);
+        if (jobStatus.status === "complete") {
+          clearInterval(pollInterval);
+          clearInterval(messageInterval);
+          setGenerationProgressText("Website generation complete! Opening studio...");
+          setTimeout(() => {
+            window.location.assign(`/editor/${encodeURIComponent(subdomain)}`);
+          }, 500);
+        } else if (jobStatus.status === "failed") {
+          clearInterval(pollInterval);
+          clearInterval(messageInterval);
+          setIsGenerating(false);
+          const isBudget = jobStatus.error?.code === "BUDGET_EXCEEDED";
+          setGenerationError({
+            message: isBudget
+              ? "Monthly AI generation budget reached — please contact your administrator."
+              : jobStatus.error?.message || "Failed to generate website. Please try again.",
+            isBudget,
+          });
+        }
+      } catch (err: any) {
+        console.warn("Poll job error:", err);
+      }
+    }, 2500);
   }
 
   const activePersonalityData =
@@ -1566,127 +1457,62 @@ export function OnboardingWizard({
 
           {/* Center Stage + Right Drawer */}
           <div className="relative z-10 flex-1 min-h-0 flex overflow-hidden">
-            {/* ─── CENTER PREVIEW CANVAS (Shows live recoloring and pages carousel) ─── */}
+            {/* ─── CENTER PREVIEW CANVAS (Dynamic Home Sections from Header to Footer) ─── */}
             <div className="flex-1 min-h-0 flex flex-col justify-between p-3 sm:p-5 lg:p-6 overflow-hidden relative">
-              {/* IF TAB IS 'PAGES' OR 'COLORS' OR 'FONTS' (Multi-Page Carousel View matching Screenshot 4 & 5) */}
-              {builderTab === "pages" || builderTab === "colors" || builderTab === "fonts" ? (
-                <div className="h-full w-full flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
-                  {/* Pages Horizontal Scroll Row */}
-                  <div
-                    ref={carouselRef}
-                    className="flex-1 min-h-0 flex items-center gap-6 sm:gap-8 overflow-x-auto py-2 px-2 sm:px-4 scrollbar-none"
-                    style={{ transform: `scale(${zoomScale})`, transformOrigin: "center left" }}
+              <div className="h-full w-full flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+                <div className="w-full max-w-5xl xl:max-w-6xl h-full max-h-[calc(100vh-210px)] min-h-[420px] flex flex-col">
+                  <DynamicPageCanvasCard
+                    page={INSTITUTIONAL_PAGES[0]}
+                    sections={homeSections}
+                    siteTitle={siteTitle}
+                    selectedPersonality={selectedPersonality}
+                    activePalette={activePalette}
+                    activeFontPairing={activeFontPairing}
+                    isLoading={adminConfigLoading}
+                    className="w-full h-full rounded-2xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none xite-site-canvas dynamic-card-home"
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Canvas Controls: Zoom Pill */}
+              <div className="flex items-center justify-between pt-2 px-2 shrink-0">
+                <div className="inline-flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs select-none">
+                  <button
+                    type="button"
+                    onClick={() => setZoomScale((z) => Math.max(0.8, z - 0.1))}
+                    className="hover:text-white/80 p-0.5 cursor-pointer"
                   >
-                    {dynamicPages.filter(
-                      (p) => p.required || selectedPages.has(p.id)
-                    ).map((page) => (
-                      <div
-                        key={page.id}
-                        className="w-[480px] sm:w-[600px] lg:w-[720px] xl:w-[800px] h-full max-h-[calc(100vh-210px)] min-h-[420px] shrink-0 flex flex-col transition-all duration-300"
-                      >
-                        {/* Page Top Label (Matches Screenshot 4 & 5) */}
-                        <div className="text-xs sm:text-sm font-bold text-white/90 mb-2 px-1 flex items-center justify-between shrink-0">
-                          <span className="truncate">{page.label}</span>
-                          <span className="text-[10px] font-mono font-medium text-white/50 uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded-full">
-                            Desktop View
-                          </span>
-                        </div>
-
-                        {/* Page Canvas Card with Dynamic Live Palette Colors & Sections from Admin */}
-                        <DynamicPageCanvasCard
-                          page={page}
-                          sections={getSectionsForPage(page.id)}
-                          siteTitle={siteTitle}
-                          selectedPersonality={selectedPersonality}
-                          activePalette={activePalette}
-                          activeFontPairing={activeFontPairing}
-                          isLoading={adminConfigLoading}
-                          className="flex-1 min-h-0 w-full rounded-2xl shadow-2xl overflow-hidden border border-white/20 flex flex-col transition-colors duration-500 bg-white"
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Bottom Controls on Canvas Stage: Zoom Pill & Carousel Arrows (Matches Screenshot 4 & 5) */}
-                  <div className="flex items-center justify-between pt-2 px-2 shrink-0">
-                    {/* Zoom Pill */}
-                    <div className="inline-flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white text-xs select-none">
-                      <button
-                        type="button"
-                        onClick={() => setZoomScale((z) => Math.max(0.8, z - 0.1))}
-                        className="hover:text-white/80 p-0.5 cursor-pointer"
-                      >
-                        <Minus className="h-3 w-3" />
-                      </button>
-                      <span className="font-mono text-[11px] font-medium">
-                        {Math.round(zoomScale * 100)}%
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setZoomScale((z) => Math.min(1.2, z + 0.1))}
-                        className="hover:text-white/80 p-0.5 cursor-pointer"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </button>
-                    </div>
-
-                    {/* Carousel Nav Arrows */}
-                    <div className="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/10 text-white">
-                      <button
-                        type="button"
-                        onClick={() => scrollCarousel("left")}
-                        className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => scrollCarousel("right")}
-                        className="p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="font-mono text-[11px] font-medium">
+                    {Math.round(zoomScale * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setZoomScale((z) => Math.min(1.2, z + 0.1))}
+                    className="hover:text-white/80 p-0.5 cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
                 </div>
-              ) : (
-                /* IF TAB IS 'SITE INFO' (Single Page Preview: Dynamic Home Sections from Header to Footer) */
-                <div className="h-full w-full flex-1 min-h-0 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-                  <div className="w-full max-w-5xl xl:max-w-6xl h-full max-h-[calc(100vh-210px)] min-h-[420px] flex flex-col">
-                    <DynamicPageCanvasCard
-                      page={INSTITUTIONAL_PAGES[0]}
-                      sections={homeSections}
-                      siteTitle={siteTitle}
-                      selectedPersonality={selectedPersonality}
-                      activePalette={activePalette}
-                      activeFontPairing={activeFontPairing}
-                      isLoading={adminConfigLoading}
-                      className="w-full h-full rounded-2xl shadow-2xl overflow-y-auto border border-white/20 flex flex-col transition-colors duration-500 scrollbar-none xite-site-canvas dynamic-card-home"
-                    />
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
-            {/* ─── RIGHT SIDEBAR DRAWER (Matches Screenshot 3, 4, 5) ─── */}
+            {/* ─── RIGHT SIDEBAR DRAWER (Site Info, Colors, Fonts) ─── */}
             <aside className="w-full sm:w-[380px] lg:w-[420px] bg-white text-neutral-900 h-full border-l border-neutral-200 flex flex-col justify-between overflow-y-auto shrink-0 shadow-2xl z-20">
               <div className="p-6 sm:p-8 space-y-6">
-                {/* Header with Title, Description & Close Icon (Matches Screenshots 3, 4, 5, 6) */}
+                {/* Header with Title, Description & Close Icon */}
                 <div className="flex items-start justify-between">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
-                      {builderTab === "site_info" && "Site Info"}
-                      {builderTab === "pages" && "Add pages to your site"}
-                      {builderTab === "colors" && "Choose a color palette"}
-                      {builderTab === "fonts" && "Choose a font pairing"}
-                      {(builderTab === "topic" || builderTab === "goals") && "Institutional Setup"}
+                      {builderTab === "site_info" && "Site Info & Personality"}
+                      {builderTab === "colors" && "Choose a Color Palette"}
+                      {builderTab === "fonts" && "Choose Typography"}
                     </h2>
                     <p className="text-xs sm:text-sm text-neutral-500 mt-1 leading-relaxed">
-                      {builderTab === "site_info" && "Give your website a name and select your brand personality."}
-                      {builderTab === "pages" && "You can always add or remove pages later. We added some recommendations based on your site goals."}
-                      {builderTab === "colors" && "These custom palettes were curated by our designers. You can always change up your colors later."}
-                      {builderTab === "fonts" && "These custom pairings were curated by our designers. There are other font options you can explore later."}
-                      {(builderTab === "topic" || builderTab === "goals") && "Review the academic modules configured for your portal."}
+                      {builderTab === "site_info" && "Set your college name, institution type, key facts, and brand voice."}
+                      {builderTab === "colors" && "Curated 5-color WCAG AA harmonized palettes tailored for educational institutions."}
+                      {builderTab === "fonts" && "Harmonious heading and body pairings designed for academic authority."}
                     </p>
                   </div>
                   <button
@@ -1699,39 +1525,75 @@ export function OnboardingWizard({
                   </button>
                 </div>
 
-                {/* ─── TAB: SITE INFO / BRAND PERSONALITY (Screenshot 3) ─── */}
+                {/* ─── TAB: SITE INFO / BRAND PERSONALITY ─── */}
                 {builderTab === "site_info" && (
-                  <div className="space-y-6">
+                  <div className="space-y-5">
+                    {/* Site Title */}
                     <div>
-                      <h3 className="text-sm font-bold text-neutral-900">Site title</h3>
-                      <p className="text-xs text-neutral-500 mt-0.5 mb-2.5">
-                        This is the name of your site. You can change it later.
+                      <h3 className="text-sm font-bold text-neutral-900">College / Site Name</h3>
+                      <p className="text-xs text-neutral-500 mt-0.5 mb-2">
+                        Official name of your institution displayed throughout the portal.
                       </p>
-
                       <div className="relative flex items-center">
                         <input
                           type="text"
                           value={siteTitle}
                           maxLength={100}
                           onChange={(e) => setSiteTitle(e.target.value)}
-                          placeholder="Your site title"
-                          className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3.5 py-3 pr-12 text-sm text-neutral-900 font-medium focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all"
+                          placeholder="e.g. Madras Institute of Technology"
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3.5 py-2.5 pr-12 text-sm text-neutral-900 font-medium focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all"
                         />
-                        <span className="absolute right-3.5 text-xs font-medium text-neutral-400">
+                        <span className="absolute right-3 text-xs font-medium text-neutral-400">
                           {100 - siteTitle.length}
                         </span>
                       </div>
                     </div>
 
+                    {/* College Type */}
+                    <div>
+                      <h3 className="text-sm font-bold text-neutral-900">Institution Type</h3>
+                      <p className="text-xs text-neutral-500 mt-0.5 mb-2">
+                        Helps AI tailor degree terminology and accreditation blocks.
+                      </p>
+                      <select
+                        value={collegeType}
+                        onChange={(e) => setCollegeType(e.target.value)}
+                        className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3.5 py-2.5 text-sm text-neutral-900 font-medium focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all"
+                      >
+                        <option value="autonomous">Autonomous Institution</option>
+                        <option value="engineering">Engineering & Technology</option>
+                        <option value="arts_science">Arts & Science College</option>
+                        <option value="medical">Medical & Healthcare</option>
+                        <option value="university">Deemed / State University</option>
+                        <option value="polytechnic">Polytechnic / Diploma Institute</option>
+                      </select>
+                    </div>
+
+                    {/* Key Facts / Accreditations */}
+                    <div>
+                      <h3 className="text-sm font-bold text-neutral-900">Institutional Highlights</h3>
+                      <p className="text-xs text-neutral-500 mt-0.5 mb-2">
+                        Accreditations, rankings, or achievements (comma-separated).
+                      </p>
+                      <input
+                        type="text"
+                        value={keyFacts}
+                        onChange={(e) => setKeyFacts(e.target.value)}
+                        placeholder="e.g. NAAC A++ Accredited, NIRF Top 50, 100% Placement Record"
+                        className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3.5 py-2.5 text-sm text-neutral-900 font-medium focus:outline-none focus:ring-1 focus:ring-black focus:border-black transition-all"
+                      />
+                    </div>
+
+                    {/* Brand Personality */}
                     <div>
                       <h3 className="text-sm font-bold text-neutral-900">
-                        Brand personality
+                        Brand Voice & Personality
                       </h3>
-                      <p className="text-xs text-neutral-500 mt-0.5 mb-3">
-                        Your selected personality shapes the tone, voice, and feel of AI-generated content.
+                      <p className="text-xs text-neutral-500 mt-0.5 mb-2.5">
+                        Shapes the tone, vocabulary, and lead messaging in generated copy.
                       </p>
 
-                      <div className="space-y-2.5">
+                      <div className="space-y-2">
                         {BRAND_PERSONALITIES.map((p) => {
                           const isSelected = selectedPersonality === p.id;
                           return (
@@ -1746,7 +1608,7 @@ export function OnboardingWizard({
                                   setSelectedFontPairingId(p.defaultFontPairingId);
                                 }
                               }}
-                              className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                              className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
                                 isSelected
                                   ? "bg-white border-neutral-900 ring-1 ring-neutral-900 shadow-xs"
                                   : "bg-neutral-50/70 border-neutral-100 hover:bg-neutral-100/60 hover:border-neutral-200"
@@ -1766,70 +1628,16 @@ export function OnboardingWizard({
                   </div>
                 )}
 
-                {/* ─── TAB: ADD PAGES TO YOUR SITE (Screenshot 4) ─── */}
-                {builderTab === "pages" && (
-                  <div className="space-y-4">
-                    <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-                      You can always add or remove pages later. We added some recommendations based on your site goals.
-                    </p>
-
-                    <div className="space-y-2.5 pt-1">
-                      {dynamicPages.map((page) => {
-                        const isChecked = page.required || selectedPages.has(page.id);
-                        return (
-                          <div
-                            key={page.id}
-                            onClick={() => togglePage(page.id)}
-                            className={`group flex items-center justify-between p-4 rounded-xl border transition-all select-none ${
-                              page.required
-                                ? "bg-neutral-50 border-neutral-200/80 cursor-default"
-                                : isChecked
-                                  ? "bg-neutral-50/90 border-neutral-300 cursor-pointer"
-                                  : "bg-white border-neutral-200 hover:bg-neutral-50/50 cursor-pointer"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              {!page.required ? (
-                                <div
-                                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-xs border transition-colors ${
-                                    isChecked
-                                      ? "bg-black border-black text-white"
-                                      : "bg-white border-neutral-300 group-hover:border-neutral-400"
-                                  }`}
-                                >
-                                  {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
-                                </div>
-                              ) : null}
-
-                              <span className="text-sm font-semibold text-neutral-900">
-                                {page.label}
-                              </span>
-                            </div>
-
-                            {page.required && (
-                              <span className="text-[11px] font-semibold text-neutral-500 bg-neutral-200/70 px-2.5 py-0.5 rounded-full">
-                                Required
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ─── TAB: CHOOSE A COLOR PALETTE (Screenshot 5) ─── */}
+                {/* ─── TAB: CHOOSE A COLOR PALETTE ─── */}
                 {builderTab === "colors" && (
                   <div className="space-y-6">
                     <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-                      These custom palettes were curated by our designers. You can always change up your colors later.
+                      Select a 5-color harmony palette. The AI will apply these colors across your generated components.
                     </p>
 
-                    {/* Palette Categories: Professional, Playful, Sophisticated */}
                     <div className="space-y-6">
                       {CURATED_PALETTE_GROUPS.map((group) => (
                         <div key={group.category} className="space-y-2.5">
-                          {/* Category Header */}
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-neutral-900 tracking-tight">
                               {group.category}
@@ -1841,7 +1649,6 @@ export function OnboardingWizard({
                             )}
                           </div>
 
-                          {/* 2x2 Grid of 5-Color Horizontal Palette Cards (Matches Screenshot 5) */}
                           <div className="grid grid-cols-2 gap-2.5">
                             {group.palettes.map((palette) => {
                               const isSelected = selectedPaletteId === palette.id;
@@ -1855,7 +1662,6 @@ export function OnboardingWizard({
                                       : "border-neutral-200"
                                   }`}
                                 >
-                                  {/* 5 Horizontal Color Blocks */}
                                   <div className="flex h-7 w-full rounded-md overflow-hidden border border-neutral-100">
                                     {palette.colors.map((c, i) => (
                                       <div
@@ -1875,12 +1681,11 @@ export function OnboardingWizard({
                   </div>
                 )}
 
-                {/* ─── TAB: FONTS (Screenshot 6: Choose a font pairing) ─── */}
+                {/* ─── TAB: FONTS ─── */}
                 {builderTab === "fonts" && (
                   <div className="space-y-6 pt-1">
                     {CURATED_FONT_GROUPS.map((group) => (
                       <div key={group.category} className="space-y-2.5">
-                        {/* Category Header */}
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-neutral-800 tracking-wide">
                             {group.category}
@@ -1892,7 +1697,6 @@ export function OnboardingWizard({
                           )}
                         </div>
 
-                        {/* 2-Column Grid of Curated Font Cards (Matches Screenshot 6) */}
                         <div className="grid grid-cols-2 gap-3">
                           {group.pairings.map((pairing) => {
                             const isSelected = selectedFontPairingId === pairing.id;
@@ -1927,39 +1731,36 @@ export function OnboardingWizard({
                     ))}
                   </div>
                 )}
-
-                {/* ─── TAB: TOPIC & GOALS ─── */}
-                {(builderTab === "topic" || builderTab === "goals") && (
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-bold text-neutral-900">
-                        Configured Academic Modules
-                      </h3>
-                      <p className="text-xs text-neutral-500 mt-0.5 mb-3">
-                        {selectedGoals.size} institutional modules active.
-                      </p>
-                    </div>
-                    <div className="space-y-1.5">
-                      {Array.from(selectedGoals).map((id) => {
-                        const goal = INSTITUTIONAL_GOALS.find((g) => g.id === id);
-                        return (
-                          <div
-                            key={id}
-                            className="text-xs p-2.5 rounded-lg bg-neutral-50 text-neutral-700 flex items-center gap-2"
-                          >
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
-                            <span>{goal?.label || id}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             </aside>
           </div>
 
-          {/* Error Banner */}
+          {/* Error Banner / Card */}
+          {generationError && (
+            <div className="relative z-20 px-6 py-3 bg-red-950/90 border-t border-red-800 text-red-100 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{generationError.message}</span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 ml-4">
+                <button
+                  type="button"
+                  onClick={handleGenerateWebsite}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white font-bold rounded-sm transition cursor-pointer"
+                >
+                  Retry Generation
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.location.assign(`/editor/${encodeURIComponent(subdomain)}`)}
+                  className="underline hover:text-white cursor-pointer"
+                >
+                  Skip to Canvas
+                </button>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="relative z-20 px-6 py-2.5 bg-red-50 border-t border-red-200 text-red-700 text-xs font-medium flex items-center justify-between">
               <span>{error}</span>
@@ -1973,7 +1774,7 @@ export function OnboardingWizard({
             </div>
           )}
 
-          {/* ─── BOTTOM STEPPER NAVIGATION BAR (Matches Screenshots 3, 4, 5, 6) ─── */}
+          {/* ─── BOTTOM STEPPER NAVIGATION BAR ─── */}
           <footer className="relative z-30 w-full shrink-0 flex items-center justify-between px-6 py-3.5 border-t border-neutral-200 bg-white select-none">
             {/* BACK BUTTON */}
             <button
@@ -1989,7 +1790,6 @@ export function OnboardingWizard({
               {(
                 [
                   { id: "site_info", label: "Site Info" },
-                  { id: "pages", label: "Pages" },
                   { id: "colors", label: "Colors" },
                   { id: "fonts", label: "Fonts" },
                 ] as const
@@ -2012,23 +1812,66 @@ export function OnboardingWizard({
               })}
             </div>
 
-            {/* NEXT / FINISH BUTTON */}
+            {/* NEXT / GENERATE BUTTON */}
             <button
               type="button"
-              onClick={builderTab === "fonts" ? handleLaunchEditor : handleAdvanceStepper}
-              disabled={pending}
-              className="px-8 py-2.5 text-xs font-bold uppercase tracking-wider bg-black text-white rounded-sm hover:bg-neutral-800 active:bg-neutral-900 transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
+              onClick={builderTab === "fonts" ? handleGenerateWebsite : handleAdvanceStepper}
+              disabled={isGenerating || pending}
+              className="px-7 py-2.5 text-xs font-bold uppercase tracking-wider bg-black text-white rounded-sm hover:bg-neutral-800 active:bg-neutral-900 transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
             >
-              {pending ? (
+              {isGenerating ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>{builderTab === "fonts" ? "Finalizing Studio..." : "Next..."}</span>
+                  <span>Generating Website...</span>
+                </>
+              ) : builderTab === "fonts" ? (
+                <>
+                  <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+                  <span>Generate My Website</span>
                 </>
               ) : (
-                <span>{builderTab === "fonts" ? "FINISH" : "NEXT"}</span>
+                <span>Next</span>
               )}
             </button>
           </footer>
+
+          {/* ─── FULL-SCREEN GENERATION IN PROGRESS OVERLAY ─── */}
+          {isGenerating && (
+            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#1c1815] via-[#120f0e] to-[#0a0908] text-white p-6 select-none animate-in fade-in duration-300">
+              <div className="w-full max-w-md p-8 rounded-3xl bg-neutral-900/90 border border-white/10 shadow-2xl backdrop-blur-xl flex flex-col items-center text-center space-y-6">
+                {/* Pulsing AI ring */}
+                <div className="relative flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-500/20 via-blue-500/20 to-purple-500/20 animate-pulse" />
+                  <div
+                    className="absolute w-14 h-14 rounded-full border-2 border-dashed border-white/30 animate-spin"
+                    style={{ animationDuration: "8s" }}
+                  />
+                  <div className="absolute w-10 h-10 rounded-2xl bg-white text-black flex items-center justify-center shadow-lg">
+                    <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                    Generating Your Website
+                  </h2>
+                  <p className="text-xs sm:text-sm text-neutral-400 min-h-[40px] flex items-center justify-center transition-all duration-300">
+                    {generationProgressText}
+                  </p>
+                </div>
+
+                {/* Shimmer Progress bar */}
+                <div className="w-full h-1.5 rounded-full bg-neutral-800 overflow-hidden relative">
+                  <div className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-amber-500 rounded-full w-full animate-pulse" />
+                </div>
+
+                <p className="text-[11px] text-neutral-500 leading-relaxed">
+                  XITE is composing custom layouts, harmonized colors, and bespoke copy for{" "}
+                  {siteTitle || "your institution"}. This takes 30–60 seconds.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -223,3 +223,34 @@ export async function saveWebsite(pages: Array<{ slug: string; title: string; se
     body: { pages },
   });
 }
+
+/* ── AI Generation & Swap API (01-frontend-spec.md) ─────────────────────── */
+
+export type JobStatusResponse = {
+  jobId: string;
+  status: "pending" | "processing" | "complete" | "failed";
+  type: string;
+  result?: any;
+  error?: { code: string; message: string };
+};
+
+export async function requestGenerateSite(payload: {
+  collegeContext: Record<string, any>;
+  colorTheme: Record<string, any>;
+}): Promise<{ jobId: string }> {
+  return await api<{ jobId: string }>("/api/v1/generate-site", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function requestSwapSection(sectionId: string): Promise<{ jobId: string }> {
+  return await api<{ jobId: string }>(`/api/v1/sections/${encodeURIComponent(sectionId)}/swap`, {
+    method: "POST",
+  });
+}
+
+export async function pollJobStatus(jobId: string): Promise<JobStatusResponse> {
+  return await api<JobStatusResponse>(`/api/v1/jobs/${encodeURIComponent(jobId)}`);
+}
+
