@@ -27,7 +27,7 @@ services:
       # browser. Changing it requires a rebuild, not a restart.
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
-        BUILD_VERSION: "v5.1.0-STUDIO-CANVAS-RESTORED-SEP20"
+        BUILD_VERSION: "v5.2.0-WHITE-CANVAS-RICH-SECTIONS-SEP20"
     restart: unless-stopped
     expose:
       - "3000"
@@ -61,7 +61,7 @@ services:
     build:
       context: .
       args:
-        BUILD_VERSION: "v5.1.0-STUDIO-CANVAS-RESTORED-SEP20"
+        BUILD_VERSION: "v5.2.0-WHITE-CANVAS-RICH-SECTIONS-SEP20"
     restart: unless-stopped
     expose:
       - "3000"

@@ -420,9 +420,9 @@ export function EditorStudio({
             fontId={themeSelection.fontId}
             onScaleChange={setCanvasScale}
             chromeClassName="shadow-2xl border border-slate-300 bg-white rounded-lg overflow-hidden"
-            canvasClassName="xite-site-canvas min-h-[75vh]"
+            canvasClassName="xite-site-canvas min-h-[75vh] bg-white text-slate-900"
           >
-            <div className="w-full flex flex-col relative">
+            <div className="w-full flex flex-col relative bg-white">
               {sections.map((sec, idx) => {
                 const isHeader =
                   (sec as any).category === "navbar" ||
