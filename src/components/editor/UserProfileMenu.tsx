@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { User, LogOut, Shield, ChevronDown, Building2 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 
@@ -16,28 +16,45 @@ export function UserProfileMenu({
   onOpenSettings,
 }: UserProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const initial = (collegeName || "C").trim().charAt(0).toUpperCase();
 
   return (
-    <div className="relative inline-block text-left">
+    <div ref={menuRef} className="relative inline-block text-left">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-800 rounded-full py-1.5 px-3 text-xs font-semibold text-white transition-all cursor-pointer shadow-lg"
+        className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-750 border border-slate-700/60 rounded-xl py-1.5 px-2.5 text-xs font-semibold text-white transition-all cursor-pointer shadow-sm hover:border-slate-600"
       >
-        <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white font-extrabold text-xs">
-          {collegeName.charAt(0)}
+        <div className="w-5.5 h-5.5 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-[11px] shadow-xs">
+          {initial}
         </div>
-        <span className="max-w-[120px] truncate">{collegeName}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+        <span className="max-w-[130px] truncate hidden sm:inline text-slate-200">{collegeName}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl p-2 z-50 text-slate-200 text-xs animate-in fade-in zoom-in-95 duration-150">
-          <div className="p-3 border-b border-slate-800">
-            <div className="flex items-center gap-2 text-white font-extrabold">
-              <Building2 className="w-4 h-4 text-blue-400" />
+        <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-slate-950/95 border border-slate-800 shadow-2xl p-1.5 z-50 text-slate-200 text-xs backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="p-3 border-b border-slate-800/80">
+            <div className="flex items-center gap-2 text-white font-bold">
+              <Building2 className="w-4 h-4 text-blue-400 shrink-0" />
               <span className="truncate">{collegeName}</span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1 truncate">{userEmail}</p>
+            <p className="text-[11px] text-slate-400 mt-1 truncate font-mono">{userEmail}</p>
           </div>
 
           <div className="py-1">
@@ -46,7 +63,7 @@ export function UserProfileMenu({
                 setIsOpen(false);
                 if (onOpenSettings) onOpenSettings("domain");
               }}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2.5 text-slate-300 hover:text-white transition cursor-pointer"
             >
               <User className="w-4 h-4 text-slate-400" />
               <span>Account Profile</span>
@@ -56,14 +73,14 @@ export function UserProfileMenu({
                 setIsOpen(false);
                 if (onOpenSettings) onOpenSettings("security");
               }}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-900 flex items-center gap-2.5 text-slate-300 hover:text-white transition cursor-pointer"
             >
               <Shield className="w-4 h-4 text-slate-400" />
               <span>Security & Roles</span>
             </button>
           </div>
 
-          <div className="pt-1 border-t border-slate-800">
+          <div className="pt-1 border-t border-slate-800/80">
             <button
               onClick={async () => {
                 try {
@@ -77,7 +94,7 @@ export function UserProfileMenu({
                 } catch {}
                 window.location.href = "/";
               }}
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-red-500/10 flex items-center gap-2 text-red-400 font-bold cursor-pointer"
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-rose-500/10 flex items-center gap-2.5 text-rose-400 font-bold transition cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>Log Out</span>

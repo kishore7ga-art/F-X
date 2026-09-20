@@ -1,6 +1,6 @@
 # Nixpacks deployment configuration for Dokploy
 [variables]
-BUILD_CACHE_BUSTER = "v5.2.0-WHITE-CANVAS-RICH-SECTIONS-SEP20"
+BUILD_CACHE_BUSTER = "v5.3.0-SUPER-STUDIO-UI-SEP20"
 NIXPACKS_NO_CACHE = "1"
 NODE_ENV = "production"
 
