@@ -1,6 +1,6 @@
 # Nixpacks deployment configuration for Dokploy
 [variables]
-BUILD_CACHE_BUSTER = "v5.0.0-AI-REBUILD-SEP20"
+BUILD_CACHE_BUSTER = "v5.1.0-STUDIO-CANVAS-RESTORED-SEP20"
 NIXPACKS_NO_CACHE = "1"
 NODE_ENV = "production"
 

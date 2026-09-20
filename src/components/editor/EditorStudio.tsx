@@ -3,28 +3,26 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Sparkles,
-  RefreshCw,
-  Monitor,
-  Tablet,
-  Smartphone,
   ExternalLink,
   Globe,
   AlertCircle,
   Loader2,
-  Check,
 } from "lucide-react";
 import { useViewport } from "@/hooks/useViewport";
-import { switchTier, tierById, ZOOM_LEVELS } from "@/lib/viewport-presets";
 import { ResponsiveCanvas } from "@/components/preview/ResponsiveCanvas";
 import { sectionCanvasHtml } from "@/lib/section-runtime";
+import { useSectionRuntime } from "@/hooks/useSectionRuntime";
+import { canApplyHeaderOverlay } from "@/lib/sections/section-edit";
+import { resolveCategory } from "@/lib/sections/categories";
+import { attachInteractiveSectionListeners } from "@/lib/interactive-section-runtime";
+import { ViewportControl } from "./ViewportControl";
 import {
   themeFontsHref,
-  themeStylesheet,
-  customThemeCss,
   tokenizeSectionHtml,
 } from "@/lib/editor-themes";
 import {
   fetchWebsite,
+  fetchDefaultWebsite,
   fetchTheme,
   requestSwapSection,
   pollJobStatus,
@@ -53,6 +51,7 @@ export function EditorStudio({
   collegeName = "Greenfield University",
 }: EditorStudioProps) {
   const [viewport, setViewport, catalogue] = useViewport();
+  const [canvasScale, setCanvasScale] = useState<number>(1);
   const [pages, setPages] = useState<EditorPage[]>([]);
   const [activePageIndex, setActivePageIndex] = useState<number>(0);
   const [themeSelection, setThemeSelection] = useState<{ themeId: string | null; fontId: string | null }>({
@@ -96,14 +95,23 @@ export function EditorStudio({
     link.href = themeFontsHref();
   }, []);
 
-  // Initial load: fetch website configuration and theme
+  // Initial load: fetch website configuration and theme, falling back to default website template
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [websitePages, theme] = await Promise.all([
-        fetchWebsite(),
+      let [websitePages, theme] = await Promise.all([
+        fetchWebsite().catch(() => []),
         fetchTheme().catch(() => ({ themeId: null, fontId: null })),
       ]);
+
+      // Fallback: If this tenant has no saved sections yet, fetch default template so sections always appear
+      if (!websitePages || websitePages.length === 0 || !websitePages[0]?.sections?.length) {
+        const defaultPages = await fetchDefaultWebsite().catch(() => []);
+        if (defaultPages && defaultPages.length > 0) {
+          websitePages = defaultPages;
+        }
+      }
+
       setPages(websitePages);
       setThemeSelection(theme);
     } catch (err) {
@@ -120,16 +128,70 @@ export function EditorStudio({
   const activePage = pages[activePageIndex] || pages[0] || null;
   const sections = activePage?.sections || [];
 
-  // Swap trigger handler for a single section
+  // ─── Section Runtime CSS injection (ensures container queries and styles render correctly) ───
+  useSectionRuntime({
+    sections,
+    scope: ".xite-site-canvas",
+    simulatedWidth: `${viewport.width}px`,
+    fillViewport: false,
+  });
+
+  // ─── Continuous Section Interactive Listeners (Track dragging, accordions, tabs, etc.) ───
+  useEffect(() => {
+    return attachInteractiveSectionListeners();
+  }, []);
+
+  // ─── Section Video Autoplay ─────────────────────────────────────────────
+  useEffect(() => {
+    const playVideos = () => {
+      document.querySelectorAll<HTMLVideoElement>(".xite-site-canvas video").forEach((v) => {
+        v.muted = true;
+        v.defaultMuted = true;
+        v.playsInline = true;
+        v.setAttribute("muted", "");
+        v.setAttribute("autoplay", "");
+        v.setAttribute("loop", "");
+        v.setAttribute("playsinline", "");
+        v.setAttribute("webkit-playsinline", "");
+        if (v.paused) {
+          v.play().catch(() => {});
+        }
+      });
+    };
+    playVideos();
+    const timer = setTimeout(playVideos, 200);
+    return () => clearTimeout(timer);
+  }, [sections]);
+
+  // ─── Hamburger Drawer Toggles for Mobile/Tablet ──────────────────────────
+  useEffect(() => {
+    const attachHamburger = () => {
+      document.querySelectorAll<HTMLElement>(".hamburger-toggle-btn").forEach((btn) => {
+        if (btn.dataset.xiteHamburgerBound) return;
+        btn.dataset.xiteHamburgerBound = "1";
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const header = btn.closest("header");
+          const menu = header?.querySelector(".mobile-drawer-menu");
+          if (menu) {
+            menu.classList.toggle("active");
+          }
+        });
+      });
+    };
+    attachHamburger();
+    const timer = setTimeout(attachHamburger, 300);
+    return () => clearTimeout(timer);
+  }, [sections]);
+
+  // ─── Swap Trigger Handler (Live AI Generation) ───────────────────────────
   const handleSwapSection = useCallback(async (sectionId: string) => {
-    // 0. Clean up any already-active polling interval for this section
     const existingTimer = activePollTimers.current.get(sectionId);
     if (existingTimer) {
       clearInterval(existingTimer);
       activePollTimers.current.delete(sectionId);
     }
 
-    // 1. Immediately disable button and show loading state
     setSectionStates((prev) => ({
       ...prev,
       [sectionId]: {
@@ -149,10 +211,9 @@ export function EditorStudio({
         },
       }));
 
-      // Short-poll job status every 2 seconds with timeout & error guards
       let attempts = 0;
       let consecutiveErrors = 0;
-      const MAX_ATTEMPTS = 90; // 90 attempts * 2s = 180s (3 minutes max)
+      const MAX_ATTEMPTS = 90; // 180 seconds max
       const MAX_CONSECUTIVE_ERRORS = 10;
 
       const pollInterval = setInterval(async () => {
@@ -178,7 +239,6 @@ export function EditorStudio({
             clearInterval(pollInterval);
             activePollTimers.current.delete(sectionId);
 
-            // Update section in state
             if (statusResp.result && statusResp.result.code) {
               setPages((prevPages) =>
                 prevPages.map((page, pIdx) => {
@@ -200,11 +260,9 @@ export function EditorStudio({
                 })
               );
             } else {
-              // Fallback: reload entire website to ensure fresh state
               void loadData();
             }
 
-            // Flash 300ms border highlight
             setSectionStates((prev) => ({
               ...prev,
               [sectionId]: {
@@ -270,15 +328,11 @@ export function EditorStudio({
     }
   }, [activePageIndex, loadData]);
 
-  // Viewport switcher helpers
-  const currentTier = tierById(catalogue, viewport.mode);
-  const activeTierId = currentTier?.id || "desktop";
-
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden select-none">
-      {/* ─── Minimal Header Bar ────────────────────────────────────────── */}
+      {/* ─── Top Studio Header Bar ─────────────────────────────────────── */}
       <header className="h-14 shrink-0 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 sm:px-6 z-40">
-        {/* Left: Branding & Live Link */}
+        {/* Left: Branding & Subdomain */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-black text-white text-sm shadow-sm">
             X
@@ -286,7 +340,7 @@ export function EditorStudio({
           <div>
             <div className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
               <span>{collegeName}</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-900/60 text-blue-300 border border-blue-700/50">
                 AI Site
               </span>
             </div>
@@ -302,76 +356,25 @@ export function EditorStudio({
           </a>
         </div>
 
-        {/* Center: Device Viewport Dock & Zoom Switcher (Spec §3.3) */}
-        <div className="flex items-center gap-2 bg-slate-950/70 p-1 rounded-xl border border-slate-800 shadow-inner">
-          {/* Device switcher */}
-          <div className="flex items-center gap-0.5 pr-2 border-r border-slate-800">
-            <button
-              type="button"
-              onClick={() => setViewport(switchTier(viewport, catalogue, "desktop"))}
-              className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
-                activeTierId === "desktop"
-                  ? "bg-slate-800 text-white shadow-xs"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-              title="Desktop View"
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Desktop</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewport(switchTier(viewport, catalogue, "tablet"))}
-              className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
-                activeTierId === "tablet"
-                  ? "bg-slate-800 text-white shadow-xs"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-              title="Tablet View"
-            >
-              <Tablet className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Tablet</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewport(switchTier(viewport, catalogue, "mobile"))}
-              className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
-                activeTierId === "mobile"
-                  ? "bg-slate-800 text-white shadow-xs"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-              title="Mobile View"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Mobile</span>
-            </button>
-          </div>
-
-          {/* Zoom switcher */}
-          <div className="flex items-center gap-1 pl-1 text-[11px] font-mono text-slate-400">
-            <button
-              type="button"
-              onClick={() => setViewport({ ...viewport, zoom: null })}
-              className={`px-1.5 py-0.5 rounded-md transition ${
-                viewport.zoom === null ? "bg-slate-800 text-white font-bold" : "hover:text-slate-200"
-              }`}
-            >
-              Fit
-            </button>
-            {ZOOM_LEVELS.map((z) => (
+        {/* Center: Page Tabs */}
+        {pages.length > 1 && (
+          <div className="flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800">
+            {pages.map((p, idx) => (
               <button
-                key={z}
+                key={p.id}
                 type="button"
-                onClick={() => setViewport({ ...viewport, zoom: z })}
-                className={`px-1.5 py-0.5 rounded-md transition ${
-                  viewport.zoom === z ? "bg-slate-800 text-white font-bold" : "hover:text-slate-200"
+                onClick={() => setActivePageIndex(idx)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                  activePageIndex === idx
+                    ? "bg-slate-800 text-white shadow-xs"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                {`${Math.round(z * 100)}%`}
+                {p.title || p.slug}
               </button>
             ))}
           </div>
-        </div>
+        )}
 
         {/* Right: Domain Settings & User Menu */}
         <div className="flex items-center gap-3">
@@ -387,25 +390,25 @@ export function EditorStudio({
         </div>
       </header>
 
-      {/* ─── Main Canvas Area ──────────────────────────────────────────── */}
-      <main className="flex-1 min-h-0 relative overflow-hidden bg-slate-900/50">
+      {/* ─── Studio Workbench Canvas Area ──────────────────────────────── */}
+      <main className="flex-1 w-full min-h-0 relative overflow-y-auto bg-slate-100/90 py-6 px-4 sm:px-8 pb-32 flex flex-col items-center justify-start">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            <span className="text-sm font-medium">Loading live website...</span>
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-slate-500 my-auto">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="text-sm font-medium">Loading website canvas...</span>
           </div>
         ) : sections.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center max-w-md mx-auto p-6">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+          <div className="flex flex-col items-center justify-center h-64 gap-4 text-center max-w-md mx-auto p-6 bg-white rounded-2xl border border-slate-200 shadow-sm my-auto">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold text-white">No Website Generated Yet</h2>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <h2 className="text-lg font-bold text-slate-900">No Website Generated Yet</h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
               Your college does not have an AI-generated website yet. Complete onboarding to generate your site.
             </p>
             <a
               href="/onboarding"
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition"
+              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition"
             >
               Start AI Generation
             </a>
@@ -415,36 +418,69 @@ export function EditorStudio({
             viewport={viewport}
             themeId={themeSelection.themeId}
             fontId={themeSelection.fontId}
-            canvasClassName="xite-site-canvas"
-            paneClassName="h-full overflow-y-auto"
+            onScaleChange={setCanvasScale}
+            chromeClassName="shadow-2xl border border-slate-300 bg-white rounded-lg overflow-hidden"
+            canvasClassName="xite-site-canvas min-h-[75vh]"
           >
-            <div className="w-full flex flex-col min-h-full">
+            <div className="w-full flex flex-col relative">
               {sections.map((sec, idx) => {
+                const isHeader =
+                  (sec as any).category === "navbar" ||
+                  resolveCategory({
+                    category: (sec as any).category,
+                    title: sec.title,
+                    code: sec.code,
+                  }) === "navbar";
+                const isOverlaid = isHeader && canApplyHeaderOverlay(sections, idx);
+
                 const secState = sectionStates[sec.id] || { status: "idle" };
                 const isGenerating = secState.status === "generating";
                 const isError = secState.status === "error";
                 const isHighlighted = Boolean(secState.highlight);
 
-                // Rotating status message for generating state
                 const elapsedSec = secState.startTime ? Math.floor((now - secState.startTime) / 1000) : 0;
                 const statusMessage =
                   elapsedSec < 15
                     ? "Generating a new version…"
                     : "Still working — this can take up to a couple of minutes…";
 
-                // Render section markup with DOM parity guarantee
                 const htmlMarkup = tokenizeSectionHtml(sectionCanvasHtml(sec.code, sec.id));
 
                 return (
                   <div
                     key={sec.id}
                     data-xite-section-id={sec.id}
-                    className={`relative group transition-all duration-300 ${
-                      isHighlighted ? "ring-4 ring-blue-500 ring-offset-2 z-20" : ""
-                    }`}
+                    style={{
+                      ...(isOverlaid
+                        ? {
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            width: "100%",
+                            zIndex: 100,
+                            backgroundColor: "transparent",
+                            overflow: "visible",
+                          }
+                        : isHeader
+                        ? {
+                            zIndex: 90,
+                            position: "relative",
+                            overflow: "visible",
+                          }
+                        : {
+                            position: "relative",
+                            zIndex: 10,
+                          }),
+                    }}
+                    className={`w-full relative transition-all group section-wrapper-container ${
+                      isOverlaid
+                        ? "[&_.section-canvas-box]:!bg-transparent [&_.section-canvas-box>header]:!bg-transparent [&_.section-canvas-box>nav]:!bg-transparent [&_.section-canvas-box>div]:!bg-transparent"
+                        : ""
+                    } ${isHighlighted ? "ring-4 ring-blue-500 ring-offset-2 z-20" : ""}`}
                   >
-                    {/* Hover Floating Swap Button (Spec §3.2, §4.1) */}
-                    <div className="absolute top-3 right-3 z-30 transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+                    {/* Hover Floating AI Swap Action Button */}
+                    <div className="absolute top-3 right-3 z-30 transition-all opacity-0 group-hover:opacity-100 focus-within:opacity-100 pointer-events-auto">
                       <button
                         type="button"
                         disabled={isGenerating}
@@ -465,7 +501,7 @@ export function EditorStudio({
                       </button>
                     </div>
 
-                    {/* Inline Section Error Banner (Spec §4.4) */}
+                    {/* Inline Section Error Banner */}
                     {isError && (
                       <div className="absolute top-3 left-3 right-20 z-30 flex items-center justify-between p-3 rounded-xl bg-rose-950/90 border border-rose-700/80 text-rose-100 shadow-xl backdrop-blur-md animate-in fade-in">
                         <div className="flex items-center gap-2 text-xs font-semibold">
@@ -482,13 +518,13 @@ export function EditorStudio({
                       </div>
                     )}
 
-                    {/* Section Content */}
+                    {/* Section HTML Rendered with DOM Parity Guarantee */}
                     <div
                       dangerouslySetInnerHTML={{ __html: htmlMarkup }}
                       style={{ display: "contents" }}
                     />
 
-                    {/* Section Loading Shimmer Overlay (Spec §4.2) */}
+                    {/* Section Loading Shimmer Overlay */}
                     {isGenerating && (
                       <div className="absolute inset-0 z-25 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
                         <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl text-white">
@@ -510,7 +546,31 @@ export function EditorStudio({
         )}
       </main>
 
-      {/* Domain & Account Settings Modal (unchanged capability) */}
+      {/* ─── Centered Floating Responsive Dock (ViewportControl from before) ─── */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white/95 backdrop-blur-xl border border-slate-200/90 p-1.5 px-3 rounded-full shadow-[0_16px_40px_rgba(15,23,42,0.14),0_4px_12px_rgba(0,0,0,0.06)] flex items-center justify-center gap-2 select-none transition-all duration-200">
+        <ViewportControl
+          viewport={viewport}
+          catalogue={catalogue}
+          onChange={setViewport}
+          scale={canvasScale}
+          orientation="horizontal"
+        />
+
+        <div className="h-4.5 w-[1px] bg-slate-200 shrink-0 mx-0.5" />
+
+        <a
+          href={`/site/${encodeURIComponent(subdomain)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 h-8 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-full shadow-sm transition-all duration-200 cursor-pointer no-underline shrink-0"
+          title="Open Live Website in New Tab"
+        >
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">Live Site</span>
+        </a>
+      </div>
+
+      {/* Domain Settings Modal */}
       <DomainSettingsModal
         isOpen={showDomainSettings}
         onClose={() => setShowDomainSettings(false)}
